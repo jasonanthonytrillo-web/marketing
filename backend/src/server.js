@@ -2,17 +2,13 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
+const prisma = require('./lib/prisma');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }
-});
-
-const prisma = new PrismaClient({
-  log: ['error', 'warn'],
 });
 
 // Test connection on startup

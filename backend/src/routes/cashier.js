@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // GET /api/cashier/orders — Get orders for cashier (pending + confirmed + preparing)
 router.get('/orders', authenticate, authorize('cashier', 'admin'), async (req, res) => {
@@ -78,7 +77,8 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
       currentStep = 'processing loyalty';
       let rate = 100; // default: 1 point per ₱100
       try {
-        const rateSetting = await prisma.systemSetting.findUnique({ where: { key: 'points_rate' } });
+        const tenantId = order.tenantId || 1;
+        const rateSetting = await prisma.systemSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'points_rate' } } });
         if (rateSetting) rate = parseFloat(rateSetting.value);
       } catch (e) {
         // SystemSetting table may not exist yet, use default rate
@@ -229,7 +229,8 @@ router.post('/orders/:id/cancel', authenticate, authorize('cashier', 'admin'), a
       if (order.status !== 'pending' && order.paymentMethod !== 'points') {
         let rate = 100;
         try {
-          const rateSetting = await prisma.systemSetting.findUnique({ where: { key: 'points_rate' } });
+          const tid = order.tenantId || 1;
+          const rateSetting = await prisma.systemSetting.findUnique({ where: { tenantId_key: { tenantId: tid, key: 'points_rate' } } });
           if (rateSetting) rate = parseFloat(rateSetting.value);
         } catch (e) { /* use default */ }
         pointsToDeduct = Math.floor(order.total / rate);

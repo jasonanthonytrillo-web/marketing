@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 const fs = require('fs');
 const path = require('path');
 
