@@ -1,0 +1,262 @@
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSocket } from '../context/SocketContext';
+import { playNotificationSound } from '../utils/helpers';
+import { getOrder } from '../services/api';
+
+export default function GlobalNotification() {
+  const [readyOrderNumbers, setReadyOrderNumbers] = useState([]);
+  const [cancelledOrderNumbers, setCancelledOrderNumbers] = useState([]);
+  const alertIntervalRef = useRef(null);
+  const { onEvent } = useSocket();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tenantSlug = searchParams.get('tenant');
+
+  // Listen for socket events
+  useEffect(() => {
+    if (!onEvent) return;
+    const unsub = onEvent('order_update', (data) => {
+      const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
+      const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
+      
+      const activeOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
+      const lastOrderNumber = localStorage.getItem(lastOrderKey);
+      
+      const isMyOrder = activeOrders.includes(data.order?.orderNumber) || 
+                       data.order?.orderNumber === lastOrderNumber;
+
+      if (isMyOrder) {
+        if (data.eventType === 'ready' || data.order.status === 'ready') {
+          triggerReadyAlert(data.order.orderNumber);
+        } else if (data.eventType === 'cancelled' || data.order.status === 'cancelled') {
+          triggerCancelledAlert(data.order.orderNumber, data.order.cancellationReason);
+          // Auto-remove from active orders list in realtime
+          const updated = activeOrders.filter(num => num !== data.order.orderNumber);
+          localStorage.setItem(activeOrdersKey, updated.length > 0 ? JSON.stringify(updated) : '[]');
+          if (updated.length === 0) localStorage.removeItem(activeOrdersKey);
+        } else if (data.eventType === 'completed' || data.order.status === 'completed') {
+          // Also cleanup completed orders in realtime
+          const updated = activeOrders.filter(num => num !== data.order.orderNumber);
+          localStorage.setItem(activeOrdersKey, updated.length > 0 ? JSON.stringify(updated) : '[]');
+          if (updated.length === 0) localStorage.removeItem(activeOrdersKey);
+        }
+      }
+    });
+    return unsub;
+  }, [onEvent, tenantSlug]);
+
+  // Polling fallback
+  useEffect(() => {
+    const checkOrders = async () => {
+      const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
+      const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
+
+      const activeOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
+      const lastOrderNumber = localStorage.getItem(lastOrderKey);
+      const ordersToCheck = Array.from(new Set([...activeOrders, lastOrderNumber].filter(Boolean)));
+      if (ordersToCheck.length === 0) return;
+
+      for (const orderNum of ordersToCheck) {
+        try {
+          const res = await getOrder(orderNum);
+          const status = res.data.data.status;
+          if (status === 'ready') {
+            triggerReadyAlert(orderNum);
+          } else if (status === 'cancelled' || status === 'completed') {
+            if (status === 'cancelled') {
+              triggerCancelledAlert(orderNum, res.data.data.cancellationReason);
+            }
+            // Cleanup inactive orders found during polling
+            const activeOrdersNow = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
+            const updated = activeOrdersNow.filter(num => num !== orderNum);
+            localStorage.setItem(activeOrdersKey, updated.length > 0 ? JSON.stringify(updated) : '[]');
+            if (updated.length === 0) localStorage.removeItem(activeOrdersKey);
+          }
+        } catch (e) {}
+      }
+    };
+
+    checkOrders();
+    const int = setInterval(checkOrders, 5000);
+    return () => clearInterval(int);
+  }, [tenantSlug]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (alertIntervalRef.current && alertIntervalRef.current !== 'starting') {
+        clearInterval(alertIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const triggerReadyAlert = (orderNum) => {
+    const dismissed = sessionStorage.getItem(`ready_dismissed_${orderNum}`);
+    if (dismissed) return;
+
+    setReadyOrderNumbers(prev => {
+      if (prev.includes(orderNum)) return prev;
+      const next = [...prev, orderNum];
+      
+      // Start/Restart alert logic with updated numbers
+      startAlertFlow(next);
+      return next;
+    });
+  };
+
+  const triggerCancelledAlert = (orderNum, reason) => {
+    const dismissed = sessionStorage.getItem(`cancel_dismissed_${orderNum}`);
+    if (dismissed) return;
+
+    setCancelledOrderNumbers(prev => {
+      if (prev.find(o => o.number === orderNum)) return prev;
+      const next = [...prev, { number: orderNum, reason: reason || 'Cancelled by staff' }];
+      
+      // Stop any ready chimes and play a single warning chime
+      if (alertIntervalRef.current) clearInterval(alertIntervalRef.current);
+      playNotificationSound('default');
+      
+      return next;
+    });
+  };
+
+  const startAlertFlow = (orderNums) => {
+    if (alertIntervalRef.current && alertIntervalRef.current !== 'starting') {
+      clearInterval(alertIntervalRef.current);
+    }
+    alertIntervalRef.current = 'starting';
+
+    // 1. Play chime
+    playNotificationSound('ready');
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+
+    // 2. Speech
+    setTimeout(() => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const text = orderNums.length > 1 
+          ? `Your orders ${orderNums.join(' and ')} are ready. Please proceed to the counter.`
+          : `Your order ${orderNums[0]} is ready. Please proceed to the counter.`;
+        
+        console.log(`📢 Speaking: "${text}"`);
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.rate = 0.9; msg.pitch = 1.1; msg.volume = 1;
+        
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female'))
+          || voices.find(v => v.lang.startsWith('en')) || voices[0];
+        if (preferred) msg.voice = preferred;
+        
+        msg.onerror = (e) => console.error('Speech error:', e);
+        msg.onend = () => {
+          console.log('🏁 Speech finished.');
+          playNotificationSound('ready');
+          startChimeLoop();
+        };
+        window.speechSynthesis.speak(msg);
+      } else {
+        console.warn('⚠️ Speech synthesis not supported in this browser.');
+        startChimeLoop();
+      }
+    }, 600);
+  };
+
+  const startChimeLoop = () => {
+    if (alertIntervalRef.current && alertIntervalRef.current !== 'starting') {
+      clearInterval(alertIntervalRef.current);
+    }
+    alertIntervalRef.current = setInterval(() => {
+      playNotificationSound('ready');
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+    }, 3000);
+  };
+
+  const dismissReadyAlert = () => {
+    readyOrderNumbers.forEach(num => sessionStorage.setItem(`ready_dismissed_${num}`, 'true'));
+    const lastNum = readyOrderNumbers[readyOrderNumbers.length - 1];
+    setReadyOrderNumbers([]);
+    
+    if (alertIntervalRef.current && alertIntervalRef.current !== 'starting') {
+      clearInterval(alertIntervalRef.current);
+    }
+    alertIntervalRef.current = null;
+    if (navigator.vibrate) navigator.vibrate(0);
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    
+    if (lastNum) {
+      const targetPath = tenantSlug ? `/order/${lastNum}?tenant=${tenantSlug}` : `/order/${lastNum}`;
+      navigate(targetPath);
+    }
+  };
+
+  const dismissCancelAlert = () => {
+    cancelledOrderNumbers.forEach(o => sessionStorage.setItem(`cancel_dismissed_${o.number}`, 'true'));
+    setCancelledOrderNumbers([]);
+  };
+
+  if (readyOrderNumbers.length === 0 && cancelledOrderNumbers.length === 0) return null;
+
+  return (
+    <>
+      {/* READY ALERT */}
+      {readyOrderNumbers.length > 0 && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-900/90 backdrop-blur-md p-6" onClick={dismissReadyAlert}>
+          <div className="text-center animate-fade-in-up w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+            <div className="text-7xl sm:text-8xl mb-4 animate-bounce">🔔</div>
+            <h1 className="font-heading text-4xl sm:text-6xl font-black text-white mb-2 leading-tight">
+              {readyOrderNumbers.length > 1 ? 'Your Orders are Ready!' : 'Your Order is Ready!'}
+            </h1>
+            <p className="text-emerald-200 text-lg sm:text-xl font-medium mb-4">Queue Number{readyOrderNumbers.length > 1 ? 's' : ''}</p>
+            
+            <div className="flex flex-wrap justify-center gap-4 mb-10">
+              {readyOrderNumbers.map(num => (
+                <div key={num} className="bg-white/10 backdrop-blur-md border-2 border-white/20 px-6 py-4 rounded-3xl">
+                  <p className="font-heading text-4xl sm:text-6xl font-black text-white tracking-tight">
+                    {num?.includes('-') ? num.split('-')[1] : num}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-emerald-300 text-base sm:text-lg mb-10">Please proceed to the counter to pick up your order{readyOrderNumbers.length > 1 ? 's' : ''}.</p>
+            <button onClick={dismissReadyAlert} className="bg-white text-emerald-800 font-bold text-lg sm:text-xl px-12 py-5 rounded-2xl shadow-2xl hover:bg-emerald-50 transition-all active:scale-95">
+              Got it! ✓
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CANCEL ALERT */}
+      {cancelledOrderNumbers.length > 0 && (
+        <div className="fixed inset-0 z-[101] flex items-center justify-center bg-red-950/90 backdrop-blur-md p-6" onClick={dismissCancelAlert}>
+          <div className="text-center animate-fade-in-up w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+            <div className="text-7xl sm:text-8xl mb-4 animate-shake">⚠️</div>
+            <h1 className="font-heading text-4xl sm:text-6xl font-black text-white mb-2 leading-tight">
+              Order Cancelled
+            </h1>
+            
+            <div className="space-y-4 mb-10">
+              {cancelledOrderNumbers.map(o => (
+                <div key={o.number} className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl">
+                  <p className="text-white font-heading text-3xl font-black mb-1">
+                    Order #{o.number?.includes('-') ? o.number.split('-')[1] : o.number}
+                  </p>
+                  <p className="text-red-200 text-lg font-medium">
+                    Reason: <span className="text-white">"{o.reason}"</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+            
+            <p className="text-red-300 text-base sm:text-lg mb-10">Please proceed to the counter if you have questions or for refund assistance.</p>
+            
+            <button onClick={dismissCancelAlert} className="bg-white text-red-800 font-bold text-lg sm:text-xl px-12 py-5 rounded-2xl shadow-2xl hover:bg-red-50 transition-all active:scale-95">
+              I Understand
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

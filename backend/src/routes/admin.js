@@ -1,0 +1,297 @@
+const express = require('express');
+const router = express.Router();
+const { PrismaClient } = require('@prisma/client');
+const { authenticate, authorize } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
+const prisma = new PrismaClient();
+const fs = require('fs');
+const path = require('path');
+
+// Image Upload (Base64)
+router.post('/upload-image', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { image, name } = req.body;
+    if (!image) return res.status(400).json({ success: false, message: 'No image provided' });
+
+    // Handle base64 string
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+    const extensionMatch = image.match(/^data:image\/(\w+);base64,/);
+    const extension = extensionMatch ? extensionMatch[1] : 'png';
+    
+    const fileName = `${Date.now()}-${name?.replace(/\s+/g, '-').toLowerCase() || 'product'}.${extension}`;
+    const uploadDir = path.join(__dirname, '../../uploads');
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadDir, fileName);
+    fs.writeFileSync(filePath, base64Data, 'base64');
+
+    const imageUrl = `/uploads/${fileName}`;
+    res.json({ success: true, url: imageUrl });
+  } catch (error) {
+    console.error('Upload Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to upload image' });
+  }
+});
+router.get('/orders', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { status, page = 1, limit = 50 } = req.query;
+    const where = { tenantId: req.user.tenantId };
+    if (status && status !== 'all') where.status = status;
+    const orders = await prisma.order.findMany({
+      where,
+      include: { items: true, payments: true },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: parseInt(limit)
+    });
+    const total = await prisma.order.count({ where });
+    res.json({ success: true, data: orders, total, page: parseInt(page), limit: parseInt(limit) });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load orders.' });
+  }
+});
+
+// Products CRUD
+router.get('/products', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { tenantId: req.user.tenantId },
+      include: { category: true, addons: true },
+      orderBy: { sortOrder: 'asc' }
+    });
+    res.json({ success: true, data: products });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load products.' });
+  }
+});
+
+router.post('/products', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, description, price, image, categoryId, stock, available, pointsCost, addons } = req.body;
+    if (!name || !price || !categoryId) {
+      return res.status(400).json({ success: false, message: 'Name, price, and category are required.' });
+    }
+    const product = await prisma.product.create({
+      data: {
+        tenantId: req.user.tenantId,
+        name, description, price: parseFloat(price), image,
+        categoryId: parseInt(categoryId), stock: parseInt(stock) || 100,
+        available: available !== false,
+        pointsCost: pointsCost ? parseInt(pointsCost) : null,
+        addons: addons ? { create: addons.map(a => ({ tenantId: req.user.tenantId, name: a.name, price: parseFloat(a.price) })) } : undefined
+      },
+      include: { category: true, addons: true }
+    });
+    await prisma.auditLog.create({
+      data: { userId: req.user.id, action: 'create_product', entityType: 'product', entityId: product.name, details: `Created new product "${product.name}" in category "${product.category?.name || 'N/A'}" at ₱${product.price}` }
+    });
+    res.status(201).json({ success: true, data: product });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to create product.' });
+  }
+});
+
+router.put('/products/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, description, price, image, categoryId, stock, available, pointsCost } = req.body;
+    const product = await prisma.product.update({
+      where: { id: parseInt(req.params.id), tenantId: req.user.tenantId },
+      data: {
+        name, description, price: price ? parseFloat(price) : undefined,
+        image, categoryId: categoryId ? parseInt(categoryId) : undefined,
+        stock: stock !== undefined ? parseInt(stock) : undefined, 
+        available,
+        pointsCost: pointsCost !== undefined ? (pointsCost ? parseInt(pointsCost) : null) : undefined
+      },
+      include: { category: true, addons: true }
+    });
+    await prisma.auditLog.create({
+      data: { userId: req.user.id, action: 'update_product', entityType: 'product', entityId: product.name, details: `Updated product "${product.name}": Price=₱${product.price}, Stock=${product.stock}, Active=${product.available}` }
+    });
+    res.json({ success: true, data: product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update product.' });
+  }
+});
+
+router.delete('/products/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const p = await prisma.product.update({ 
+        where: { id: parseInt(req.params.id), tenantId: req.user.tenantId }, 
+        data: { available: false } 
+    });
+    await prisma.auditLog.create({
+      data: { userId: req.user.id, action: 'deactivate_product', entityType: 'product', entityId: p.name, details: `Deactivated product "${p.name}" (ID: ${p.id})` }
+    });
+    res.json({ success: true, message: 'Product deactivated.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to delete product.' });
+  }
+});
+
+// Staff CRUD
+router.get('/staff', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { tenantId: req.user.tenantId },
+      select: { id: true, email: true, name: true, role: true, active: true, createdAt: true, points: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load staff.' });
+  }
+});
+
+router.post('/staff', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ success: false, message: 'All fields are required.' });
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return res.status(400).json({ success: false, message: 'Email already exists.' });
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const user = await prisma.user.create({
+      data: { tenantId: req.user.tenantId, name, email, password: hashedPassword, role, points: role === 'customer' ? 0 : undefined },
+      select: { id: true, email: true, name: true, role: true, active: true, points: true }
+    });
+
+    await prisma.auditLog.create({
+      data: { userId: req.user.id, action: 'create_staff', entityType: 'user', entityId: user.name, details: `Created new ${user.role}: ${user.name} (${user.email})` }
+    });
+
+    res.status(201).json({ success: true, data: user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to create user.' });
+  }
+});
+
+router.put('/staff/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, email, role, active, password } = req.body;
+    const data = { name, email, role, active };
+    if (password) data.password = await bcrypt.hash(password, 12);
+    const user = await prisma.user.update({
+      where: { id: parseInt(req.params.id) },
+      data,
+      select: { id: true, email: true, name: true, role: true, active: true }
+    });
+    await prisma.auditLog.create({
+      data: { userId: req.user.id, action: 'update_staff', entityType: 'staff', entityId: user.name, details: `Updated staff "${user.name}" (${user.email}): Role=${user.role}, Active=${user.active}` }
+    });
+    res.json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update staff.' });
+  }
+});
+
+router.delete('/staff/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    await prisma.user.update({ where: { id: parseInt(req.params.id) }, data: { active: false } });
+    await prisma.auditLog.create({
+      data: { userId: req.user.id, action: 'deactivate_staff', entityType: 'user', entityId: parseInt(req.params.id), details: `Deactivated staff ID: ${req.params.id}` }
+    });
+    res.json({ success: true, message: 'Staff deactivated.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to deactivate staff.' });
+  }
+});
+
+// Inventory
+router.get('/inventory', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { tenantId: req.user.tenantId },
+      select: { id: true, name: true, stock: true, available: true, category: { select: { name: true } } },
+      orderBy: { stock: 'asc' }
+    });
+    res.json({ success: true, data: products });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load inventory.' });
+  }
+});
+
+router.post('/inventory/:id/restock', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    const product = await prisma.product.update({
+      where: { id: parseInt(req.params.id) },
+      data: { stock: { increment: parseInt(quantity) } }
+    });
+    await prisma.inventoryLog.create({
+      data: { productId: product.id, quantityChange: parseInt(quantity), reason: 'restock', staffId: req.user.id }
+    });
+    await prisma.auditLog.create({
+      data: { userId: req.user.id, action: 'restock_product', entityType: 'product', entityId: product.id, details: `Added ${quantity} units to ${product.name}` }
+    });
+    res.json({ success: true, data: product });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to restock.' });
+  }
+});
+
+// Audit logs
+router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const logs = await prisma.auditLog.findMany({
+      where: { tenantId: req.user.tenantId },
+      include: { user: { select: { name: true, role: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 100
+    });
+    res.json({ success: true, data: logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load audit logs.' });
+  }
+});
+
+// GET /api/admin/settings — Get system settings
+router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const settings = await prisma.systemSetting.findMany({
+      where: { tenantId: req.user.tenantId }
+    });
+    const settingsMap = settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {});
+    res.json({ success: true, data: settingsMap });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load settings.' });
+  }
+});
+
+// POST /api/admin/settings — Update system settings
+router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { settings } = req.body; // { key: value }
+    
+    for (const [key, value] of Object.entries(settings)) {
+      await prisma.systemSetting.upsert({
+        where: { tenantId_key: { tenantId: req.user.tenantId, key } },
+        update: { value: value.toString() },
+        create: { tenantId: req.user.tenantId, key, value: value.toString() }
+      });
+    }
+
+    await prisma.auditLog.create({
+      data: { 
+        userId: req.user.id, 
+        action: 'update_settings', 
+        entityType: 'system', 
+        details: `Updated settings: ${Object.keys(settings).join(', ')}` 
+      }
+    });
+
+    res.json({ success: true, message: 'Settings updated successfully.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to save settings.' });
+  }
+});
+
+module.exports = router;

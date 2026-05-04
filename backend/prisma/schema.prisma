@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id          Int      @id @default(autoincrement())
+  name        String   // e.g., "MK Food Corner"
+  slug        String   @unique // e.g., "mk-food" for subdomains
+  logo        String?
+  primaryColor   String  @default("#f97316") // Default orange
+  secondaryColor String  @default("#fbbf24") // Default amber
+  bannerImage    String? // Dynamic background for landing page
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users         User[]
+  categories    Category[]
+  products      Product[]
+  orders        Order[]
+  systemSettings SystemSetting[]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int?     
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("cashier") // admin, cashier, kitchen, customer
+  pin       String?
+  points    Float    @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id])
+  orders    Order[]
+  payments  Payment[]
+  auditLogs AuditLog[]
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int?     
+  name        String
+  description String?
+  icon        String?
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant   Tenant?    @relation(fields: [tenantId], references: [id])
+  products Product[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int?     
+  categoryId  Int
+  name        String
+  description String?
+  price       Float
+  image       String?
+  stock       Int      @default(100)
+  available   Boolean  @default(true)
+  pointsCost  Int?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id])
+  category      Category       @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  addons        ProductAddon[]
+  inventoryLogs InventoryLog[]
+}
+
+model ProductAddon {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @default(1)
+  productId Int
+  name      String
+  price     Float
+  available Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id                 Int       @id @default(autoincrement())
+  tenantId           Int?      
+  orderNumber        String    @unique
+  customerId         Int?
+  customer           User?     @relation(fields: [customerId], references: [id])
+  customerName       String    @default("Guest")
+  orderType          String    @default("dine_in") // dine_in, take_out
+  status             String    @default("pending") // pending, confirmed, preparing, ready, completed, cancelled
+  paymentMethod      String    @default("cash") // cash, gcash, maya, card, points
+  paymentStatus      String    @default("unpaid") // unpaid, paid, refunded
+  subtotal           Float     @default(0)
+  discountType       String? // senior, pwd, promo
+  discountAmount     Float     @default(0)
+  taxAmount          Float     @default(0)
+  total              Float     @default(0)
+  notes              String?
+  cancellationReason String?
+  cashierId          Int?
+  confirmedAt        DateTime?
+  kitchenStartedAt   DateTime?
+  kitchenCompletedAt DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id])
+  items         OrderItem[]
+  payments      Payment[]
+  notifications Notification[]
+}
+
+model OrderItem {
+  id           Int      @id @default(autoincrement())
+  orderId      Int
+  productId    Int
+  productName  String
+  productPrice Float
+  quantity     Int      @default(1)
+  subtotal     Float
+  size         String?
+  flavor       String?
+  notes        String?
+  addons       String? // JSON string of [{name, price}]
+  isRedemption Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id             Int      @id @default(autoincrement())
+  orderId        Int
+  amountDue      Float
+  amountReceived Float
+  changeAmount   Float    @default(0)
+  paymentMethod  String
+  discountType   String?
+  discountAmount Float    @default(0)
+  taxAmount      Float    @default(0)
+  cashierId      Int?
+  createdAt      DateTime @default(now())
+
+  order   Order @relation(fields: [orderId], references: [id])
+  cashier User? @relation(fields: [cashierId], references: [id])
+}
+
+model InventoryLog {
+  id             Int      @id @default(autoincrement())
+  productId      Int
+  quantityChange Int
+  reason         String // order, restock, adjustment, waste
+  referenceId    String?
+  staffId        Int?
+  createdAt      DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  tenantId   Int      @default(1)
+  userId     Int?
+  action     String
+  entityType String
+  entityId   String?
+  details    String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  orderId   Int?
+  type      String // order_placed, payment_confirmed, preparing, ready, completed, cancelled
+  message   String
+  module    String // kiosk, cashier, kitchen, queue
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  order Order? @relation(fields: [orderId], references: [id])
+}
+
+model SystemSetting {
+  id        Int    @id @default(autoincrement())
+  tenantId  Int    @default(1)
+  key       String
+  value     String
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, key])
+}

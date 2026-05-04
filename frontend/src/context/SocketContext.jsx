@@ -1,0 +1,59 @@
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { io } from 'socket.io-client';
+
+const SocketContext = createContext(null);
+
+export function SocketProvider({ children }) {
+  const [connected, setConnected] = useState(false);
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    const url = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
+    const socket = io(url, { transports: ['websocket', 'polling'], reconnection: true, reconnectionDelay: 2000 });
+    socketRef.current = socket;
+
+    socket.on('connect', () => setConnected(true));
+    socket.on('disconnect', () => setConnected(false));
+
+    return () => { 
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
+
+  const joinRoom = (room, tenantId) => { 
+    if (socketRef.current && connected) {
+      const roomName = tenantId ? `tenant-${tenantId}-${room}` : room;
+      socketRef.current.emit('join', roomName);
+      console.log(`📡 Joining room: ${roomName}`);
+    }
+  };
+
+  const leaveRoom = (room, tenantId) => { 
+    if (socketRef.current && connected) {
+      const roomName = tenantId ? `tenant-${tenantId}-${room}` : room;
+      socketRef.current.emit('leave', roomName);
+    }
+  };
+
+  const onEvent = (event, callback) => {
+    if (socketRef.current) {
+      socketRef.current.on(event, callback);
+      return () => {
+        if (socketRef.current) socketRef.current.off(event, callback);
+      };
+    }
+    return () => {};
+  };
+
+  return (
+    <SocketContext.Provider value={{ socket: socketRef.current, connected, joinRoom, leaveRoom, onEvent }}>
+      {children}
+    </SocketContext.Provider>
+  );
+}
+
+export const useSocket = () => useContext(SocketContext);
+export default SocketContext;

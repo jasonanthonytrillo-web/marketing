@@ -1,0 +1,102 @@
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json', Accept: 'application/json' }
+});
+
+// Auth & Tenant interceptor
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('pos_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  // TENANT DETECTION: Extract company name from URL (e.g. mcdonalds.your-pos.com)
+  const hostname = window.location.hostname;
+  const urlParams = new URLSearchParams(window.location.search);
+  const tenantQuery = urlParams.get('tenant');
+  
+  let tenantSlug = 'project-million'; // Default for localhost/testing
+
+  if (tenantQuery) {
+    tenantSlug = tenantQuery;
+  } else if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    tenantSlug = hostname.split('.')[0]; // Gets the "mcdonalds" part
+  }
+  
+  // You can either send the slug to be resolved, or store the tenantId locally
+  // We'll send the ID if we have it saved, otherwise default to 1
+  const savedTenantId = localStorage.getItem('tenant_id');
+  config.headers['x-tenant-id'] = savedTenantId || '1';
+  config.headers['x-tenant-slug'] = tenantSlug;
+
+  return config;
+});
+
+// Auth
+export const login = (data) => api.post('/auth/login', data);
+export const register = (data) => api.post('/auth/register', data);
+export const registerCustomer = (data) => api.post('/auth/register-customer', data);
+export const getMe = () => api.get('/auth/me');
+export const changePassword = (data) => api.post('/auth/change-password', data);
+
+// Products (Public)
+export const getProducts = () => api.get('/products');
+export const getProduct = (id) => api.get(`/products/${id}`);
+export const getPublicTenant = (slug) => api.get(`/products/tenant/${slug}`);
+
+// Categories
+export const getCategories = () => api.get('/categories');
+
+// Orders (Kiosk)
+export const createOrder = (data) => api.post('/orders', data);
+export const getOrder = (orderNumber) => api.get(`/orders/${orderNumber}`);
+export const getQueue = () => api.get('/orders/queue/active');
+export const cancelOrder = (orderNumber) => api.post(`/orders/${orderNumber}/cancel`);
+export const getOrderHistory = () => api.get('/orders/history');
+
+// Cashier
+export const getCashierOrders = (status) => api.get(`/cashier/orders${status ? `?status=${status}` : ''}`);
+export const confirmOrder = (id, data) => api.post(`/cashier/orders/${id}/confirm`, data);
+export const cashierCancelOrder = (id, data) => api.post(`/cashier/orders/${id}/cancel`, data);
+export const calculatePayment = (data) => api.post('/cashier/calculate', data);
+
+// Kitchen
+export const getKitchenOrders = () => api.get('/kitchen/orders');
+export const startPreparing = (id) => api.post(`/kitchen/orders/${id}/start`);
+export const completeOrder = (id) => api.post(`/kitchen/orders/${id}/complete`);
+export const markServed = (id) => api.post(`/kitchen/orders/${id}/served`);
+
+// Admin
+export const getAdminOrders = (status, page) => api.get(`/admin/orders?status=${status || 'all'}&page=${page || 1}`);
+export const getAdminProducts = () => api.get('/admin/products');
+export const createProduct = (data) => api.post('/admin/products', data);
+export const updateProduct = (id, data) => api.put(`/admin/products/${id}`, data);
+export const deleteProduct = (id) => api.delete(`/admin/products/${id}`);
+export const getStaff = () => api.get('/admin/staff');
+export const createStaff = (data) => api.post('/admin/staff', data);
+export const updateStaff = (id, data) => api.put(`/admin/staff/${id}`, data);
+export const deleteStaff = (id) => api.delete(`/admin/staff/${id}`);
+export const getInventory = () => api.get('/admin/inventory');
+export const restockProduct = (id, quantity) => api.post(`/admin/inventory/${id}/restock`, { quantity });
+export const getAuditLogs = () => api.get('/admin/audit-logs');
+export const getSettings = () => api.get('/admin/settings');
+export const updateSettings = (settings) => api.post('/admin/settings', { settings });
+export const uploadImage = (data) => api.post('/admin/upload-image', data);
+
+// Payments
+export const createXenditInvoice = (data) => api.post('/payments/xendit/create-invoice', data);
+
+// Categories Admin
+export const createCategory = (data) => api.post('/categories', data);
+export const updateCategory = (id, data) => api.put(`/categories/${id}`, data);
+export const deleteCategory = (id) => api.delete(`/categories/${id}`);
+
+// Reports
+export const getDailyReport = (days) => api.get(`/reports/daily?days=${days || 7}`);
+export const getBestsellers = () => api.get('/reports/bestsellers');
+export const getAdminSummary = () => api.get('/reports/summary');
+export const getKitchenTimes = () => api.get('/reports/kitchen-times');
+
+export default api;

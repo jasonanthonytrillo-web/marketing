@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 { font-family: 'Outfit', sans-serif; }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-lg border border-surface-200/50 rounded-2xl shadow-lg transition-all duration-300;
+  }
+  .glass-card:hover {
+    @apply border-primary-300/50 shadow-xl;
+  }
+  .glass-dark {
+    @apply bg-surface-800/90 backdrop-blur-lg border border-surface-700/50 rounded-2xl shadow-lg;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-100 text-surface-700 font-semibold rounded-xl border border-surface-200 hover:bg-surface-200 hover:border-surface-300 transition-all duration-200;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-50 text-red-600 font-semibold rounded-xl border border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-200;
+  }
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-600 font-semibold rounded-xl border border-emerald-200 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all duration-200;
+  }
+  .btn-warning {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-amber-50 text-amber-600 font-semibold rounded-xl border border-amber-200 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all duration-200;
+  }
+  .btn-icon {
+    @apply w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-200;
+  }
+  .input-field {
+    @apply w-full px-4 py-3 bg-surface-50 border border-surface-200 rounded-xl text-surface-900 placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all duration-200;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-pending { @apply bg-amber-100 text-amber-700; }
+  .badge-confirmed { @apply bg-blue-100 text-blue-700; }
+  .badge-preparing { @apply bg-orange-100 text-orange-700; }
+  .badge-ready { @apply bg-emerald-100 text-emerald-700; }
+  .badge-completed { @apply bg-surface-100 text-surface-600; }
+  .badge-cancelled { @apply bg-red-100 text-red-700; }
+  .badge-paid { @apply bg-emerald-100 text-emerald-700; }
+  .badge-unpaid { @apply bg-red-100 text-red-700; }
+
+  .stat-card {
+    @apply glass-card p-5 flex flex-col gap-1;
+  }
+  .stat-label {
+    @apply text-xs font-medium text-surface-400 uppercase tracking-wider;
+  }
+  .stat-value {
+    @apply text-2xl font-bold font-heading text-surface-900;
+  }
+
+  /* Queue display specific */
+  .queue-number {
+    @apply text-4xl sm:text-6xl md:text-8xl font-black font-heading tracking-tight;
+  }
+
+  /* Print styles */
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white; }
+    .print-receipt {
+      width: 80mm;
+      margin: 0 auto;
+      font-size: 12px;
+      color: black;
+    }
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Animations */
+.animate-delay-1 { animation-delay: 0.1s; }
+.animate-delay-2 { animation-delay: 0.2s; }
+.animate-delay-3 { animation-delay: 0.3s; }
+.animate-delay-4 { animation-delay: 0.4s; }
+.animate-delay-5 { animation-delay: 0.5s; }
+
+/* Modal Helpers */
+.modal-overlay {
+  @apply fixed inset-0 z-[100] flex justify-center bg-surface-900/60 backdrop-blur-sm overflow-y-auto p-4 py-8 sm:p-10;
+}
+.modal-container {
+  @apply relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl animate-fade-in my-auto h-fit;
+}
+
+

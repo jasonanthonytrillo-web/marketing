@@ -1,0 +1,34 @@
+# Dependencies
+**/node_modules
+**/dist
+**/build
+**/.next
+
+# Environment Variables
+**/.env
+**/.env.local
+**/.env.production
+**/.env.development
+
+# Logs
+**/logs
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE Files
+.vscode
+.idea
+
+# Prisma
+/backend/prisma/dev.db
+/backend/prisma/dev.db-journal
+
+# Project specific
+/backend/uploads/*
+!/backend/uploads/.gitkeep
