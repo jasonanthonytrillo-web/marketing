@@ -21,7 +21,8 @@ router.get('/tenant/:slug', async (req, res) => {
       } 
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to fetch tenant.' });
+    console.error('❌ Error fetching tenant:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to fetch tenant.', error: error.message });
   }
 });
 

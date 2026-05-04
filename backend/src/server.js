@@ -11,7 +11,14 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }
 });
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: ['error', 'warn'],
+});
+
+// Test connection on startup
+prisma.$connect()
+  .then(() => console.log('✅ Prisma connected to Database'))
+  .catch((err) => console.error('❌ Prisma connection FAILED:', err.message));
 
 const path = require('path');
 
