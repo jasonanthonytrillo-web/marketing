@@ -17,11 +17,12 @@ api.interceptors.request.use(config => {
   const urlParams = new URLSearchParams(window.location.search);
   const tenantQuery = urlParams.get('tenant');
   
-  let tenantSlug = 'project-million'; // Default for localhost/testing
+  let tenantSlug = 'project-million'; // Default
+  const isPlatformDomain = hostname.includes('vercel.app') || hostname.includes('onrender.com');
 
   if (tenantQuery) {
     tenantSlug = tenantQuery;
-  } else if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+  } else if (!isPlatformDomain && hostname !== 'localhost' && hostname !== '127.0.0.1') {
     tenantSlug = hostname.split('.')[0]; // Gets the "mcdonalds" part
   }
   
