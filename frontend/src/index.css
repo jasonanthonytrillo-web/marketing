@@ -75,14 +75,33 @@
   /* Print styles */
   @media print {
     .no-print { display: none !important; }
-    body { background: white; }
-    .print-receipt {
-      width: 80mm;
-      margin: 0 auto;
-      font-size: 12px;
-      color: black;
+    body { background: white; margin: 0; padding: 0; }
+    .print-only { display: block !important; }
+    
+    /* Standard thermal receipt size */
+    @page {
+      margin: 0;
+      size: 80mm auto;
     }
+
+    .receipt-container {
+      width: 100%;
+      max-width: 80mm;
+      padding: 10mm 5mm;
+      font-family: 'Courier New', Courier, monospace;
+      color: black;
+      font-size: 14px;
+      line-height: 1.4;
+      background: white;
+    }
+
+    .receipt-header { text-align: center; margin-bottom: 5mm; }
+    .receipt-title { font-size: 18px; font-weight: bold; text-transform: uppercase; }
+    .receipt-divider { border-top: 1px dashed black; margin: 3mm 0; }
+    .receipt-item { display: flex; justify-between; }
+    .receipt-footer { text-align: center; margin-top: 8mm; font-size: 12px; }
   }
+  .print-only { display: none; }
 }
 
 /* Custom scrollbar */

@@ -6,32 +6,45 @@ const prisma = require('../lib/prisma');
 const fs = require('fs');
 const path = require('path');
 
-// Media Upload (Base64) - Supports Images and Videos
+const supabase = require('../lib/supabase');
+
+// Media Upload (Base64) - Supports Images and Videos - Now Using Supabase Storage!
 router.post('/upload-image', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { image, name } = req.body; // Using "image" field for backward compatibility
+    const { image, name } = req.body;
     if (!image) return res.status(400).json({ success: false, message: 'No media provided' });
 
-    // Detect type and extension from base64 header (e.g. "data:video/mp4;base64,..." or "data:image/png;base64,...")
+    // Detect type and extension
     const match = image.match(/^data:(\w+)\/(\w+);base64,/);
     if (!match) return res.status(400).json({ success: false, message: 'Invalid file format' });
     
-    const type = match[1]; // image or video
+    const type = match[1]; 
     const extension = match[2];
+    const mimeType = `${type}/${extension}`;
     
     const base64Data = image.split(';base64,').pop();
-    const fileName = `${Date.now()}-${name?.replace(/\s+/g, '-').toLowerCase() || 'media'}.${extension}`;
-    const uploadDir = path.join(__dirname, '../../uploads');
+    const buffer = Buffer.from(base64Data, 'base64');
+    const fileName = `${req.user.tenantId || 'global'}/${Date.now()}-${name?.replace(/\s+/g, '-').toLowerCase() || 'media'}.${extension}`;
 
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('pos-media')
+      .upload(fileName, buffer, {
+        contentType: mimeType,
+        upsert: true
+      });
+
+    if (error) {
+      console.error('Supabase Upload Error:', error);
+      return res.status(500).json({ success: false, message: 'Storage upload failed. Ensure "pos-media" bucket exists and is public.' });
     }
 
-    const filePath = path.join(uploadDir, fileName);
-    fs.writeFileSync(filePath, base64Data, 'base64');
+    // Get Public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('pos-media')
+      .getPublicUrl(fileName);
 
-    const fileUrl = `/uploads/${fileName}`;
-    res.json({ success: true, url: fileUrl });
+    res.json({ success: true, url: publicUrl });
   } catch (error) {
     console.error('Upload Error:', error);
     res.status(500).json({ success: false, message: 'Failed to upload media' });
@@ -140,15 +153,55 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
 
 router.delete('/products/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const p = await prisma.product.update({ 
-        where: { id: parseInt(req.params.id), tenantId: req.user.tenantId }, 
-        data: { available: false } 
+    const productId = parseInt(req.params.id);
+    
+    // Find product to check name for audit log
+    const product = await prisma.product.findUnique({
+      where: { id: productId, tenantId: req.user.tenantId }
     });
-    await prisma.auditLog.create({
-      data: { userId: req.user.id, action: 'deactivate_product', entityType: 'product', entityId: p.name, details: `Deactivated product "${p.name}" (ID: ${p.id})` }
-    });
-    res.json({ success: true, message: 'Product deactivated.' });
+
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
+
+    try {
+      // ATTEMPT 1: Hard delete (only works if never sold)
+      await prisma.product.delete({
+        where: { id: productId, tenantId: req.user.tenantId }
+      });
+
+      await prisma.auditLog.create({
+        data: { 
+          userId: req.user.id, 
+          tenantId: req.user.tenantId,
+          action: 'hard_delete_product', 
+          entityType: 'product', 
+          entityId: product.name, 
+          details: `Permanently deleted product "${product.name}"` 
+        }
+      });
+
+      res.json({ success: true, message: 'Product permanently deleted.' });
+    } catch (e) {
+      // ATTEMPT 2: Soft delete fallback (if sold before)
+      await prisma.product.update({
+        where: { id: productId, tenantId: req.user.tenantId },
+        data: { available: false }
+      });
+
+      await prisma.auditLog.create({
+        data: { 
+          userId: req.user.id, 
+          tenantId: req.user.tenantId,
+          action: 'deactivate_product', 
+          entityType: 'product', 
+          entityId: product.name, 
+          details: `Deactivated product "${product.name}" (could not hard delete due to existing sales history)` 
+        }
+      });
+
+      res.json({ success: true, message: 'Product deactivated (it has sales history and cannot be fully deleted).' });
+    }
   } catch (error) {
+    console.error('Delete Error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete product.' });
   }
 });

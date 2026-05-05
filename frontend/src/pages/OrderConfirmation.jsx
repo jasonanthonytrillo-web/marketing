@@ -231,9 +231,57 @@ export default function OrderConfirmation() {
         )}
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up mb-4" style={{ animationDelay: '0.5s' }}>
+        <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up mb-4 no-print" style={{ animationDelay: '0.5s' }}>
+          <button onClick={() => window.print()} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3">🖨️ Print Receipt</button>
           <Link to={queueLink} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3">📋 View Queue</Link>
           <Link to={menuLink} className="btn-primary flex-1 justify-center text-sm sm:text-base py-3" style={{ backgroundColor: brandingColor }}>🍽️ Order Again</Link>
+        </div>
+
+        {/* Hidden Printable Receipt */}
+        <div className="print-only receipt-container">
+          <div className="receipt-header">
+            <h1 className="receipt-title">{user?.tenantName || 'Project Million'}</h1>
+            <p>{user?.tenantAddress || 'Quality Food & Service'}</p>
+            <p>Tel: {user?.tenantPhone || 'N/A'}</p>
+          </div>
+          <div className="receipt-divider"></div>
+          <p><strong>Order:</strong> {order.orderNumber}</p>
+          <p><strong>Date:</strong> {formatDate(order.createdAt)}</p>
+          <p><strong>Type:</strong> {order.orderType === 'dine_in' ? 'DINE-IN' : 'TAKE-OUT'}</p>
+          <div className="receipt-divider"></div>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-dashed border-black">
+                <th className="py-1">QTY</th>
+                <th className="py-1">ITEM</th>
+                <th className="py-1 text-right">PRICE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items?.map(item => (
+                <tr key={item.id} className="text-xs">
+                  <td className="py-1 align-top">{item.quantity}</td>
+                  <td className="py-1 align-top">
+                    {item.productName}
+                    {item.addons && <div className="text-[10px] opacity-70">- {JSON.parse(item.addons).map(a => a.name).join(', ')}</div>}
+                  </td>
+                  <td className="py-1 text-right align-top">{formatCurrency(item.subtotal)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="receipt-divider"></div>
+          <div className="flex justify-between"><span>SUBTOTAL</span><span>{formatCurrency(order.subtotal)}</span></div>
+          {order.discountAmount > 0 && <div className="flex justify-between"><span>DISCOUNT ({order.discountType})</span><span>-{formatCurrency(order.discountAmount)}</span></div>}
+          <div className="flex justify-between"><span>TAX (12%)</span><span>{formatCurrency(order.taxAmount)}</span></div>
+          <div className="flex justify-between font-bold text-lg pt-1"><span>TOTAL</span><span>{formatCurrency(order.total)}</span></div>
+          <div className="receipt-divider"></div>
+          <div className="flex justify-between text-xs"><span>METHOD</span><span>{order.paymentMethod?.toUpperCase()}</span></div>
+          <div className="flex justify-between text-xs"><span>STATUS</span><span>{order.paymentStatus?.toUpperCase()}</span></div>
+          <div className="receipt-footer mt-6">
+            <p className="font-bold">Thank you for your business!</p>
+            <p>Please come again!</p>
+          </div>
         </div>
 
         {canCancel && (

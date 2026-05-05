@@ -11,6 +11,7 @@ export default function ProductsTab() {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('active'); // active, archived, all
 
   const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -39,7 +40,10 @@ export default function ProductsTab() {
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || p.categoryId === parseInt(selectedCategory);
-    return matchesSearch && matchesCategory;
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'active' && p.available) || 
+                         (statusFilter === 'archived' && !p.available);
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   useEffect(() => {
@@ -85,12 +89,21 @@ export default function ProductsTab() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to deactivate this product?')) return;
+    if (!confirm('Are you sure you want to delete/archive this product? It will no longer appear on the menu.')) return;
     try {
       await deleteProduct(id);
       loadData();
     } catch (error) {
       alert('Failed to delete product');
+    }
+  };
+
+  const handleRestore = async (product) => {
+    try {
+      await updateProduct(product.id, { ...product, available: true });
+      loadData();
+    } catch (error) {
+      alert('Failed to restore product');
     }
   };
 
@@ -105,22 +118,33 @@ export default function ProductsTab() {
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
         <input 
           type="text" 
-          placeholder="Search products by name..." 
+          placeholder="Search products..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="input-field flex-1"
         />
-        <select 
-          value={selectedCategory} 
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="input-field sm:w-64"
-        >
-          <option value="All">All Categories</option>
-          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <div className="flex gap-2 flex-shrink-0">
+          <select 
+            value={selectedCategory} 
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="input-field w-32 sm:w-40"
+          >
+            <option value="All">All Categories</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="input-field w-32 sm:w-40 border-primary-100 bg-primary-50/30 font-bold"
+          >
+            <option value="active">Active Only</option>
+            <option value="archived">Archived</option>
+            <option value="all">All Status</option>
+          </select>
+        </div>
       </div>
 
       {isEditing && (
@@ -319,7 +343,12 @@ export default function ProductsTab() {
                 </td>
                 <td className="p-4 text-right space-x-2">
                   <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 font-medium px-2 py-1 bg-blue-50 rounded">Edit</button>
-                  <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-700 font-medium px-2 py-1 bg-red-50 rounded">Deactivate</button>
+                  {product.available ? (
+                    <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-700 font-medium px-2 py-1 bg-red-50 rounded">Delete</button>
+                  ) : (
+                    <button onClick={() => handleRestore(product)} 
+                      className="text-emerald-600 hover:text-emerald-800 font-medium px-2 py-1 bg-emerald-50 rounded">Restore</button>
+                  )}
                 </td>
               </tr>
             ))}

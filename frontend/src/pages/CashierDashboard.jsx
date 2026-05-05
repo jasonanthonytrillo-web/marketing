@@ -448,10 +448,49 @@ export default function CashierDashboard() {
                     </div>
 
                     {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
-                      <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3">Cancel Order</button>
+                      <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3 mb-3">Cancel Order</button>
                     )}
+                    <button onClick={() => window.print()} className="btn-secondary w-full py-3">🖨️ Print Receipt</button>
                   </div>
                 )}
+              </div>
+
+              {/* Hidden Printable Receipt for Cashier */}
+              <div className="print-only receipt-container">
+                <div className="receipt-header">
+                  <h1 className="receipt-title">{user?.tenantName || 'Project Million'}</h1>
+                  <p>Official Receipt</p>
+                </div>
+                <div className="receipt-divider"></div>
+                <p><strong>Order:</strong> {selectedOrder.orderNumber}</p>
+                <p><strong>Cashier:</strong> {user?.name}</p>
+                <p><strong>Date:</strong> {formatDate(selectedOrder.createdAt)}</p>
+                <div className="receipt-divider"></div>
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-dashed border-black">
+                      <th className="py-1">QTY</th>
+                      <th className="py-1">ITEM</th>
+                      <th className="py-1 text-right">PRICE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedOrder.items?.map(item => (
+                      <tr key={item.id} className="text-xs">
+                        <td className="py-1 align-top">{item.quantity}</td>
+                        <td className="py-1 align-top">{item.productName}</td>
+                        <td className="py-1 text-right align-top">{formatCurrency(item.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="receipt-divider"></div>
+                <div className="flex justify-between"><span>TOTAL</span><span>{formatCurrency(selectedOrder.total)}</span></div>
+                <div className="flex justify-between text-xs"><span>METHOD</span><span>{selectedOrder.paymentMethod?.toUpperCase()}</span></div>
+                <div className="receipt-footer mt-6">
+                  <p>Customer Copy</p>
+                  <p>Thank you!</p>
+                </div>
               </div>
             </div>
           )}
