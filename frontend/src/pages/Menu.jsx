@@ -142,12 +142,14 @@ export default function Menu() {
                       <p className="font-bold text-surface-900 truncate">{user.name}</p>
                     </div>
                     <div className="p-2">
-                      <Link
-                        to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}&action=change-password` : '/account?action=change-password'}
-                        className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
-                      >
-                        <span>🔒</span> Change Password
-                      </Link>
+                      {!user?.isGoogle && (
+                        <Link
+                          to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}&action=change-password` : '/account?action=change-password'}
+                          className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                        >
+                          <span>🔒</span> Change Password
+                        </Link>
+                      )}
                       <Link
                         to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}` : '/account'}
                         className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"

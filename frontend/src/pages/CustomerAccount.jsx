@@ -210,7 +210,7 @@ export default function CustomerAccount() {
         </div>
       </div>
       {/* Password Modal */}
-      {showPasswordModal && (
+      {showPasswordModal && !user?.isGoogle && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}></div>
           <div className="bg-white rounded-[40px] w-full max-w-md p-8 relative z-10 shadow-2xl animate-fade-in-up">
