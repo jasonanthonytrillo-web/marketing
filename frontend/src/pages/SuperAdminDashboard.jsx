@@ -61,21 +61,25 @@ export default function SuperAdminDashboard() {
   if (loading && tenants.length === 0) return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">Loading Tenants...</div>;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-slate-900 border-r border-white/5 flex flex-col h-screen sticky top-0">
-        <div className="p-8">
+    <div className="h-screen bg-slate-950 text-white flex flex-col md:flex-row overflow-hidden">
+      {/* Sidebar / Bottom Nav (Mobile) */}
+      <aside className="w-full md:w-64 bg-slate-900 border-t md:border-t-0 md:border-r border-white/5 flex flex-col md:h-screen z-30 flex-shrink-0 order-last md:order-first pb-safe">
+        {/* Desktop Only Header */}
+        <div className="hidden md:block p-8 border-b border-white/5 md:border-0">
           <h1 className="text-2xl font-black tracking-tighter text-indigo-400">SUPERADMIN</h1>
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Tenant Control Center</p>
         </div>
         
-        <nav className="flex-1 px-4 space-y-1">
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
-            <span>🏢</span> Manage Tenants
+        {/* Navigation Tabs */}
+        <nav className="flex md:flex-col overflow-x-auto md:overflow-y-auto px-2 py-3 md:p-4 gap-2 scrollbar-hide justify-center md:justify-start">
+          <button className="flex-1 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl font-bold bg-indigo-600/10 md:bg-indigo-600 text-indigo-400 md:text-white shadow-none md:shadow-lg md:shadow-indigo-600/20 whitespace-nowrap transition-all">
+            <span className="text-xl md:text-lg leading-none">🏢</span>
+            <span className="text-[10px] md:text-sm">Manage Tenants</span>
           </button>
         </nav>
 
-        <div className="p-4 border-t border-white/5">
+        {/* Desktop Only Logout */}
+        <div className="hidden md:block p-4 border-t border-white/5 mt-auto">
           <button onClick={logoutUser} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all">
             <span>🚪</span> Log Out
           </button>
@@ -83,7 +87,39 @@ export default function SuperAdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden md:h-screen">
+        {/* Header */}
+        <header className="bg-slate-900 border-b border-white/5 px-6 py-4 flex items-center justify-between sticky top-0 z-20 shadow-xl flex-shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-xl border border-indigo-500/20">
+              ⚡
+            </div>
+            <div>
+              <h1 className="font-heading text-lg font-bold text-white leading-tight">
+                System Infrastructure
+              </h1>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                SuperAdmin Control
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-bold text-white">{user?.name}</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase">{user?.role}</p>
+            </div>
+            <div className="flex items-center gap-2 border-l border-white/5 pl-2 sm:pl-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+                {user?.name?.charAt(0)}
+              </div>
+              <button onClick={logoutUser} className="md:hidden p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                <span className="text-xl">🚪</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-6 md:p-12">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
           <div>
             <h2 className="text-4xl font-black tracking-tight">Active Ecosystem</h2>
@@ -174,7 +210,8 @@ export default function SuperAdminDashboard() {
             </table>
           </div>
         </div>
-      </main>
+      </div>
+    </main>
 
       {/* Provision Modal */}
       {showModal && (

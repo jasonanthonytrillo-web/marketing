@@ -77,8 +77,15 @@ export default function Landing() {
   const bannerImage = tenant?.bannerImage || (tenant?.slug === 'burger-palace' ? burgerBackground : defaultBackground);
 
   const [currentAssetIndex, setCurrentAssetIndex] = useState(0);
-  const assets = (tenant?.bannerAssets && Array.isArray(tenant.bannerAssets) && tenant.bannerAssets.length > 0)
-    ? tenant.bannerAssets.filter(a => a && a.trim() !== '')
+  
+  // Safe asset resolution (handles JSON objects and string-encoded JSON from API)
+  let rawAssets = tenant?.bannerAssets || [];
+  if (typeof rawAssets === 'string') {
+    try { rawAssets = JSON.parse(rawAssets); } catch (e) { rawAssets = []; }
+  }
+  
+  const assets = (Array.isArray(rawAssets) && rawAssets.length > 0)
+    ? rawAssets.filter(a => a && typeof a === 'string' && a.trim() !== '')
     : [bannerImage];
 
   useEffect(() => {
@@ -124,12 +131,12 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden" style={{ '--primary-custom': primaryColor }}>
       {/* Background Layer */}
-      <div className="absolute inset-0 z-0 bg-black">
+      <div className="fixed inset-0 z-0 bg-black">
         <style>
           {`
               @keyframes kenburns {
-                0% { transform: scale(1); }
-                100% { transform: scale(1.1); }
+                0% { transform: scale(1.1); }
+                100% { transform: scale(1.5); }
               }
               .animate-kenburns {
                 animation: kenburns 15s linear infinite alternate;
@@ -149,25 +156,34 @@ export default function Landing() {
         </style>
 
         {assets.map((asset, index) => {
-          const isVid = typeof asset === 'string' && asset.match(/\.(mp4|webm|ogg)$/i);
+          const fullUrl = asset.startsWith('http') || asset.startsWith('data:') 
+            ? asset 
+            : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${asset}`;
+          
+          const isVid = typeof asset === 'string' && (
+            /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(asset.split(/[?#]/)[0]) || 
+            (asset.includes('/uploads/') && !/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(asset))
+          );
           const isActive = index === currentAssetIndex;
 
           return (
             <div
               key={`${asset}-${index}`}
-              className={`absolute inset-0 asset-transition ${isActive ? 'opacity-60' : 'opacity-0'}`}
+              className={`absolute inset-0 asset-transition ${isActive ? 'opacity-100' : 'opacity-0'}`}
               style={{ zIndex: isActive ? 1 : 0 }}
             >
               {isVid ? (
                 <video
+                  key={fullUrl}
                   autoPlay muted loop playsInline
+                  preload="auto"
                   className="w-full h-full object-cover"
                 >
-                  <source src={asset} type={`video/${asset.split('.').pop()}`} />
+                  <source src={fullUrl} />
                 </video>
               ) : (
                 <img
-                  src={asset}
+                  src={fullUrl}
                   alt=""
                   className={`w-full h-full object-cover ${isActive ? 'animate-kenburns' : ''}`}
                 />

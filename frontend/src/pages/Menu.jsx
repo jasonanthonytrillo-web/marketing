@@ -162,19 +162,21 @@ export default function Menu() {
 
       <div className="max-w-7xl mx-auto px-4 pt-4 md:pt-6 flex flex-col md:flex-row gap-6 lg:gap-8">
         {/* Left Sidebar: Categories */}
-        <div className="w-full md:w-48 lg:w-56 flex-shrink-0 animate-fade-in-up relative">
+        <div className="w-full md:w-48 lg:w-56 flex-shrink-0 animate-fade-in-up relative max-w-full min-w-0">
           <div className="md:sticky md:top-6 md:max-h-[calc(100vh-3rem)] flex flex-col">
             <div className="flex-shrink-0 mb-6">
-              {branding?.logo ? (
-                <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg border-2 border-white mb-4">
-                  <img src={branding.logo} className="w-full h-full object-cover" alt={tenantName} />
-                </div>
-              ) : (
-                <div className="w-12 h-12 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center text-2xl shadow-lg border-2 border-white mb-4" style={{ color: brandingColor }}>
-                  💎
-                </div>
-              )}
-              <h1 className="font-heading text-2xl md:text-3xl font-bold text-surface-900 mb-1 uppercase" style={{ color: brandingColor }}>{tenantName}</h1>
+              <div className="flex items-center gap-3 mb-2 md:mb-3">
+                {branding?.logo ? (
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl overflow-hidden shadow-lg border-2 border-white flex-shrink-0">
+                    <img src={branding.logo} className="w-full h-full object-cover" alt={tenantName} />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-lg border-2 border-white flex-shrink-0" style={{ color: brandingColor }}>
+                    💎
+                  </div>
+                )}
+                <h1 className="font-heading text-2xl md:text-3xl font-bold text-surface-900 uppercase leading-tight" style={{ color: brandingColor }}>{tenantName}</h1>
+              </div>
               <p className="text-surface-500 text-xs md:text-sm mb-3 md:mb-6">Tap an item to customize and add to cart</p>
             </div>
 

@@ -63,10 +63,11 @@ export default function AdminDashboard() {
   </div>;
 
   return (
-    <div className="min-h-screen bg-surface-50 flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-surface-900 text-white flex flex-col h-screen sticky top-0">
-        <div className="p-6 border-b border-surface-800">
+    <div className="h-screen bg-surface-50 flex flex-col md:flex-row overflow-hidden">
+      {/* Sidebar / Bottom Nav (Mobile) */}
+      <aside className="w-full md:w-64 bg-surface-900 text-white flex flex-col md:h-screen z-30 flex-shrink-0 order-last md:order-first border-t md:border-t-0 md:border-r border-surface-800 pb-safe">
+        {/* Desktop Only Header */}
+        <div className="hidden md:flex p-6 border-b border-surface-800 justify-between items-center">
           <h1 className="font-heading text-xl font-black tracking-tight text-white flex items-center gap-2">
             {user?.tenantLogo ? (
               <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover" alt={user.tenantName} />
@@ -77,20 +78,22 @@ export default function AdminDashboard() {
           </h1>
         </div>
         
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        {/* Navigation Tabs */}
+        <nav className="flex md:flex-col overflow-x-auto md:overflow-y-auto px-2 py-3 md:p-4 gap-2 md:gap-1 scrollbar-hide justify-between md:justify-start">
           {navItems.map(item => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === item.id ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/20' : 'text-surface-400 hover:text-white hover:bg-surface-800'}`}
+              className={`flex-1 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl font-bold transition-all ${activeTab === item.id ? 'bg-primary-600/10 md:bg-primary-600 text-primary-500 md:text-white shadow-none md:shadow-lg md:shadow-primary-600/20' : 'text-surface-400 hover:text-white md:hover:bg-surface-800'}`}
             >
-              <span className="text-lg">{item.icon}</span>
-              {item.label}
+              <span className="text-xl md:text-lg leading-none">{item.icon}</span>
+              <span className="text-[10px] md:text-sm whitespace-nowrap">{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-surface-800">
+        {/* Desktop Only Logout */}
+        <div className="hidden md:block p-4 border-t border-surface-800 mt-auto">
           <button onClick={logoutUser} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all">
             <span>🚪</span> Log Out
           </button>
@@ -98,7 +101,7 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden md:h-screen">
         {/* Header */}
         <header className="bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm flex-shrink-0">
           <div className="flex items-center gap-4">
@@ -118,14 +121,19 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button onClick={loadSummary} className="p-2 text-surface-400 hover:text-primary-600 transition-colors">🔄</button>
             <div className="text-right hidden sm:block">
               <p className="text-sm font-bold text-surface-900">{user?.name}</p>
               <p className="text-[10px] font-bold text-surface-400 uppercase">{user?.role}</p>
             </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-primary-500/20">
-              {user?.name?.charAt(0)}
+            <div className="flex items-center gap-2 border-l border-surface-200 pl-2 sm:pl-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-primary-500/20">
+                {user?.name?.charAt(0)}
+              </div>
+              <button onClick={logoutUser} className="md:hidden p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                <span className="text-xl">🚪</span>
+              </button>
             </div>
           </div>
         </header>

@@ -1,9 +1,7 @@
 const CACHE_NAME = 'elevate-pos-v1';
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico'
+  '/index.html'
 ];
 
 // Install Event

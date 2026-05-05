@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getSettings, updateSettings } from '../../services/api';
+import { getSettings, updateSettings, uploadImage } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SettingsTab() {
@@ -119,27 +119,53 @@ export default function SettingsTab() {
                       </div>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">OG Image URL (Social Media Preview)</label>
-                    <div className="flex gap-4">
-                      <input 
-                        type="text" 
-                        value={settings.tenant_og_image || ''} 
-                        onChange={e => setSettings({...settings, tenant_og_image: e.target.value})}
-                        className="input-field flex-1 py-3 text-sm" 
-                        placeholder="https://example.com/og-image.png"
-                      />
-                      {settings.tenant_og_image && (
-                        <div className="w-20 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
-                          <img src={settings.tenant_og_image} className="w-full h-full object-cover" alt="OG Preview" />
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-400 mt-2 italic">Recommended: 1200×630px. This image appears when links are shared on Facebook, Messenger, etc.</p>
-                  </div>
-                  </div>
                 </>
               )}
+
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">OG Image (Social Media Preview)</label>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 flex gap-2">
+                    <input 
+                      type="text" 
+                      value={settings.tenant_og_image || ''} 
+                      onChange={e => setSettings({...settings, tenant_og_image: e.target.value})}
+                      className="input-field flex-1 py-3 text-sm" 
+                      placeholder="https://example.com/og-image.png"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => document.getElementById('ogImageUpload').click()}
+                      className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold"
+                    >
+                      📁 Upload
+                    </button>
+                    <input 
+                      type="file" id="ogImageUpload" accept="image/*" className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          setMessage('📤 Uploading OG Image...');
+                          try {
+                            const res = await uploadImage({ image: reader.result, name: 'og-image' });
+                            setSettings({ ...settings, tenant_og_image: res.data.url });
+                            setMessage('OG Image updated! ✅');
+                          } catch (error) { alert('Upload failed'); }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </div>
+                  {settings.tenant_og_image && (
+                    <div className="w-24 h-14 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 shadow-sm">
+                      <img src={settings.tenant_og_image.startsWith('http') ? settings.tenant_og_image : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${settings.tenant_og_image}`} className="w-full h-full object-cover" alt="OG Preview" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2 italic font-medium">Recommended: 1200×630px. This image appears when you share your link on Facebook, Messenger, etc.</p>
+              </div>
 
               <div>
                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Landing Page Background Assets (Slideshow / Video)</label>
@@ -147,11 +173,11 @@ export default function SettingsTab() {
                   {(settings.tenant_assets || []).map((asset, idx) => (
                     <div key={idx} className="flex gap-4 items-center bg-slate-50 p-4 rounded-2xl border border-slate-200">
                       <div className="w-16 h-16 rounded-xl border border-slate-300 overflow-hidden bg-black flex-shrink-0">
-                        {asset.match(/\.(mp4|webm)$/i) ? (
-                          <div className="w-full h-full flex items-center justify-center text-white text-xs font-black">VIDEO</div>
-                        ) : (
-                          <img src={asset} className="w-full h-full object-cover" alt="" />
-                        )}
+                          {asset.match(/\.(mp4|webm|mov|ogg)$/i) ? (
+                            <div className="w-full h-full flex items-center justify-center text-white text-[8px] font-black uppercase">VIDEO</div>
+                          ) : (
+                            <img src={asset.startsWith('http') || asset.startsWith('data:') ? asset : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${asset}`} className="w-full h-full object-cover" alt="" />
+                          )}
                       </div>
                       <input 
                         type="text" 
@@ -176,13 +202,42 @@ export default function SettingsTab() {
                       </button>
                     </div>
                   ))}
-                  <button 
-                    type="button"
-                    onClick={() => setSettings({...settings, tenant_assets: [...(settings.tenant_assets || []), '']})}
-                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black uppercase tracking-widest text-xs hover:border-primary-400 hover:text-primary-500 transition-all"
-                  >
-                    + Add Background Media (Image/Video)
-                  </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button 
+                      type="button"
+                      onClick={() => document.getElementById('bgMediaUpload').click()}
+                      className="py-4 bg-slate-900 text-white font-black rounded-2xl shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"
+                    >
+                      <span>📁</span> Choose File
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setSettings({...settings, tenant_assets: [...(settings.tenant_assets || []), '']})}
+                      className="py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black uppercase tracking-widest text-[10px] hover:border-primary-400 hover:text-primary-500 transition-all flex items-center justify-center gap-2"
+                    >
+                      <span>➕</span> Add URL
+                    </button>
+                    <input 
+                      type="file" 
+                      id="bgMediaUpload" 
+                      accept="image/*,video/*" 
+                      className="hidden" 
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onloadend = async () => {
+                          setMessage('📤 Uploading...');
+                            try {
+                              const res = await uploadImage({ image: reader.result, name: 'landing-bg' });
+                              setSettings(prev => ({ ...prev, tenant_assets: [...(prev.tenant_assets || []), res.data.url] }));
+                              setMessage('Media uploaded! ✅');
+                            } catch (error) { alert('Upload failed'); }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

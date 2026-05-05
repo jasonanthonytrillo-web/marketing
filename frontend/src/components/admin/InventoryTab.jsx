@@ -119,7 +119,8 @@ export default function InventoryTab() {
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden relative z-0">
-        <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[500px]">
           <thead>
             <tr className="bg-surface-50 border-b border-surface-200 text-sm font-medium text-surface-500 uppercase tracking-wider">
               <th className="p-4">Product Name</th>
@@ -158,6 +159,7 @@ export default function InventoryTab() {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }

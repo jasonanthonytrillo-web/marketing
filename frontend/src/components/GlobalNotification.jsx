@@ -73,7 +73,16 @@ export default function GlobalNotification() {
             localStorage.setItem(activeOrdersKey, updated.length > 0 ? JSON.stringify(updated) : '[]');
             if (updated.length === 0) localStorage.removeItem(activeOrdersKey);
           }
-        } catch (e) {}
+        } catch (e) {
+          if (e.response && e.response.status === 404) {
+            // Order was deleted or not found, remove it from active tracking
+            const activeOrdersNow = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
+            const updated = activeOrdersNow.filter(num => num !== orderNum);
+            localStorage.setItem(activeOrdersKey, updated.length > 0 ? JSON.stringify(updated) : '[]');
+            if (updated.length === 0) localStorage.removeItem(activeOrdersKey);
+            if (localStorage.getItem(lastOrderKey) === orderNum) localStorage.removeItem(lastOrderKey);
+          }
+        }
       }
     };
 

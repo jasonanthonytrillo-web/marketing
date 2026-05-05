@@ -135,7 +135,7 @@ export default function OrderConfirmation() {
           <p className="font-heading text-6xl sm:text-8xl md:text-9xl font-black text-slate-900 tracking-tighter mb-2 leading-none">
             {order.orderNumber.includes('-') ? order.orderNumber.split('-')[1] : order.orderNumber}
           </p>
-          <p className="text-[10px] text-slate-400 mb-6 sm:mb-8 font-mono">Full ID: {order.orderNumber}</p>
+          <p className="text-[10px] text-slate-400 mb-6 sm:mb-8 font-mono break-all px-4">Full ID: {order.orderNumber}</p>
 
           {order.estimatedPrepTime && (
             <div className="mb-6 animate-bounce-in">

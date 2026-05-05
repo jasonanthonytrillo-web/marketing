@@ -255,7 +255,7 @@ export default function CashierDashboard() {
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left Panel: Order List */}
-        <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none`}>
+        <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none min-w-0`}>
           <div className="p-2 sm:p-4 border-b border-surface-200 flex gap-1.5 sm:gap-2 overflow-x-auto bg-white flex-shrink-0 scrollbar-hide">
             {['pending', 'confirmed', 'preparing', 'ready', 'completed'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}

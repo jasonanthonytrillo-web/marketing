@@ -38,11 +38,11 @@ export default function OrdersTab() {
 
   return (
     <div className="animate-fade-in-up">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <h2 className="font-heading text-2xl font-bold text-surface-900">Order Management</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide -mx-2 px-2">
           {['all', 'pending', 'preparing', 'completed', 'cancelled'].map(s => (
-            <button key={s} onClick={() => { setStatus(s); setPage(1); }} className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${status === s ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'bg-white text-surface-500 border border-surface-200 hover:bg-surface-50'}`}>
+            <button key={s} onClick={() => { setStatus(s); setPage(1); }} className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${status === s ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'bg-white text-surface-500 border border-surface-200 hover:bg-surface-50'}`}>
               {s}
             </button>
           ))}
@@ -50,44 +50,46 @@ export default function OrdersTab() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-surface-50 border-b border-surface-200 text-xs font-bold text-surface-400 uppercase tracking-widest">
-              <th className="p-4">Order #</th>
-              <th className="p-4">Date</th>
-              <th className="p-4">Customer</th>
-              <th className="p-4">Total</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Payment</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-surface-100 text-sm">
-            {orders.map(order => (
-              <tr key={order.id} className="hover:bg-surface-50 transition-colors group">
-                <td className="p-4">
-                  <span className="font-mono font-bold text-surface-900">#{order.orderNumber}</span>
-                </td>
-                <td className="p-4 text-surface-500">{formatDate(order.createdAt)}</td>
-                <td className="p-4">
-                  <div className="font-bold text-surface-900">{order.customerName || 'Guest'}</div>
-                  <div className="text-[10px] text-surface-400 uppercase font-black">{order.orderType || 'Dine-in'}</div>
-                </td>
-                <td className="p-4 font-black text-surface-900">{formatCurrency(order.total)}</td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${getStatusColor(order.status)}`}>
-                    {order.status}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className="text-xs font-medium text-surface-600 capitalize">{order.paymentMethod || 'Cash'}</span>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr className="bg-surface-50 border-b border-surface-200 text-xs font-bold text-surface-400 uppercase tracking-widest">
+                <th className="p-4">Order #</th>
+                <th className="p-4">Date</th>
+                <th className="p-4">Customer</th>
+                <th className="p-4">Total</th>
+                <th className="p-4 text-center">Status</th>
+                <th className="p-4">Payment</th>
               </tr>
-            ))}
-            {orders.length === 0 && (
-              <tr><td colSpan="6" className="p-12 text-center text-surface-400">No orders found for this filter.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-surface-100 text-sm">
+              {orders.map(order => (
+                <tr key={order.id} className="hover:bg-surface-50 transition-colors group">
+                  <td className="p-4">
+                    <span className="font-mono font-bold text-surface-900">#{order.orderNumber}</span>
+                  </td>
+                  <td className="p-4 text-surface-500 whitespace-nowrap">{formatDate(order.createdAt)}</td>
+                  <td className="p-4">
+                    <div className="font-bold text-surface-900">{order.customerName || 'Guest'}</div>
+                    <div className="text-[10px] text-surface-400 uppercase font-black">{order.orderType || 'Dine-in'}</div>
+                  </td>
+                  <td className="p-4 font-black text-surface-900">{formatCurrency(order.total)}</td>
+                  <td className="p-4 text-center">
+                    <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${getStatusColor(order.status)}`}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className="text-xs font-medium text-surface-600 capitalize">{order.paymentMethod || 'Cash'}</span>
+                  </td>
+                </tr>
+              ))}
+              {orders.length === 0 && (
+                <tr><td colSpan="6" className="p-12 text-center text-surface-400">No orders found for this filter.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

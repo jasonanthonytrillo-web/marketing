@@ -6,18 +6,21 @@ const prisma = require('../lib/prisma');
 const fs = require('fs');
 const path = require('path');
 
-// Image Upload (Base64)
+// Media Upload (Base64) - Supports Images and Videos
 router.post('/upload-image', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { image, name } = req.body;
-    if (!image) return res.status(400).json({ success: false, message: 'No image provided' });
+    const { image, name } = req.body; // Using "image" field for backward compatibility
+    if (!image) return res.status(400).json({ success: false, message: 'No media provided' });
 
-    // Handle base64 string
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-    const extensionMatch = image.match(/^data:image\/(\w+);base64,/);
-    const extension = extensionMatch ? extensionMatch[1] : 'png';
+    // Detect type and extension from base64 header (e.g. "data:video/mp4;base64,..." or "data:image/png;base64,...")
+    const match = image.match(/^data:(\w+)\/(\w+);base64,/);
+    if (!match) return res.status(400).json({ success: false, message: 'Invalid file format' });
     
-    const fileName = `${Date.now()}-${name?.replace(/\s+/g, '-').toLowerCase() || 'product'}.${extension}`;
+    const type = match[1]; // image or video
+    const extension = match[2];
+    
+    const base64Data = image.split(';base64,').pop();
+    const fileName = `${Date.now()}-${name?.replace(/\s+/g, '-').toLowerCase() || 'media'}.${extension}`;
     const uploadDir = path.join(__dirname, '../../uploads');
 
     if (!fs.existsSync(uploadDir)) {
@@ -27,11 +30,11 @@ router.post('/upload-image', authenticate, authorize('admin'), async (req, res) 
     const filePath = path.join(uploadDir, fileName);
     fs.writeFileSync(filePath, base64Data, 'base64');
 
-    const imageUrl = `/uploads/${fileName}`;
-    res.json({ success: true, url: imageUrl });
+    const fileUrl = `/uploads/${fileName}`;
+    res.json({ success: true, url: fileUrl });
   } catch (error) {
     console.error('Upload Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to upload image' });
+    res.status(500).json({ success: false, message: 'Failed to upload media' });
   }
 });
 router.get('/orders', authenticate, authorize('admin'), async (req, res) => {
@@ -323,7 +326,7 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
       if (brandingMap[key]) {
         const field = brandingMap[key];
         // SECURITY: Only superadmins can change critical branding
-        if (['name', 'logo', 'favicon', 'ogImage'].includes(field) && req.user.role !== 'superadmin') {
+        if (['name', 'logo', 'favicon'].includes(field) && req.user.role !== 'superadmin') {
           continue;
         }
         brandingUpdate[field] = value;

@@ -286,7 +286,8 @@ export default function ProductsTab() {
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
-        <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[600px]">
           <thead>
             <tr className="bg-surface-50 border-b border-surface-200 text-sm font-medium text-surface-500 uppercase tracking-wider">
               <th className="p-4">Product</th>
@@ -325,6 +326,7 @@ export default function ProductsTab() {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }
