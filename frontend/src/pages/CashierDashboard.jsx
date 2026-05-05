@@ -455,41 +455,83 @@ export default function CashierDashboard() {
                 )}
               </div>
 
-              {/* Hidden Printable Receipt for Cashier */}
+              {/* Printable Receipt */}
               <div className="print-only receipt-container">
                 <div className="receipt-header">
-                  <h1 className="receipt-title">{user?.tenantName || 'Project Million'}</h1>
-                  <p>Official Receipt</p>
+                  <span className="receipt-logo">{user?.tenantName || 'Project Million'}</span>
+                  <span className="receipt-subtitle">Official Receipt</span>
                 </div>
+
+                <div className="receipt-info">
+                  <p><span>ORDER NO:</span> <strong>{selectedOrder.orderNumber}</strong></p>
+                  <p><span>CASHIER:</span> <span>{user?.name}</span></p>
+                  <p><span>DATE:</span> <span>{formatDate(selectedOrder.createdAt)}</span></p>
+                  <p><span>TYPE:</span> <span>{selectedOrder.orderType?.toUpperCase()}</span></p>
+                </div>
+
                 <div className="receipt-divider"></div>
-                <p><strong>Order:</strong> {selectedOrder.orderNumber}</p>
-                <p><strong>Cashier:</strong> {user?.name}</p>
-                <p><strong>Date:</strong> {formatDate(selectedOrder.createdAt)}</p>
-                <div className="receipt-divider"></div>
-                <table className="w-full text-left">
+
+                <table className="w-full receipt-table">
                   <thead>
-                    <tr className="border-b border-dashed border-black">
-                      <th className="py-1">QTY</th>
-                      <th className="py-1">ITEM</th>
-                      <th className="py-1 text-right">PRICE</th>
+                    <tr>
+                      <th className="w-1/2">ITEM</th>
+                      <th className="text-center">QTY</th>
+                      <th className="text-right">PRICE</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedOrder.items?.map(item => (
-                      <tr key={item.id} className="text-xs">
-                        <td className="py-1 align-top">{item.quantity}</td>
-                        <td className="py-1 align-top">{item.productName}</td>
-                        <td className="py-1 text-right align-top">{formatCurrency(item.subtotal)}</td>
+                      <tr key={item.id}>
+                        <td>
+                          {item.productName}
+                          {item.addons && JSON.parse(item.addons).map(a => (
+                            <div key={a.name} style={{ fontSize: '9px', opacity: 0.7 }}>+ {a.name}</div>
+                          ))}
+                        </td>
+                        <td className="text-center">{item.quantity}</td>
+                        <td className="text-right">{formatCurrency(item.subtotal)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+
                 <div className="receipt-divider"></div>
-                <div className="flex justify-between"><span>TOTAL</span><span>{formatCurrency(selectedOrder.total)}</span></div>
-                <div className="flex justify-between text-xs"><span>METHOD</span><span>{selectedOrder.paymentMethod?.toUpperCase()}</span></div>
-                <div className="receipt-footer mt-6">
-                  <p>Customer Copy</p>
-                  <p>Thank you!</p>
+
+                <div className="space-y-1">
+                  <div className="receipt-total-row">
+                    <span>SUBTOTAL</span>
+                    <span>{formatCurrency(selectedOrder.subtotal)}</span>
+                  </div>
+                  {selectedOrder.discountAmount > 0 && (
+                    <div className="receipt-total-row">
+                      <span>DISCOUNT ({selectedOrder.discountType})</span>
+                      <span>-{formatCurrency(selectedOrder.discountAmount)}</span>
+                    </div>
+                  )}
+                  <div className="receipt-total-row">
+                    <span>VAT (12%)</span>
+                    <span>{formatCurrency(selectedOrder.taxAmount)}</span>
+                  </div>
+                  <div className="receipt-total-row receipt-total-main">
+                    <span>TOTAL</span>
+                    <span>{formatCurrency(selectedOrder.total)}</span>
+                  </div>
+                </div>
+
+                <div className="receipt-info mt-4" style={{ borderTop: '1px solid #000', paddingTop: '2mm' }}>
+                  <p><span>METHOD:</span> <strong>{selectedOrder.paymentMethod?.toUpperCase()}</strong></p>
+                  {selectedOrder.amountReceived > 0 && (
+                    <>
+                      <p><span>RECEIVED:</span> <span>{formatCurrency(selectedOrder.amountReceived)}</span></p>
+                      <p><span>CHANGE:</span> <span>{formatCurrency(selectedOrder.amountReceived - selectedOrder.total)}</span></p>
+                    </>
+                  )}
+                </div>
+
+                <div className="receipt-footer">
+                  <p>CUSTOMER COPY</p>
+                  <p>THANK YOU FOR YOUR PATRONAGE!</p>
+                  <p className="mt-2" style={{ fontSize: '8px', opacity: 0.6 }}>{window.location.hostname}</p>
                 </div>
               </div>
             </div>
