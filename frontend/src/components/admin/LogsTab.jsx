@@ -40,9 +40,6 @@ export default function LogsTab() {
           <h2 className="font-heading text-3xl font-black text-slate-900 tracking-tight">Security Audit Logs</h2>
           <p className="text-slate-500 font-medium">Track every sensitive action across the system.</p>
         </div>
-        <button onClick={loadData} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
-          🔄 Refresh
-        </button>
       </div>
 
       <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">

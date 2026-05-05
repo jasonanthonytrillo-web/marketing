@@ -73,8 +73,8 @@ export default function Landing() {
       {/* Video Background & Animated Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none bg-surface-900">
 
-          <style>
-            {`
+        <style>
+          {`
               @keyframes kenburns {
                 0% { transform: scale(1) translate(0, 0); }
                 50% { transform: scale(1.05) translate(-1%, -1%); }
@@ -95,14 +95,14 @@ export default function Landing() {
                 color: var(--primary-custom);
               }
             `}
-          </style>
-          <img 
-            src={bannerImage}
-            alt="Delicious Background"
-            className="absolute inset-0 w-full h-full object-cover opacity-60 z-0 animate-kenburns"
-          />
+        </style>
+        <img
+          src={bannerImage}
+          alt="Delicious Background"
+          className="absolute inset-0 w-full h-full object-cover opacity-60 z-0 animate-kenburns"
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-surface-950/80 via-surface-950/40 to-surface-950/90 z-10" />
-        
+
         <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full blur-[100px] animate-pulse-slow z-20 opacity-30" style={{ backgroundColor: primaryColor }} />
       </div>
 
@@ -139,7 +139,7 @@ export default function Landing() {
         </h1>
 
         <p className="text-surface-400 text-lg md:text-xl max-w-md mx-auto mb-12">
-          {tenant 
+          {tenant
             ? `Experience the best of ${tenant.name}. Fresh food, fast service.`
             : (isCustomer ? "You're earning points on every order! Ready to eat?" : "Fresh food, fast service. Order right from this screen.")
           }
@@ -147,12 +147,12 @@ export default function Landing() {
 
         <div className="flex flex-col gap-4 items-center max-w-xs mx-auto">
           <Link to={menuLink} className="btn-custom w-full text-lg py-4 rounded-2xl tracking-wider uppercase flex items-center justify-center gap-2" id="start-order-btn">
-            {isCustomer ? '🚀 Order Now' : '🍽️ Start Your Order'}
+            {isCustomer ? '🚀 Order Now' : 'Start Your Order'}
           </Link>
 
           {!user && (
             <Link to={portalLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white hover:bg-white/10 transition-all">
-              👤 Member Portal
+              Sign in / Sign up
             </Link>
           )}
 
@@ -163,7 +163,7 @@ export default function Landing() {
           )}
 
           <Link to={queueLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white" id="view-queue-btn">
-            📋 View Order Queue
+            View Order Queue
           </Link>
 
           {!user ? (
@@ -171,7 +171,7 @@ export default function Landing() {
               Staff Login →
             </Link>
           ) : (
-            <button 
+            <button
               onClick={logoutUser}
               className="text-red-400 text-sm hover:text-red-300 transition-colors mt-4 font-bold uppercase tracking-widest"
             >

@@ -39,8 +39,6 @@ export default function ReportsTab() {
           <h2 className="font-heading text-2xl font-bold text-surface-900">Advanced Analytics</h2>
           <p className="text-surface-500 text-sm">Deep insights into your business performance.</p>
         </div>
-        <button onClick={loadData} className="btn-secondary py-2 px-4">🔄 Refresh Data</button>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Daily Sales Chart Placeholder */}
