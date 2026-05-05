@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { login, googleLogin, registerCustomer } from '../services/api';
+import { login, googleLogin, facebookLogin, registerCustomer } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
+import FacebookLogin from '@greatsumini/react-facebook-login';
 
 export default function MemberPortal() {
   const [mode, setMode] = useState('login'); // login, register
@@ -54,6 +55,25 @@ export default function MemberPortal() {
 
   const handleGoogleError = () => {
     setError('Google Login was cancelled or failed.');
+  };
+
+  const handleFacebookSuccess = async (response) => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await facebookLogin({ accessToken: response.accessToken, tenantSlug });
+      loginUser(res.data.data.token, res.data.data.user);
+      navigate(tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Facebook Login failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookError = (error) => {
+    console.error('FB Error:', error);
+    setError('Facebook Login failed or was cancelled.');
   };
 
   return (
@@ -111,13 +131,41 @@ export default function MemberPortal() {
                 </div>
               )}
 
-              <div className="mb-6 flex justify-center">
+              <div className="mb-6 flex flex-col items-center gap-3">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}
                   theme="filled_black"
                   shape="pill"
                   width="300"
+                />
+
+                <FacebookLogin
+                  appId="1907997370588631"
+                  onSuccess={handleFacebookSuccess}
+                  onFail={handleFacebookError}
+                  style={{
+                    backgroundColor: '#1877F2',
+                    color: '#fff',
+                    fontSize: '14px',
+                    padding: '0 10px',
+                    border: 'none',
+                    borderRadius: '9999px',
+                    fontWeight: 'bold',
+                    width: '300px',
+                    height: '40px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px'
+                  }}
+                  children={
+                    <>
+                      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                      Continue with Facebook
+                    </>
+                  }
                 />
               </div>
 
