@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { getOrder, getPublicTenant } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
+import { useDynamicBranding } from '../hooks/useDynamicBranding';
 
 export default function Landing() {
   const [lastOrder, setLastOrder] = useState(null);
@@ -12,6 +13,9 @@ export default function Landing() {
   const [searchParams] = useSearchParams();
   const isCustomer = user && user.role === 'customer';
   const { joinRoom, connected } = useSocket();
+
+  // Dynamic favicon & title
+  useDynamicBranding(tenant?.name || 'PROJECT MILLION', tenant?.favicon);
 
   useEffect(() => {
     if (tenant?.id) {
@@ -62,7 +66,12 @@ export default function Landing() {
   const queueLink = tenant ? `/queue?tenant=${tenant.slug}` : '/queue';
   const portalLink = tenant ? `/member-portal?tenant=${tenant.slug}` : '/member-portal';
   const primaryColor = tenant?.primaryColor || '#4f46e5';
-  const bannerImage = tenant?.bannerImage || 'https://images.unsplash.com/photo-1586816001966-79b736744398?q=80&w=2000&auto=format&fit=crop';
+  
+  // Smart background fallback based on tenant type
+  const burgerBackground = 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=2000&auto=format&fit=crop';
+  const defaultBackground = 'https://images.unsplash.com/photo-1586816001966-79b736744398?q=80&w=2000&auto=format&fit=crop';
+  
+  const bannerImage = tenant?.bannerImage || (tenant?.slug === 'burger-palace' ? burgerBackground : defaultBackground);
 
   if (loading) return <div className="min-h-screen bg-surface-900 flex items-center justify-center">
     <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
@@ -122,6 +131,18 @@ export default function Landing() {
           </div>
         )}
 
+        <div className="flex justify-center mb-6">
+          {tenant?.logo ? (
+            <div className="w-24 h-24 rounded-[32px] overflow-hidden shadow-2xl ring-4 ring-white/10 animate-scale-in">
+              <img src={tenant.logo} className="w-full h-full object-cover" alt={tenant.name} />
+            </div>
+          ) : (
+            <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-[32px] flex items-center justify-center text-4xl shadow-2xl border border-white/20 animate-scale-in ring-4 ring-white/10">
+              💎
+            </div>
+          )}
+        </div>
+
         <h1 className="font-heading text-6xl md:text-8xl font-black text-white leading-tight mb-4 uppercase">
           {tenant ? (
             <span style={{ color: primaryColor }}>
@@ -146,25 +167,45 @@ export default function Landing() {
         </p>
 
         <div className="flex flex-col gap-4 items-center max-w-xs mx-auto">
-          <Link to={menuLink} className="btn-custom w-full text-lg py-4 rounded-2xl tracking-wider uppercase flex items-center justify-center gap-2" id="start-order-btn">
-            {isCustomer ? '🚀 Order Now' : 'Start Your Order'}
-          </Link>
+          {user && user.role !== 'customer' ? (
+            <>
+              <Link
+                to={tenant ? `/${user.role === 'admin' ? 'admin' : user.role === 'kitchen' ? 'kitchen' : 'cashier'}?tenant=${tenant.slug}` : `/${user.role === 'admin' ? 'admin' : user.role === 'kitchen' ? 'kitchen' : 'cashier'}`}
+                className="btn-custom w-full text-lg py-4 rounded-2xl tracking-wider uppercase flex items-center justify-center gap-2 mb-2"
+              >
+                Back to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Dashboard
+              </Link>
 
-          {!user && (
-            <Link to={portalLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white hover:bg-white/10 transition-all">
-              Sign in / Sign up
-            </Link>
+              <Link to={menuLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white hover:bg-white/10 transition-all">
+                Start Your Order
+              </Link>
+              <Link to={queueLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white">
+                View Order Queue
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to={menuLink} className="btn-custom w-full text-lg py-4 rounded-2xl tracking-wider uppercase flex items-center justify-center gap-2" id="start-order-btn">
+                {isCustomer ? 'Order Now' : 'Start Your Order'}
+              </Link>
+
+              {!user && (
+                <Link to={portalLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white hover:bg-white/10 transition-all">
+                  Sign in / Sign up
+                </Link>
+              )}
+
+              {lastOrder && (
+                <Link to={`/order/${lastOrder}`} className="btn-secondary w-full bg-emerald-500 border-emerald-400 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 animate-fade-in-up">
+                  View Receipt
+                </Link>
+              )}
+
+              <Link to={queueLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white" id="view-queue-btn">
+                View Order Queue
+              </Link>
+            </>
           )}
-
-          {lastOrder && (
-            <Link to={`/order/${lastOrder}`} className="btn-secondary w-full bg-emerald-500 border-emerald-400 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 animate-fade-in-up">
-              View Receipt
-            </Link>
-          )}
-
-          <Link to={queueLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white" id="view-queue-btn">
-            View Order Queue
-          </Link>
 
           {!user ? (
             <Link to={tenant ? `/login?tenant=${tenant.slug}` : '/login'} className="text-surface-500 text-sm hover:text-white transition-colors mt-4">
@@ -178,6 +219,15 @@ export default function Landing() {
               Sign Out [{user.role}]
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Legal Footer */}
+      <div className="relative z-10 mt-auto py-8 text-center border-t border-white/5 w-full max-w-sm mx-auto">
+        <div className="flex justify-center gap-6 text-[10px] font-bold text-surface-500 uppercase tracking-widest">
+          <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+          <Link to="/data-deletion" className="hover:text-white transition-colors">Deletion</Link>
         </div>
       </div>
     </div>

@@ -37,7 +37,6 @@ api.interceptors.request.use(config => {
 // Auth
 export const login = (data) => api.post('/auth/login', data);
 export const googleLogin = (data) => api.post('/auth/google', data);
-export const facebookLogin = (data) => api.post('/auth/facebook', data);
 export const register = (data) => api.post('/auth/register', data);
 export const registerCustomer = (data) => api.post('/auth/register-customer', data);
 export const getMe = () => api.get('/auth/me');

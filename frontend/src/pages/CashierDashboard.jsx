@@ -4,6 +4,7 @@ import { getCashierOrders, confirmOrder, cashierCancelOrder, calculatePayment } 
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, unlockAudio } from '../utils/helpers';
+import { useDynamicBranding } from '../hooks/useDynamicBranding';
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);
@@ -19,6 +20,9 @@ export default function CashierDashboard() {
   const [cancelReason, setCancelReason] = useState('Customer changed mind');
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
+
+  // Dynamic favicon & title
+  useDynamicBranding(`${user?.tenantName || 'Cashier'} Dashboard`, user?.tenantFavicon);
 
   useEffect(() => {
     loadOrders();
@@ -247,7 +251,12 @@ export default function CashierDashboard() {
       {/* Header */}
       <header className="bg-white border-b border-surface-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 z-10">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <h2 className="font-heading font-black text-lg sm:text-xl text-primary-600 tracking-tight uppercase">Cashier Dashboard</h2>
+          {user?.tenantLogo ? (
+            <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover shadow-sm" alt={user.tenantName} />
+          ) : (
+            <div className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center text-sm shadow-inner">🏢</div>
+          )}
+          <h2 className="font-heading font-black text-lg sm:text-xl text-primary-600 tracking-tight uppercase truncate">{user?.tenantName || 'Cashier'} Dashboard</h2>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <span className="text-xs sm:text-sm font-medium text-surface-600 hidden sm:inline">👤 {user?.name}</span>

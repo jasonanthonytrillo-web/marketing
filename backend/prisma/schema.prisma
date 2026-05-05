@@ -13,6 +13,7 @@ model Tenant {
   name        String   // e.g., "MK Food Corner"
   slug        String   @unique // e.g., "mk-food" for subdomains
   logo        String?
+  favicon     String?
   primaryColor   String  @default("#f97316") // Default orange
   secondaryColor String  @default("#fbbf24") // Default amber
   bannerImage    String? // Dynamic background for landing page

@@ -11,6 +11,7 @@ import SettingsTab from '../components/admin/SettingsTab';
 import AuditLogsTab from '../components/admin/LogsTab';
 import StaffTab from '../components/admin/StaffTab';
 import { formatCurrency } from '../utils/helpers';
+import { useDynamicBranding } from '../hooks/useDynamicBranding';
 
 export default function AdminDashboard() {
   const { user, logoutUser } = useAuth();
@@ -18,6 +19,9 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Dynamic favicon & title
+  useDynamicBranding(`${user?.tenantName || 'Admin'} Dashboard`, user?.tenantFavicon);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -64,8 +68,12 @@ export default function AdminDashboard() {
       <aside className="w-full md:w-64 bg-surface-900 text-white flex flex-col h-screen sticky top-0">
         <div className="p-6 border-b border-surface-800">
           <h1 className="font-heading text-xl font-black tracking-tight text-white flex items-center gap-2">
-            <span className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-sm shadow-lg shadow-primary-500/20">POS</span>
-            {user?.tenantName || 'ADMIN'}
+            {user?.tenantLogo ? (
+              <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover" alt={user.tenantName} />
+            ) : (
+              <span className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-sm shadow-lg shadow-primary-500/20">POS</span>
+            )}
+            <span className="truncate">{user?.tenantName || 'ADMIN'}</span>
           </h1>
         </div>
         
@@ -94,9 +102,13 @@ export default function AdminDashboard() {
         {/* Header */}
         <header className="bg-white border-b border-surface-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20 shadow-sm flex-shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-xl shadow-inner">
-              🏢
-            </div>
+            {user?.tenantLogo ? (
+              <img src={user.tenantLogo} className="w-10 h-10 rounded-xl object-cover shadow-sm" alt={user.tenantName} />
+            ) : (
+              <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                🏢
+              </div>
+            )}
             <div>
               <h1 className="font-heading text-lg font-bold text-surface-900 leading-tight">
                 {user?.tenantName || 'Store'} Management

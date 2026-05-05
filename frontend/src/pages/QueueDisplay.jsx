@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { getQueue, getPublicTenant } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { playNotificationSound, unlockAudio } from '../utils/helpers';
+import { useDynamicBranding } from '../hooks/useDynamicBranding';
 
 export default function QueueDisplay() {
   const [preparing, setPreparing] = useState([]);
@@ -44,6 +45,9 @@ export default function QueueDisplay() {
     setAudioUnlocked(true);
     playNotificationSound('default');
   };
+
+  // Dynamic favicon & title
+  useDynamicBranding(branding?.name || 'Order Queue', branding?.favicon);
 
   useEffect(() => {
     if (!onEvent) return;

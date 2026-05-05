@@ -83,6 +83,8 @@ router.post('/login', async (req, res) => {
           tenantId: user.tenantId,
           tenantName: user.tenant?.name,
           tenantSlug: user.tenant?.slug,
+          tenantLogo: user.tenant?.logo,
+          tenantFavicon: user.tenant?.favicon,
           points: user.points || 0
         }
       }
@@ -159,6 +161,8 @@ router.post('/google', async (req, res) => {
           tenantId: user.tenantId,
           tenantName: user.tenant?.name,
           tenantSlug: user.tenant?.slug,
+          tenantLogo: user.tenant?.logo,
+          tenantFavicon: user.tenant?.favicon,
           points: user.points || 0
         }
       }
@@ -167,94 +171,6 @@ router.post('/google', async (req, res) => {
   } catch (error) {
     console.error('Google Auth Error:', error);
     res.status(500).json({ success: false, message: 'Google Authentication failed.' });
-  }
-});
-
-// POST /api/auth/facebook
-router.post('/facebook', async (req, res) => {
-  try {
-    const { accessToken, tenantSlug } = req.body;
-    
-    if (!accessToken) {
-      return res.status(400).json({ success: false, message: 'Access token is required.' });
-    }
-
-    // Verify Facebook token by calling Graph API
-    const fbRes = await fetch(`https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email`);
-    const fbData = await fbRes.json();
-
-    if (fbData.error) {
-      return res.status(401).json({ success: false, message: 'Invalid Facebook token.' });
-    }
-
-    const { email, name } = fbData;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Facebook account must have an email associated.' });
-    }
-
-    // Resolve tenantId
-    let tenantId = 1;
-    if (tenantSlug && tenantSlug !== 'project-million') {
-      const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
-      if (tenant) tenantId = tenant.id;
-    }
-
-    // Find or create user
-    let user = await prisma.user.findUnique({ 
-      where: { email },
-      include: { tenant: true }
-    });
-
-    if (user) {
-      if (tenantSlug && tenantSlug !== 'project-million' && user.tenant?.slug !== tenantSlug) {
-        return res.status(403).json({ 
-          success: false, 
-          message: `Access denied. This account does not belong to ${tenantSlug.replace(/-/g, ' ')}.` 
-        });
-      }
-    } else {
-      const randomPassword = Math.random().toString(36).slice(-10) + 'Fb!';
-      const hashedPassword = await require('bcrypt').hash(randomPassword, 12);
-      
-      user = await prisma.user.create({
-        data: {
-          email,
-          password: hashedPassword,
-          name,
-          role: 'customer',
-          points: 0,
-          tenantId: tenantId
-        },
-        include: { tenant: true }
-      });
-    }
-
-    const jwtToken = jwt.sign(
-      { userId: user.id, role: user.role, tenantId: user.tenantId },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({
-      success: true,
-      data: {
-        token: jwtToken,
-        user: { 
-          id: user.id, 
-          email: user.email, 
-          name: user.name, 
-          role: user.role,
-          tenantId: user.tenantId,
-          tenantName: user.tenant?.name,
-          tenantSlug: user.tenant?.slug,
-          points: user.points || 0
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('Facebook Auth Error:', error);
-    res.status(500).json({ success: false, message: 'Facebook Authentication failed.' });
   }
 });
 

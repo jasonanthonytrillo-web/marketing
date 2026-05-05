@@ -58,6 +58,72 @@ export default function SettingsTab() {
         )}
 
         <div className="glass-card overflow-hidden">
+          <div className="p-6 bg-primary-50 border-b border-primary-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-primary-500/20">🎨</div>
+            <div>
+              <h3 className="font-heading font-bold text-primary-900">Store Branding</h3>
+              <p className="text-primary-700 text-xs font-medium">Customize your logo and tab icon.</p>
+            </div>
+          </div>
+          <div className="p-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Store Logo URL</label>
+                <div className="flex gap-4">
+                  <input 
+                    type="text" 
+                    value={settings.tenant_logo || ''} 
+                    onChange={e => setSettings({...settings, tenant_logo: e.target.value})}
+                    className="input-field flex-1 py-3 text-sm" 
+                    placeholder="https://example.com/logo.png"
+                  />
+                  {settings.tenant_logo && (
+                    <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
+                      <img src={settings.tenant_logo} className="w-full h-full object-cover" alt="Preview" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Favicon URL (Tab Icon)</label>
+                <div className="flex gap-4">
+                  <input 
+                    type="text" 
+                    value={settings.tenant_favicon || ''} 
+                    onChange={e => setSettings({...settings, tenant_favicon: e.target.value})}
+                    className="input-field flex-1 py-3 text-sm" 
+                    placeholder="https://example.com/favicon.ico"
+                  />
+                  {settings.tenant_favicon && (
+                    <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center p-2">
+                      <img src={settings.tenant_favicon} className="w-full h-full object-contain" alt="Preview" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Landing Page Banner (Background URL)</label>
+                <div className="flex gap-4">
+                  <input 
+                    type="text" 
+                    value={settings.tenant_banner || ''} 
+                    onChange={e => setSettings({...settings, tenant_banner: e.target.value})}
+                    className="input-field flex-1 py-3 text-sm" 
+                    placeholder="https://images.unsplash.com/photo-..."
+                  />
+                  {settings.tenant_banner && (
+                    <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
+                      <img src={settings.tenant_banner} className="w-full h-full object-cover" alt="Preview" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 italic">Pro-tip: Use high-resolution square images for logos and wide images (1920x1080) for banners.</p>
+          </div>
+        </div>
+
+        <div className="glass-card overflow-hidden">
           <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-emerald-500/20">💎</div>
             <div>

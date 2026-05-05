@@ -21,8 +21,11 @@ export default function CustomerAccount() {
       navigate('/member-portal');
     } else if (user) {
       loadHistory();
+      if (searchParams.get('action') === 'change-password') {
+        setShowPasswordModal(true);
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, searchParams]);
 
   const loadHistory = async () => {
     try {
@@ -117,13 +120,6 @@ export default function CustomerAccount() {
                   <p className="text-[9px] font-black uppercase tracking-widest text-orange-300/70 mb-0.5">Points Balance</p>
                   <p className="text-xl font-black text-white">{Math.floor(user?.points || 0)} <span className="text-[10px] opacity-60">PTS</span></p>
                 </div>
-                <button
-                  onClick={() => setShowPasswordModal(true)}
-                  className="px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 text-white hover:bg-white/20 transition-all"
-                >
-
-                  <p className="text-xs font-black uppercase tracking-widest">Change Password</p>
-                </button>
               </div>
             </div>
           </div>

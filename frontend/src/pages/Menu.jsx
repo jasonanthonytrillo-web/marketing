@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
 import { formatCurrency, unlockAudio } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
+import { useDynamicBranding } from '../hooks/useDynamicBranding';
 
 export default function Menu() {
   const { user, logoutUser } = useAuth();
@@ -80,6 +81,9 @@ export default function Menu() {
 
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  // Dynamic favicon & title
+  useDynamicBranding(tenantName, branding?.favicon);
+
   if (loading) return (
     <div className="min-h-screen bg-surface-50 flex items-center justify-center">
       <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
@@ -90,11 +94,12 @@ export default function Menu() {
 
   return (
     <div className="min-h-screen bg-surface-50 pb-24" style={{ '--primary-custom': brandingColor }}>
-      {/* Top Header Row */}
-      <div className="p-4 md:p-6 lg:px-8 pb-0 flex justify-between items-center">
-        <Link to={searchParams.get('tenant') ? `/?tenant=${searchParams.get('tenant')}` : '/'} className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all">
-          <span className="text-lg md:text-xl leading-none">←</span> <span className="hidden sm:inline">Back Home</span><span className="sm:hidden">Back</span>
-        </Link>
+      {/* Sticky Top Header Row */}
+      <div className="sticky top-0 z-40 bg-surface-50/90 backdrop-blur-xl border-b border-surface-200/50 shadow-sm transition-all">
+        <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 flex justify-between items-center">
+          <Link to={searchParams.get('tenant') ? `/?tenant=${searchParams.get('tenant')}` : '/'} className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95">
+            <span className="text-lg md:text-xl leading-none">←</span> <span className="hidden sm:inline">Back Home</span><span className="sm:hidden">Back</span>
+          </Link>
 
         {isCustomer && user && (
           <div className="flex items-center gap-4 relative">
@@ -117,17 +122,59 @@ export default function Menu() {
               >
                 {getInitials(user.name)}
               </button>
+
+              {showUserMenu && (
+                <div className="absolute right-0 mt-3 w-56 bg-white rounded-3xl shadow-2xl border border-surface-100 overflow-hidden z-50 animate-scale-in origin-top-right">
+                  <div className="p-4 border-b border-surface-50 bg-surface-50/50">
+                    <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-1">Signed in as</p>
+                    <p className="font-bold text-surface-900 truncate">{user.name}</p>
+                  </div>
+                  <div className="p-2">
+                    <Link 
+                      to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}&action=change-password` : '/account?action=change-password'}
+                      className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                    >
+                      <span>🔒</span> Change Password
+                    </Link>
+                    <Link 
+                      to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}` : '/account'}
+                      className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                    >
+                      <span>📜</span> Order History
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        logoutUser();
+                      }}
+                      className="flex items-center gap-3 w-full p-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
+                    >
+                      <span>👋</span> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 pt-4 md:pt-6 flex flex-col md:flex-row gap-6 lg:gap-8">
         {/* Left Sidebar: Categories */}
         <div className="w-full md:w-48 lg:w-56 flex-shrink-0 animate-fade-in-up relative">
           <div className="md:sticky md:top-6 md:max-h-[calc(100vh-3rem)] flex flex-col">
-            <div className="flex-shrink-0">
-              <h1 className="font-heading text-2xl md:text-3xl font-bold text-surface-900 mb-1 mt-2 uppercase" style={{ color: brandingColor }}>{tenantName}</h1>
+            <div className="flex-shrink-0 mb-6">
+              {branding?.logo ? (
+                <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg border-2 border-white mb-4">
+                  <img src={branding.logo} className="w-full h-full object-cover" alt={tenantName} />
+                </div>
+              ) : (
+                <div className="w-12 h-12 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center text-2xl shadow-lg border-2 border-white mb-4" style={{ color: brandingColor }}>
+                  💎
+                </div>
+              )}
+              <h1 className="font-heading text-2xl md:text-3xl font-bold text-surface-900 mb-1 uppercase" style={{ color: brandingColor }}>{tenantName}</h1>
               <p className="text-surface-500 text-xs md:text-sm mb-3 md:mb-6">Tap an item to customize and add to cart</p>
             </div>
 

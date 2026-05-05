@@ -96,7 +96,15 @@ router.post('/products', authenticate, authorize('admin'), async (req, res) => {
 
 router.put('/products/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { name, description, price, image, categoryId, stock, available, pointsCost } = req.body;
+    const { name, description, price, image, categoryId, stock, available, pointsCost, addons } = req.body;
+
+    // Handle addons: Delete old ones and create new ones (sync)
+    if (addons) {
+      await prisma.productAddon.deleteMany({
+        where: { productId: parseInt(req.params.id) }
+      });
+    }
+
     const product = await prisma.product.update({
       where: { id: parseInt(req.params.id), tenantId: req.user.tenantId },
       data: {
@@ -104,7 +112,14 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
         image, categoryId: categoryId ? parseInt(categoryId) : undefined,
         stock: stock !== undefined ? parseInt(stock) : undefined, 
         available,
-        pointsCost: pointsCost !== undefined ? (pointsCost ? parseInt(pointsCost) : null) : undefined
+        pointsCost: pointsCost !== undefined ? (pointsCost ? parseInt(pointsCost) : null) : undefined,
+        addons: addons ? { 
+          create: addons.map(a => ({ 
+            tenantId: req.user.tenantId, 
+            name: a.name, 
+            price: parseFloat(a.price) 
+          })) 
+        } : undefined
       },
       include: { category: true, addons: true }
     });
@@ -259,6 +274,20 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
       where: { tenantId: req.user.tenantId }
     });
     const settingsMap = settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {});
+    
+    // Include tenant branding
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user.tenantId }
+    });
+    
+    if (tenant) {
+      settingsMap.tenant_logo = tenant.logo;
+      settingsMap.tenant_favicon = tenant.favicon;
+      settingsMap.tenant_banner = tenant.bannerImage;
+      settingsMap.primary_color = tenant.primaryColor;
+      settingsMap.secondary_color = tenant.secondaryColor;
+    }
+
     res.json({ success: true, data: settingsMap });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to load settings.' });
@@ -270,7 +299,35 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { settings } = req.body; // { key: value }
     
+    const brandingMap = {
+      tenant_logo: 'logo',
+      tenant_favicon: 'favicon',
+      tenant_banner: 'bannerImage',
+      primary_color: 'primaryColor',
+      secondary_color: 'secondaryColor'
+    };
+
+    const brandingUpdate = {};
+    const regularSettings = {};
+
     for (const [key, value] of Object.entries(settings)) {
+      if (brandingMap[key]) {
+        brandingUpdate[brandingMap[key]] = value;
+      } else {
+        regularSettings[key] = value;
+      }
+    }
+
+    // Update Tenant branding if needed
+    if (Object.keys(brandingUpdate).length > 0) {
+      await prisma.tenant.update({
+        where: { id: req.user.tenantId },
+        data: brandingUpdate
+      });
+    }
+
+    // Update regular system settings
+    for (const [key, value] of Object.entries(regularSettings)) {
       await prisma.systemSetting.upsert({
         where: { tenantId_key: { tenantId: req.user.tenantId, key } },
         update: { value: value.toString() },
@@ -283,12 +340,13 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
         userId: req.user.id, 
         action: 'update_settings', 
         entityType: 'system', 
-        details: `Updated settings: ${Object.keys(settings).join(', ')}` 
+        details: `Updated settings and branding: ${Object.keys(settings).join(', ')}` 
       }
     });
 
     res.json({ success: true, message: 'Settings updated successfully.' });
   } catch (error) {
+    console.error('Save Settings Error:', error);
     res.status(500).json({ success: false, message: 'Failed to save settings.' });
   }
 });

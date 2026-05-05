@@ -203,6 +203,73 @@ export default function ProductsTab() {
                   <input type="checkbox" id="available" checked={currentProduct.available} onChange={e => setCurrentProduct({...currentProduct, available: e.target.checked})} className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500" />
                   <label htmlFor="available" className="text-sm font-medium text-surface-700">Available for Sale</label>
                 </div>
+
+                {/* Add-ons Section */}
+                <div className="pt-6 border-t border-surface-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-heading font-bold text-surface-900">Customization Add-ons</h4>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const addons = currentProduct.addons || [];
+                        setCurrentProduct({
+                          ...currentProduct,
+                          addons: [...addons, { name: '', price: 0 }]
+                        });
+                      }}
+                      className="text-xs bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg font-bold border border-emerald-100 hover:bg-emerald-100 transition-all"
+                    >
+                      + Add Option
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {(currentProduct.addons || []).map((addon, index) => (
+                      <div key={index} className="flex gap-3 items-center animate-fade-in">
+                        <input 
+                          type="text" 
+                          placeholder="Add-on Name (e.g. Extra Cheese)" 
+                          value={addon.name} 
+                          onChange={e => {
+                            const newAddons = [...currentProduct.addons];
+                            newAddons[index].name = e.target.value;
+                            setCurrentProduct({...currentProduct, addons: newAddons});
+                          }}
+                          className="input-field flex-1 py-2 text-xs"
+                        />
+                        <div className="relative w-28">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 text-xs">₱</span>
+                          <input 
+                            type="number" 
+                            placeholder="Price" 
+                            value={addon.price} 
+                            onChange={e => {
+                              const newAddons = [...currentProduct.addons];
+                              newAddons[index].price = e.target.value;
+                              setCurrentProduct({...currentProduct, addons: newAddons});
+                            }}
+                            className="input-field w-full pl-6 py-2 text-xs"
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const newAddons = currentProduct.addons.filter((_, i) => i !== index);
+                            setCurrentProduct({...currentProduct, addons: newAddons});
+                          }}
+                          className="text-red-400 hover:text-red-600 p-2"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    {(!currentProduct.addons || currentProduct.addons.length === 0) && (
+                      <div className="text-center py-4 bg-surface-50 rounded-2xl border border-dashed border-surface-200">
+                        <p className="text-xs text-surface-400 font-medium">No add-ons configured for this product.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </form>
             </div>
 

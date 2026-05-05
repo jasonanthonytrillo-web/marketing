@@ -14,6 +14,8 @@ router.get('/tenant/:slug', async (req, res) => {
       data: { 
         name: tenant.name, 
         slug: tenant.slug,
+        logo: tenant.logo,
+        favicon: tenant.favicon,
         primaryColor: tenant.primaryColor,
         secondaryColor: tenant.secondaryColor,
         bannerImage: tenant.bannerImage
@@ -59,6 +61,8 @@ router.get('/', async (req, res) => {
       data: categories, 
       tenantName: tenant?.name,
       branding: {
+        logo: tenant?.logo,
+        favicon: tenant?.favicon,
         primaryColor: tenant?.primaryColor,
         secondaryColor: tenant?.secondaryColor,
         bannerImage: tenant?.bannerImage

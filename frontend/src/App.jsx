@@ -23,6 +23,7 @@ import KitchenDashboard from './pages/KitchenDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import MemberPortal from './pages/MemberPortal';
 import CustomerAccount from './pages/CustomerAccount';
+import { PrivacyPolicy, TermsOfService, DataDeletion } from './pages/Legal';
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
@@ -72,6 +73,11 @@ function App() {
 
               {/* Public Queue Display */}
               <Route path="/queue" element={<QueueDisplay />} />
+
+              {/* Legal Pages */}
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/data-deletion" element={<DataDeletion />} />
 
               {/* Staff Login */}
               <Route path="/login" element={<Login />} />
