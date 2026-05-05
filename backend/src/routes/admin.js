@@ -155,54 +155,27 @@ router.delete('/products/:id', authenticate, authorize('admin'), async (req, res
   try {
     const productId = parseInt(req.params.id);
     
-    // Find product to check name for audit log
-    const product = await prisma.product.findUnique({
-      where: { id: productId, tenantId: req.user.tenantId }
+    // Perform SOFT DELETE (Archive)
+    const product = await prisma.product.update({
+      where: { id: productId, tenantId: req.user.tenantId },
+      data: { available: false }
     });
 
-    if (!product) return res.status(404).json({ success: false, message: 'Product not found.' });
+    await prisma.auditLog.create({
+      data: { 
+        userId: req.user.id, 
+        tenantId: req.user.tenantId,
+        action: 'archive_product', 
+        entityType: 'product', 
+        entityId: product.name, 
+        details: `Archived product "${product.name}"` 
+      }
+    });
 
-    try {
-      // ATTEMPT 1: Hard delete (only works if never sold)
-      await prisma.product.delete({
-        where: { id: productId, tenantId: req.user.tenantId }
-      });
-
-      await prisma.auditLog.create({
-        data: { 
-          userId: req.user.id, 
-          tenantId: req.user.tenantId,
-          action: 'hard_delete_product', 
-          entityType: 'product', 
-          entityId: product.name, 
-          details: `Permanently deleted product "${product.name}"` 
-        }
-      });
-
-      res.json({ success: true, message: 'Product permanently deleted.' });
-    } catch (e) {
-      // ATTEMPT 2: Soft delete fallback (if sold before)
-      await prisma.product.update({
-        where: { id: productId, tenantId: req.user.tenantId },
-        data: { available: false }
-      });
-
-      await prisma.auditLog.create({
-        data: { 
-          userId: req.user.id, 
-          tenantId: req.user.tenantId,
-          action: 'deactivate_product', 
-          entityType: 'product', 
-          entityId: product.name, 
-          details: `Deactivated product "${product.name}" (could not hard delete due to existing sales history)` 
-        }
-      });
-
-      res.json({ success: true, message: 'Product deactivated (it has sales history and cannot be fully deleted).' });
-    }
+    res.json({ success: true, message: 'Product moved to archive.' });
   } catch (error) {
     console.error('Delete Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to delete product.' });
+    res.status(500).json({ success: false, message: 'Failed to archive product.' });
   }
 });
 

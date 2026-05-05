@@ -118,32 +118,41 @@ export default function ProductsTab() {
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <input 
-          type="text" 
-          placeholder="Search products..." 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="input-field flex-1"
-        />
-        <div className="flex gap-2 flex-shrink-0">
-          <select 
-            value={selectedCategory} 
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="input-field w-32 sm:w-40"
-          >
-            <option value="All">All Categories</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select 
-            value={statusFilter} 
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="input-field w-32 sm:w-40 border-primary-100 bg-primary-50/30 font-bold"
-          >
-            <option value="active">Active Only</option>
-            <option value="archived">Archived</option>
-            <option value="all">All Status</option>
-          </select>
+      <div className="flex flex-col lg:flex-row gap-6 mb-8 bg-surface-50/50 p-6 rounded-3xl border border-surface-100">
+        <div className="flex-1">
+          <label className="block text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2 ml-1">Search Menu</label>
+          <input 
+            type="text" 
+            placeholder="Search by product name..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input-field w-full shadow-sm bg-white"
+          />
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <div className="w-40 sm:w-48">
+            <label className="block text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2 ml-1">Category Filter</label>
+            <select 
+              value={selectedCategory} 
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="input-field w-full shadow-sm bg-white"
+            >
+              <option value="All">All Categories</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div className="w-40 sm:w-48">
+            <label className="block text-[10px] font-black text-primary-500 uppercase tracking-widest mb-2 ml-1">Archive View</label>
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="input-field w-full shadow-sm bg-white border-primary-100 ring-4 ring-primary-500/5 font-bold text-primary-700"
+            >
+              <option value="active">🟢 Active Only</option>
+              <option value="archived">📁 Archived</option>
+              <option value="all">🔍 All Status</option>
+            </select>
+          </div>
         </div>
       </div>
 
