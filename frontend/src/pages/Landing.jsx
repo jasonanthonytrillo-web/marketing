@@ -315,9 +315,9 @@ export default function Landing() {
       {/* Legal Footer */}
       <div className="relative z-10 mt-auto py-8 text-center border-t border-white/5 w-full max-w-sm mx-auto">
         <div className="flex justify-center gap-6 text-[10px] font-bold text-surface-500 uppercase tracking-widest">
-          <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-          <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
-          <Link to="/data-deletion" className="hover:text-white transition-colors">Deletion</Link>
+          <Link to={tenant ? `/privacy?tenant=${tenant.slug}` : '/privacy'} className="hover:text-white transition-colors">Privacy</Link>
+          <Link to={tenant ? `/terms?tenant=${tenant.slug}` : '/terms'} className="hover:text-white transition-colors">Terms</Link>
+          <Link to={tenant ? `/data-deletion?tenant=${tenant.slug}` : '/data-deletion'} className="hover:text-white transition-colors">Conditions</Link>
         </div>
       </div>
     </div>

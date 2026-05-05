@@ -101,6 +101,10 @@ export const getBestsellers = () => api.get('/reports/bestsellers');
 export const getAdminSummary = () => api.get('/reports/summary');
 export const getKitchenTimes = () => api.get('/reports/kitchen-times');
 
+// Combos
+export const getComboOptions = (productId) => api.get(`/admin/products/${productId}/combo-options`);
+export const updateComboOptions = (productId, data) => api.post(`/admin/products/${productId}/combo-options`, data);
+
 // Superadmin
 export const getTenants = () => api.get('/superadmin/tenants');
 export const createTenant = (data) => api.post('/superadmin/tenants', data);

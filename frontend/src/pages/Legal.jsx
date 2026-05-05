@@ -80,7 +80,7 @@ export const TermsOfService = () => (
 );
 
 export const DataDeletion = () => (
-  <LegalLayout title="Data Deletion Instructions">
+  <LegalLayout title="Store Conditions">
     <div className="space-y-6">
       <p>We respect your right to control your personal data. If you wish to delete your ELEVATEPOS account and all associated data, please follow these instructions:</p>
       

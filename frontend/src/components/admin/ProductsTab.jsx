@@ -141,16 +141,16 @@ export default function ProductsTab() {
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
-          <div className="w-40 sm:w-48">
-            <label className="block text-[10px] font-black text-primary-500 uppercase tracking-widest mb-2 ml-1">Archive View</label>
+          <div className="w-48 sm:w-56 p-2 bg-primary-50/50 rounded-2xl border-2 border-primary-100 shadow-sm">
+            <label className="block text-[10px] font-black text-primary-600 uppercase tracking-widest mb-1.5 ml-1">📦 Archive View</label>
             <select 
               value={statusFilter} 
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="input-field w-full shadow-sm bg-white border-primary-100 ring-4 ring-primary-500/5 font-bold text-primary-700"
+              className="w-full bg-white border-primary-200 rounded-xl px-3 py-2 text-sm font-bold text-primary-700 focus:ring-primary-500 transition-all outline-none"
             >
               <option value="active">🟢 Active Only</option>
-              <option value="archived">📁 Archived</option>
-              <option value="all">🔍 All Status</option>
+              <option value="archived">📁 Archived Items</option>
+              <option value="all">🔍 Show All</option>
             </select>
           </div>
         </div>
@@ -232,10 +232,57 @@ export default function ProductsTab() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <input type="checkbox" id="available" checked={currentProduct.available} onChange={e => setCurrentProduct({...currentProduct, available: e.target.checked})} className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500" />
-                  <label htmlFor="available" className="text-sm font-medium text-surface-700">Available for Sale</label>
+                {/* Status & Mix/Match */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                  <div className="flex items-center gap-2 p-4 bg-surface-50 rounded-2xl border border-surface-100">
+                    <input 
+                      type="checkbox" 
+                      id="available"
+                      checked={currentProduct.available}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, available: e.target.checked })}
+                      className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <label htmlFor="available" className="text-sm font-bold text-surface-700">Available for Sale</label>
+                  </div>
+                  <div className="flex items-center gap-2 p-4 bg-primary-50/50 rounded-2xl border border-primary-100">
+                    <input 
+                      type="checkbox" 
+                      id="isCombo"
+                      checked={currentProduct.isCombo || false}
+                      onChange={(e) => setCurrentProduct({ ...currentProduct, isCombo: e.target.checked })}
+                      className="w-5 h-5 rounded border-primary-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <label htmlFor="isCombo" className="text-sm font-bold text-primary-700">Is Mix & Match Combo?</label>
+                  </div>
                 </div>
+
+                {currentProduct.isCombo && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 mt-4 bg-primary-50/30 rounded-2xl border border-primary-100/50 animate-fade-in">
+                    <div>
+                      <label className="block text-[10px] font-black text-primary-500 uppercase tracking-widest mb-1 ml-1">Group 1 Label</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Choose your Main"
+                        value={currentProduct.comboGroup1Name || ''}
+                        onChange={(e) => setCurrentProduct({ ...currentProduct, comboGroup1Name: e.target.value })}
+                        className="input-field w-full shadow-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-primary-500 uppercase tracking-widest mb-1 ml-1">Group 2 Label</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Choose your Side"
+                        value={currentProduct.comboGroup2Name || ''}
+                        onChange={(e) => setCurrentProduct({ ...currentProduct, comboGroup2Name: e.target.value })}
+                        className="input-field w-full shadow-sm bg-white"
+                      />
+                    </div>
+                    <p className="col-span-full text-[10px] text-primary-400 font-medium italic">
+                      Note: Save this product first, then you can assign products to these groups.
+                    </p>
+                  </div>
+                )}
 
                 {/* Add-ons Section */}
                 <div className="pt-6 border-t border-surface-100">

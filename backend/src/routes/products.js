@@ -81,7 +81,10 @@ router.get('/:id', async (req, res) => {
       where: { id: parseInt(req.params.id) },
       include: {
         category: true,
-        addons: { where: { available: true } }
+        addons: { where: { available: true } },
+        comboOptions: {
+          include: { product: true }
+        }
       }
     });
 

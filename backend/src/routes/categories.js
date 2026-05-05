@@ -6,15 +6,31 @@ const prisma = require('../lib/prisma');
 // GET /api/categories — Public: Get all active categories
 router.get('/', async (req, res) => {
   try {
-    let tenantId = req.headers['x-tenant-id'] ? parseInt(req.headers['x-tenant-id']) : 1;
-    const tenantSlug = req.headers['x-tenant-slug'];
+    let tenantId = 1;
 
-    if (tenantSlug) {
-      if (tenantSlug === 'project-million') {
-        tenantId = 1;
-      } else {
-        const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
-        if (tenant) tenantId = tenant.id;
+    // 1. Priority: If user is authenticated, use their tenantId (Crucial for Admin Panel)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+        const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+        if (user) tenantId = user.tenantId;
+      } catch (e) {
+        // Token invalid or expired, fallback to headers
+      }
+    } else {
+      // 2. Fallback: Use headers for public Kiosk users
+      tenantId = req.headers['x-tenant-id'] ? parseInt(req.headers['x-tenant-id']) : 1;
+      const tenantSlug = req.headers['x-tenant-slug'];
+
+      if (tenantSlug) {
+        if (tenantSlug === 'project-million') {
+          tenantId = 1;
+        } else {
+          const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+          if (tenant) tenantId = tenant.id;
+        }
       }
     }
 
@@ -23,7 +39,6 @@ router.get('/', async (req, res) => {
       orderBy: { sortOrder: 'asc' },
       include: { _count: { select: { products: true } } }
     });
-    res.setHeader('X-Debug-Tenant-ID', tenantId.toString());
     res.json({ success: true, data: categories });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to load categories.' });

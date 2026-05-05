@@ -81,11 +81,18 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Mix & Match (Combo) Fields
+  isCombo         Boolean  @default(false)
+  comboGroup1Name String?  // e.g. "Choose your Main"
+  comboGroup2Name String?  // e.g. "Choose your Side"
+
   tenant        Tenant?        @relation(fields: [tenantId], references: [id])
   category      Category       @relation(fields: [categoryId], references: [id])
   orderItems    OrderItem[]
   addons        ProductAddon[]
   inventoryLogs InventoryLog[]
+  comboOptions  ComboOption[]  @relation("ComboParent")
+  asOptionIn    ComboOption[]  @relation("OptionProduct")
 }
 
 model ProductAddon {
@@ -98,6 +105,18 @@ model ProductAddon {
   createdAt DateTime @default(now())
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ComboOption {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @default(1)
+  comboId   Int      // The parent combo product
+  productId Int      // The product that is an option
+  groupNumber Int    @default(1) // 1 or 2
+  priceBonus Float   @default(0)
+
+  combo     Product  @relation("ComboParent", fields: [comboId], references: [id], onDelete: Cascade)
+  product   Product  @relation("OptionProduct", fields: [productId], references: [id])
 }
 
 model Order {
@@ -144,6 +163,7 @@ model OrderItem {
   flavor       String?
   notes        String?
   addons       String? // JSON string of [{name, price}]
+  comboChoices String? // JSON string of { group1: productName, group2: productName }
   isRedemption Boolean  @default(false)
   createdAt    DateTime @default(now())
 

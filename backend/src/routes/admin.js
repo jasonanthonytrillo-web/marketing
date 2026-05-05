@@ -416,4 +416,45 @@ router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => 
   }
 });
 
+// Combo Options Management
+router.get('/products/:id/combo-options', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const options = await prisma.comboOption.findMany({
+      where: { comboId: parseInt(req.params.id), tenantId: req.user.tenantId },
+      include: { product: true }
+    });
+    res.json({ success: true, data: options });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load combo options.' });
+  }
+});
+
+router.post('/products/:id/combo-options', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { options } = req.body; // Array of { productId, groupNumber, priceBonus }
+    const comboId = parseInt(req.params.id);
+
+    // 1. Delete existing options
+    await prisma.comboOption.deleteMany({
+      where: { comboId: comboId, tenantId: req.user.tenantId }
+    });
+
+    // 2. Create new options
+    const created = await prisma.comboOption.createMany({
+      data: options.map(opt => ({
+        tenantId: req.user.tenantId,
+        comboId: comboId,
+        productId: parseInt(opt.productId),
+        groupNumber: parseInt(opt.groupNumber),
+        priceBonus: parseFloat(opt.priceBonus) || 0
+      }))
+    });
+
+    res.json({ success: true, data: created });
+  } catch (error) {
+    console.error('Combo Options Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update combo options.' });
+  }
+});
+
 module.exports = router;

@@ -17,7 +17,8 @@ export default function Menu() {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
-  const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], notes: '' });
+  const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
+  const [comboStep, setComboStep] = useState(1); // 1 or 2
   const { addToCart, getItemCount, items, getSubtotal } = useCart();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -36,6 +37,16 @@ export default function Menu() {
     } finally { 
       setLoading(false); 
     }
+  };
+
+  const handleProductClick = (product) => {
+    if (product.isCombo) {
+      setComboStep(1);
+      setAddOpts({ size: '', flavor: '', addons: [], notes: '', comboChoices: { group1: null, group2: null } });
+    } else {
+      setAddOpts({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
+    }
+    setSelectedProduct(product);
   };
 
   const brandingColor = branding?.primaryColor || '#f97316';
@@ -216,7 +227,7 @@ export default function Menu() {
                 {cat.products?.map((product, idx) => (
                   <button 
                     key={product.id} 
-                    onClick={() => { setSelectedProduct(product); setAddOpts({ size: '', flavor: '', addons: [], notes: '' }); }}
+                    onClick={() => handleProductClick(product)}
                     className={`glass-card text-left overflow-hidden group flex flex-col ${(!product.available || product.stock <= 0) ? 'opacity-75 grayscale-[0.5] cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                     disabled={!product.available || product.stock <= 0}
                   >
@@ -276,85 +287,141 @@ export default function Menu() {
         </div>
       )}
 
-      {/* Product Detail Modal */}
+      {/* Product Detail Modal / Combo Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setSelectedProduct(null)}>
-          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>
-            <div className="h-48 md:h-64 bg-surface-100 flex items-center justify-center text-7xl relative overflow-hidden">
-              <img src={selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'} className="w-full h-full object-cover" />
+          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
+            
+            {/* Modal Header Image */}
+            <div className="h-40 md:h-56 bg-surface-100 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
+              <img 
+                src={(selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'} 
+                className="w-full h-full object-cover transition-all duration-700" 
+              />
               <button 
                 onClick={() => setSelectedProduct(null)} 
-                className="absolute top-6 right-6 w-12 h-12 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all z-20 group"
+                className="absolute top-4 right-4 w-10 h-10 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all z-20 group"
               >
-                <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                ✕
               </button>
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                <h2 className="font-heading text-xl md:text-2xl font-bold text-white">{selectedProduct.name}</h2>
+              </div>
             </div>
-            <div className="p-6">
-              <h2 className="font-heading text-2xl font-bold text-surface-900 mb-1">{selectedProduct.name}</h2>
-              <p className="text-surface-500 text-sm mb-6">{selectedProduct.description}</p>
-              
-              <div className="flex items-center gap-4 mb-8">
-                <p className="font-heading text-3xl font-bold" style={{ color: brandingColor }}>₱{selectedProduct.price.toFixed(2)}</p>
-                {selectedProduct.pointsCost && isCustomer && (
-                  <div className="bg-amber-50 text-amber-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-100">
-                    💎 Redeem for {selectedProduct.pointsCost} Points
-                  </div>
-                )}
-              </div>
 
-              {/* Add-ons */}
-              {selectedProduct.addons && selectedProduct.addons.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Custom Add-ons</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProduct.addons.map(addon => (
-                      <button key={addon.id} onClick={() => toggleAddon(addon)}
-                        className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${addOpts.addons.find(a => a.id === addon.id) ? 'border-transparent text-white' : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-primary-300'}`}
-                        style={addOpts.addons.find(a => a.id === addon.id) ? { backgroundColor: brandingColor } : {}}>
-                        {addon.name} +₱{addon.price}
+            <div className="p-6 overflow-y-auto flex-1 scrollbar-hide">
+              {selectedProduct.isCombo ? (
+                <div className="space-y-6">
+                  {/* Combo Step Progress */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className={`flex-1 h-2 rounded-full transition-all ${comboStep >= 1 ? 'bg-primary-500' : 'bg-surface-200'}`} style={comboStep >= 1 ? {backgroundColor: brandingColor} : {}}></div>
+                    <div className={`flex-1 h-2 rounded-full transition-all ${comboStep >= 2 ? 'bg-primary-500' : 'bg-surface-200'}`} style={comboStep >= 2 ? {backgroundColor: brandingColor} : {}}></div>
+                  </div>
+
+                  <div className="animate-fade-in" key={comboStep}>
+                    <h3 className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em] mb-4">
+                      {comboStep === 1 ? (selectedProduct.comboGroup1Name || 'Step 1: Choose Item') : (selectedProduct.comboGroup2Name || 'Step 2: Choose Side/Drink')}
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      {(selectedProduct.comboOptions || [])
+                        .filter(opt => opt.groupNumber === comboStep)
+                        .map(opt => (
+                          <button
+                            key={opt.id}
+                            onClick={() => {
+                              setAddOpts(prev => ({
+                                ...prev,
+                                comboChoices: { ...prev.comboChoices, [`group${comboStep}`]: opt.product }
+                              }));
+                              if (comboStep < 2) setComboStep(2);
+                            }}
+                            className={`p-3 rounded-2xl border-2 text-left transition-all group ${addOpts.comboChoices?.[`group${comboStep}`]?.id === opt.product.id ? 'border-primary-500 bg-primary-50/50' : 'border-surface-100 bg-surface-50 hover:border-surface-300'}`}
+                            style={addOpts.comboChoices?.[`group${comboStep}`]?.id === opt.product.id ? { borderColor: brandingColor } : {}}
+                          >
+                            <div className="aspect-square rounded-xl overflow-hidden mb-2 bg-white">
+                              <img src={opt.product.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={opt.product.name} />
+                            </div>
+                            <p className="font-bold text-surface-900 text-xs line-clamp-1">{opt.product.name}</p>
+                            {opt.priceBonus > 0 && <p className="text-[10px] text-primary-500 font-black">+₱{opt.priceBonus}</p>}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+
+                  {comboStep === 2 && addOpts.comboChoices.group1 && addOpts.comboChoices.group2 && (
+                    <div className="pt-6 border-t border-surface-100 animate-bounce-in">
+                      <div className="bg-surface-50 p-4 rounded-2xl mb-6">
+                        <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2">Selection Summary</p>
+                        <div className="flex justify-between text-sm font-bold text-surface-700">
+                          <span>{addOpts.comboChoices.group1.name}</span>
+                          <span>+ {addOpts.comboChoices.group2.name}</span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleAddToCart(selectedProduct)} 
+                        className="w-full py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        style={{ backgroundColor: brandingColor }}
+                      >
+                        Add Combo to Cart ₱{selectedProduct.price.toFixed(2)}
                       </button>
-                    ))}
-                  </div>
+                      <button onClick={() => setComboStep(1)} className="w-full py-3 text-surface-400 text-[10px] font-black uppercase tracking-widest hover:text-surface-600 transition-colors">
+                        ← Change Selections
+                      </button>
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <>
+                  <p className="text-surface-500 text-sm mb-6">{selectedProduct.description}</p>
+                  <div className="flex items-center gap-4 mb-8">
+                    <p className="font-heading text-3xl font-bold" style={{ color: brandingColor }}>₱{selectedProduct.price.toFixed(2)}</p>
+                    {selectedProduct.pointsCost && isCustomer && (
+                      <div className="bg-amber-50 text-amber-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-100">
+                        💎 Redeem for {selectedProduct.pointsCost} Points
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add-ons */}
+                  {selectedProduct.addons && selectedProduct.addons.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Custom Add-ons</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.addons.map(addon => (
+                          <button key={addon.id} onClick={() => toggleAddon(addon)}
+                            className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${addOpts.addons.find(a => a.id === addon.id) ? 'border-transparent text-white' : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-primary-300'}`}
+                            style={addOpts.addons.find(a => a.id === addon.id) ? { backgroundColor: brandingColor } : {}}>
+                            {addon.name} +₱{addon.price}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  <div className="mb-8">
+                    <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Special Instructions</h3>
+                    <textarea 
+                      value={addOpts.notes} 
+                      onChange={e => setAddOpts(p => ({ ...p, notes: e.target.value }))}
+                      className="w-full bg-surface-50 border border-surface-200 rounded-2xl p-4 text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none h-24 resize-none" 
+                      placeholder="e.g. No onions, extra sauce..." 
+                    />
+                  </div>
+
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => handleAddToCart(selectedProduct)} 
+                      className="flex-1 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                      style={{ backgroundColor: brandingColor }}
+                      disabled={!selectedProduct.available}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </>
               )}
-
-              {/* Notes */}
-              <div className="mb-8">
-                <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Special Instructions</h3>
-                <textarea 
-                  value={addOpts.notes} 
-                  onChange={e => setAddOpts(p => ({ ...p, notes: e.target.value }))}
-                  className="w-full bg-surface-50 border border-surface-200 rounded-2xl p-4 text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none h-24 resize-none" 
-                  placeholder="e.g. No onions, extra sauce..." 
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => handleAddToCart(selectedProduct)} 
-                  className="flex-1 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-                  style={{ backgroundColor: brandingColor }}
-                  disabled={!selectedProduct.available}
-                >
-                  Add to Cart
-                </button>
-
-                {selectedProduct.pointsCost && isCustomer && (
-                  <button
-                    disabled={!selectedProduct.available || (user?.points || 0) < selectedProduct.pointsCost}
-                    onClick={() => {
-                      addToCart(selectedProduct, { ...addOpts, isRedemption: true });
-                      setSelectedProduct(null);
-                      setAddOpts({ size: '', flavor: '', addons: [], notes: '' });
-                    }}
-                    className="flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    💎 Redeem
-                  </button>
-                )}
-              </div>
             </div>
           </div>
         </div>
