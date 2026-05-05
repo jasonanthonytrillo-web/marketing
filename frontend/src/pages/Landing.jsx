@@ -156,7 +156,11 @@ export default function Landing() {
         </style>
 
         {assets.map((asset, index) => {
-          const fullUrl = asset.startsWith('http') || asset.startsWith('data:') 
+          // Resolve URL: 
+          // 1. If it's a full URL or data URI, use it as is.
+          // 2. If it's an upload (/uploads/...), prefix with backend API URL.
+          // 3. If it's a local public asset (starts with / but not /uploads/), use it as is.
+          const fullUrl = (asset.startsWith('http') || asset.startsWith('data:') || (asset.startsWith('/') && !asset.startsWith('/uploads/')))
             ? asset 
             : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${asset}`;
           
@@ -283,7 +287,10 @@ export default function Landing() {
               </div>
 
               {lastOrder && (
-                <Link to={`/order/${lastOrder}`} className="w-full mt-2 py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse">
+                <Link 
+                  to={tenant ? `/order/${lastOrder}?tenant=${tenant.slug}` : `/order/${lastOrder}`} 
+                  className="w-full mt-2 py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse"
+                >
                   <span></span> View Recent Receipt
                 </Link>
               )}

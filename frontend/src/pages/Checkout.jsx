@@ -95,7 +95,8 @@ export default function Checkout() {
             orderNumber: order.orderNumber,
             amount: total,
             customerName: customerName || 'Guest',
-            paymentMethod: paymentMethod
+            paymentMethod: paymentMethod,
+            tenant: tenantSlug
           });
           
           if (xenditRes.data.success && xenditRes.data.invoice_url) {

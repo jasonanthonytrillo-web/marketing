@@ -8,7 +8,7 @@ const XENDIT_AUTH = Buffer.from(`${XENDIT_SECRET_KEY}:`).toString('base64');
 // POST /api/payments/xendit/create-invoice
 router.post('/xendit/create-invoice', async (req, res) => {
   try {
-    const { orderId, orderNumber, amount, customerName, paymentMethod } = req.body;
+    const { orderId, orderNumber, amount, customerName, paymentMethod, tenant } = req.body;
 
     // Map POS payment methods to Xendit Invoice payment methods
     let xenditMethods = [];
@@ -24,8 +24,8 @@ router.post('/xendit/create-invoice', async (req, res) => {
         given_names: customerName || 'Guest'
       },
       payment_methods: xenditMethods.length > 0 ? xenditMethods : undefined,
-      success_redirect_url: `${req.headers.origin}/order/${orderNumber}?paid=true`,
-      failure_redirect_url: `${req.headers.origin}/checkout?status=failed`,
+      success_redirect_url: `${req.headers.origin}/order/${orderNumber}?paid=true${tenant ? `&tenant=${tenant}` : ''}`,
+      failure_redirect_url: `${req.headers.origin}/checkout?status=failed${tenant ? `&tenant=${tenant}` : ''}`,
       currency: 'PHP',
       reminder_time: 1
     };
