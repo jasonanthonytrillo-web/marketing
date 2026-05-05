@@ -24,6 +24,7 @@ router.get('/orders', authenticate, authorize('kitchen', 'admin', 'cashier'), as
 router.post('/orders/:id/start', authenticate, authorize('kitchen', 'admin'), async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
+    const { prepTime } = req.body; // Minutes from kitchen
     const order = await prisma.order.findUnique({ 
       where: { id: orderId, tenantId: req.user.tenantId } 
     });
@@ -32,7 +33,11 @@ router.post('/orders/:id/start', authenticate, authorize('kitchen', 'admin'), as
     }
     const updated = await prisma.order.update({
       where: { id: orderId, tenantId: req.user.tenantId },
-      data: { status: 'preparing', kitchenStartedAt: new Date() },
+      data: { 
+        status: 'preparing', 
+        kitchenStartedAt: new Date(),
+        estimatedPrepTime: prepTime ? parseInt(prepTime) : null
+      },
       include: { items: true }
     });
 

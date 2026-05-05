@@ -66,7 +66,7 @@ export const calculatePayment = (data) => api.post('/cashier/calculate', data);
 
 // Kitchen
 export const getKitchenOrders = () => api.get('/kitchen/orders');
-export const startPreparing = (id) => api.post(`/kitchen/orders/${id}/start`);
+export const startPreparing = (id, prepTime) => api.post(`/kitchen/orders/${id}/start`, { prepTime });
 export const completeOrder = (id) => api.post(`/kitchen/orders/${id}/complete`);
 export const markServed = (id) => api.post(`/kitchen/orders/${id}/served`);
 

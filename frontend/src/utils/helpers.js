@@ -134,3 +134,11 @@ export function getElapsedMinutes(dateString) {
   if (!dateString) return 0;
   return Math.floor((Date.now() - new Date(dateString).getTime()) / 60000);
 }
+
+export function formatMinutes(minutes) {
+  if (!minutes) return null;
+  if (minutes < 60) return `${minutes} mins`;
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hrs} hr${hrs > 1 ? 's' : ''}${mins > 0 ? ` ${mins} mins` : ''}`;
+}

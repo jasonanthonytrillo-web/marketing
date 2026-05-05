@@ -120,6 +120,7 @@ model Order {
   cashierId          Int?
   confirmedAt        DateTime?
   kitchenStartedAt   DateTime?
+  estimatedPrepTime  Int?      // Duration in minutes
   kitchenCompletedAt DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt

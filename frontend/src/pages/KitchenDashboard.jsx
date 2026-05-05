@@ -67,7 +67,11 @@ export default function KitchenDashboard() {
   const handleAction = async (orderId, action) => {
     setProcessing(true);
     try {
-      if (action === 'start') await startPreparing(orderId);
+      if (action === 'start') {
+        const prepTime = window.prompt('Estimated preparation duration (in minutes):', '15');
+        if (prepTime === null) return; // User cancelled
+        await startPreparing(orderId, prepTime);
+      }
       else if (action === 'complete') await completeOrder(orderId);
       else if (action === 'served') await markServed(orderId);
       loadOrders();

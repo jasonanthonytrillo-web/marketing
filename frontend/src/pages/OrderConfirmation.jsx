@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getOrder, cancelOrder, getPublicTenant } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useCart } from '../context/CartContext';
-import { formatCurrency, formatDate, playNotificationSound, unlockAudio } from '../utils/helpers';
+import { formatCurrency, formatDate, playNotificationSound, unlockAudio, formatMinutes } from '../utils/helpers';
 
 const STATUS_STEPS = [
   { key: 'pending', label: 'Order Received', icon: '📋', activeBg: 'bg-orange-500', activeRing: 'ring-orange-100', inactiveBg: 'bg-orange-50' },
@@ -136,6 +136,19 @@ export default function OrderConfirmation() {
             {order.orderNumber.includes('-') ? order.orderNumber.split('-')[1] : order.orderNumber}
           </p>
           <p className="text-[10px] text-slate-400 mb-6 sm:mb-8 font-mono">Full ID: {order.orderNumber}</p>
+          
+          {order.estimatedPrepTime && (
+            <div className="mb-6 animate-bounce-in">
+              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 px-4 py-2 rounded-2xl shadow-sm">
+                <span className="text-xl">🕒</span>
+                <div className="text-left">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 leading-none mb-1">Estimated Wait</p>
+                  <p className="text-lg font-black text-blue-700 leading-none">{formatMinutes(order.estimatedPrepTime)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <p className="text-slate-700 font-medium mb-6 sm:mb-8 text-xs sm:text-sm md:text-base px-1 sm:px-2">
             Please wait for your number to be called or displayed on the queue screen.
           </p>

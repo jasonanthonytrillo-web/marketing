@@ -69,7 +69,7 @@ export default function GlobalThankYou() {
     });
 
     return () => unsub();
-  }, [onEvent, joinRoom, navigate]);
+  }, [onEvent, joinRoom, navigate, tenantSlug]);
 
   if (!showThankYou) return null;
 
