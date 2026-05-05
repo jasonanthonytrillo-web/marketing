@@ -95,8 +95,18 @@ router.get('/share/:slug', async (req, res) => {
     const redirectUrl = `${baseUrl}/?tenant=${slug}`;
     
     // Resolve the full OG Image URL (must be absolute)
-    let ogImage = tenant.ogImage || tenant.logo || 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
-    if (ogImage.startsWith('/uploads/')) {
+    let ogImage = tenant.ogImage || tenant.logo;
+    
+    // Default fallback for Burger Palace
+    if (!ogImage && slug === 'burger-palace') {
+      ogImage = '/og-default.png';
+    }
+    
+    if (!ogImage) {
+      ogImage = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
+    }
+
+    if (ogImage.startsWith('/')) {
       ogImage = `${protocol}://${host}${ogImage}`;
     }
 
