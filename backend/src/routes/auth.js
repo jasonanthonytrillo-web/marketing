@@ -46,7 +46,6 @@ router.post('/login', async (req, res) => {
 
     // TENANT SECURITY CHECK: 
     // If a tenantSlug is provided, the user MUST belong to that tenant (Superadmins bypass this).
-    const { tenantSlug } = req.body;
     if (user.role !== 'superadmin' && tenantSlug && tenantSlug !== 'project-million') {
       if (user.tenant?.slug !== tenantSlug) {
         return res.status(403).json({ 
