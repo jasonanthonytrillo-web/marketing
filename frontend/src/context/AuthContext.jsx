@@ -65,16 +65,17 @@ export function AuthProvider({ children }) {
   };
 
   const logoutUser = () => {
-    // Save tenant slug before clearing user data
-    // Try both the flat property (from login) and nested object (from getMe)
+    const role = user?.role;
     const tenantSlug = user?.tenantSlug || user?.tenant?.slug;
     
     localStorage.removeItem('pos_token');
     localStorage.removeItem('tenant_id');
     setUser(null);
     
-    // Redirect to tenant-specific landing page if applicable
-    if (tenantSlug && tenantSlug !== 'project-million') {
+    // Redirect staff to /login, customers to landing
+    if (['admin', 'kitchen', 'cashier', 'superadmin'].includes(role)) {
+      window.location.href = '/login';
+    } else if (tenantSlug && tenantSlug !== 'project-million') {
       window.location.href = `/?tenant=${tenantSlug}`;
     } else {
       window.location.href = '/';

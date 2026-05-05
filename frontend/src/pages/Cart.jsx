@@ -25,7 +25,7 @@ export default function Cart() {
     }
   }, [tenantSlug]);
 
-  const brandingColor = branding?.primaryColor || '#4f46e5';
+  const brandingColor = branding?.primaryColor || '#f97316';
   const menuLink = tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu';
   const checkoutLink = tenantSlug ? `/checkout?tenant=${tenantSlug}` : '/checkout';
 

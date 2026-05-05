@@ -65,7 +65,7 @@ export default function Landing() {
   const menuLink = tenant ? `/menu?tenant=${tenant.slug}` : '/menu';
   const queueLink = tenant ? `/queue?tenant=${tenant.slug}` : '/queue';
   const portalLink = tenant ? `/member-portal?tenant=${tenant.slug}` : '/member-portal';
-  const primaryColor = tenant?.primaryColor || '#4f46e5';
+  const primaryColor = tenant?.primaryColor || '#f97316';
 
   // Smart background fallback based on tenant type
   const burgerBackground = 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=2000&auto=format&fit=crop';

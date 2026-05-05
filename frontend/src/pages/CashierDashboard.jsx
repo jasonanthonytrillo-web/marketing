@@ -46,7 +46,7 @@ export default function CashierDashboard() {
 
   useEffect(() => {
     if (!connected || !onEvent) return;
-    
+
     const unsub = onEvent('new_order', (data) => {
       console.log('Realtime New Order:', data);
       playNotificationSound('newOrder');
@@ -98,8 +98,8 @@ export default function CashierDashboard() {
 
   useEffect(() => {
     if (selectedOrder) {
-      setPaymentData(p => ({ 
-        ...p, 
+      setPaymentData(p => ({
+        ...p,
         method: selectedOrder.paymentMethod,
         received: selectedOrder.paymentStatus === 'paid' ? selectedOrder.total.toString() : ''
       }));
@@ -123,7 +123,7 @@ export default function CashierDashboard() {
     if (!selectedOrder || !calcResult) return;
     if (!paymentData.received) return alert('Please enter the amount received.');
     if (calcResult.isInsufficient) return alert('Insufficient payment amount. The total due is ' + calcResult.total);
-    
+
     setProcessing(true);
     try {
       await confirmOrder(selectedOrder.id, {
@@ -209,7 +209,7 @@ export default function CashierDashboard() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-bold text-surface-700 mb-2">Reason for cancellation:</label>
-                <textarea 
+                <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder="e.g. Out of stock, customer changed mind..."
@@ -219,7 +219,7 @@ export default function CashierDashboard() {
               </div>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {['Out of stock', 'Customer changed mind', 'Wrong order', 'Payment failed'].map(r => (
-                  <button 
+                  <button
                     key={r}
                     onClick={() => setCancelReason(r)}
                     className={`py-2 px-3 rounded-lg text-xs font-semibold border transition-all ${cancelReason === r ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white border-surface-200 text-surface-600 hover:bg-surface-50'}`}
@@ -230,13 +230,13 @@ export default function CashierDashboard() {
               </div>
             </div>
             <div className="p-6 bg-surface-50 border-t border-surface-100 flex gap-3">
-              <button 
+              <button
                 onClick={() => setShowCancelModal(false)}
                 className="flex-1 py-3.5 bg-white border border-surface-200 text-surface-700 font-bold rounded-2xl hover:bg-surface-100 transition-all"
               >
                 Go Back
               </button>
-              <button 
+              <button
                 onClick={handleConfirmCancel}
                 disabled={!cancelReason.trim() || processing}
                 className="flex-[1.5] py-3.5 bg-red-600 text-white font-bold rounded-2xl shadow-lg shadow-red-600/20 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
@@ -293,7 +293,7 @@ export default function CashierDashboard() {
                       <p className="text-xs sm:text-sm text-surface-500">{order.customerName}</p>
                     </div>
                     <div className="text-right">
-                      <span className={`badge text-[10px] sm:text-xs mb-1 ${order.orderType === 'dine_in' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <span className={`badge text-[10px] sm:text-xs mb-1 ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                         {order.orderType === 'dine_in' ? 'Dine In' : 'Take Out'}
                       </span>
                       {order.paymentMethod === 'points' && (
@@ -380,7 +380,7 @@ export default function CashierDashboard() {
                           <span className="font-bold text-surface-900">Total Due</span>
                           <span className="font-heading text-2xl font-black text-primary-600">{formatCurrency(calcResult.total)}</span>
                         </div>
-                        
+
                         <div className="pt-4 border-t border-surface-200 mt-4">
                           <label className="block text-xs font-semibold text-surface-500 uppercase tracking-wider mb-2">Amount Received</label>
                           <div className="flex gap-2">
@@ -388,7 +388,7 @@ export default function CashierDashboard() {
                               className={`input-field flex-1 text-lg font-bold font-heading ${calcResult.isInsufficient && paymentData.received ? 'border-red-500 focus:ring-red-500/50 text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'}`} placeholder="0.00" />
                             <button onClick={exactCash} className="btn-secondary px-4 whitespace-nowrap">Exact</button>
                           </div>
-                          
+
                           <div className="grid grid-cols-4 gap-2 mt-2">
                             {[50, 100, 500, 1000].map(amt => (
                               <button key={amt} onClick={() => addCash(amt)} className="py-2 bg-white border border-surface-200 rounded-lg text-sm font-medium hover:bg-surface-50 hover:border-primary-300 transition-colors">+{amt}</button>
@@ -407,7 +407,7 @@ export default function CashierDashboard() {
                     {selectedOrder.paymentMethod === 'points' ? (
                       <div className="flex gap-3 pt-2">
                         <button onClick={handleCancel} disabled={processing} className="btn-danger flex-1 py-4">Cancel Order</button>
-                        <button 
+                        <button
                           onClick={() => {
                             setPaymentData(p => ({ ...p, received: '0', method: 'points' }));
                             setTimeout(() => handleConfirmPayment(), 100);
@@ -436,9 +436,9 @@ export default function CashierDashboard() {
 
                         <div className="flex gap-3 pt-2">
                           <button onClick={handleCancel} disabled={processing} className="btn-danger flex-1 py-4">Cancel Order</button>
-                          <button 
-                            onClick={handleConfirmPayment} 
-                            disabled={processing || !paymentData.received || calcResult?.isInsufficient} 
+                          <button
+                            onClick={handleConfirmPayment}
+                            disabled={processing || !paymentData.received || calcResult?.isInsufficient}
                             className={`flex-[2] py-4 shadow-xl font-bold transition-all ${(!paymentData.received || calcResult?.isInsufficient) ? 'bg-surface-300 text-surface-500 cursor-not-allowed opacity-50' : 'btn-primary'}`}
                           >
                             {processing ? 'Processing...' : (!paymentData.received ? 'Enter Amount' : calcResult?.isInsufficient ? 'Insufficient' : 'Confirm Payment')}
@@ -457,9 +457,9 @@ export default function CashierDashboard() {
                       <div className="flex justify-between font-bold text-lg pt-2 border-t border-surface-100"><span>Total</span><span className="text-primary-600">{formatCurrency(selectedOrder.total)}</span></div>
                       <div className="flex justify-between pt-2"><span className="text-surface-500">Method</span><span className="font-medium uppercase">{selectedOrder.paymentMethod}</span></div>
                     </div>
-                    
+
                     {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
-                       <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3">Cancel Order</button>
+                      <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3">Cancel Order</button>
                     )}
                   </div>
                 )}

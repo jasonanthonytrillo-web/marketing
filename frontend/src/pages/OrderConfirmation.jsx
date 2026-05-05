@@ -8,7 +8,7 @@ import { formatCurrency, formatDate, playNotificationSound, unlockAudio, formatM
 const STATUS_STEPS = [
   { key: 'pending', label: 'Order Received', icon: '📋', activeBg: 'bg-orange-500', activeRing: 'ring-orange-100', inactiveBg: 'bg-orange-50' },
   { key: 'confirmed', label: 'Payment Confirmed', icon: '✅', activeBg: 'bg-emerald-500', activeRing: 'ring-emerald-100', inactiveBg: 'bg-emerald-50' },
-  { key: 'preparing', label: 'Preparing', icon: '👨‍🍳', activeBg: 'bg-blue-500', activeRing: 'ring-blue-100', inactiveBg: 'bg-slate-100' },
+  { key: 'preparing', label: 'Preparing', icon: '👨‍🍳', activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-slate-100' },
   { key: 'ready', label: 'Ready for Pickup', icon: '🔔', activeBg: 'bg-amber-500', activeRing: 'ring-amber-100', inactiveBg: 'bg-amber-50' },
 ];
 
@@ -136,14 +136,14 @@ export default function OrderConfirmation() {
             {order.orderNumber.includes('-') ? order.orderNumber.split('-')[1] : order.orderNumber}
           </p>
           <p className="text-[10px] text-slate-400 mb-6 sm:mb-8 font-mono">Full ID: {order.orderNumber}</p>
-          
+
           {order.estimatedPrepTime && (
             <div className="mb-6 animate-bounce-in">
-              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 px-4 py-2 rounded-2xl shadow-sm">
+              <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-100 px-4 py-2 rounded-2xl shadow-sm">
                 <span className="text-xl">🕒</span>
                 <div className="text-left">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 leading-none mb-1">Estimated Wait</p>
-                  <p className="text-lg font-black text-blue-700 leading-none">{formatMinutes(order.estimatedPrepTime)}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary-400 leading-none mb-1">Estimated Wait</p>
+                  <p className="text-lg font-black text-primary-700 leading-none">{formatMinutes(order.estimatedPrepTime)}</p>
                 </div>
               </div>
             </div>
@@ -153,8 +153,8 @@ export default function OrderConfirmation() {
             Please wait for your number to be called or displayed on the queue screen.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
-            <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm ${order.orderType === 'dine_in' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-              {order.orderType === 'dine_in' ? '🍽️ Dine In' : '🥡 Take Out'}
+            <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+              {order.orderType === 'dine_in' ? '🏠 Dine In' : '🥡 Take Out'}
             </span>
             {order.paymentMethod === 'points' ? (
               <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-purple-100 text-purple-700 font-bold text-xs sm:text-sm">
@@ -237,8 +237,8 @@ export default function OrderConfirmation() {
         </div>
 
         {canCancel && (
-          <button 
-            onClick={handleCancelOrder} 
+          <button
+            onClick={handleCancelOrder}
             className="w-full py-3 mb-8 text-sm font-bold text-red-500 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors animate-fade-in-up"
             style={{ animationDelay: '0.45s' }}
           >
@@ -252,7 +252,7 @@ export default function OrderConfirmation() {
           const activeOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
           const otherOrders = activeOrders.filter(num => num !== orderNumber);
           if (otherOrders.length === 0) return null;
-          
+
           return (
             <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
               <div className="flex items-center gap-3 mb-4">
@@ -262,8 +262,8 @@ export default function OrderConfirmation() {
               </div>
               <div className="grid grid-cols-1 gap-2">
                 {otherOrders.map(num => (
-                  <Link 
-                    key={num} 
+                  <Link
+                    key={num}
                     to={tenantSlug ? `/order/${num}?tenant=${tenantSlug}` : `/order/${num}`}
                     className="flex items-center justify-between p-4 bg-white rounded-2xl border border-surface-200 hover:border-primary-300 hover:bg-primary-50 transition-all group shadow-sm"
                   >

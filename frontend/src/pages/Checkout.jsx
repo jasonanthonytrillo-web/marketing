@@ -28,7 +28,7 @@ export default function Checkout() {
     }
   }, [tenantSlug]);
 
-  const brandingColor = branding?.primaryColor || '#4f46e5';
+  const brandingColor = branding?.primaryColor || '#f97316';
   const cartLink = tenantSlug ? `/cart?tenant=${tenantSlug}` : '/cart';
   const menuLink = tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu';
   const isFullRedemption = items.length > 0 && items.every(item => item.isRedemption);
