@@ -6,6 +6,8 @@ export default function CategoriesTab() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
     loadCategories();
@@ -48,10 +50,17 @@ export default function CategoriesTab() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this category? Products in this category will become uncategorized.')) return;
+  const handleDelete = (id) => {
+    setDeleteId(id);
+    setIsDeleting(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await deleteCategory(id);
+      await deleteCategory(deleteId);
+      setIsDeleting(false);
+      setDeleteId(null);
       loadCategories();
     } catch (error) {
       alert('Failed to delete category');
@@ -124,6 +133,42 @@ export default function CategoriesTab() {
                 <button type="submit" className="flex-[2] btn-primary">Save Category</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Premium Delete Confirmation Modal */}
+      {isDeleting && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setIsDeleting(false)}>
+          <div 
+            className="bg-white rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl animate-scale-in border border-white/20"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-8 text-center">
+              {/* Pulsing Warning Icon */}
+              <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse border-4 border-red-100">
+                <span className="text-4xl">⚠️</span>
+              </div>
+              
+              <h3 className="text-2xl font-black text-surface-900 mb-3 tracking-tight">Are you sure?</h3>
+              <p className="text-surface-500 font-medium leading-relaxed mb-8">
+                You are about to delete this category. <span className="text-red-500 font-bold">Products in this category will become uncategorized.</span>
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={confirmDelete}
+                  className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Delete Category
+                </button>
+                <button 
+                  onClick={() => setIsDeleting(false)}
+                  className="w-full py-4 bg-surface-100 hover:bg-surface-200 text-surface-600 font-black uppercase tracking-widest rounded-2xl transition-all"
+                >
+                  Keep Category
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

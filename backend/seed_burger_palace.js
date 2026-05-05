@@ -30,23 +30,33 @@ async function seedBurgerPalace() {
   ];
 
   for (const p of products) {
-    await prisma.product.create({ data: p });
+    console.log(`🍟 Adding ${p.name}...`);
+    try {
+      // Use raw SQL to bypass the missing "isCombo" column issue
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "Product" ("tenantId", "categoryId", "name", "description", "price", "stock", "available", "isCombo", "sortOrder", "image", "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      `, p.tenantId, p.categoryId, p.name, p.description, p.price, p.stock, true, false, 0, '');
+    } catch (e) {
+      // If that fails, try without the isCombo column entirely
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "Product" ("tenantId", "categoryId", "name", "description", "price", "stock", "available", "sortOrder", "image", "createdAt", "updatedAt")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      `, p.tenantId, p.categoryId, p.name, p.description, p.price, p.stock, true, 0, '');
+    }
   }
 
   // Create Burger Palace Admin
   const bcrypt = require('bcryptjs');
   const adminPass = await bcrypt.hash('burgeradmin', 12);
-  const exists = await prisma.user.findUnique({ where: { email: 'admin@burgerpalace.com' } });
-  if (!exists) {
-    await prisma.user.create({
-      data: {
-        email: 'admin@burgerpalace.com',
-        password: adminPass,
-        name: 'Burger Palace Manager',
-        role: 'admin',
-        tenantId: tenant.id
-      }
-    });
+  try {
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "User" ("email", "password", "name", "role", "active", "tenantId", "createdAt", "updatedAt")
+      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      ON CONFLICT ("email") DO NOTHING
+    `, 'admin@burgerpalace.com', adminPass, 'Burger Palace Manager', 'admin', true, tenant.id);
+  } catch (e) {
+    console.log('Admin already exists or error creating.');
   }
 
   console.log('✅ Burger Palace seeded successfully!');

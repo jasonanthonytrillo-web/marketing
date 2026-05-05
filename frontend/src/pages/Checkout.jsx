@@ -10,7 +10,7 @@ const PAYMENT_METHODS = [{ id: 'cash', label: 'Cash', icon: '💵' }, { id: 'gca
 
 export default function Checkout() {
   const { items, getSubtotal, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tenantSlug = searchParams.get('tenant');
@@ -65,7 +65,8 @@ export default function Checkout() {
         flavor: item.flavor,
         notes: item.notes, 
         addons: item.selectedAddons?.map(a => a.id) || [],
-        isRedemption: item.isRedemption || false
+        isRedemption: item.isRedemption || false,
+        comboChoices: item.comboChoices // Add this!
       }));
       
       const res = await createOrder({ 
@@ -100,6 +101,7 @@ export default function Checkout() {
           });
           
           if (xenditRes.data.success && xenditRes.data.invoice_url) {
+            await refreshUser();
             window.location.href = xenditRes.data.invoice_url;
             return;
           }
@@ -111,6 +113,8 @@ export default function Checkout() {
         }
       }
       
+      await refreshUser();
+      clearCart();
       navigate(tenantSlug ? `/order/${order.orderNumber}?tenant=${tenantSlug}` : `/order/${order.orderNumber}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to place order.');

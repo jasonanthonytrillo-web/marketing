@@ -60,6 +60,7 @@ export function CartProvider({ children }) {
         flavor: opts.flavor,
         selectedAddons: opts.addons || [],
         notes: opts.notes,
+        comboChoices: opts.comboChoices || null,
         isRedemption: opts.isRedemption || false
       }
     });

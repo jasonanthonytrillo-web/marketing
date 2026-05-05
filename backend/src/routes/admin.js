@@ -53,7 +53,7 @@ router.post('/upload-image', authenticate, authorize('admin'), async (req, res) 
 router.get('/orders', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { status, page = 1, limit = 50 } = req.query;
-    const where = { tenantId: req.user.tenantId };
+    const where = { tenantId: req.tenantId };
     if (status && status !== 'all') where.status = status;
     const orders = await prisma.order.findMany({
       where,
@@ -73,7 +73,7 @@ router.get('/orders', authenticate, authorize('admin'), async (req, res) => {
 router.get('/products', authenticate, authorize('admin'), async (req, res) => {
   try {
     const products = await prisma.product.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: { tenantId: req.tenantId },
       include: { category: true, addons: true },
       orderBy: { sortOrder: 'asc' }
     });
@@ -91,7 +91,7 @@ router.post('/products', authenticate, authorize('admin'), async (req, res) => {
     }
     const product = await prisma.product.create({
       data: {
-        tenantId: req.user.tenantId,
+        tenantId: req.tenantId,
         name, description, price: parseFloat(price), image,
         categoryId: parseInt(categoryId), stock: parseInt(stock) || 100,
         available: available !== false,
@@ -119,13 +119,13 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
       await prisma.productAddon.deleteMany({
         where: { 
           productId: parseInt(req.params.id),
-          tenantId: req.user.tenantId // DEFENSIVE: Ensure we only delete our own addons
+          tenantId: req.tenantId // DEFENSIVE: Ensure we only delete our own addons
         }
       });
     }
 
     const product = await prisma.product.update({
-      where: { id: parseInt(req.params.id), tenantId: req.user.tenantId },
+      where: { id: parseInt(req.params.id), tenantId: req.tenantId },
       data: {
         name, description, price: price ? parseFloat(price) : undefined,
         image, categoryId: categoryId ? parseInt(categoryId) : undefined,
@@ -134,7 +134,7 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
         pointsCost: pointsCost !== undefined ? (pointsCost ? parseInt(pointsCost) : null) : undefined,
         addons: addons ? { 
           create: addons.map(a => ({ 
-            tenantId: req.user.tenantId, 
+            tenantId: req.tenantId, 
             name: a.name, 
             price: parseFloat(a.price) 
           })) 
@@ -157,14 +157,14 @@ router.delete('/products/:id', authenticate, authorize('admin'), async (req, res
     
     // Perform SOFT DELETE (Archive)
     const product = await prisma.product.update({
-      where: { id: productId, tenantId: req.user.tenantId },
+      where: { id: productId, tenantId: req.tenantId },
       data: { available: false }
     });
 
     await prisma.auditLog.create({
       data: { 
         userId: req.user.id, 
-        tenantId: req.user.tenantId,
+        tenantId: req.tenantId,
         action: 'archive_product', 
         entityType: 'product', 
         entityId: product.name, 
@@ -183,7 +183,7 @@ router.delete('/products/:id', authenticate, authorize('admin'), async (req, res
 router.get('/staff', authenticate, authorize('admin'), async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: { tenantId: req.tenantId },
       select: { id: true, email: true, name: true, role: true, active: true, createdAt: true, points: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -205,7 +205,7 @@ router.post('/staff', authenticate, authorize('admin'), async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: { tenantId: req.user.tenantId, name, email, password: hashedPassword, role, points: role === 'customer' ? 0 : undefined },
+      data: { tenantId: req.tenantId, name, email, password: hashedPassword, role, points: role === 'customer' ? 0 : undefined },
       select: { id: true, email: true, name: true, role: true, active: true, points: true }
     });
 
@@ -255,7 +255,7 @@ router.delete('/staff/:id', authenticate, authorize('admin'), async (req, res) =
 router.get('/inventory', authenticate, authorize('admin'), async (req, res) => {
   try {
     const products = await prisma.product.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: { tenantId: req.tenantId },
       select: { id: true, name: true, stock: true, available: true, category: { select: { name: true } } },
       orderBy: { stock: 'asc' }
     });
@@ -288,7 +288,7 @@ router.post('/inventory/:id/restock', authenticate, authorize('admin'), async (r
 router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => {
   try {
     const logs = await prisma.auditLog.findMany({
-      where: { tenantId: req.user.tenantId },
+      where: { tenantId: req.tenantId },
       include: { user: { select: { name: true, role: true } } },
       orderBy: { createdAt: 'desc' },
       take: 100
@@ -303,13 +303,13 @@ router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => 
 router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
   try {
     const settings = await prisma.systemSetting.findMany({
-      where: { tenantId: req.user.tenantId }
+      where: { tenantId: req.tenantId }
     });
     const settingsMap = settings.reduce((acc, s) => ({ ...acc, [s.key]: s.value }), {});
     
     // Include tenant branding
     const tenant = await prisma.tenant.findUnique({
-      where: { id: req.user.tenantId }
+      where: { id: req.tenantId }
     });
     
     if (tenant) {
@@ -364,7 +364,7 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
     // Update Tenant branding if needed
     if (Object.keys(brandingUpdate).length > 0) {
       await prisma.tenant.update({
-        where: { id: req.user.tenantId },
+        where: { id: req.tenantId },
         data: brandingUpdate
       });
     }
@@ -372,9 +372,9 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
     // Update regular system settings
     for (const [key, value] of Object.entries(regularSettings)) {
       await prisma.systemSetting.upsert({
-        where: { tenantId_key: { tenantId: req.user.tenantId, key } },
+        where: { tenantId_key: { tenantId: req.tenantId, key } },
         update: { value: value.toString() },
-        create: { tenantId: req.user.tenantId, key, value: value.toString() }
+        create: { tenantId: req.tenantId, key, value: value.toString() }
       });
     }
 
@@ -399,7 +399,7 @@ router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => 
   try {
     const logs = await prisma.auditLog.findMany({
       where: { 
-        tenantId: req.user.tenantId 
+        tenantId: req.tenantId 
       },
       include: {
         user: {
@@ -420,7 +420,7 @@ router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => 
 router.get('/products/:id/combo-options', authenticate, authorize('admin'), async (req, res) => {
   try {
     const options = await prisma.comboOption.findMany({
-      where: { comboId: parseInt(req.params.id), tenantId: req.user.tenantId },
+      where: { comboId: parseInt(req.params.id), tenantId: req.tenantId },
       include: { product: true }
     });
     res.json({ success: true, data: options });
@@ -436,13 +436,13 @@ router.post('/products/:id/combo-options', authenticate, authorize('admin'), asy
 
     // 1. Delete existing options
     await prisma.comboOption.deleteMany({
-      where: { comboId: comboId, tenantId: req.user.tenantId }
+      where: { comboId: comboId, tenantId: req.tenantId }
     });
 
     // 2. Create new options
     const created = await prisma.comboOption.createMany({
       data: options.map(opt => ({
-        tenantId: req.user.tenantId,
+        tenantId: req.tenantId,
         comboId: comboId,
         productId: parseInt(opt.productId),
         groupNumber: parseInt(opt.groupNumber),

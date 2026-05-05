@@ -23,14 +23,18 @@ api.interceptors.request.use(config => {
   if (tenantQuery) {
     tenantSlug = tenantQuery;
   } else if (!isPlatformDomain && hostname !== 'localhost' && hostname !== '127.0.0.1') {
-    tenantSlug = hostname.split('.')[0]; // Gets the "mcdonalds" part
+    tenantSlug = hostname.split('.')[0]; 
   }
   
-  // You can either send the slug to be resolved, or store the tenantId locally
-  // We'll send the ID if we have it saved, otherwise default to 1
-  const savedTenantId = localStorage.getItem('tenant_id');
-  config.headers['x-tenant-id'] = savedTenantId || '1';
   config.headers['x-tenant-slug'] = tenantSlug;
+
+  // If we have a slug, we should let the backend resolve the ID by slug 
+  // or use the saved ID only if it matches the current session logic
+  const savedTenantId = localStorage.getItem('tenant_id');
+  if (savedTenantId && !tenantQuery) {
+    config.headers['x-tenant-id'] = savedTenantId;
+  }
+  // If tenantQuery exists, we DONT send a hardcoded ID so the backend uses the Slug
 
   return config;
 });

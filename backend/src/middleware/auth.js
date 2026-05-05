@@ -25,7 +25,22 @@ const authenticate = async (req, res, next) => {
       return res.status(403).json({ success: false, message: 'This store is currently suspended. Please contact support.' });
     }
 
+    // TENANT ISOLATION: 
+    // Ensure the tenant context matches the user's tenant
+    const headerTenantId = req.headers['x-tenant-id'];
+    if (user.role !== 'superadmin' && headerTenantId) {
+      if (parseInt(headerTenantId) !== user.tenantId) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Security Alert: You are not authorized to access this store context.' 
+        });
+      }
+    }
+
     req.user = user;
+    // Always use the user's tenantId for security, ignore the header if not superadmin
+    req.tenantId = user.role === 'superadmin' ? (parseInt(headerTenantId) || user.tenantId) : user.tenantId;
+    
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {

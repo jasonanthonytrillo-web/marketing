@@ -48,7 +48,15 @@ router.get('/', async (req, res) => {
       include: { 
         products: { 
           where: { available: true, tenantId: tenantId },
-          include: { category: true, addons: true },
+          include: { 
+            category: true, 
+            addons: true,
+            comboOptions: {
+              include: {
+                product: true
+              }
+            }
+          },
           orderBy: { sortOrder: 'asc' }
         } 
       }

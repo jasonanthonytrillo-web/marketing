@@ -120,6 +120,22 @@ export default function CustomerAccount() {
                   <p className="text-[9px] font-black uppercase tracking-widest text-orange-300/70 mb-0.5">Points Balance</p>
                   <p className="text-xl font-black text-white">{Math.floor(user?.points || 0)} <span className="text-[10px] opacity-60">PTS</span></p>
                 </div>
+                
+                {/* Security Button - Hidden for Google Users */}
+                {!user?.isGoogle ? (
+                  <button 
+                    onClick={() => setShowPasswordModal(true)}
+                    className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 px-4 py-2 rounded-2xl transition-all group"
+                  >
+                    <p className="text-[9px] font-black uppercase tracking-widest text-orange-100 mb-0.5">Security</p>
+                    <p className="text-xs font-black text-white flex items-center gap-1 group-hover:gap-2 transition-all">Update Password →</p>
+                  </button>
+                ) : (
+                  <div className="bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 px-4 py-2 rounded-2xl">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-300 mb-0.5">Verified</p>
+                    <p className="text-xs font-black text-white flex items-center gap-1">Logged in with Google G</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -99,7 +99,8 @@ router.post('/login', async (req, res) => {
           tenantSlug: user.tenant?.slug,
           tenantLogo: user.tenant?.logo,
           tenantFavicon: user.tenant?.favicon,
-          points: user.points || 0
+          points: user.points || 0,
+          isGoogle: user.isGoogle
         }
       }
     });
@@ -146,7 +147,8 @@ router.post('/google', async (req, res) => {
           name,
           password: randomPass,
           role: 'customer',
-          tenantId
+          tenantId,
+          isGoogle: true
         },
         include: { tenant: true }
       });
@@ -177,7 +179,8 @@ router.post('/google', async (req, res) => {
           tenantSlug: user.tenant?.slug,
           tenantLogo: user.tenant?.logo,
           tenantFavicon: user.tenant?.favicon,
-          points: user.points || 0
+          points: user.points || 0,
+          isGoogle: user.isGoogle
         }
       }
     });
@@ -300,6 +303,7 @@ router.get('/me', authenticate, async (req, res) => {
       success: true, 
       data: {
         ...fullUser,
+        isGoogle: fullUser.isGoogle,
         tenantName: fullUser.tenant?.name
       } 
     });
@@ -320,6 +324,10 @@ router.post('/change-password', authenticate, async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    if (user.isGoogle) {
+      return res.status(400).json({ success: false, message: 'Password cannot be changed for Google accounts.' });
     }
 
     const validPassword = await bcrypt.compare(currentPassword, user.password);

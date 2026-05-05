@@ -32,6 +32,8 @@ app.set('prisma', prisma);
 app.use((req, res, next) => {
   req.io = io;
   req.prisma = prisma;
+  // Support for Google Sign-In (Popups)
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   next();
 });
 

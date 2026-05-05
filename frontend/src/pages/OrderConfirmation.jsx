@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getOrder, cancelOrder, getPublicTenant } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, playNotificationSound, unlockAudio, formatMinutes } from '../utils/helpers';
 
 const STATUS_STEPS = [
@@ -13,6 +14,7 @@ const STATUS_STEPS = [
 ];
 
 export default function OrderConfirmation() {
+  const { user } = useAuth();
   const { orderNumber } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -86,6 +88,17 @@ export default function OrderConfirmation() {
     if (!onEvent) return;
     const unsub = onEvent('order_update', (data) => {
       if (data.order?.orderNumber === orderNumber) {
+        // Trigger alerts if status changed to ready
+        if (data.order.status === 'ready' && order?.status !== 'ready') {
+          playNotificationSound('ready');
+          
+          // Voice announcement after a short delay
+          setTimeout(() => {
+            const msg = new SpeechSynthesisUtterance(`Order number ${orderNumber.split('-')[1] || orderNumber} is now ready for pickup`);
+            msg.rate = 0.9;
+            window.speechSynthesis.speak(msg);
+          }, 800);
+        }
         setOrder(data.order);
       }
     });

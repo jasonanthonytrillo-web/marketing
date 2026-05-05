@@ -32,10 +32,10 @@ export default function Menu() {
       setCategories(res.data.data || []);
       if (res.data.tenantName) setTenantName(res.data.tenantName);
       if (res.data.branding) setBranding(res.data.branding);
-    } catch (e) { 
-      console.error('Failed to load products:', e); 
-    } finally { 
-      setLoading(false); 
+    } catch (e) {
+      console.error('Failed to load products:', e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,9 +71,10 @@ export default function Menu() {
   }, [branding?.id, connected]);
 
   const handleAddToCart = (product) => {
-    addToCart(product, addOpts);
+    addToCart(product, { ...addOpts, isRedemption: product.isRedemption });
     setSelectedProduct(null);
-    setAddOpts({ size: '', flavor: '', addons: [], notes: '' });
+    setAddOpts({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
+    setComboStep(1);
   };
 
   const toggleAddon = (addon) => {
@@ -112,62 +113,62 @@ export default function Menu() {
             <span className="text-lg md:text-xl leading-none">←</span> <span className="hidden sm:inline">Back Home</span><span className="sm:hidden">Back</span>
           </Link>
 
-        {isCustomer && user && (
-          <div className="flex items-center gap-4 relative">
-            <button
-              onClick={() => setShowRewards(true)}
-              className="animate-fade-in flex items-center gap-3 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-2xl shadow-sm hover:bg-emerald-100 transition-all active:scale-95 group"
-            >
-              <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">💎</div>
-              <div className="text-left hidden sm:block">
-                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-0.5">Points</p>
-                <p className="text-sm font-black text-emerald-900 leading-none">{Math.floor(user.points || 0)}</p>
-              </div>
-            </button>
-
-            <div className="relative">
+          {isCustomer && user && (
+            <div className="flex items-center gap-4 relative">
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all border-2 border-white"
-                style={{ backgroundColor: brandingColor }}
+                onClick={() => setShowRewards(true)}
+                className="animate-fade-in flex items-center gap-3 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-2xl shadow-sm hover:bg-emerald-100 transition-all active:scale-95 group"
               >
-                {getInitials(user.name)}
+                <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">💎</div>
+                <div className="text-left hidden sm:block">
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-0.5">Points</p>
+                  <p className="text-sm font-black text-emerald-900 leading-none">{Math.floor(user.points || 0)}</p>
+                </div>
               </button>
 
-              {showUserMenu && (
-                <div className="absolute right-0 mt-3 w-56 bg-white rounded-3xl shadow-2xl border border-surface-100 overflow-hidden z-50 animate-scale-in origin-top-right">
-                  <div className="p-4 border-b border-surface-50 bg-surface-50/50">
-                    <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-1">Signed in as</p>
-                    <p className="font-bold text-surface-900 truncate">{user.name}</p>
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all border-2 border-white"
+                  style={{ backgroundColor: brandingColor }}
+                >
+                  {getInitials(user.name)}
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-3xl shadow-2xl border border-surface-100 overflow-hidden z-50 animate-scale-in origin-top-right">
+                    <div className="p-4 border-b border-surface-50 bg-surface-50/50">
+                      <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-1">Signed in as</p>
+                      <p className="font-bold text-surface-900 truncate">{user.name}</p>
+                    </div>
+                    <div className="p-2">
+                      <Link
+                        to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}&action=change-password` : '/account?action=change-password'}
+                        className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                      >
+                        <span>🔒</span> Change Password
+                      </Link>
+                      <Link
+                        to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}` : '/account'}
+                        className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                      >
+                        <span>📜</span> Order History
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          logoutUser();
+                        }}
+                        className="flex items-center gap-3 w-full p-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
+                      >
+                        <span>👋</span> Sign Out
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-2">
-                    <Link 
-                      to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}&action=change-password` : '/account?action=change-password'}
-                      className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
-                    >
-                      <span>🔒</span> Change Password
-                    </Link>
-                    <Link 
-                      to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}` : '/account'}
-                      className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
-                    >
-                      <span>📜</span> Order History
-                    </Link>
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        logoutUser();
-                      }}
-                      className="flex items-center gap-3 w-full p-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
-                    >
-                      <span>👋</span> Sign Out
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
@@ -192,8 +193,8 @@ export default function Menu() {
             </div>
 
             <div className="flex overflow-x-auto md:grid md:grid-cols-1 gap-2 md:gap-4 pb-2 md:pb-20 scrollbar-hide px-1 md:overflow-y-auto rounded-xl md:rounded-3xl">
-              <button 
-                onClick={() => setActiveCategory('all')} 
+              <button
+                onClick={() => setActiveCategory('all')}
                 className={`flex-shrink-0 w-20 md:w-auto flex flex-col items-center justify-center text-center aspect-square rounded-2xl md:rounded-3xl p-2 md:p-3 transition-all ${activeCategory === 'all' ? 'text-white shadow-lg shadow-primary-500/30 scale-[1.05]' : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:bg-surface-50 hover:scale-[1.05]'}`}
                 style={activeCategory === 'all' ? { backgroundColor: brandingColor } : {}}
               >
@@ -201,9 +202,9 @@ export default function Menu() {
                 <span className="text-[10px] md:text-sm lg:text-base font-bold leading-tight">All Items</span>
               </button>
               {categories.map(cat => (
-                <button 
-                  key={cat.id} 
-                  onClick={() => setActiveCategory(String(cat.id))} 
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(String(cat.id))}
                   className={`flex-shrink-0 w-20 md:w-auto flex flex-col items-center justify-center text-center aspect-square rounded-2xl md:rounded-3xl p-2 md:p-3 transition-all ${activeCategory === String(cat.id) ? 'text-white shadow-lg shadow-primary-500/30 scale-[1.05]' : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:bg-surface-50 hover:scale-[1.05]'}`}
                   style={activeCategory === String(cat.id) ? { backgroundColor: brandingColor } : {}}
                 >
@@ -225,16 +226,16 @@ export default function Menu() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {cat.products?.map((product, idx) => (
-                  <button 
-                    key={product.id} 
+                  <button
+                    key={product.id}
                     onClick={() => handleProductClick(product)}
                     className={`glass-card text-left overflow-hidden group flex flex-col ${(!product.available || product.stock <= 0) ? 'opacity-75 grayscale-[0.5] cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                     disabled={!product.available || product.stock <= 0}
                   >
                     <div className="h-32 md:h-48 bg-white flex items-center justify-center text-6xl md:text-8xl transition-transform duration-500 w-full relative">
-                      <img 
-                        src={product.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'} 
-                        className="w-full h-full object-cover" 
+                      <img
+                        src={product.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
+                        className="w-full h-full object-cover"
                       />
                       {product.pointsCost && isCustomer && (
                         <div className="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
@@ -268,8 +269,8 @@ export default function Menu() {
       {/* Floating Cart Button */}
       {itemCount > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-6">
-          <Link 
-            to={searchParams.get('tenant') ? `/cart?tenant=${searchParams.get('tenant')}` : '/cart'} 
+          <Link
+            to={searchParams.get('tenant') ? `/cart?tenant=${searchParams.get('tenant')}` : '/cart'}
             className="flex items-center justify-between w-full h-16 px-6 rounded-3xl text-white shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all animate-bounce-in"
             style={{ backgroundColor: brandingColor }}
           >
@@ -291,18 +292,28 @@ export default function Menu() {
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setSelectedProduct(null)}>
           <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
-            
+
             {/* Modal Header Image */}
             <div className="h-40 md:h-56 bg-surface-100 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
-              <img 
-                src={(selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'} 
-                className="w-full h-full object-cover transition-all duration-700" 
+              <img
+                src={(selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
+                className="w-full h-full object-cover transition-all duration-700"
               />
-              <button 
-                onClick={() => setSelectedProduct(null)} 
-                className="absolute top-4 right-4 w-10 h-10 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all z-20 group"
+              {/* Back Button for Combo Step 2 */}
+              {selectedProduct.isCombo && comboStep > 1 && (
+                <button
+                  onClick={() => setComboStep(1)}
+                  className="absolute top-4 left-4 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all z-20 group"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+              )}
+
+              <button
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-4 right-4 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all z-20 group"
               >
-                ✕
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
                 <h2 className="font-heading text-xl md:text-2xl font-bold text-white">{selectedProduct.name}</h2>
@@ -314,42 +325,75 @@ export default function Menu() {
                 <div className="space-y-6">
                   {/* Combo Step Progress */}
                   <div className="flex items-center gap-4 mb-6">
-                    <div className={`flex-1 h-2 rounded-full transition-all ${comboStep >= 1 ? 'bg-primary-500' : 'bg-surface-200'}`} style={comboStep >= 1 ? {backgroundColor: brandingColor} : {}}></div>
-                    <div className={`flex-1 h-2 rounded-full transition-all ${comboStep >= 2 ? 'bg-primary-500' : 'bg-surface-200'}`} style={comboStep >= 2 ? {backgroundColor: brandingColor} : {}}></div>
+                    <div className={`flex-1 h-2 rounded-full transition-all ${comboStep >= 1 ? 'bg-primary-500' : 'bg-surface-200'}`} style={comboStep >= 1 ? { backgroundColor: brandingColor } : {}}></div>
+                    <div className={`flex-1 h-2 rounded-full transition-all ${comboStep >= 2 ? 'bg-primary-500' : 'bg-surface-200'}`} style={comboStep >= 2 ? { backgroundColor: brandingColor } : {}}></div>
                   </div>
 
                   <div className="animate-fade-in" key={comboStep}>
                     <h3 className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em] mb-4">
                       {comboStep === 1 ? (selectedProduct.comboGroup1Name || 'Step 1: Choose Item') : (selectedProduct.comboGroup2Name || 'Step 2: Choose Side/Drink')}
                     </h3>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       {(selectedProduct.comboOptions || [])
                         .filter(opt => opt.groupNumber === comboStep)
-                        .map(opt => (
-                          <button
-                            key={opt.id}
-                            onClick={() => {
-                              setAddOpts(prev => ({
-                                ...prev,
-                                comboChoices: { ...prev.comboChoices, [`group${comboStep}`]: opt.product }
-                              }));
-                              if (comboStep < 2) setComboStep(2);
-                            }}
-                            className={`p-3 rounded-2xl border-2 text-left transition-all group ${addOpts.comboChoices?.[`group${comboStep}`]?.id === opt.product.id ? 'border-primary-500 bg-primary-50/50' : 'border-surface-100 bg-surface-50 hover:border-surface-300'}`}
-                            style={addOpts.comboChoices?.[`group${comboStep}`]?.id === opt.product.id ? { borderColor: brandingColor } : {}}
-                          >
-                            <div className="aspect-square rounded-xl overflow-hidden mb-2 bg-white">
-                              <img src={opt.product.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={opt.product.name} />
-                            </div>
-                            <p className="font-bold text-surface-900 text-xs line-clamp-1">{opt.product.name}</p>
-                            {opt.priceBonus > 0 && <p className="text-[10px] text-primary-500 font-black">+₱{opt.priceBonus}</p>}
-                          </button>
-                        ))}
+                        .map(opt => {
+                          const isSelected = addOpts.comboChoices?.[`group${comboStep}`]?.id === opt.product.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              onClick={() => {
+                                setAddOpts(prev => ({
+                                  ...prev,
+                                  comboChoices: { ...prev.comboChoices, [`group${comboStep}`]: opt.product }
+                                }));
+                              }}
+                              className={`relative flex flex-col rounded-[24px] overflow-hidden border-2 transition-all duration-300 group ${isSelected ? 'shadow-lg -translate-y-1' : 'border-surface-100 bg-white hover:border-surface-300 shadow-sm'}`}
+                              style={isSelected ? { borderColor: brandingColor, backgroundColor: `${brandingColor}08` } : {}}
+                            >
+                              {/* Checkmark Badge */}
+                              {isSelected && (
+                                <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-white shadow-md animate-scale-in" style={{ backgroundColor: brandingColor }}>
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                                </div>
+                              )}
+
+                              <div className="aspect-[4/3] overflow-hidden bg-surface-50">
+                                <img
+                                  src={opt.product.image || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1000&auto=format&fit=crop'}
+                                  className={`w-full h-full object-cover transition-transform duration-500 ${isSelected ? 'scale-110' : 'group-hover:scale-105'}`}
+                                  alt={opt.product.name}
+                                />
+                              </div>
+
+                              <div className="p-3 text-center">
+                                <p className={`font-black text-[11px] leading-tight uppercase tracking-tight mb-1 transition-colors ${isSelected ? 'text-surface-900' : 'text-surface-600'}`}>{opt.product.name}</p>
+                                {opt.priceBonus > 0 && (
+                                  <span className="inline-block px-2 py-0.5 rounded-full bg-primary-100 text-primary-700 text-[10px] font-black" style={{ backgroundColor: `${brandingColor}20`, color: brandingColor }}>
+                                    +₱{opt.priceBonus}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
                     </div>
+
+                    {/* Next Button for Step 1 */}
+                    {comboStep === 1 && addOpts.comboChoices?.group1 && (
+                      <div className="pt-6 animate-fade-in-up">
+                        <button
+                          onClick={() => setComboStep(2)}
+                          className="w-full py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                          style={{ backgroundColor: brandingColor }}
+                        >
+                          {selectedProduct.comboGroup2Name || 'Select Side'} →
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  {comboStep === 2 && addOpts.comboChoices.group1 && addOpts.comboChoices.group2 && (
+                  {comboStep === 2 && addOpts.comboChoices?.group1 && addOpts.comboChoices?.group2 && (
                     <div className="pt-6 border-t border-surface-100 animate-bounce-in">
                       <div className="bg-surface-50 p-4 rounded-2xl mb-6">
                         <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2">Selection Summary</p>
@@ -358,8 +402,8 @@ export default function Menu() {
                           <span>+ {addOpts.comboChoices.group2.name}</span>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => handleAddToCart(selectedProduct)} 
+                      <button
+                        onClick={() => handleAddToCart(selectedProduct)}
                         className="w-full py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                         style={{ backgroundColor: brandingColor }}
                       >
@@ -402,17 +446,17 @@ export default function Menu() {
                   {/* Notes */}
                   <div className="mb-8">
                     <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Special Instructions</h3>
-                    <textarea 
-                      value={addOpts.notes} 
+                    <textarea
+                      value={addOpts.notes}
                       onChange={e => setAddOpts(p => ({ ...p, notes: e.target.value }))}
-                      className="w-full bg-surface-50 border border-surface-200 rounded-2xl p-4 text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none h-24 resize-none" 
-                      placeholder="e.g. No onions, extra sauce..." 
+                      className="w-full bg-surface-50 border border-surface-200 rounded-2xl p-4 text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none h-24 resize-none"
+                      placeholder="e.g. No onions, extra sauce..."
                     />
                   </div>
 
                   <div className="flex gap-4">
-                    <button 
-                      onClick={() => handleAddToCart(selectedProduct)} 
+                    <button
+                      onClick={() => handleAddToCart(selectedProduct)}
                       className="flex-1 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                       style={{ backgroundColor: brandingColor }}
                       disabled={!selectedProduct.available}

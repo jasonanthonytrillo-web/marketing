@@ -15,8 +15,10 @@ export default function KitchenDashboard() {
   const [showNewOrderAlert, setShowNewOrderAlert] = useState(false);
   const [showPrepModal, setShowPrepModal] = useState(false);
   const [prepModalOrder, setPrepModalOrder] = useState(null);
+  const [isAlerting, setIsAlerting] = useState(false);
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
+  const alertInterval = useRef(null);
 
   // Dynamic favicon & title
   useDynamicBranding(`${user?.tenantName || 'Kitchen'} Dashboard`, user?.tenantFavicon);
@@ -27,7 +29,7 @@ export default function KitchenDashboard() {
       joinRoom('kitchen', user.tenantId);
     }
     const timer = setInterval(() => setNow(new Date()), 30000); // Update timers every 30s
-    
+
     // Unlock audio for KDS notifications
     const unlock = () => {
       unlockAudio();
@@ -36,20 +38,39 @@ export default function KitchenDashboard() {
     };
     document.addEventListener('click', unlock, { once: true });
     document.addEventListener('touchstart', unlock, { once: true });
-    
+
     return () => {
       clearInterval(timer);
+      if (alertInterval.current) clearInterval(alertInterval.current);
       document.removeEventListener('click', unlock);
       document.removeEventListener('touchstart', unlock);
     };
   }, []);
 
+  const stopAlert = () => {
+    setIsAlerting(false);
+    setShowNewOrderAlert(false);
+    if (alertInterval.current) {
+      clearInterval(alertInterval.current);
+      alertInterval.current = null;
+    }
+  };
+
   useEffect(() => {
     if (!onEvent) return;
     const unsub = onEvent('new_kitchen_order', (data) => {
-      playNotificationSound('newOrder');
+      setIsAlerting(true);
       setShowNewOrderAlert(true);
-      setTimeout(() => setShowNewOrderAlert(false), 5000);
+      playNotificationSound('newOrder');
+      
+      // Clear existing interval if any
+      if (alertInterval.current) clearInterval(alertInterval.current);
+      
+      // Start new loop
+      alertInterval.current = setInterval(() => {
+        playNotificationSound('newOrder');
+      }, 3000);
+
       loadOrders();
     });
     const unsub2 = onEvent('order_update', () => loadOrders());
@@ -106,10 +127,13 @@ export default function KitchenDashboard() {
     <div className="min-h-screen flex flex-col bg-surface-950 text-white overflow-hidden relative">
       {/* New Order Visual Alert */}
       {showNewOrderAlert && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] animate-bounce pointer-events-none">
-          <div className="bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.5)] border-4 border-white/20 flex items-center gap-4">
-            <span className="text-3xl">🔔</span>
-            <span className="font-heading font-black text-2xl uppercase tracking-tighter">New Order Received!</span>
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] animate-bounce cursor-pointer" onClick={stopAlert}>
+          <div className="bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.5)] border-4 border-white/20 flex flex-col items-center gap-2">
+            <div className="flex items-center gap-4">
+              <span className="text-3xl">🔔</span>
+              <span className="font-heading font-black text-2xl uppercase tracking-tighter">New Order Received!</span>
+            </div>
+            <span className="text-xs font-bold bg-emerald-700/50 px-3 py-1 rounded-full animate-pulse">Tap to Silence Alarm 🔇</span>
           </div>
         </div>
       )}
@@ -137,7 +161,7 @@ export default function KitchenDashboard() {
           { id: 'preparing', label: 'Preparing', color: 'bg-surface-700', active: 'bg-orange-500' },
           { id: 'ready', label: 'Ready', color: 'bg-surface-700', active: 'bg-blue-500' }
         ].map(tab => (
-          <button 
+          <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${activeTab === tab.id ? `${tab.active} text-white shadow-lg` : 'bg-surface-800 text-surface-400'}`}
@@ -232,8 +256,8 @@ export default function KitchenDashboard() {
 
             <div className="flex flex-col gap-4">
               <div className="relative group">
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   id="custom-prep"
                   placeholder="Or enter custom minutes..."
                   className="w-full bg-surface-950 border-2 border-surface-800 rounded-2xl py-5 px-6 text-xl font-bold focus:border-orange-500 outline-none transition-all placeholder:text-surface-700"
@@ -242,7 +266,7 @@ export default function KitchenDashboard() {
                   }}
                 />
               </div>
-              <button 
+              <button
                 onClick={() => {
                   const val = document.getElementById('custom-prep').value;
                   if (val) handleConfirmPrep(val);
@@ -251,7 +275,7 @@ export default function KitchenDashboard() {
               >
                 Start Cooking Now 🍳
               </button>
-              <button 
+              <button
                 onClick={() => setShowPrepModal(false)}
                 className="w-full py-4 text-surface-500 font-bold hover:text-white transition-colors"
               >
@@ -327,7 +351,7 @@ function OrderCard({ order, now, onAction, processing }) {
         )}
         {order.status === 'ready' && (
           <button onClick={() => onAction('served')} disabled={processing} className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors shadow-lg">
-            Order Complete
+            Mark as Served
           </button>
         )}
       </div>

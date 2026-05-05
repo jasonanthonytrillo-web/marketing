@@ -42,18 +42,18 @@ router.post('/', async (req, res) => {
       exists = !!check;
     }
 
-    // Calculate totals
-    let subtotal = 0;
     const orderItems = [];
+    let subtotal = 0;
 
     for (const item of items) {
+      const pid = item.productId || item.id;
       const product = await prisma.product.findUnique({
-        where: { id: item.productId },
+        where: { id: parseInt(pid) },
         include: { addons: true }
       });
 
       if (!product) {
-        return res.status(400).json({ success: false, message: `Product ID ${item.productId} not found.` });
+        return res.status(400).json({ success: false, message: `Product ID ${pid} not found.` });
       }
 
       if (product.stock < item.quantity) {
@@ -72,9 +72,12 @@ router.post('/', async (req, res) => {
 
       // Calculate addon prices
       let selectedAddons = [];
-      if (item.addons && item.addons.length > 0 && !item.isRedemption) {
-        for (const addonId of item.addons) {
-          const addon = product.addons.find(a => a.id === addonId);
+      const addonsInput = item.addons || item.selectedAddons || [];
+      if (addonsInput.length > 0 && !item.isRedemption) {
+        for (const addonId of addonsInput) {
+          // Handle both full addon objects and just IDs
+          const id = typeof addonId === 'object' ? addonId.id : addonId;
+          const addon = product.addons.find(a => a.id === id);
           if (addon) {
             selectedAddons.push({ name: addon.name, price: addon.price });
             itemSubtotal += addon.price * item.quantity;
@@ -94,6 +97,7 @@ router.post('/', async (req, res) => {
         flavor: item.flavor || null,
         notes: item.notes || null,
         addons: selectedAddons.length > 0 ? JSON.stringify(selectedAddons) : null,
+        comboChoices: item.comboChoices ? (typeof item.comboChoices === 'string' ? item.comboChoices : JSON.stringify(item.comboChoices)) : null,
         isRedemption: item.isRedemption || false
       });
     }
@@ -108,30 +112,36 @@ router.post('/', async (req, res) => {
       const customer = await prisma.user.findUnique({ where: { id: parseInt(customerId) } });
       if (customer && customer.role === 'customer') {
         validCustomerId = customer.id;
-        let totalPointsRequired = 0;
-        // Re-check items for redemption status
-        for (const item of items) {
+        
+        // Calculate points to deduct for redemptions
+        let pointsToDeduct = 0;
+        for (const item of orderItems) {
           if (item.isRedemption) {
             const product = await prisma.product.findUnique({ where: { id: item.productId } });
             if (product && product.pointsCost) {
-              totalPointsRequired += (product.pointsCost * item.quantity);
+              pointsToDeduct += (product.pointsCost * item.quantity);
             }
           }
         }
 
-        if (totalPointsRequired > customer.points) {
-          return res.status(400).json({ success: false, message: `Insufficient points. You need ${totalPointsRequired} points.` });
-        }
+        if (pointsToDeduct > 0) {
+          if (!validCustomerId) {
+            return res.status(400).json({ success: false, message: 'You must be logged in to redeem rewards.' });
+          }
+          const customerCheck = await prisma.user.findUnique({ where: { id: validCustomerId } });
+          if (!customerCheck || (customerCheck.points || 0) < pointsToDeduct) {
+            return res.status(400).json({ success: false, message: 'Insufficient points for this redemption.' });
+          }
 
-        if (totalPointsRequired > 0) {
+          // Deduct points
           await prisma.user.update({
             where: { id: customer.id },
-            data: { points: { decrement: totalPointsRequired } }
+            data: { points: { decrement: pointsToDeduct } }
           });
 
           // Emit real-time loyalty update so customer UI refreshes instantly
           if (req.io && req.io.emitLoyaltyUpdate) {
-            req.io.emitLoyaltyUpdate(customer.id, -totalPointsRequired);
+            req.io.emitLoyaltyUpdate(customer.id, -pointsToDeduct);
           }
         }
       }
@@ -185,19 +195,50 @@ router.post('/', async (req, res) => {
 
     // Decrement stock
     for (const item of items) {
+      const pid = item.productId || item.id;
+      if (!pid) continue;
+
+      // Update main product stock
       await prisma.product.update({
-        where: { id: item.productId },
+        where: { id: parseInt(pid) },
         data: { stock: { decrement: item.quantity } }
       });
 
       await prisma.inventoryLog.create({
         data: {
-          productId: item.productId,
+          productId: parseInt(pid),
           quantityChange: -item.quantity,
           reason: 'order',
           referenceId: order.orderNumber
         }
       });
+
+      // Update sub-item stock if it's a combo
+      if (item.comboChoices) {
+        try {
+          const choices = typeof item.comboChoices === 'string' ? JSON.parse(item.comboChoices) : item.comboChoices;
+          for (const key in choices) {
+            const subProduct = choices[key];
+            if (subProduct && subProduct.id) {
+              await prisma.product.update({
+                where: { id: parseInt(subProduct.id) },
+                data: { stock: { decrement: item.quantity } }
+              });
+              
+              await prisma.inventoryLog.create({
+                data: {
+                  productId: parseInt(subProduct.id),
+                  quantityChange: -item.quantity,
+                  reason: 'order',
+                  referenceId: order.orderNumber
+                }
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Combo stock update error:', err);
+        }
+      }
     }
 
     // Create notification

@@ -9,6 +9,9 @@ export default function ProductsTab() {
   const [uploading, setUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [comboOptions, setComboOptions] = useState([]);
+  const [isComboLoading, setIsComboLoading] = useState(false);
+  const [optionSearch, setOptionSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [statusFilter, setStatusFilter] = useState('active'); // active, archived, all
@@ -63,24 +66,80 @@ export default function ProductsTab() {
     }
   };
 
-  const handleEdit = (product) => {
+  const handleEdit = async (product) => {
     setCurrentProduct(product);
     setIsEditing(true);
+    if (product.isCombo) {
+      loadComboOptions(product.id);
+    } else {
+      setComboOptions([]);
+    }
+  };
+
+  const loadComboOptions = async (id) => {
+    setIsComboLoading(true);
+    try {
+      const { getComboOptions } = await import('../../services/api');
+      const res = await getComboOptions(id);
+      setComboOptions(res.data.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsComboLoading(false);
+    }
+  };
+
+  const handleAddOption = (product, groupNumber) => {
+    if (comboOptions.some(o => o.productId === product.id && o.groupNumber === groupNumber)) return;
+    setComboOptions([...comboOptions, { 
+      productId: product.id, 
+      product: product,
+      groupNumber, 
+      priceBonus: 0 
+    }]);
+    setOptionSearch('');
+  };
+
+  const handleRemoveOption = (index) => {
+    setComboOptions(comboOptions.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateOptionBonus = (index, bonus) => {
+    const newOptions = [...comboOptions];
+    newOptions[index].priceBonus = parseFloat(bonus) || 0;
+    setComboOptions(newOptions);
   };
 
   const handleAdd = () => {
-    setCurrentProduct({ name: '', description: '', price: '', image: '', categoryId: '', stock: 100, available: true });
+    setCurrentProduct({ name: '', description: '', price: '', image: '', categoryId: '', stock: 100, available: true, isCombo: false });
+    setComboOptions([]);
     setIsEditing(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     try {
+      let savedProduct;
       if (currentProduct.id) {
-        await updateProduct(currentProduct.id, currentProduct);
+        const res = await updateProduct(currentProduct.id, currentProduct);
+        savedProduct = res.data.data;
       } else {
-        await createProduct(currentProduct);
+        const res = await createProduct(currentProduct);
+        savedProduct = res.data.data;
       }
+      
+      // Save combo options if it's a combo
+      if (currentProduct.isCombo && savedProduct.id) {
+        const { updateComboOptions } = await import('../../services/api');
+        await updateComboOptions(savedProduct.id, {
+          options: comboOptions.map(o => ({
+            productId: o.productId,
+            groupNumber: o.groupNumber,
+            priceBonus: o.priceBonus
+          }))
+        });
+      }
+
       setIsEditing(false);
       loadData();
     } catch (error) {
@@ -113,9 +172,17 @@ export default function ProductsTab() {
     <div className="">
       <div className="flex justify-between items-center mb-6">
         <h2 className="font-heading text-2xl font-bold text-surface-900">Products & Menu</h2>
-        <button onClick={handleAdd} className="btn-primary py-2 px-4 shadow-md">
-          + Add Product
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => setStatusFilter(statusFilter === 'archived' ? 'active' : 'archived')} 
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all border-2 ${statusFilter === 'archived' ? 'bg-primary-600 text-white border-primary-600 shadow-lg' : 'bg-white text-surface-600 border-surface-200 hover:border-primary-300'}`}
+          >
+            {statusFilter === 'archived' ? '📋 View Active' : '📁 View Archives'}
+          </button>
+          <button onClick={handleAdd} className="btn-primary py-2 px-4 shadow-md">
+            + Add Product
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 mb-8 bg-surface-50/50 p-6 rounded-3xl border border-surface-100">
@@ -130,7 +197,7 @@ export default function ProductsTab() {
           />
         </div>
         <div className="flex flex-wrap gap-4">
-          <div className="w-40 sm:w-48">
+          <div className="w-48 sm:w-64">
             <label className="block text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2 ml-1">Category Filter</label>
             <select 
               value={selectedCategory} 
@@ -139,18 +206,6 @@ export default function ProductsTab() {
             >
               <option value="All">All Categories</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-          <div className="w-48 sm:w-56 p-2 bg-primary-50/50 rounded-2xl border-2 border-primary-100 shadow-sm">
-            <label className="block text-[10px] font-black text-primary-600 uppercase tracking-widest mb-1.5 ml-1">📦 Archive View</label>
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-white border-primary-200 rounded-xl px-3 py-2 text-sm font-bold text-primary-700 focus:ring-primary-500 transition-all outline-none"
-            >
-              <option value="active">🟢 Active Only</option>
-              <option value="archived">📁 Archived Items</option>
-              <option value="all">🔍 Show All</option>
             </select>
           </div>
         </div>
@@ -257,30 +312,125 @@ export default function ProductsTab() {
                 </div>
 
                 {currentProduct.isCombo && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 mt-4 bg-primary-50/30 rounded-2xl border border-primary-100/50 animate-fade-in">
-                    <div>
-                      <label className="block text-[10px] font-black text-primary-500 uppercase tracking-widest mb-1 ml-1">Group 1 Label</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. Choose your Main"
-                        value={currentProduct.comboGroup1Name || ''}
-                        onChange={(e) => setCurrentProduct({ ...currentProduct, comboGroup1Name: e.target.value })}
-                        className="input-field w-full shadow-sm bg-white"
-                      />
+                  <div className="p-6 bg-primary-50/30 rounded-3xl border border-primary-100 animate-fade-in space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-primary-500 uppercase tracking-widest mb-1 ml-1">Group 1 Label (e.g. Choose Main)</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Choose your Main"
+                          value={currentProduct.comboGroup1Name || ''}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, comboGroup1Name: e.target.value })}
+                          className="input-field w-full shadow-sm bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-primary-500 uppercase tracking-widest mb-1 ml-1">Group 2 Label (e.g. Choose Drink)</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Choose your Side"
+                          value={currentProduct.comboGroup2Name || ''}
+                          onChange={(e) => setCurrentProduct({ ...currentProduct, comboGroup2Name: e.target.value })}
+                          className="input-field w-full shadow-sm bg-white"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-primary-500 uppercase tracking-widest mb-1 ml-1">Group 2 Label</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. Choose your Side"
-                        value={currentProduct.comboGroup2Name || ''}
-                        onChange={(e) => setCurrentProduct({ ...currentProduct, comboGroup2Name: e.target.value })}
-                        className="input-field w-full shadow-sm bg-white"
-                      />
+
+                    {/* Combo Option Checklists */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-primary-100/50">
+                      
+                      {/* Group 1 Selector */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between px-1">
+                          <h4 className="text-[10px] font-black text-primary-500 uppercase tracking-widest">{currentProduct.comboGroup1Name || 'Step 1 Options'}</h4>
+                          <span className="text-[10px] font-bold text-surface-400">{comboOptions.filter(o => o.groupNumber === 1).length} Selected</span>
+                        </div>
+                        <div className="bg-surface-50/50 rounded-2xl border border-surface-100 p-2 max-h-[350px] overflow-y-auto space-y-1">
+                          {products.filter(p => {
+                            if (p.isCombo || !p.available) return false;
+                            const cat = p.category?.name?.toLowerCase() || '';
+                            const isSideOrDrink = cat.includes('drink') || cat.includes('beverage') || cat.includes('side') || cat.includes('snack') || cat.includes('dessert');
+                            return !isSideOrDrink; // Only Food
+                          }).map(p => {
+                            const isSelected = comboOptions.some(o => o.productId === p.id && o.groupNumber === 1);
+                            return (
+                              <button 
+                                key={p.id}
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setComboOptions(comboOptions.filter(o => !(o.productId === p.id && o.groupNumber === 1)));
+                                  } else {
+                                    setComboOptions([...comboOptions, { productId: p.id, product: p, groupNumber: 1, priceBonus: 0 }]);
+                                  }
+                                }}
+                                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all border ${
+                                  isSelected 
+                                    ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' 
+                                    : 'bg-white border-transparent hover:border-surface-200 text-surface-600'
+                                }`}
+                              >
+                                <span className={`text-xs font-bold truncate ${isSelected ? 'text-blue-900' : ''}`}>{p.name}</span>
+                                {isSelected ? (
+                                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">✓</span>
+                                ) : (
+                                  <span className="w-5 h-5 rounded-full border-2 border-surface-200"></span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Group 2 Selector */}
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between px-1">
+                          <h4 className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{currentProduct.comboGroup2Name || 'Step 2 Options'}</h4>
+                          <span className="text-[10px] font-bold text-surface-400">{comboOptions.filter(o => o.groupNumber === 2).length} Selected</span>
+                        </div>
+                        <div className="bg-surface-50/50 rounded-2xl border border-surface-100 p-2 max-h-[350px] overflow-y-auto space-y-1">
+                          {products.filter(p => {
+                            if (p.isCombo || !p.available) return false;
+                            const cat = p.category?.name?.toLowerCase() || '';
+                            const isSideOrDrink = cat.includes('drink') || cat.includes('beverage') || cat.includes('side') || cat.includes('snack') || cat.includes('dessert');
+                            return isSideOrDrink; // Only Sides & Drinks
+                          }).map(p => {
+                            const isSelected = comboOptions.some(o => o.productId === p.id && o.groupNumber === 2);
+                            return (
+                              <button 
+                                key={p.id}
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setComboOptions(comboOptions.filter(o => !(o.productId === p.id && o.groupNumber === 2)));
+                                  } else {
+                                    setComboOptions([...comboOptions, { productId: p.id, product: p, groupNumber: 2, priceBonus: 0 }]);
+                                  }
+                                }}
+                                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all border ${
+                                  isSelected 
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm' 
+                                    : 'bg-white border-transparent hover:border-surface-200 text-surface-600'
+                                }`}
+                              >
+                                <span className={`text-xs font-bold truncate ${isSelected ? 'text-emerald-900' : ''}`}>{p.name}</span>
+                                {isSelected ? (
+                                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">✓</span>
+                                ) : (
+                                  <span className="w-5 h-5 rounded-full border-2 border-surface-200"></span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="col-span-full mt-4 p-4 bg-white/50 rounded-2xl border border-dashed border-primary-200">
+                        <p className="text-[10px] text-primary-400 font-bold uppercase tracking-widest text-center">
+                          💡 Just tap the product names to include or remove them from the combo.
+                        </p>
+                      </div>
                     </div>
-                    <p className="col-span-full text-[10px] text-primary-400 font-medium italic">
-                      Note: Save this product first, then you can assign products to these groups.
-                    </p>
                   </div>
                 )}
 
@@ -378,7 +528,7 @@ export default function ProductsTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-100 text-sm">
-            {filteredProducts.map(product => (
+            {filteredProducts.length > 0 ? filteredProducts.map(product => (
               <tr key={product.id} className="hover:bg-surface-50 transition-colors">
                 <td className="p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-surface-100 flex-shrink-0 overflow-hidden border border-surface-200">
@@ -407,7 +557,17 @@ export default function ProductsTab() {
                   )}
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan="5" className="p-12 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-4xl">🏜️</span>
+                    <p className="text-surface-500 font-bold">No products found in this view.</p>
+                    <p className="text-surface-400 text-xs">Try changing your filters or adding a new product!</p>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

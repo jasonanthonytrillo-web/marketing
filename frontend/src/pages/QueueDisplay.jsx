@@ -43,7 +43,6 @@ export default function QueueDisplay() {
   const handleStartBoard = () => {
     unlockAudio();
     setAudioUnlocked(true);
-    playNotificationSound('default');
   };
 
   // Dynamic favicon & title
@@ -53,7 +52,6 @@ export default function QueueDisplay() {
     if (!onEvent) return;
     const unsub = onEvent('order_update', () => loadQueue());
     const unsub2 = onEvent('queue_update', (data) => {
-      if (data.type === 'ready') playNotificationSound('ready');
       loadQueue();
     });
     return () => { unsub(); unsub2(); };
@@ -65,7 +63,6 @@ export default function QueueDisplay() {
       const data = res.data.data;
       // Check for new ready orders
       const newReady = data.ready.filter(o => !prevReadyRef.current.find(p => p.id === o.id));
-      if (newReady.length > 0 && prevReadyRef.current.length > 0) playNotificationSound('ready');
       prevReadyRef.current = data.ready;
       setPreparing(data.preparing);
       setReady(data.ready);

@@ -1,38 +1,47 @@
+// 1. FORCE THE CONNECTION AT THE SYSTEM LEVEL
+process.env.DATABASE_URL = "postgresql://postgres.gtpisifdmptxcbfwvfxv:nichellepaswwor@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+process.env.DIRECT_URL = "postgresql://postgres.gtpisifdmptxcbfwvfxv:nichellepaswwor@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true";
+
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-async function fixData() {
-  console.log('🔄 Syncing Burger Palace Name & Branding (Raw SQL Mode)...');
-  
-  try {
-    // Check if tenant exists
-    const check = await prisma.$queryRaw`SELECT id FROM "Tenant" WHERE slug = 'burger-palace' LIMIT 1`;
-    
-    if (check.length > 0) {
-      console.log('✅ Found existing tenant. Updating name and branding...');
-      await prisma.$executeRaw`
-        UPDATE "Tenant" 
-        SET "name" = 'BURGER PALACE', 
-            "primaryColor" = '#eab308', 
-            "logo" = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png', 
-            "favicon" = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png'
-        WHERE "slug" = 'burger-palace';
-      `;
-    } else {
-      console.log('➕ Creating new tenant "burger-palace"...');
-      await prisma.$executeRaw`
-        INSERT INTO "Tenant" ("name", "slug", "primaryColor", "logo", "favicon", "active", "updatedAt")
-        VALUES ('BURGER PALACE', 'burger-palace', '#eab308', 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png', 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png', true, NOW());
-      `;
-    }
+async function fixBurgerPalaceData() {
+  console.log('🛠️ Deep Syncing Burger Palace Data...');
 
-    console.log('✨ SUCCESS! BURGER PALACE DATA SYNCHRONIZED.');
-    console.log('👉 Refresh your landing page now.');
-  } catch (error) {
-    console.error('❌ Raw Fix Failed:', error.message);
-  } finally {
-    await prisma.$disconnect();
+  const tenant = await prisma.tenant.findUnique({ where: { slug: 'burger-palace' } });
+  if (!tenant) return console.error('Tenant not found');
+
+  // 1. Find the correct categories
+  const categories = await prisma.category.findMany({ where: { tenantId: tenant.id } });
+  const burgerCat = categories.find(c => c.name === 'Signature Burgers');
+  const mealCat = categories.find(c => c.name === 'Value Meals');
+  const drinkCat = categories.find(c => c.name === 'Drinks');
+
+  if (!burgerCat || !mealCat || !drinkCat) {
+    console.log('⚠️ Some categories missing, recreating them...');
+    // This might be the issue - if the categories were created but have no products
   }
+
+  // 2. Update ALL products for this tenant to ensure they are linked to the right categories
+  // We'll search by name to find them and re-link
+  const products = await prisma.product.findMany({ where: { tenantId: tenant.id } });
+  
+  for (const p of products) {
+    let newCatId = p.categoryId;
+    if (p.name.includes('Burger') || p.name.includes('Chicken')) newCatId = burgerCat.id;
+    if (p.name.includes('Mix') || p.name.includes('Meal')) newCatId = mealCat.id;
+    if (p.name.includes('Lemonade') || p.name.includes('Cola')) newCatId = drinkCat.id;
+
+    await prisma.product.update({
+      where: { id: p.id },
+      data: { categoryId: newCatId, available: true }
+    });
+    console.log(`✅ Updated ${p.name} to category ${newCatId}`);
+  }
+
+  console.log('✅ DEEP SYNC COMPLETE!');
 }
 
-fixData();
+fixBurgerPalaceData()
+  .catch(e => console.error(e))
+  .finally(() => prisma.$disconnect());
