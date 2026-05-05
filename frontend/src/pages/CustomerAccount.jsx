@@ -95,11 +95,9 @@ export default function CustomerAccount() {
               <span className="text-[9px] sm:text-[10px] uppercase tracking-widest hidden sm:block">back to menu</span>
             </Link>
           </div>
-          <h1 className="flex-1 text-center text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-orange-600 whitespace-nowrap px-2">t</h1>
+          <h1 className="flex-1 text-center text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-orange-600 whitespace-nowrap px-2">Order History</h1>
           <div className="flex-1 flex justify-end">
-            <button onClick={logoutUser} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
-              <span className="text-lg">🚪</span>
-            </button>
+            {/* Space reserved for balance/layout symmetry */}
           </div>
         </div>
       </div>
