@@ -14,6 +14,7 @@ router.get('/tenant/:slug', async (req, res) => {
         slug: true,
         logo: true,
         favicon: true,
+        ogImage: true,
         primaryColor: true,
         secondaryColor: true,
         bannerImage: true,

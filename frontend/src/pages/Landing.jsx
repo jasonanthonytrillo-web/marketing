@@ -14,8 +14,11 @@ export default function Landing() {
   const isCustomer = user && user.role === 'customer';
   const { joinRoom, connected } = useSocket();
 
-  // Dynamic favicon & title
-  useDynamicBranding(tenant?.name || 'PROJECT MILLION', tenant?.favicon);
+  // Dynamic favicon, title & OG meta
+  useDynamicBranding(tenant?.name || 'PROJECT MILLION', tenant?.favicon, {
+    image: tenant?.ogImage || tenant?.logo,
+    description: `Order from ${tenant?.name || 'PROJECT MILLION'} — Self-Service Kiosk`
+  });
 
   useEffect(() => {
     if (tenant?.id) {

@@ -287,6 +287,7 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
       settingsMap.tenant_name = tenant.name;
       settingsMap.tenant_logo = tenant.logo;
       settingsMap.tenant_favicon = tenant.favicon;
+      settingsMap.tenant_og_image = tenant.ogImage;
       settingsMap.tenant_banner = tenant.bannerImage;
       settingsMap.tenant_assets = tenant.bannerAssets || [];
       settingsMap.primary_color = tenant.primaryColor;
@@ -308,6 +309,7 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
       tenant_name: 'name',
       tenant_logo: 'logo',
       tenant_favicon: 'favicon',
+      tenant_og_image: 'ogImage',
       tenant_banner: 'bannerImage',
       tenant_assets: 'bannerAssets',
       primary_color: 'primaryColor',
@@ -321,7 +323,7 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
       if (brandingMap[key]) {
         const field = brandingMap[key];
         // SECURITY: Only superadmins can change critical branding
-        if (['name', 'logo', 'favicon'].includes(field) && req.user.role !== 'superadmin') {
+        if (['name', 'logo', 'favicon', 'ogImage'].includes(field) && req.user.role !== 'superadmin') {
           continue;
         }
         brandingUpdate[field] = value;

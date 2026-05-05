@@ -119,6 +119,25 @@ export default function SettingsTab() {
                       </div>
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">OG Image URL (Social Media Preview)</label>
+                    <div className="flex gap-4">
+                      <input 
+                        type="text" 
+                        value={settings.tenant_og_image || ''} 
+                        onChange={e => setSettings({...settings, tenant_og_image: e.target.value})}
+                        className="input-field flex-1 py-3 text-sm" 
+                        placeholder="https://example.com/og-image.png"
+                      />
+                      {settings.tenant_og_image && (
+                        <div className="w-20 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
+                          <img src={settings.tenant_og_image} className="w-full h-full object-cover" alt="OG Preview" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 italic">Recommended: 1200×630px. This image appears when links are shared on Facebook, Messenger, etc.</p>
+                  </div>
+                  </div>
                 </>
               )}
 
