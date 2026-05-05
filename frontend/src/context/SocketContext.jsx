@@ -9,15 +9,25 @@ export function SocketProvider({ children }) {
 
   useEffect(() => {
     const url = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
-    const socket = io(url, { transports: ['websocket', 'polling'], reconnection: true, reconnectionDelay: 2000 });
-    socketRef.current = socket;
+    console.log('🔌 Initializing WebSocket connection to:', url);
+    
+    const newSocket = io(url, { transports: ['websocket', 'polling'], reconnection: true, reconnectionDelay: 2000 });
+    socketRef.current = newSocket;
 
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
+    newSocket.on('connect', () => {
+      console.log('✅ WebSocket Connected');
+      setConnected(true);
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('❌ WebSocket Disconnected');
+      setConnected(false);
+    });
 
     return () => { 
-      if (socketRef.current) {
-        socketRef.current.disconnect();
+      if (newSocket) {
+        console.log('🔌 Disconnecting WebSocket...');
+        newSocket.disconnect();
         socketRef.current = null;
       }
     };
@@ -35,6 +45,7 @@ export function SocketProvider({ children }) {
     if (socketRef.current && connected) {
       const roomName = tenantId ? `tenant-${tenantId}-${room}` : room;
       socketRef.current.emit('leave', roomName);
+      console.log(`🔌 Leaving room: ${roomName}`);
     }
   };
 
@@ -49,7 +60,7 @@ export function SocketProvider({ children }) {
   };
 
   return (
-    <SocketContext.Provider value={{ socket: socketRef.current, connected, joinRoom, leaveRoom, onEvent }}>
+    <SocketContext.Provider value={{ connected, joinRoom, leaveRoom, onEvent }}>
       {children}
     </SocketContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { getKitchenOrders, startPreparing, completeOrder, markServed } from '../services/api';
 import { useSocket } from '../context/SocketContext';
