@@ -56,7 +56,6 @@ export default function GlobalThankYou() {
 
           // Show the global thank you screen
           setShowThankYou(true);
-          playNotificationSound('success'); // optional success chime
 
           // After 5 seconds, hide the screen and navigate home
           setTimeout(() => {
@@ -74,17 +73,28 @@ export default function GlobalThankYou() {
   if (!showThankYou) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white animate-fade-in">
-      <div className="text-center p-8 animate-scale-in">
-        <div className="text-8xl mb-6">🎉</div>
-        <h1 className="font-heading text-4xl sm:text-6xl font-black text-slate-900 mb-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-6">
+      <div className="text-center animate-fade-in-up w-full max-w-2xl">
+        <div className="text-7xl sm:text-8xl mb-6 animate-bounce">🎉</div>
+        <h1 className="font-heading text-4xl sm:text-6xl font-black text-white mb-4 leading-tight">
           Thank You!
         </h1>
-        <p className="text-xl text-slate-600 mb-8 font-medium">
+        <p className="text-slate-300 text-lg sm:text-xl font-medium mb-10">
           We hope you enjoy your meal.<br/>See you again soon!
         </p>
-        <div className="w-16 h-1 bg-emerald-500 mx-auto rounded-full mb-8 animate-pulse"></div>
-        <p className="text-sm text-slate-400">Returning to home screen...</p>
+        
+        <div className="w-24 h-1.5 bg-emerald-500 mx-auto rounded-full mb-10 shadow-[0_0_20px_rgba(16,185,129,0.5)]"></div>
+        
+        <button 
+          onClick={() => {
+            setShowThankYou(false);
+            const homePath = tenantSlug ? `/?tenant=${tenantSlug}` : '/';
+            navigate(homePath);
+          }}
+          className="bg-white text-slate-900 font-bold text-lg sm:text-xl px-12 py-5 rounded-2xl shadow-2xl hover:bg-slate-50 transition-all active:scale-95"
+        >
+          Return to Menu
+        </button>
       </div>
     </div>
   );

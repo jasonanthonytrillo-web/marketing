@@ -13,6 +13,8 @@ export default function KitchenDashboard() {
   const [now, setNow] = useState(new Date());
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showNewOrderAlert, setShowNewOrderAlert] = useState(false);
+  const [showPrepModal, setShowPrepModal] = useState(false);
+  const [prepModalOrder, setPrepModalOrder] = useState(null);
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
 
@@ -68,12 +70,28 @@ export default function KitchenDashboard() {
     setProcessing(true);
     try {
       if (action === 'start') {
-        const prepTime = window.prompt('Estimated preparation duration (in minutes):', '15');
-        if (prepTime === null) return; // User cancelled
-        await startPreparing(orderId, prepTime);
+        setPrepModalOrder(orderId);
+        setShowPrepModal(true);
+        setProcessing(false); // Modal takes over
+        return;
       }
       else if (action === 'complete') await completeOrder(orderId);
       else if (action === 'served') await markServed(orderId);
+      loadOrders();
+    } catch (e) {
+      alert('Action failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleConfirmPrep = async (mins) => {
+    if (!prepModalOrder) return;
+    setProcessing(true);
+    setShowPrepModal(false);
+    try {
+      await startPreparing(prepModalOrder, mins);
+      setPrepModalOrder(null);
       loadOrders();
     } catch (e) {
       alert('Action failed');
@@ -188,6 +206,61 @@ export default function KitchenDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Prep Time Modal */}
+      {showPrepModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-surface-900 border border-surface-800 rounded-[40px] p-8 md:p-12 max-w-lg w-full shadow-2xl animate-scale-in">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-orange-500/20 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 border border-orange-500/30">🍳</div>
+              <h2 className="text-3xl font-black text-white mb-2">Estimate Prep Time</h2>
+              <p className="text-surface-400 font-medium text-lg">How long will this order take?</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-10">
+              {[5, 10, 15, 20, 30, 60].map(mins => (
+                <button
+                  key={mins}
+                  onClick={() => handleConfirmPrep(mins)}
+                  className="py-6 bg-surface-800 hover:bg-orange-600 border border-surface-700 hover:border-orange-500 rounded-2xl font-black text-2xl transition-all active:scale-95 flex flex-col items-center group"
+                >
+                  <span className="text-white group-hover:scale-110 transition-transform">{mins}</span>
+                  <span className="text-[10px] uppercase tracking-widest text-surface-500 group-hover:text-orange-100">Mins</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="relative group">
+                <input 
+                  type="number" 
+                  id="custom-prep"
+                  placeholder="Or enter custom minutes..."
+                  className="w-full bg-surface-950 border-2 border-surface-800 rounded-2xl py-5 px-6 text-xl font-bold focus:border-orange-500 outline-none transition-all placeholder:text-surface-700"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleConfirmPrep(e.target.value);
+                  }}
+                />
+              </div>
+              <button 
+                onClick={() => {
+                  const val = document.getElementById('custom-prep').value;
+                  if (val) handleConfirmPrep(val);
+                }}
+                className="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white font-black text-xl rounded-2xl shadow-xl shadow-orange-900/20 transition-all flex items-center justify-center gap-2"
+              >
+                Start Cooking Now 🍳
+              </button>
+              <button 
+                onClick={() => setShowPrepModal(false)}
+                className="w-full py-4 text-surface-500 font-bold hover:text-white transition-colors"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

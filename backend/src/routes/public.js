@@ -67,8 +67,9 @@ router.get('/manifest/:slug', async (req, res) => {
     };
 
     res.setHeader('Content-Type', 'application/manifest+json');
-    res.send(JSON.stringify(manifest));
+    res.json(manifest);
   } catch (error) {
+    console.error('Manifest Error:', error);
     res.status(500).json({ success: false, message: 'Manifest error' });
   }
 });
