@@ -35,16 +35,19 @@ export function AuthProvider({ children }) {
             if (currentTenantSlug !== userTenantSlug && userData.role === 'customer') {
               console.warn(`Tenant mismatch. User belongs to ${userTenantSlug}, but visited ${currentTenantSlug}. Logging out.`);
               localStorage.removeItem('pos_token');
+              localStorage.removeItem('tenant_id');
               setUser(null);
             } else {
               setUser(userData);
             }
           } else {
             localStorage.removeItem('pos_token');
+            localStorage.removeItem('tenant_id');
           }
         })
         .catch(() => { 
           localStorage.removeItem('pos_token'); 
+          localStorage.removeItem('tenant_id');
           setUser(null);
         })
         .finally(() => setLoading(false));

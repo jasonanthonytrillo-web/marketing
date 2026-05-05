@@ -9,9 +9,13 @@ router.get('/', async (req, res) => {
     let tenantId = req.headers['x-tenant-id'] ? parseInt(req.headers['x-tenant-id']) : 1;
     const tenantSlug = req.headers['x-tenant-slug'];
 
-    if (tenantSlug && tenantSlug !== 'project-million') {
-      const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
-      if (tenant) tenantId = tenant.id;
+    if (tenantSlug) {
+      if (tenantSlug === 'project-million') {
+        tenantId = 1;
+      } else {
+        const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+        if (tenant) tenantId = tenant.id;
+      }
     }
 
     const categories = await prisma.category.findMany({
