@@ -26,7 +26,8 @@ export default function Login() {
       loginUser(token, user);
       
       // Redirect based on role
-      if (user.role === 'admin') navigate('/admin');
+      if (user.role === 'superadmin') navigate('/superadmin');
+      else if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'cashier') navigate('/cashier');
       else if (user.role === 'kitchen') navigate('/kitchen');
       else navigate('/');

@@ -23,6 +23,7 @@ import KitchenDashboard from './pages/KitchenDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import MemberPortal from './pages/MemberPortal';
 import CustomerAccount from './pages/CustomerAccount';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import { PrivacyPolicy, TermsOfService, DataDeletion } from './pages/Legal';
 
 function ProtectedRoute({ children, roles }) {
@@ -90,6 +91,9 @@ function App() {
 
               {/* Admin */}
               <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+
+              {/* Superadmin */}
+              <Route path="/superadmin" element={<ProtectedRoute roles={['superadmin']}><SuperAdminDashboard /></ProtectedRoute>} />
 
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>

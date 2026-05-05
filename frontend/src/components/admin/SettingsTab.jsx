@@ -67,6 +67,16 @@ export default function SettingsTab() {
           </div>
           <div className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Display Store Name</label>
+                <input 
+                  type="text" 
+                  value={settings.tenant_name || ''} 
+                  onChange={e => setSettings({...settings, tenant_name: e.target.value})}
+                  className="input-field w-full py-4 text-xl font-black" 
+                  placeholder="e.g. BURGER PALACE"
+                />
+              </div>
               <div>
                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Store Logo URL</label>
                 <div className="flex gap-4">

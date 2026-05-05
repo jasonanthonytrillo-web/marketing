@@ -131,23 +131,26 @@ export default function Landing() {
           </div>
         )}
 
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-10">
           {tenant?.logo ? (
-            <div className="w-24 h-24 rounded-[32px] overflow-hidden shadow-2xl ring-4 ring-white/10 animate-scale-in">
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-[40px] overflow-hidden shadow-2xl ring-8 ring-white/5 animate-scale-in transition-transform hover:scale-110 duration-500">
               <img src={tenant.logo} className="w-full h-full object-cover" alt={tenant.name} />
             </div>
           ) : (
-            <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-[32px] flex items-center justify-center text-4xl shadow-2xl border border-white/20 animate-scale-in ring-4 ring-white/10">
-              💎
+            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/10 backdrop-blur-md rounded-[40px] flex items-center justify-center text-5xl shadow-2xl border border-white/20 animate-scale-in ring-8 ring-white/5">
+              {tenant?.slug === 'burger-palace' ? '🍔' : '💎'}
             </div>
           )}
         </div>
 
-        <h1 className="font-heading text-6xl md:text-8xl font-black text-white leading-tight mb-4 uppercase">
+        <h1 className="font-heading text-6xl md:text-9xl font-black text-white leading-[0.85] mb-8 uppercase tracking-tighter">
           {tenant ? (
-            <span style={{ color: primaryColor }}>
-              {tenant.name}
-            </span>
+            <>
+              {tenant.name.split(' ')[0]} <br />
+              <span style={{ color: primaryColor }} className="drop-shadow-[0_0_30px_rgba(var(--primary-custom),0.3)]">
+                {tenant.name.split(' ').slice(1).join(' ')}
+              </span>
+            </>
           ) : (
             <>
               PROJECT
@@ -159,11 +162,10 @@ export default function Landing() {
           )}
         </h1>
 
-        <p className="text-surface-400 text-lg md:text-xl max-w-md mx-auto mb-12">
-          {tenant
-            ? `Experience the best of ${tenant.name}. Fresh food, fast service.`
-            : (isCustomer ? "You're earning points on every order! Ready to eat?" : "Fresh food, fast service. Order right from this screen.")
-          }
+        <p className="text-lg md:text-2xl text-surface-300 max-w-2xl mx-auto font-medium leading-relaxed mb-12">
+          {tenant?.slug === 'burger-palace' 
+            ? 'The most royal burgers in the palace. Order now and skip the wait!' 
+            : 'Fresh food, fast service. Order right from this screen and enjoy your meal.'}
         </p>
 
         <div className="flex flex-col gap-4 items-center max-w-xs mx-auto">

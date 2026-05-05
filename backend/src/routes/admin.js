@@ -281,6 +281,7 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
     });
     
     if (tenant) {
+      settingsMap.tenant_name = tenant.name;
       settingsMap.tenant_logo = tenant.logo;
       settingsMap.tenant_favicon = tenant.favicon;
       settingsMap.tenant_banner = tenant.bannerImage;
@@ -300,6 +301,7 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
     const { settings } = req.body; // { key: value }
     
     const brandingMap = {
+      tenant_name: 'name',
       tenant_logo: 'logo',
       tenant_favicon: 'favicon',
       tenant_banner: 'bannerImage',
