@@ -271,13 +271,19 @@ router.get('/queue/active', async (req, res) => {
 // GET /api/orders/:orderNumber — Get order by number (for kiosk tracking)
 router.get('/:orderNumber', async (req, res) => {
   try {
+    const tenantSlug = req.headers['x-tenant-slug'];
     const order = await prisma.order.findUnique({
       where: { orderNumber: req.params.orderNumber },
-      include: { items: true, payments: true }
+      include: { items: true, payments: true, tenant: true }
     });
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
+    }
+
+    // SECURITY: Ensure order belongs to the tenant slug from header
+    if (tenantSlug && tenantSlug !== 'project-million' && order.tenant.slug !== tenantSlug) {
+      return res.status(403).json({ success: false, message: 'Unauthorized access to this order.' });
     }
 
     res.json({ success: true, data: order });
@@ -289,13 +295,19 @@ router.get('/:orderNumber', async (req, res) => {
 // POST /api/orders/:orderNumber/cancel — Customer cancel (only if pending)
 router.post('/:orderNumber/cancel', async (req, res) => {
   try {
+    const tenantSlug = req.headers['x-tenant-slug'];
     const order = await prisma.order.findUnique({
       where: { orderNumber: req.params.orderNumber },
-      include: { items: true }
+      include: { items: true, tenant: true }
     });
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
+    }
+
+    // SECURITY: Ensure order belongs to the tenant
+    if (tenantSlug && tenantSlug !== 'project-million' && order.tenant.slug !== tenantSlug) {
+      return res.status(403).json({ success: false, message: 'Unauthorized.' });
     }
 
     if (order.status !== 'pending') {

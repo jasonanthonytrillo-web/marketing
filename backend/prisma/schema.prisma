@@ -32,7 +32,7 @@ model Tenant {
 model User {
   id        Int      @id @default(autoincrement())
   tenantId  Int?     
-  email     String   @unique
+  email     String   
   password  String
   name      String
   role      String   @default("cashier") // admin, cashier, kitchen, customer
@@ -46,6 +46,8 @@ model User {
   orders    Order[]
   payments  Payment[]
   auditLogs AuditLog[]
+
+  @@unique([email, tenantId])
 }
 
 model Category {

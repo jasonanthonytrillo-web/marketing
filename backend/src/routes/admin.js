@@ -101,7 +101,10 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
     // Handle addons: Delete old ones and create new ones (sync)
     if (addons) {
       await prisma.productAddon.deleteMany({
-        where: { productId: parseInt(req.params.id) }
+        where: { 
+          productId: parseInt(req.params.id),
+          tenantId: req.user.tenantId // DEFENSIVE: Ensure we only delete our own addons
+        }
       });
     }
 

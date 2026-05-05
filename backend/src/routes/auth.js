@@ -20,8 +20,23 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
 
-    const user = await prisma.user.findUnique({ 
-      where: { email },
+    // TENANT DETECTION: Determine which shop the user is trying to log into
+    const { tenantSlug } = req.body;
+    let tenantId = 1; // Default
+    if (tenantSlug && tenantSlug !== 'project-million') {
+      const tenantRecord = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+      if (tenantRecord) tenantId = tenantRecord.id;
+    }
+
+    // FIND USER: Look for the email specifically within this store
+    const user = await prisma.user.findFirst({ 
+      where: { 
+        email,
+        OR: [
+          { tenantId: tenantId },
+          { role: 'superadmin' } // Superadmins can log in from anywhere
+        ]
+      },
       include: { tenant: true }
     });
 
@@ -116,9 +131,9 @@ router.post('/google', async (req, res) => {
       if (tenant) tenantId = tenant.id;
     }
 
-    // Find user by email
-    let user = await prisma.user.findUnique({ 
-      where: { email },
+    // Find user by email WITHIN this specific tenant
+    let user = await prisma.user.findFirst({ 
+      where: { email, tenantId },
       include: { tenant: true }
     });
 
@@ -183,16 +198,16 @@ router.post('/register-customer', async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required.' });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'Email already registered.' });
-    }
-
     // Resolve tenantId from slug
     let tenantId = 1;
     if (tenantSlug && tenantSlug !== 'project-million') {
       const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
       if (tenant) tenantId = tenant.id;
+    }
+
+    const existing = await prisma.user.findFirst({ where: { email, tenantId } });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Email already registered in this store.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -239,20 +254,33 @@ router.post('/register', authenticate, async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
     const hashedPin = pin ? await bcrypt.hash(pin, 12) : null;
 
+    // SECURITY: Only superadmins can create other superadmins
+    let finalRole = role || 'cashier';
+    if (finalRole === 'superadmin' && req.user.role !== 'superadmin') {
+      finalRole = 'admin';
+    }
+
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         name,
-        role: role || 'cashier',
+        role: finalRole,
         pin: hashedPin,
-        points: 0
+        points: 0,
+        tenantId: req.user.tenantId // IMPORTANT: Bind to the creator's tenant
       },
-      select: { id: true, email: true, name: true, role: true, active: true, createdAt: true, points: true }
+      select: { id: true, email: true, name: true, role: true, active: true, createdAt: true, points: true, tenantId: true }
     });
 
     await prisma.auditLog.create({
-      data: { userId: req.user.id, action: 'create_user', entityType: 'user', entityId: user.name, details: `Created user: ${name} (${role})` }
+      data: { 
+        userId: req.user.id, 
+        action: 'create_user', 
+        entityType: 'user', 
+        entityId: user.id.toString(), 
+        details: `Created user: ${name} (${finalRole}) for Tenant ID: ${req.user.tenantId}` 
+      }
     });
 
     res.status(201).json({ success: true, data: user });

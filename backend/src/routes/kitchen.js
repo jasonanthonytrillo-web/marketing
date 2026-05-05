@@ -24,12 +24,14 @@ router.get('/orders', authenticate, authorize('kitchen', 'admin', 'cashier'), as
 router.post('/orders/:id/start', authenticate, authorize('kitchen', 'admin'), async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    const order = await prisma.order.findUnique({ 
+      where: { id: orderId, tenantId: req.user.tenantId } 
+    });
     if (!order || order.status !== 'confirmed') {
       return res.status(400).json({ success: false, message: 'Order not found or not confirmed.' });
     }
     const updated = await prisma.order.update({
-      where: { id: orderId },
+      where: { id: orderId, tenantId: req.user.tenantId },
       data: { status: 'preparing', kitchenStartedAt: new Date() },
       include: { items: true }
     });
@@ -56,12 +58,14 @@ router.post('/orders/:id/start', authenticate, authorize('kitchen', 'admin'), as
 router.post('/orders/:id/complete', authenticate, authorize('kitchen', 'admin'), async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    const order = await prisma.order.findUnique({ 
+      where: { id: orderId, tenantId: req.user.tenantId } 
+    });
     if (!order || !['confirmed', 'preparing'].includes(order.status)) {
       return res.status(400).json({ success: false, message: 'Invalid order state.' });
     }
     const updated = await prisma.order.update({
-      where: { id: orderId },
+      where: { id: orderId, tenantId: req.user.tenantId },
       data: { status: 'ready', kitchenCompletedAt: new Date(), kitchenStartedAt: order.kitchenStartedAt || new Date() },
       include: { items: true }
     });
@@ -90,7 +94,7 @@ router.post('/orders/:id/served', authenticate, authorize('kitchen', 'admin', 'c
   try {
     const orderId = parseInt(req.params.id);
     const updated = await prisma.order.update({
-      where: { id: orderId },
+      where: { id: orderId, tenantId: req.user.tenantId },
       data: { status: 'completed' },
       include: { items: true }
     });

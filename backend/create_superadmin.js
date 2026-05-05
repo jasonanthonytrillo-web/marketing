@@ -8,20 +8,28 @@ async function createSuperAdmin() {
   try {
     const password = await bcrypt.hash('superadmin123', 12);
     
-    const user = await prisma.user.upsert({
-      where: { email: 'superadmin@elevatepos.com' },
-      update: {
-        role: 'superadmin',
-        active: true
-      },
-      create: {
-        email: 'superadmin@elevatepos.com',
-        password: password,
-        name: 'Master SuperAdmin',
-        role: 'superadmin',
-        active: true
-      }
+    // Check if superadmin exists (where tenantId is null)
+    let user = await prisma.user.findFirst({
+      where: { email: 'superadmin@elevatepos.com', role: 'superadmin' }
     });
+
+    if (user) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { active: true }
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          email: 'superadmin@elevatepos.com',
+          password: password,
+          name: 'Master SuperAdmin',
+          role: 'superadmin',
+          active: true,
+          tenantId: null
+        }
+      });
+    }
 
     console.log('✅ SUPERADMIN CREATED SUCCESSFULLY!');
     console.log('📧 Email: superadmin@elevatepos.com');

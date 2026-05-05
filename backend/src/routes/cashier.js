@@ -36,7 +36,7 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
     
     currentStep = 'fetching order';
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id: orderId, tenantId: req.user.tenantId },
       include: { items: true }
     });
 
@@ -107,7 +107,7 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
 
     currentStep = 'updating order';
     const updated = await prisma.order.update({
-      where: { id: orderId },
+      where: { id: orderId, tenantId: req.user.tenantId },
       data: {
         status: 'confirmed',
         paymentStatus: 'paid',
@@ -186,7 +186,7 @@ router.post('/orders/:id/cancel', authenticate, authorize('cashier', 'admin'), a
     const { reason } = req.body;
 
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id: orderId, tenantId: req.user.tenantId },
       include: { items: true }
     });
 
@@ -252,7 +252,7 @@ router.post('/orders/:id/cancel', authenticate, authorize('cashier', 'admin'), a
     }
 
     const updated = await prisma.order.update({
-      where: { id: orderId },
+      where: { id: orderId, tenantId: req.user.tenantId },
       data: {
         status: 'cancelled',
         paymentStatus: order.paymentStatus === 'paid' ? 'refunded' : 'unpaid',
