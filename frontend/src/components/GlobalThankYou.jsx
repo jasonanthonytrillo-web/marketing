@@ -11,8 +11,25 @@ export default function GlobalThankYou() {
   const tenantSlug = searchParams.get('tenant');
 
   useEffect(() => {
-    // Join the kiosk room to listen for global order updates
-    joinRoom('kiosk', tenantSlug);
+    const initThankYou = async () => {
+      let roomId = 'global';
+      
+      if (tenantSlug) {
+        try {
+          const { getPublicTenant } = await import('../services/api');
+          const res = await getPublicTenant(tenantSlug);
+          if (res.data.success) {
+            roomId = res.data.data.id;
+          }
+        } catch (e) {
+          console.error('Failed to resolve tenant for thank you screen:', e);
+        }
+      }
+
+      joinRoom('kiosk', roomId);
+    };
+
+    initThankYou();
 
     if (!onEvent) return;
 

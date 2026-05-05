@@ -250,7 +250,7 @@ function OrderCard({ order, now, onAction, processing }) {
         )}
         {order.status === 'ready' && (
           <button onClick={() => onAction('served')} disabled={processing} className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors shadow-lg">
-            Order Completed
+            Order Complete
           </button>
         )}
       </div>
