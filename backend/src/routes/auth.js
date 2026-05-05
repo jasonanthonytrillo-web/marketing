@@ -4,6 +4,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { authenticate } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
+const { OAuth2Client } = require('google-auth-library');
+const GOOGLE_CLIENT_ID = '542194625185-rd9qq05qqgej9n6qkhlgcdgfagid601l.apps.googleusercontent.com';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 
 
@@ -87,6 +90,83 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Login crash details:', error);
     res.status(500).json({ success: false, message: error.message || 'Login failed.' });
+  }
+});
+
+// POST /api/auth/google
+router.post('/google', async (req, res) => {
+  try {
+    const { token, tenantSlug } = req.body;
+    
+    if (!token) return res.status(400).json({ success: false, message: 'Google token required' });
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name } = payload;
+
+    // Resolve Tenant ID based on slug
+    let tenantId = 1; // Default
+    if (tenantSlug && tenantSlug !== 'project-million') {
+      const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+      if (tenant) tenantId = tenant.id;
+    }
+
+    // Find user by email
+    let user = await prisma.user.findUnique({ 
+      where: { email },
+      include: { tenant: true }
+    });
+
+    // If user doesn't exist, auto-register as customer
+    if (!user) {
+      // Create a random complex password since they use Google
+      const randomPass = await bcrypt.hash(Math.random().toString(36).slice(-10) + 'GoOgLe', 12);
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          password: randomPass,
+          role: 'customer',
+          tenantId
+        },
+        include: { tenant: true }
+      });
+    }
+
+    if (!user.active) {
+      return res.status(401).json({ success: false, message: 'Account is deactivated.' });
+    }
+
+    // Generate JWT
+    const jwtToken = jwt.sign(
+      { userId: user.id, role: user.role, tenantId: user.tenantId },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        token: jwtToken,
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name, 
+          role: user.role,
+          tenantId: user.tenantId,
+          tenantName: user.tenant?.name,
+          tenantSlug: user.tenant?.slug,
+          points: user.points || 0
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    res.status(500).json({ success: false, message: 'Google Authentication failed.' });
   }
 });
 

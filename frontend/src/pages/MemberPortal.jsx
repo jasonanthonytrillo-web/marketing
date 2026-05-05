@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { login, registerCustomer } from '../services/api';
+import { login, googleLogin, registerCustomer } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function MemberPortal() {
   const [mode, setMode] = useState('login'); // login, register
@@ -35,6 +36,24 @@ export default function MemberPortal() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await googleLogin({ token: credentialResponse.credential, tenantSlug });
+      loginUser(res.data.data.token, res.data.data.user);
+      navigate(tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Google Login failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google Login was cancelled or failed.');
   };
 
   return (
@@ -91,6 +110,25 @@ export default function MemberPortal() {
                   ⚠️ {error}
                 </div>
               )}
+
+              <div className="mb-6 flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="filled_black"
+                  shape="pill"
+                  width="300"
+                />
+              </div>
+
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-slate-900/50 px-2 text-slate-500 uppercase tracking-widest font-bold">Or continue with email</span>
+                </div>
+              </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {mode === 'register' && (
