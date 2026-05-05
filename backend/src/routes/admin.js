@@ -421,4 +421,26 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
+// GET /api/admin/audit-logs
+router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const logs = await prisma.auditLog.findMany({
+      where: { 
+        tenantId: req.user.tenantId 
+      },
+      include: {
+        user: {
+          select: { name: true, role: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100
+    });
+    res.json({ success: true, data: logs });
+  } catch (error) {
+    console.error('Audit Log Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load audit logs.' });
+  }
+});
+
 module.exports = router;
