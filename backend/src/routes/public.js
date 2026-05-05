@@ -90,13 +90,15 @@ router.get('/share/:slug', async (req, res) => {
     const host = req.get('host');
     const protocol = req.protocol === 'http' && host.includes('localhost') ? 'http' : 'https';
     
-    // Resolve the full OG Image URL
+    // Resolve the Frontend URL (Priority: Env Var > Request Host)
+    const baseUrl = (process.env.FRONTEND_URL || `${protocol}://${host}`).replace(/\/$/, '');
+    const redirectUrl = `${baseUrl}/?tenant=${slug}`;
+    
+    // Resolve the full OG Image URL (must be absolute)
     let ogImage = tenant.ogImage || tenant.logo || 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
     if (ogImage.startsWith('/uploads/')) {
       ogImage = `${protocol}://${host}${ogImage}`;
     }
-
-    const redirectUrl = `${protocol}://${host}/?tenant=${slug}`;
 
     // Serve a meta-only page that redirects to the actual landing page
     res.send(`
