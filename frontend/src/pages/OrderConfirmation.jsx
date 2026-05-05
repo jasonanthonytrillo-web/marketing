@@ -251,7 +251,7 @@ export default function OrderConfirmation() {
                 {otherOrders.map(num => (
                   <Link 
                     key={num} 
-                    to={`/order/${num}`}
+                    to={tenantSlug ? `/order/${num}?tenant=${tenantSlug}` : `/order/${num}`}
                     className="flex items-center justify-between p-4 bg-white rounded-2xl border border-surface-200 hover:border-primary-300 hover:bg-primary-50 transition-all group shadow-sm"
                   >
                     <div className="flex items-center gap-3">

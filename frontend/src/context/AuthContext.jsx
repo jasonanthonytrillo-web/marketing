@@ -24,7 +24,21 @@ export function AuthProvider({ children }) {
       getMe()
         .then(res => {
           if (res.data && res.data.success) {
-            setUser(res.data.data);
+            const userData = res.data.data;
+            
+            // Enforce Tenant Boundaries
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentTenantSlug = urlParams.get('tenant') || 'project-million';
+            const userTenantSlug = userData.tenantSlug || userData.tenant?.slug || 'project-million';
+            
+            // Allow admins to roam? Actually, let's keep it strict for now.
+            if (currentTenantSlug !== userTenantSlug && userData.role === 'customer') {
+              console.warn(`Tenant mismatch. User belongs to ${userTenantSlug}, but visited ${currentTenantSlug}. Logging out.`);
+              localStorage.removeItem('pos_token');
+              setUser(null);
+            } else {
+              setUser(userData);
+            }
           } else {
             localStorage.removeItem('pos_token');
           }

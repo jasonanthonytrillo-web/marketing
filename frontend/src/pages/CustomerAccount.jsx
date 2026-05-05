@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getOrderHistory, changePassword } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate } from '../utils/helpers';
@@ -13,6 +13,8 @@ export default function CustomerAccount() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tenantSlug = searchParams.get('tenant');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -85,7 +87,7 @@ export default function CustomerAccount() {
       <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-2xl mx-auto px-6 py-6 grid grid-cols-3 items-center">
           <div className="justify-self-start">
-            <Link to="/menu" className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-all text-orange-600 font-bold whitespace-nowrap">
+            <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : "/menu"} className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-all text-orange-600 font-bold whitespace-nowrap">
               <span className="text-xl">←</span>
               <span className="text-[10px] uppercase tracking-widest">back to menu</span>
             </Link>
