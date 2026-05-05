@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getProducts } from '../services/api';
+import { getProducts, changePassword } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
 import { formatCurrency, unlockAudio } from '../utils/helpers';
@@ -92,6 +92,40 @@ export default function Menu() {
   };
 
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordMessage({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordMessage({ type: '', text: '' });
+    try {
+      await changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      setPasswordMessage({ type: 'success', text: 'Password updated successfully!' });
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setPasswordMessage({ type: '', text: '' });
+      }, 2000);
+    } catch (error) {
+      setPasswordMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Failed to update password.'
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   // Dynamic favicon & title
   useDynamicBranding(tenantName, branding?.favicon);
@@ -143,12 +177,15 @@ export default function Menu() {
                     </div>
                     <div className="p-2">
                       {!user?.isGoogle && (
-                        <Link
-                          to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}&action=change-password` : '/account?action=change-password'}
+                        <button
+                          onClick={() => {
+                            setShowUserMenu(false);
+                            setShowPasswordModal(true);
+                          }}
                           className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
                         >
                           <span>🔒</span> Change Password
-                        </Link>
+                        </button>
                       )}
                       <Link
                         to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}` : '/account'}
@@ -511,6 +548,76 @@ export default function Menu() {
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}></div>
+          <div className="bg-white rounded-[40px] w-full max-w-md p-8 relative z-10 shadow-2xl animate-fade-in-up">
+            <h3 className="text-2xl font-black text-slate-900 mb-6">Update Security</h3>
+
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Current Password</label>
+                <input
+                  type="password"
+                  required
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">New Password</label>
+                <input
+                  type="password"
+                  required
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Confirm New Password</label>
+                <input
+                  type="password"
+                  required
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {passwordMessage.text && (
+                <div className={`p-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest ${passwordMessage.type === 'success' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
+                  {passwordMessage.text}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="flex-1 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="flex-1 bg-orange-600 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500 shadow-lg shadow-orange-600/20 disabled:opacity-50 transition-all"
+                >
+                  {passwordLoading ? 'Updating...' : 'Save Password'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

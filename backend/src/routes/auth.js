@@ -137,6 +137,15 @@ router.post('/google', async (req, res) => {
       include: { tenant: true }
     });
 
+    // If user exists but isGoogle isn't set, update it
+    if (user && !user.isGoogle) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { isGoogle: true },
+        include: { tenant: true }
+      });
+    }
+
     // If user doesn't exist, auto-register as customer
     if (!user) {
       // Create a random complex password since they use Google

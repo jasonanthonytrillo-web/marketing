@@ -15,6 +15,8 @@ export default function ProductsTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [statusFilter, setStatusFilter] = useState('active'); // active, archived, all
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
 
   const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -147,13 +149,20 @@ export default function ProductsTab() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete/archive this product? It will no longer appear on the menu.')) return;
+  const handleDelete = (product) => {
+    setProductToDelete(product);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
     try {
-      await deleteProduct(id);
+      await deleteProduct(productToDelete.id);
+      setShowDeleteConfirm(false);
+      setProductToDelete(null);
       loadData();
     } catch (error) {
-      alert('Failed to delete product');
+      alert('Failed to deactivate product');
     }
   };
 
@@ -550,7 +559,7 @@ export default function ProductsTab() {
                 <td className="p-4 text-right space-x-2">
                   <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 font-medium px-2 py-1 bg-blue-50 rounded">Edit</button>
                   {product.available ? (
-                    <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:text-red-700 font-medium px-2 py-1 bg-red-50 rounded">Delete</button>
+                    <button onClick={() => handleDelete(product)} className="text-red-500 hover:text-red-700 font-medium px-2 py-1 bg-red-50 rounded transition-colors">Deactivate</button>
                   ) : (
                     <button onClick={() => handleRestore(product)} 
                       className="text-emerald-600 hover:text-emerald-800 font-medium px-2 py-1 bg-emerald-50 rounded">Restore</button>
@@ -571,6 +580,39 @@ export default function ProductsTab() {
           </tbody>
         </table>
       </div>
+
+    {/* Custom Deactivation Confirmation Modal */}
+    {showDeleteConfirm && productToDelete && (
+      <div className="modal-overlay">
+        <div className="modal-container max-w-sm animate-scale-in">
+          <div className="p-8 text-center">
+            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-[32px] flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner ring-4 ring-red-50/50">
+              ⚠️
+            </div>
+            <h3 className="font-heading text-2xl font-black text-surface-900 mb-2">Deactivate Product?</h3>
+            <p className="text-surface-500 text-sm mb-8 leading-relaxed">
+              Are you sure you want to hide <span className="text-red-600 font-bold">"{productToDelete.name}"</span> from the menu? It will be moved to the archives.
+            </p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => setShowDeleteConfirm(false)}
+                className="py-3.5 bg-surface-100 text-surface-600 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-surface-200 transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="py-3.5 bg-red-600 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all active:scale-95"
+              >
+                Confirm Hiding
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </div>
     </div>
     </div>
   );

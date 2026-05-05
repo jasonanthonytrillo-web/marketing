@@ -88,15 +88,19 @@ export default function CustomerAccount() {
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-2xl mx-auto px-6 py-6 grid grid-cols-3 items-center">
-          <div className="justify-self-start">
-            <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : "/menu"} className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-all text-orange-600 font-bold whitespace-nowrap">
-              <span className="text-xl">←</span>
-              <span className="text-[10px] uppercase tracking-widest">back to menu</span>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
+          <div className="flex-1 flex justify-start">
+            <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : "/menu"} className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-100 rounded-xl sm:rounded-2xl hover:bg-slate-200 transition-all text-orange-600 font-bold whitespace-nowrap">
+              <span className="text-lg sm:text-xl leading-none">←</span>
+              <span className="text-[9px] sm:text-[10px] uppercase tracking-widest hidden sm:block">back to menu</span>
             </Link>
           </div>
-          <h1 className="justify-self-center text-sm font-black uppercase tracking-[0.3em] text-orange-600 whitespace-nowrap">My Account</h1>
-          <div className="justify-self-end w-10"></div>
+          <h1 className="flex-1 text-center text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-orange-600 whitespace-nowrap px-2">My Account</h1>
+          <div className="flex-1 flex justify-end">
+            <button onClick={logoutUser} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+              <span className="text-lg">🚪</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -116,34 +120,14 @@ export default function CustomerAccount() {
               <p className="text-orange-100/60 text-sm font-medium mb-4">{user?.email}</p>
 
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
-                <div className="bg-black/30 backdrop-blur-md border border-white/10 px-4 py-2 rounded-2xl">
+                <div className="bg-black/30 backdrop-blur-md border border-white/10 px-6 py-2 rounded-2xl">
                   <p className="text-[9px] font-black uppercase tracking-widest text-orange-300/70 mb-0.5">Points Balance</p>
                   <p className="text-xl font-black text-white">{Math.floor(user?.points || 0)} <span className="text-[10px] opacity-60">PTS</span></p>
                 </div>
-                
-                {/* Security Button - Hidden for Google Users */}
-                {!user?.isGoogle ? (
-                  <button 
-                    onClick={() => setShowPasswordModal(true)}
-                    className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 px-4 py-2 rounded-2xl transition-all group"
-                  >
-                    <p className="text-[9px] font-black uppercase tracking-widest text-orange-100 mb-0.5">Security</p>
-                    <p className="text-xs font-black text-white flex items-center gap-1 group-hover:gap-2 transition-all">Update Password →</p>
-                  </button>
-                ) : (
-                  <div className="bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 px-4 py-2 rounded-2xl">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-300 mb-0.5">Verified</p>
-                    <p className="text-xs font-black text-white flex items-center gap-1">Logged in with Google G</p>
-                  </div>
-                )}
               </div>
             </div>
           </div>
-
-
         </div>
-
-
 
         {/* Order History Section */}
         <div className="mb-6 flex items-center justify-between px-2">
@@ -153,8 +137,8 @@ export default function CustomerAccount() {
 
         <div className="space-y-4">
           {orders.map((order, idx) => (
-            <div key={order.id} className="bg-white border border-slate-200 rounded-[32px] p-6 hover:border-orange-500/30 transition-all group animate-fade-in-up shadow-sm" style={{ animationDelay: `${idx * 0.1}s` }}>
-              <div className="flex justify-between items-start mb-6">
+            <div key={order.id} className="bg-white border border-slate-200 rounded-[2rem] sm:rounded-[32px] p-4 sm:p-6 hover:border-orange-500/30 transition-all group animate-fade-in-up shadow-sm" style={{ animationDelay: `${idx * 0.1}s` }}>
+              <div className="flex justify-between items-start mb-4 sm:mb-6">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
                     <span className="w-2 h-2 rounded-full bg-orange-500 shadow-lg shadow-orange-500/20"></span>
@@ -162,24 +146,24 @@ export default function CustomerAccount() {
                   </div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-5">{formatDate(order.createdAt)}</p>
                 </div>
-                <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] border ${getStatusColor(order.status)} transition-colors`}>
+                <span className={`px-3 sm:px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] border ${getStatusColor(order.status)} transition-colors`}>
                   {order.status}
                 </span>
               </div>
 
-              <div className="space-y-3 mb-6 ml-5">
+              <div className="space-y-3 mb-4 sm:mb-6 ml-2 sm:ml-5">
                 {order.items?.map(item => (
-                  <div key={item.id} className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-2">
+                   <div key={item.id} className="flex justify-between items-center text-xs">
+                    <div className="flex items-center gap-2 pr-2">
                       <span className="text-orange-600/50 font-black">{item.quantity}×</span>
-                      <span className="text-slate-600 font-medium">{item.productName}</span>
+                      <span className="text-slate-600 font-medium truncate max-w-[120px] sm:max-w-none">{item.productName}</span>
                     </div>
-                    <span className="text-slate-500 font-bold">{formatCurrency(item.subtotal)}</span>
+                    <span className="text-slate-500 font-bold whitespace-nowrap">{formatCurrency(item.subtotal)}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="pt-5 border-t border-slate-100 space-y-2 ml-5">
+              <div className="pt-4 sm:pt-5 border-t border-slate-100 space-y-2 ml-2 sm:ml-5">
                 <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   <span>Subtotal</span>
                   <span>{formatCurrency(order.subtotal || (order.total / 1.12))}</span>
@@ -190,7 +174,7 @@ export default function CustomerAccount() {
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Total Paid</span>
-                  <span className="text-xl font-black text-slate-900 tracking-tight">{formatCurrency(order.total)}</span>
+                  <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{formatCurrency(order.total)}</span>
                 </div>
               </div>
             </div>
@@ -209,76 +193,6 @@ export default function CustomerAccount() {
           )}
         </div>
       </div>
-      {/* Password Modal */}
-      {showPasswordModal && !user?.isGoogle && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}></div>
-          <div className="bg-white rounded-[40px] w-full max-w-md p-8 relative z-10 shadow-2xl animate-fade-in-up">
-            <h3 className="text-2xl font-black text-slate-900 mb-6">Update Security</h3>
-
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Current Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">New Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Confirm New Password</label>
-                <input
-                  type="password"
-                  required
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              {passwordMessage.text && (
-                <div className={`p-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest ${passwordMessage.type === 'success' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
-                  {passwordMessage.text}
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowPasswordModal(false)}
-                  className="flex-1 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={passwordLoading}
-                  className="flex-1 bg-orange-600 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500 shadow-lg shadow-orange-600/20 disabled:opacity-50 transition-all"
-                >
-                  {passwordLoading ? 'Updating...' : 'Save Password'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
