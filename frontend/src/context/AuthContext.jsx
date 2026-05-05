@@ -74,7 +74,7 @@ export function AuthProvider({ children }) {
     
     // Redirect staff to /login, customers to landing
     if (['admin', 'kitchen', 'cashier', 'superadmin'].includes(role)) {
-      window.location.href = '/login';
+      window.location.href = tenantSlug ? `/login?tenant=${tenantSlug}` : '/login';
     } else if (tenantSlug && tenantSlug !== 'project-million') {
       window.location.href = `/?tenant=${tenantSlug}`;
     } else {

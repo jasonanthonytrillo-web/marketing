@@ -15,7 +15,7 @@ export default function CashierDashboard() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
-  const [showNewOrderAlert, setShowNewOrderAlert] = useState(false);
+
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('Customer changed mind');
   const { joinRoom, onEvent, connected } = useSocket();
@@ -50,8 +50,6 @@ export default function CashierDashboard() {
     const unsub = onEvent('new_order', (data) => {
       console.log('Realtime New Order:', data);
       playNotificationSound('newOrder');
-      setShowNewOrderAlert(true);
-      setTimeout(() => setShowNewOrderAlert(false), 5000);
       loadOrders(); // Refresh list to show the new order
     });
 
@@ -185,15 +183,6 @@ export default function CashierDashboard() {
 
   return (
     <div className="h-screen flex flex-col bg-surface-100 overflow-hidden relative">
-      {/* New Order Visual Alert */}
-      {showNewOrderAlert && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] animate-bounce pointer-events-none">
-          <div className="bg-primary-600 text-white px-8 py-4 rounded-2xl shadow-[0_0_40px_rgba(var(--primary-rgb),0.4)] border-4 border-white/20 flex items-center gap-4">
-            <span className="text-3xl">💵</span>
-            <span className="font-heading font-black text-2xl uppercase tracking-tighter">New Order Received!</span>
-          </div>
-        </div>
-      )}
 
       {/* Cancellation Reason Modal */}
       {showCancelModal && (

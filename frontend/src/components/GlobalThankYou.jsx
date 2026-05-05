@@ -42,9 +42,10 @@ export default function GlobalThankYou() {
         const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
         
         const activeOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
+        const lastOrderNumber = localStorage.getItem(lastOrderKey);
         
-        // Check if this completed order is one of the kiosk's active orders
-        if (activeOrders.includes(order.orderNumber)) {
+        // Check if this completed order is one of the kiosk's active orders or the last order
+        if (activeOrders.includes(order.orderNumber) || order.orderNumber === lastOrderNumber) {
           // Remove from local storage
           const updatedOrders = activeOrders.filter(num => num !== order.orderNumber);
           localStorage.setItem(activeOrdersKey, updatedOrders.length > 0 ? JSON.stringify(updatedOrders) : '[]');

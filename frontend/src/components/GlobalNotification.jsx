@@ -127,11 +127,11 @@ export default function GlobalNotification() {
     }
     alertIntervalRef.current = 'starting';
 
-    // 1. Play chime
+    // 1. Play initial chime
     playNotificationSound('ready');
     if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
 
-    // 2. Speech
+    // 2. Speech (fire and forget — don't rely on onend for the chime loop)
     setTimeout(() => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -149,17 +149,18 @@ export default function GlobalNotification() {
         if (preferred) msg.voice = preferred;
         
         msg.onerror = (e) => console.error('Speech error:', e);
-        msg.onend = () => {
-          console.log('🏁 Speech finished.');
-          playNotificationSound('ready');
-          startChimeLoop();
-        };
+        msg.onend = () => console.log('🏁 Speech finished.');
         window.speechSynthesis.speak(msg);
       } else {
         console.warn('⚠️ Speech synthesis not supported in this browser.');
-        startChimeLoop();
       }
     }, 600);
+
+    // 3. Start chime loop on a fixed timer — don't depend on speech onend (unreliable on many browsers)
+    setTimeout(() => {
+      playNotificationSound('ready');
+      startChimeLoop();
+    }, 4000);
   };
 
   const startChimeLoop = () => {
@@ -239,11 +240,8 @@ export default function GlobalNotification() {
             <div className="space-y-4 mb-10">
               {cancelledOrderNumbers.map(o => (
                 <div key={o.number} className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl">
-                  <p className="text-white font-heading text-3xl font-black mb-1">
+                  <p className="text-white font-heading text-3xl font-black">
                     Order #{o.number?.includes('-') ? o.number.split('-')[1] : o.number}
-                  </p>
-                  <p className="text-red-200 text-lg font-medium">
-                    Reason: <span className="text-white">"{o.reason}"</span>
                   </p>
                 </div>
               ))}
