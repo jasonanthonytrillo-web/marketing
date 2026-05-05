@@ -201,7 +201,7 @@ export default function Landing() {
             </div>
           ) : (
             <div className="w-24 h-24 md:w-32 md:h-32 bg-white/10 backdrop-blur-md rounded-[40px] flex items-center justify-center text-5xl shadow-2xl border border-white/20 animate-scale-in ring-8 ring-white/5">
-              {tenant?.slug === 'burger-palace' ? '🍔' : '💎'}
+              {tenant?.slug === 'burger-palace' ? '🍔' : 'PM'}
             </div>
           )}
         </div>
@@ -265,7 +265,7 @@ export default function Landing() {
 
               {lastOrder && (
                 <Link to={`/order/${lastOrder}`} className="w-full mt-2 py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse">
-                  <span>📄</span> View Recent Receipt
+                  <span></span> View Recent Receipt
                 </Link>
               )}
             </>

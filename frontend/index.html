@@ -3,6 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link id="manifest-link" rel="manifest" href="/manifest.json" />
+    <script>
+      // Dynamic Manifest Logic
+      const urlParams = new URLSearchParams(window.location.search);
+      const tenant = urlParams.get('tenant');
+      if (tenant && tenant !== 'project-million') {
+        const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+        document.getElementById('manifest-link').setAttribute('href', `${apiUrl}/api/public/manifest/${tenant}`);
+      }
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="description" content="Enterprise POS System - Self-Service Kiosk, Queue Display, Cashier & Kitchen Dashboard" />
     <meta name="theme-color" content="#f97316" />
