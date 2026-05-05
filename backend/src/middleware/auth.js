@@ -13,11 +13,16 @@ const authenticate = async (req, res, next) => {
     
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, email: true, name: true, role: true, active: true, points: true, tenantId: true }
+      include: { tenant: true }
     });
 
     if (!user || !user.active) {
       return res.status(401).json({ success: false, message: 'Invalid or inactive account.' });
+    }
+
+    // BLOCK SUSPENDED TENANTS
+    if (user.role !== 'superadmin' && user.tenant && !user.tenant.active) {
+      return res.status(403).json({ success: false, message: 'This store is currently suspended. Please contact support.' });
     }
 
     req.user = user;

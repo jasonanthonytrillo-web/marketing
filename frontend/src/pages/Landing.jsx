@@ -73,24 +73,66 @@ export default function Landing() {
   
   const bannerImage = tenant?.bannerImage || (tenant?.slug === 'burger-palace' ? burgerBackground : defaultBackground);
 
+  const [currentAssetIndex, setCurrentAssetIndex] = useState(0);
+  const assets = (tenant?.bannerAssets && Array.isArray(tenant.bannerAssets) && tenant.bannerAssets.length > 0) 
+    ? tenant.bannerAssets.filter(a => a && a.trim() !== '') 
+    : [bannerImage];
+
+  useEffect(() => {
+    if (assets.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentAssetIndex((prev) => (prev + 1) % assets.length);
+      }, 10000); // 10 seconds for a better feel
+      return () => clearInterval(interval);
+    }
+  }, [assets]);
+
   if (loading) return <div className="min-h-screen bg-surface-900 flex items-center justify-center">
     <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
   </div>;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-surface-900 via-surface-800 to-surface-900 flex items-center justify-center relative overflow-hidden" style={{ '--primary-custom': primaryColor }}>
-      {/* Video Background & Animated Orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none bg-surface-900">
+  const isSuspended = tenant && !tenant.active && user?.role !== 'superadmin';
 
+  if (isSuspended) {
+    return (
+      <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center text-5xl mb-8 animate-pulse">
+          🚫
+        </div>
+        <h1 className="font-heading text-4xl md:text-6xl font-black text-white mb-4 uppercase tracking-tighter">
+          Service <span className="text-red-500">Suspended</span>
+        </h1>
+        <p className="text-surface-400 text-lg md:text-xl max-w-md mx-auto mb-10 leading-relaxed">
+          The storefront for <span className="text-white font-bold">{tenant.name}</span> is temporarily unavailable. 
+          Please contact the system administrator for more information.
+        </p>
+        <div className="flex flex-col gap-4 w-full max-w-xs">
+          <Link to="/" className="py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold hover:bg-white/10 transition-all">
+            Return Home
+          </Link>
+          <Link to="/login" className="text-surface-500 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors">
+            Staff Login →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden" style={{ '--primary-custom': primaryColor }}>
+      {/* Background Layer */}
+      <div className="absolute inset-0 z-0 bg-black">
         <style>
           {`
               @keyframes kenburns {
-                0% { transform: scale(1) translate(0, 0); }
-                50% { transform: scale(1.05) translate(-1%, -1%); }
-                100% { transform: scale(1) translate(0, 0); }
+                0% { transform: scale(1); }
+                100% { transform: scale(1.1); }
               }
               .animate-kenburns {
-                animation: kenburns 30s ease-in-out infinite;
+                animation: kenburns 15s linear infinite alternate;
+              }
+              .asset-transition {
+                transition: opacity 2s ease-in-out;
               }
               .btn-custom {
                 background-color: var(--primary-custom);
@@ -100,22 +142,43 @@ export default function Landing() {
               .btn-custom:hover {
                 filter: brightness(1.1);
               }
-              .text-custom {
-                color: var(--primary-custom);
-              }
             `}
         </style>
-        <img
-          src={bannerImage}
-          alt="Delicious Background"
-          className="absolute inset-0 w-full h-full object-cover opacity-60 z-0 animate-kenburns"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-surface-950/80 via-surface-950/40 to-surface-950/90 z-10" />
+        
+        {assets.map((asset, index) => {
+          const isVid = typeof asset === 'string' && asset.match(/\.(mp4|webm|ogg)$/i);
+          const isActive = index === currentAssetIndex;
+          
+          return (
+            <div 
+              key={`${asset}-${index}`}
+              className={`absolute inset-0 asset-transition ${isActive ? 'opacity-60' : 'opacity-0'}`}
+              style={{ zIndex: isActive ? 1 : 0 }}
+            >
+              {isVid ? (
+                <video 
+                  autoPlay muted loop playsInline 
+                  className="w-full h-full object-cover"
+                >
+                  <source src={asset} type={`video/${asset.split('.').pop()}`} />
+                </video>
+              ) : (
+                <img
+                  src={asset}
+                  alt=""
+                  className={`w-full h-full object-cover ${isActive ? 'animate-kenburns' : ''}`}
+                />
+              )}
+            </div>
+          );
+        })}
 
+        <div className="absolute inset-0 bg-gradient-to-b from-surface-950/80 via-surface-950/40 to-surface-950/90 z-10" />
         <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full blur-[100px] animate-pulse-slow z-20 opacity-30" style={{ backgroundColor: primaryColor }} />
       </div>
 
-      <div className="relative z-10 text-center px-6 animate-fade-in-up">
+      {/* Main Content Wrapper - Centered */}
+      <div className="relative z-20 w-full max-w-5xl mx-auto px-6 py-20 flex flex-col items-center justify-center text-center animate-fade-in-up">
         {isCustomer ? (
           <div className="inline-flex flex-col items-center gap-2 mb-8 animate-fade-in">
             <div className="bg-emerald-500/10 border border-emerald-500/20 px-6 py-2 rounded-full text-emerald-400 font-bold text-sm backdrop-blur-sm">
@@ -168,57 +231,56 @@ export default function Landing() {
             : 'Fresh food, fast service. Order right from this screen and enjoy your meal.'}
         </p>
 
-        <div className="flex flex-col gap-4 items-center max-w-xs mx-auto">
+        {/* Action Buttons */}
+        <div className="flex flex-col items-center gap-4 w-full max-w-sm mx-auto">
           {user && user.role !== 'customer' ? (
             <>
               <Link
                 to={tenant ? `/${user.role === 'admin' ? 'admin' : user.role === 'kitchen' ? 'kitchen' : 'cashier'}?tenant=${tenant.slug}` : `/${user.role === 'admin' ? 'admin' : user.role === 'kitchen' ? 'kitchen' : 'cashier'}`}
-                className="btn-custom w-full text-lg py-4 rounded-2xl tracking-wider uppercase flex items-center justify-center gap-2 mb-2"
+                className="btn-custom w-full text-lg py-5 rounded-2xl font-black tracking-widest uppercase flex items-center justify-center gap-2 mb-2 shadow-xl"
               >
-                Back to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Dashboard
+                Go to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} 🚀
               </Link>
 
-              <Link to={menuLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white hover:bg-white/10 transition-all">
-                Start Your Order
-              </Link>
-              <Link to={queueLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white">
-                View Order Queue
+              <Link to={menuLink} className="w-full py-4 px-6 bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-2xl font-bold transition-all flex items-center justify-center">
+                Start New Order
               </Link>
             </>
           ) : (
             <>
-              <Link to={menuLink} className="btn-custom w-full text-lg py-4 rounded-2xl tracking-wider uppercase flex items-center justify-center gap-2" id="start-order-btn">
-                {isCustomer ? 'Order Now' : 'Start Your Order'}
+              <Link to={menuLink} className="btn-custom w-full text-xl py-6 rounded-3xl font-black tracking-widest uppercase flex items-center justify-center gap-3 shadow-2xl transition-all hover:scale-105" id="start-order-btn">
+                {isCustomer ? 'Start Ordering' : 'Start Your Order'} 🚀
               </Link>
 
-              {!user && (
-                <Link to={portalLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white hover:bg-white/10 transition-all">
-                  Sign in / Sign up
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full mt-2">
+                {!user && (
+                  <Link to={portalLink} className="py-4 px-6 bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2">
+                    <span>👤</span> Sign In
+                  </Link>
+                )}
+                <Link to={queueLink} className="py-4 px-6 bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2" id="view-queue-btn">
+                  <span>📊</span> Queue
                 </Link>
-              )}
+              </div>
 
               {lastOrder && (
-                <Link to={`/order/${lastOrder}`} className="btn-secondary w-full bg-emerald-500 border-emerald-400 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 animate-fade-in-up">
-                  View Receipt
+                <Link to={`/order/${lastOrder}`} className="w-full mt-2 py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse">
+                  <span>📄</span> View Recent Receipt
                 </Link>
               )}
-
-              <Link to={queueLink} className="btn-secondary w-full bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white" id="view-queue-btn">
-                View Order Queue
-              </Link>
             </>
           )}
 
           {!user ? (
-            <Link to={tenant ? `/login?tenant=${tenant.slug}` : '/login'} className="text-surface-500 text-sm hover:text-white transition-colors mt-4">
-              Staff Login →
+            <Link to={tenant ? `/login?tenant=${tenant.slug}` : '/login'} className="text-surface-500 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors mt-6">
+              Staff Secure Login →
             </Link>
           ) : (
             <button
               onClick={logoutUser}
-              className="text-red-400 text-sm hover:text-red-300 transition-colors mt-4 font-bold uppercase tracking-widest"
+              className="text-red-400 text-[10px] font-black uppercase tracking-widest hover:text-red-300 transition-colors mt-6"
             >
-              Sign Out [{user.role}]
+              Log Out System [{user.role}]
             </button>
           )}
         </div>

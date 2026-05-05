@@ -17,6 +17,7 @@ model Tenant {
   primaryColor   String  @default("#f97316") // Default orange
   secondaryColor String  @default("#fbbf24") // Default amber
   bannerImage    String? // Dynamic background for landing page
+  bannerAssets   Json?    // Array of URLs for slideshow/video
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

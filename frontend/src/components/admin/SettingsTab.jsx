@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { getSettings, updateSettings } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function SettingsTab() {
-  const [settings, setSettings] = useState({ points_rate: '100' });
+  const { user } = useAuth();
+  const [settings, setSettings] = useState({ points_rate: '100', tenant_assets: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+
+  const isSuper = user?.role === 'superadmin';
 
   useEffect(() => {
     loadSettings();
@@ -65,71 +69,105 @@ export default function SettingsTab() {
               <p className="text-primary-700 text-xs font-medium">Customize your logo and tab icon.</p>
             </div>
           </div>
-          <div className="p-8 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Display Store Name</label>
-                <input 
-                  type="text" 
-                  value={settings.tenant_name || ''} 
-                  onChange={e => setSettings({...settings, tenant_name: e.target.value})}
-                  className="input-field w-full py-4 text-xl font-black" 
-                  placeholder="e.g. BURGER PALACE"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Store Logo URL</label>
-                <div className="flex gap-4">
-                  <input 
-                    type="text" 
-                    value={settings.tenant_logo || ''} 
-                    onChange={e => setSettings({...settings, tenant_logo: e.target.value})}
-                    className="input-field flex-1 py-3 text-sm" 
-                    placeholder="https://example.com/logo.png"
-                  />
-                  {settings.tenant_logo && (
-                    <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
-                      <img src={settings.tenant_logo} className="w-full h-full object-cover" alt="Preview" />
+          <div className="p-8 space-y-8">
+            <div className="grid grid-cols-1 gap-8">
+              {isSuper && (
+                <>
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Display Store Name</label>
+                    <input 
+                      type="text" 
+                      value={settings.tenant_name || ''} 
+                      onChange={e => setSettings({...settings, tenant_name: e.target.value})}
+                      className="input-field w-full py-4 text-xl font-black" 
+                      placeholder="e.g. BURGER PALACE"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Store Logo URL</label>
+                      <div className="flex gap-4">
+                        <input 
+                          type="text" 
+                          value={settings.tenant_logo || ''} 
+                          onChange={e => setSettings({...settings, tenant_logo: e.target.value})}
+                          className="input-field flex-1 py-3 text-sm" 
+                          placeholder="https://example.com/logo.png"
+                        />
+                        {settings.tenant_logo && (
+                          <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
+                            <img src={settings.tenant_logo} className="w-full h-full object-cover" alt="Preview" />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Favicon URL (Tab Icon)</label>
-                <div className="flex gap-4">
-                  <input 
-                    type="text" 
-                    value={settings.tenant_favicon || ''} 
-                    onChange={e => setSettings({...settings, tenant_favicon: e.target.value})}
-                    className="input-field flex-1 py-3 text-sm" 
-                    placeholder="https://example.com/favicon.ico"
-                  />
-                  {settings.tenant_favicon && (
-                    <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center p-2">
-                      <img src={settings.tenant_favicon} className="w-full h-full object-contain" alt="Preview" />
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Favicon URL (Tab Icon)</label>
+                      <div className="flex gap-4">
+                        <input 
+                          type="text" 
+                          value={settings.tenant_favicon || ''} 
+                          onChange={e => setSettings({...settings, tenant_favicon: e.target.value})}
+                          className="input-field flex-1 py-3 text-sm" 
+                          placeholder="https://example.com/favicon.ico"
+                        />
+                        {settings.tenant_favicon && (
+                          <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center p-2">
+                            <img src={settings.tenant_favicon} className="w-full h-full object-contain" alt="Preview" />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
+
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Landing Page Banner (Background URL)</label>
-                <div className="flex gap-4">
-                  <input 
-                    type="text" 
-                    value={settings.tenant_banner || ''} 
-                    onChange={e => setSettings({...settings, tenant_banner: e.target.value})}
-                    className="input-field flex-1 py-3 text-sm" 
-                    placeholder="https://images.unsplash.com/photo-..."
-                  />
-                  {settings.tenant_banner && (
-                    <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
-                      <img src={settings.tenant_banner} className="w-full h-full object-cover" alt="Preview" />
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Landing Page Background Assets (Slideshow / Video)</label>
+                <div className="space-y-4">
+                  {(settings.tenant_assets || []).map((asset, idx) => (
+                    <div key={idx} className="flex gap-4 items-center bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                      <div className="w-16 h-16 rounded-xl border border-slate-300 overflow-hidden bg-black flex-shrink-0">
+                        {asset.match(/\.(mp4|webm)$/i) ? (
+                          <div className="w-full h-full flex items-center justify-center text-white text-xs font-black">VIDEO</div>
+                        ) : (
+                          <img src={asset} className="w-full h-full object-cover" alt="" />
+                        )}
+                      </div>
+                      <input 
+                        type="text" 
+                        value={asset} 
+                        onChange={e => {
+                          const newAssets = [...settings.tenant_assets];
+                          newAssets[idx] = e.target.value;
+                          setSettings({...settings, tenant_assets: newAssets});
+                        }}
+                        className="input-field flex-1 py-3 text-xs" 
+                        placeholder="Image or Video URL (.mp4 supported)"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newAssets = settings.tenant_assets.filter((_, i) => i !== idx);
+                          setSettings({...settings, tenant_assets: newAssets});
+                        }}
+                        className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black"
+                      >
+                        ✕
+                      </button>
                     </div>
-                  )}
+                  ))}
+                  <button 
+                    type="button"
+                    onClick={() => setSettings({...settings, tenant_assets: [...(settings.tenant_assets || []), '']})}
+                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black uppercase tracking-widest text-xs hover:border-primary-400 hover:text-primary-500 transition-all"
+                  >
+                    + Add Background Media (Image/Video)
+                  </button>
                 </div>
               </div>
             </div>
-            <p className="text-xs text-slate-400 italic">Pro-tip: Use high-resolution square images for logos and wide images (1920x1080) for banners.</p>
+            <p className="text-xs text-slate-400 italic font-medium">✨ Tip: You can mix images and videos. The system will automatically play videos and cycle through images in a slideshow.</p>
           </div>
         </div>
 
