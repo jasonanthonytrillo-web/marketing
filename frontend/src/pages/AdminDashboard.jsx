@@ -158,17 +158,26 @@ export default function AdminDashboard() {
               {/* Secondary Metrics */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
-                  <h3 className="font-heading font-bold text-surface-900 mb-6">Sales Performance</h3>
-                  <div className="h-64 w-full flex items-end gap-3 px-2 pt-4">
-                    {[40, 70, 45, 90, 65, 80, 55, 75, 40, 60, 85, 50].map((height, i) => (
-                      <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                        <div 
-                          className="w-full bg-gradient-to-t from-primary-500/20 to-primary-500 rounded-t-lg transition-all duration-1000 group-hover:brightness-110" 
-                          style={{ height: `${height}%` }}
-                        ></div>
-                        <span className="text-[10px] font-bold text-surface-400 uppercase">{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}</span>
-                      </div>
-                    ))}
+                  <h3 className="font-heading font-bold text-surface-900 mb-6">Sales Performance (Last 14 Days)</h3>
+                  <div className="h-64 w-full flex items-end gap-2 px-2 pt-4">
+                    {(() => {
+                      const maxVal = Math.max(...(summary.dailySales?.map(s => s.revenue) || [1]));
+                      return (summary.dailySales || []).map((data, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
+                          <div className="relative w-full flex flex-col justify-end h-full">
+                            {/* Tooltip on hover */}
+                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-surface-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30 font-black shadow-xl">
+                              {formatCurrency(data.revenue)}
+                            </div>
+                            <div 
+                              className="w-full bg-gradient-to-t from-primary-500/20 to-primary-500 rounded-t-lg transition-all duration-1000 group-hover:brightness-110" 
+                              style={{ height: `${(data.revenue / (maxVal || 1)) * 100}%`, minHeight: data.revenue > 0 ? '4px' : '2px' }}
+                            ></div>
+                          </div>
+                          <span className="text-[8px] font-bold text-surface-400 uppercase rotate-45 mt-2 origin-left">{data.label}</span>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200">

@@ -86,6 +86,29 @@ router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
       };
     };
 
+    // Calculate real daily sales for the chart (Last 14 days is better for a new shop)
+    const dailySales = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const start = new Date(d.setHours(0, 0, 0, 0));
+      const end = new Date(d.setHours(23, 59, 59, 999));
+      
+      const sales = await prisma.order.aggregate({
+        where: {
+          tenantId: req.user.tenantId,
+          status: 'completed',
+          createdAt: { gte: start, lte: end }
+        },
+        _sum: { total: true }
+      });
+      
+      dailySales.push({
+        label: d.toLocaleDateString('default', { month: 'short', day: 'numeric' }),
+        revenue: sales._sum.total || 0
+      });
+    }
+
     const [todaySummary, weekSummary, monthSummary] = await Promise.all([
       calcSummary(today), calcSummary(weekAgo), calcSummary(monthAgo)
     ]);
@@ -101,7 +124,7 @@ router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
         month: monthSummary, 
         totalProducts, 
         lowStock,
-        // Add specific keys for AdminDashboard.jsx KPI cards
+        dailySales,
         revenue: todaySummary.sales,
         ordersCount: todaySummary.orders,
         productsCount: totalProducts,
@@ -131,10 +154,15 @@ router.get('/kitchen-times', authenticate, authorize('admin'), async (req, res) 
       orderBy: { createdAt: 'desc' },
       take: 50
     });
-    const data = orders.map(o => ({
-      orderNumber: o.orderNumber,
-      prepTimeMinutes: Math.round((o.kitchenCompletedAt - o.kitchenStartedAt) / 60000)
-    }));
+    const data = orders.map(o => {
+      const diffMs = o.kitchenCompletedAt - o.kitchenStartedAt;
+      let mins = Math.round(diffMs / 60000);
+      if (mins === 0 && diffMs > 0) mins = 1; // At least 1 min if any time spent
+      return {
+        orderNumber: o.orderNumber,
+        prepTimeMinutes: mins
+      };
+    });
     const avg = data.length > 0 ? Math.round(data.reduce((s, d) => s + d.prepTimeMinutes, 0) / data.length) : 0;
     res.json({ success: true, data: { orders: data, averagePrepTime: avg } });
   } catch (error) {
