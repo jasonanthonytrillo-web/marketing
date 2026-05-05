@@ -2,28 +2,30 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function forceFix() {
-  console.log('⚡ Starting Manual Schema Sync...');
+  console.log('⚡ Force-syncing Database Schema...');
   
   try {
-    // 1. Add logo column
-    console.log('➕ Adding "logo" column...');
-    await prisma.$executeRawUnsafe(`ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "logo" TEXT;`);
+    // Manually add the missing column using raw SQL
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "bannerAssets" JSONB;
+    `);
+
+    console.log('✅ Column bannerAssets added successfully!');
     
-    // 2. Add favicon column
-    console.log('➕ Adding "favicon" column...');
-    await prisma.$executeRawUnsafe(`ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "favicon" TEXT;`);
-    
-    // 3. Add bannerImage column
-    console.log('➕ Adding "bannerImage" column...');
-    await prisma.$executeRawUnsafe(`ALTER TABLE "Tenant" ADD COLUMN IF NOT EXISTS "bannerImage" TEXT;`);
-    
-    console.log('✅ DATABASE SCHEMA UPDATED SUCCESSFULLY!');
-    console.log('🚀 You can now try logging in again.');
+    // Now run the repair script logic directly
+    console.log('🍔 Updating Burger Palace branding...');
+    await prisma.$executeRawUnsafe(`
+      UPDATE "Tenant" 
+      SET name = 'BURGER PALACE', 
+          "primaryColor" = '#eab308', 
+          active = true,
+          "updatedAt" = NOW()
+      WHERE slug = 'burger-palace';
+    `);
+
+    console.log('🎉 ALL FIXED! Please refresh your browser.');
   } catch (error) {
-    console.error('❌ Manual Sync Failed:', error.message);
-    if (error.message.includes('already exists')) {
-      console.log('ℹ️ Columns already exist, which is fine.');
-    }
+    console.error('❌ Force Fix Failed:', error.message);
   } finally {
     await prisma.$disconnect();
   }

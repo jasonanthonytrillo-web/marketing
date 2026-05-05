@@ -66,16 +66,16 @@ export default function Landing() {
   const queueLink = tenant ? `/queue?tenant=${tenant.slug}` : '/queue';
   const portalLink = tenant ? `/member-portal?tenant=${tenant.slug}` : '/member-portal';
   const primaryColor = tenant?.primaryColor || '#4f46e5';
-  
+
   // Smart background fallback based on tenant type
   const burgerBackground = 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=2000&auto=format&fit=crop';
   const defaultBackground = 'https://images.unsplash.com/photo-1586816001966-79b736744398?q=80&w=2000&auto=format&fit=crop';
-  
+
   const bannerImage = tenant?.bannerImage || (tenant?.slug === 'burger-palace' ? burgerBackground : defaultBackground);
 
   const [currentAssetIndex, setCurrentAssetIndex] = useState(0);
-  const assets = (tenant?.bannerAssets && Array.isArray(tenant.bannerAssets) && tenant.bannerAssets.length > 0) 
-    ? tenant.bannerAssets.filter(a => a && a.trim() !== '') 
+  const assets = (tenant?.bannerAssets && Array.isArray(tenant.bannerAssets) && tenant.bannerAssets.length > 0)
+    ? tenant.bannerAssets.filter(a => a && a.trim() !== '')
     : [bannerImage];
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function Landing() {
           Service <span className="text-red-500">Suspended</span>
         </h1>
         <p className="text-surface-400 text-lg md:text-xl max-w-md mx-auto mb-10 leading-relaxed">
-          The storefront for <span className="text-white font-bold">{tenant.name}</span> is temporarily unavailable. 
+          The storefront for <span className="text-white font-bold">{tenant.name}</span> is temporarily unavailable.
           Please contact the system administrator for more information.
         </p>
         <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -144,20 +144,20 @@ export default function Landing() {
               }
             `}
         </style>
-        
+
         {assets.map((asset, index) => {
           const isVid = typeof asset === 'string' && asset.match(/\.(mp4|webm|ogg)$/i);
           const isActive = index === currentAssetIndex;
-          
+
           return (
-            <div 
+            <div
               key={`${asset}-${index}`}
               className={`absolute inset-0 asset-transition ${isActive ? 'opacity-60' : 'opacity-0'}`}
               style={{ zIndex: isActive ? 1 : 0 }}
             >
               {isVid ? (
-                <video 
-                  autoPlay muted loop playsInline 
+                <video
+                  autoPlay muted loop playsInline
                   className="w-full h-full object-cover"
                 >
                   <source src={asset} type={`video/${asset.split('.').pop()}`} />
@@ -226,8 +226,8 @@ export default function Landing() {
         </h1>
 
         <p className="text-lg md:text-2xl text-surface-300 max-w-2xl mx-auto font-medium leading-relaxed mb-12">
-          {tenant?.slug === 'burger-palace' 
-            ? 'The most royal burgers in the palace. Order now and skip the wait!' 
+          {tenant?.slug === 'burger-palace'
+            ? 'The most royal burgers in the palace. Order now and skip the wait!'
             : 'Fresh food, fast service. Order right from this screen and enjoy your meal.'}
         </p>
 
@@ -249,17 +249,17 @@ export default function Landing() {
           ) : (
             <>
               <Link to={menuLink} className="btn-custom w-full text-xl py-6 rounded-3xl font-black tracking-widest uppercase flex items-center justify-center gap-3 shadow-2xl transition-all hover:scale-105" id="start-order-btn">
-                {isCustomer ? 'Start Ordering' : 'Start Your Order'} 🚀
+                {isCustomer ? 'Start Ordering' : 'Start Order'}
               </Link>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full mt-2">
                 {!user && (
                   <Link to={portalLink} className="py-4 px-6 bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2">
-                    <span>👤</span> Sign In
+                    <span></span> Sign In
                   </Link>
                 )}
                 <Link to={queueLink} className="py-4 px-6 bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 hover:text-white rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2" id="view-queue-btn">
-                  <span>📊</span> Queue
+                  <span></span> Queue
                 </Link>
               </div>
 
