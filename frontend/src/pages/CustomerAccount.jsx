@@ -95,7 +95,7 @@ export default function CustomerAccount() {
               <span className="text-[9px] sm:text-[10px] uppercase tracking-widest hidden sm:block">back to menu</span>
             </Link>
           </div>
-          <h1 className="flex-1 text-center text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-orange-600 whitespace-nowrap px-2">My Account</h1>
+          <h1 className="flex-1 text-center text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-orange-600 whitespace-nowrap px-2">t</h1>
           <div className="flex-1 flex justify-end">
             <button onClick={logoutUser} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
               <span className="text-lg">🚪</span>
@@ -131,7 +131,7 @@ export default function CustomerAccount() {
 
         {/* Order History Section */}
         <div className="mb-6 flex items-center justify-between px-2">
-          <h3 className="text-xl font-black tracking-tight text-slate-800">Recent Feasts</h3>
+          <h3 className="text-xl font-black tracking-tight text-slate-800">Order History</h3>
           <span className="text-[10px] font-black text-orange-600/50 uppercase tracking-widest">{orders.length} Orders</span>
         </div>
 
@@ -153,7 +153,7 @@ export default function CustomerAccount() {
 
               <div className="space-y-3 mb-4 sm:mb-6 ml-2 sm:ml-5">
                 {order.items?.map(item => (
-                   <div key={item.id} className="flex justify-between items-center text-xs">
+                  <div key={item.id} className="flex justify-between items-center text-xs">
                     <div className="flex items-center gap-2 pr-2">
                       <span className="text-orange-600/50 font-black">{item.quantity}×</span>
                       <span className="text-slate-600 font-medium truncate max-w-[120px] sm:max-w-none">{item.productName}</span>

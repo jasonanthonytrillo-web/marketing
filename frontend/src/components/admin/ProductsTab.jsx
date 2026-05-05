@@ -614,6 +614,5 @@ export default function ProductsTab() {
     )}
     </div>
     </div>
-    </div>
   );
 }
