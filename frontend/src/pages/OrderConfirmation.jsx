@@ -143,7 +143,7 @@ export default function OrderConfirmation() {
                 <span className="text-xl">🕒</span>
                 <div className="text-left">
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary-400 leading-none mb-1">Estimated Wait</p>
-                  <p className="text-lg font-black text-primary-700 leading-none">{formatMinutes(order.estimatedPrepTime)}</p>
+                  <p className="text-lg font-black text-primary-600 leading-none">{formatMinutes(order.estimatedPrepTime)}</p>
                 </div>
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function OrderConfirmation() {
               </span>
             ) : (
               <span className={`font-bold text-xs sm:text-sm flex items-center gap-2 ${order.paymentStatus === 'paid' ? 'text-emerald-700' : 'text-slate-800'}`}>
-                {order.paymentStatus === 'paid' ? '✅ Paid' : '⏳ Pending Payment'}
+                {order.paymentStatus === 'paid' ? '✅ OFFICIAL RECEIPT' : '⏳ ORDER SLIP - PAY AT COUNTER'}
               </span>
             )}
           </div>
@@ -239,7 +239,7 @@ export default function OrderConfirmation() {
         {canCancel && (
           <button
             onClick={handleCancelOrder}
-            className="w-full py-3 mb-8 text-sm font-bold text-red-500 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors animate-fade-in-up"
+            className="w-full py-3 mb-8 text-xs font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all animate-fade-in-up border border-transparent hover:border-red-100 rounded-xl"
             style={{ animationDelay: '0.45s' }}
           >
             ✕ Cancel This Order
