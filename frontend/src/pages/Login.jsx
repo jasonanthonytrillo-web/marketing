@@ -9,6 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [searchParams] = useSearchParams();
   const { loginUser } = useAuth();
   const navigate = useNavigate();
@@ -55,10 +56,23 @@ export default function Login() {
               className="w-full px-4 py-3 bg-surface-900/50 border border-surface-700 rounded-xl text-white placeholder-surface-500 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all" placeholder="email@example.com" />
           </div>
 
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-surface-400 mb-1.5">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
-              className="w-full px-4 py-3 bg-surface-900/50 border border-surface-700 rounded-xl text-white placeholder-surface-500 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all" placeholder="••••••••" />
+            <input 
+              type={showPassword ? "text" : "password"} 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              required
+              className="w-full px-4 py-3 bg-surface-900/50 border border-surface-700 rounded-xl text-white placeholder-surface-500 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all pr-12" 
+              placeholder="••••••••" 
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-[34px] p-2 text-surface-400 hover:text-white transition-colors"
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary w-full py-3.5">

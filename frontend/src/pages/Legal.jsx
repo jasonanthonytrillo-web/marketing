@@ -1,21 +1,27 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
-const LegalLayout = ({ title, children }) => (
-  <div className="min-h-screen bg-slate-950 text-slate-300 p-8 md:p-20 font-sans leading-relaxed">
-    <div className="max-w-3xl mx-auto">
-      <Link to="/" className="inline-block mb-12 text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-widest text-sm transition-all hover:-translate-x-2">
-        ← Back to Home
-      </Link>
-      <h1 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tight uppercase">{title}</h1>
-      <div className="bg-slate-900/50 border border-white/10 rounded-[40px] p-8 md:p-12 backdrop-blur-xl shadow-2xl">
-        {children}
+const LegalLayout = ({ title, children }) => {
+  const [searchParams] = useSearchParams();
+  const tenantSlug = searchParams.get('tenant');
+  const homeLink = tenantSlug ? `/?tenant=${tenantSlug}` : '/';
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-300 p-8 md:p-20 font-sans leading-relaxed">
+      <div className="max-w-3xl mx-auto">
+        <Link to={homeLink} className="inline-block mb-12 text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-widest text-sm transition-all hover:-translate-x-2">
+          ← Back to Home
+        </Link>
+        <h1 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tight uppercase">{title}</h1>
+        <div className="bg-slate-900/50 border border-white/10 rounded-[40px] p-8 md:p-12 backdrop-blur-xl shadow-2xl">
+          {children}
+        </div>
+        <footer className="mt-12 text-slate-600 text-sm border-t border-white/5 pt-8">
+          <p>&copy; {new Date().getFullYear()} ELEVATEPOS System. All rights reserved.</p>
+        </footer>
       </div>
-      <footer className="mt-12 text-slate-600 text-sm border-t border-white/5 pt-8">
-        <p>&copy; {new Date().getFullYear()} ELEVATEPOS System. All rights reserved.</p>
-      </footer>
     </div>
-  </div>
-);
+  );
+};
 
 export const PrivacyPolicy = () => (
   <LegalLayout title="Privacy Policy">

@@ -122,7 +122,6 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
-            <button onClick={loadSummary} className="p-2 text-surface-400 hover:text-primary-600 transition-colors">🔄</button>
             <div className="text-right hidden sm:block">
               <p className="text-sm font-bold text-surface-900">{user?.name}</p>
               <p className="text-[10px] font-bold text-surface-400 uppercase">{user?.role}</p>
@@ -160,10 +159,16 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
                   <h3 className="font-heading font-bold text-surface-900 mb-6">Sales Performance</h3>
-                  <div className="h-64 flex flex-col items-center justify-center text-surface-300 italic border-2 border-dashed border-surface-100 rounded-2xl p-4">
-                    <p className="text-4xl mb-4">📈</p>
-                    <p className="font-bold text-surface-500">Live Sales Chart Initializing...</p>
-                    <p className="text-xs text-surface-400 mt-2">Connecting to real-time sales stream</p>
+                  <div className="h-64 w-full flex items-end gap-3 px-2 pt-4">
+                    {[40, 70, 45, 90, 65, 80, 55, 75, 40, 60, 85, 50].map((height, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                        <div 
+                          className="w-full bg-gradient-to-t from-primary-500/20 to-primary-500 rounded-t-lg transition-all duration-1000 group-hover:brightness-110" 
+                          style={{ height: `${height}%` }}
+                        ></div>
+                        <span className="text-[10px] font-bold text-surface-400 uppercase">{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
@@ -211,10 +216,6 @@ function StatCard({ title, value, icon, color }) {
       <div className="flex items-center justify-between mb-4">
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${colors[color]} group-hover:scale-110 transition-transform`}>
           {icon}
-        </div>
-        <div className="flex gap-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-          <span className="text-[10px] font-black text-surface-300 uppercase tracking-widest">Live</span>
         </div>
       </div>
       <p className="text-surface-500 font-bold text-sm mb-1">{title}</p>

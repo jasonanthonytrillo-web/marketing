@@ -73,13 +73,32 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
 // DELETE /api/categories/:id — Admin: Delete category
 router.delete('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
+    const categoryId = parseInt(req.params.id);
+    
+    // Find the category first to check ownership
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId }
+    });
+
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Category not found.' });
+    }
+
+    // Security check: Admins can only delete their own tenant's categories
+    if (req.user.role !== 'superadmin' && category.tenantId !== req.user.tenantId) {
+      return res.status(403).json({ success: false, message: 'Permission denied.' });
+    }
+
+    // Soft delete by deactivating
     await prisma.category.update({
-      where: { id: parseInt(req.params.id), tenantId: req.user.tenantId },
+      where: { id: categoryId },
       data: { active: false }
     });
-    res.json({ success: true, message: 'Category deactivated.' });
+
+    res.json({ success: true, message: 'Category deactivated successfully.' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to delete category.' });
+    console.error('Delete Category Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete category. It might be in use by active orders.' });
   }
 });
 

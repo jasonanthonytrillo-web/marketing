@@ -71,7 +71,7 @@ export default function Landing() {
   const primaryColor = tenant?.primaryColor || '#f97316';
 
   // Smart background fallback based on tenant type
-  const burgerBackground = '/burger-bg.mp4';
+  const burgerBackground = 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=2000&auto=format&fit=crop';
   const defaultBackground = 'https://images.unsplash.com/photo-1586816001966-79b736744398?q=80&w=2000&auto=format&fit=crop';
 
   const bannerImage = tenant?.bannerImage || (tenant?.slug === 'burger-palace' ? burgerBackground : defaultBackground);
