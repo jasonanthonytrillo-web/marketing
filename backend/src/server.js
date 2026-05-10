@@ -61,6 +61,12 @@ app.use('/api/feedback', require('./routes/feedback'));
 // Socket.io
 require('./socket')(io, prisma);
 
+// Robots.txt for Social Scrapers
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send("User-agent: *\nAllow: /");
+});
+
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
 
