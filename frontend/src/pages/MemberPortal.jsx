@@ -76,7 +76,10 @@ export default function MemberPortal() {
         }, 2000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      console.error('Registration/Verification Error:', err);
+      const msg = err.response?.data?.message || err.message || 'Something went wrong.';
+      const status = err.response?.status ? `(${err.response.status}) ` : '';
+      setError(`${status}${msg}`);
       if (err.response?.data?.unverified) {
         setMode('register'); // Let them re-register to get a new code
       }
@@ -94,7 +97,10 @@ export default function MemberPortal() {
       loginUser(res.data.data.token, res.data.data.user);
       navigate(tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu');
     } catch (err) {
-      setError(err.response?.data?.message || 'Google Login failed.');
+      console.error('Frontend Error:', err);
+      const msg = err.response?.data?.message || err.message || 'Unknown Error';
+      const status = err.response?.status ? `(${err.response.status}) ` : '';
+      setError(`${status}${msg}`);
     } finally {
       setLoading(false);
     }
