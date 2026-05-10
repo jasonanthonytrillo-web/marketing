@@ -419,24 +419,37 @@ router.post('/register-customer', async (req, res) => {
 router.post('/verify-registration', async (req, res) => {
   const { email, otp, tenantSlug } = req.body;
   try {
+    console.log('--- VERIFICATION ATTEMPT ---');
+    console.log('Email:', email);
+    console.log('OTP:', otp);
+    console.log('TenantSlug:', tenantSlug);
+
     let tenantId = null;
     if (tenantSlug) {
       const t = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
       if (t) tenantId = t.id;
     }
+    console.log('Resolved TenantId:', tenantId);
 
     const user = await prisma.user.findFirst({
       where: { 
         email, 
-        tenantId, 
-        otpCode: otp, 
-        otpExpires: { gt: new Date() } 
+        tenantId,
+        otpCode: otp
       }
     });
 
     if (!user) {
+      console.error('❌ User not found with these credentials');
       return res.status(401).json({ success: false, message: 'Invalid or expired code.' });
     }
+
+    if (user.otpExpires < new Date()) {
+      console.error('❌ OTP has expired');
+      return res.status(401).json({ success: false, message: 'Code has expired. Please sign up again.' });
+    }
+
+    console.log('✅ User found, proceeding to verify');
 
     // Mark as verified
     const updatedUser = await prisma.user.update({
