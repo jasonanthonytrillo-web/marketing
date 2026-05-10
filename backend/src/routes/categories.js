@@ -25,12 +25,8 @@ router.get('/', async (req, res) => {
       const tenantSlug = req.headers['x-tenant-slug'];
 
       if (tenantSlug) {
-        if (tenantSlug === 'project-million') {
-          tenantId = 1;
-        } else {
-          const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
-          if (tenant) tenantId = tenant.id;
-        }
+        const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+        if (tenant) tenantId = tenant.id;
       }
     }
 

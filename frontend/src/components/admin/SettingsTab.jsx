@@ -246,6 +246,62 @@ export default function SettingsTab() {
         </div>
 
         <div className="glass-card overflow-hidden">
+          <div className="p-6 bg-blue-50 border-b border-blue-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-blue-500/20">📱</div>
+            <div>
+              <h3 className="font-heading font-bold text-blue-900">Payment Settings</h3>
+              <p className="text-blue-700 text-xs font-medium">Manage your cashless payment details.</p>
+            </div>
+          </div>
+          <div className="p-8 space-y-6">
+            <div>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">GCash QR Code</label>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 flex gap-2">
+                  <input 
+                    type="text" 
+                    value={settings.gcash_qr || ''} 
+                    onChange={e => setSettings({...settings, gcash_qr: e.target.value})}
+                    className="input-field flex-1 py-3 text-sm" 
+                    placeholder="https://example.com/gcash-qr.png"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => document.getElementById('gcashQrUpload').click()}
+                    className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold"
+                  >
+                    📁 Upload
+                  </button>
+                  <input 
+                    type="file" id="gcashQrUpload" accept="image/*" className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onloadend = async () => {
+                        setMessage('📤 Uploading GCash QR...');
+                        try {
+                          const res = await uploadImage({ image: reader.result, name: 'gcash-qr' });
+                          setSettings({ ...settings, gcash_qr: res.data.url });
+                          setMessage('GCash QR updated! ✅');
+                        } catch (error) { alert('Upload failed'); }
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </div>
+                {settings.gcash_qr && (
+                  <div className="w-20 h-20 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 shadow-sm">
+                    <img src={settings.gcash_qr.startsWith('http') ? settings.gcash_qr : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${settings.gcash_qr}`} className="w-full h-full object-contain" alt="GCash QR Preview" />
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-2 italic font-medium">This QR code will be displayed to customers when you trigger a GCash payment request from the cashier dashboard.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card overflow-hidden">
           <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-emerald-500/20">💎</div>
             <div>

@@ -113,7 +113,7 @@ export default function ProductsTab() {
   };
 
   const handleAdd = () => {
-    setCurrentProduct({ name: '', description: '', price: '', image: '', categoryId: '', stock: 100, available: true, isCombo: false });
+    setCurrentProduct({ name: '', description: '', price: '', costPrice: '', image: '', categoryId: '', stock: 100, available: true, isCombo: false });
     setComboOptions([]);
     setIsEditing(true);
   };
@@ -245,6 +245,10 @@ export default function ProductsTab() {
                   <div>
                     <label className="block text-sm font-medium text-surface-700 mb-1">Price (₱)</label>
                     <input required type="number" step="0.01" value={currentProduct.price} onChange={e => setCurrentProduct({...currentProduct, price: e.target.value})} className="input-field w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-surface-700 mb-1">Cost Price (₱)</label>
+                    <input type="number" step="0.01" value={currentProduct.costPrice || ''} onChange={e => setCurrentProduct({...currentProduct, costPrice: e.target.value})} className="input-field w-full border-blue-50 focus:border-blue-500" placeholder="What you pay" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-emerald-600 mb-1">Points Cost 💎</label>
@@ -532,6 +536,8 @@ export default function ProductsTab() {
               <th className="p-4">Product</th>
               <th className="p-4">Category</th>
               <th className="p-4">Price</th>
+              <th className="p-4">Cost</th>
+              <th className="p-4">Margin</th>
               <th className="p-4">Status</th>
               <th className="p-4 text-right">Actions</th>
             </tr>
@@ -551,6 +557,12 @@ export default function ProductsTab() {
                 </td>
                 <td className="p-4 text-surface-600">{product.category?.name || 'Uncategorized'}</td>
                 <td className="p-4 font-bold text-primary-600">{formatCurrency(product.price)}</td>
+                <td className="p-4 text-surface-400 font-medium">{formatCurrency(product.costPrice || 0)}</td>
+                <td className="p-4">
+                   <span className={`font-black ${product.price - (product.costPrice || 0) > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                    {formatCurrency(product.price - (product.costPrice || 0))}
+                   </span>
+                </td>
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded text-xs font-bold ${product.available ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                     {product.available ? 'Active' : 'Inactive'}

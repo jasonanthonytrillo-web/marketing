@@ -121,6 +121,10 @@ export default function CategoriesTab() {
                 <input required type="text" value={currentCategory.name} onChange={e => setCurrentCategory({...currentCategory, name: e.target.value})} className="input-field w-full" placeholder="e.g. Burgers" />
               </div>
               <div>
+                <label className="block text-sm font-medium text-surface-700 mb-1">Category Icon (Emoji)</label>
+                <input type="text" value={currentCategory.icon || ''} onChange={e => setCurrentCategory({...currentCategory, icon: e.target.value})} className="input-field w-full" placeholder="e.g. 🍔" />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-surface-700 mb-1">Sort Order</label>
                 <input type="number" value={currentCategory.sortOrder} onChange={e => setCurrentCategory({...currentCategory, sortOrder: parseInt(e.target.value)})} className="input-field w-full" />
               </div>

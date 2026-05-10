@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getOrder, cancelOrder, getPublicTenant } from '../services/api';
+import { getOrder, cancelOrder, getPublicTenant, submitFeedback } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, playNotificationSound, unlockAudio, formatMinutes } from '../utils/helpers';
 
+import { applyTheme, clearTheme } from '../utils/theme';
+
 const STATUS_STEPS = [
-  { key: 'pending', label: 'Order Received', icon: '📋', activeBg: 'bg-orange-500', activeRing: 'ring-orange-100', inactiveBg: 'bg-orange-50' },
+  { key: 'pending', label: 'Order Received', icon: '📋', activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-primary-50' },
   { key: 'confirmed', label: 'Payment Confirmed', icon: '✅', activeBg: 'bg-emerald-500', activeRing: 'ring-emerald-100', inactiveBg: 'bg-emerald-50' },
   { key: 'preparing', label: 'Preparing', icon: '👨‍🍳', activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-slate-100' },
   { key: 'ready', label: 'Ready for Pickup', icon: '🔔', activeBg: 'bg-amber-500', activeRing: 'ring-amber-100', inactiveBg: 'bg-amber-50' },
@@ -24,6 +26,13 @@ export default function OrderConfirmation() {
   const [searchParams] = useSearchParams();
   const tenantSlug = searchParams.get('tenant');
   const [branding, setBranding] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  // Feedback State
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   useEffect(() => {
     clearCart();
@@ -45,9 +54,15 @@ export default function OrderConfirmation() {
   useEffect(() => {
     if (tenantSlug) {
       getPublicTenant(tenantSlug).then(res => {
-        if (res.data.success) setBranding(res.data.data);
+        if (res.data.success) {
+          setBranding(res.data.data);
+          if (res.data.data.primaryColor) {
+            applyTheme(res.data.data.primaryColor);
+          }
+        }
       });
     }
+    return () => clearTheme();
   }, [tenantSlug]);
 
   const brandingColor = branding?.primaryColor || '#f97316';
@@ -88,11 +103,8 @@ export default function OrderConfirmation() {
     if (!onEvent) return;
     const unsub = onEvent('order_update', (data) => {
       if (data.order?.orderNumber === orderNumber) {
-        // Trigger alerts if status changed to ready
         if (data.order.status === 'ready' && order?.status !== 'ready') {
           playNotificationSound('ready');
-          
-          // Voice announcement after a short delay
           setTimeout(() => {
             const msg = new SpeechSynthesisUtterance(`Order number ${orderNumber.split('-')[1] || orderNumber} is now ready for pickup`);
             msg.rate = 0.9;
@@ -100,22 +112,57 @@ export default function OrderConfirmation() {
           }, 800);
         }
         setOrder(data.order);
+        // Automatically close payment modal if order is confirmed
+        if (data.order.status !== 'pending') {
+          setPaymentRequest(null);
+        }
       }
     });
-    return unsub;
-  }, [onEvent, orderNumber]);
+
+    const unsub2 = onEvent('payment_request', (data) => {
+      console.log('Payment request received:', data);
+      if (data.orderNumber === orderNumber) {
+        setPaymentRequest(data);
+      }
+    });
+
+    return () => {
+      unsub();
+      unsub2();
+    };
+  }, [onEvent, orderNumber, order?.status]);
+
+  const [paymentRequest, setPaymentRequest] = useState(null);
 
   const loadOrder = async () => {
-    try { const res = await getOrder(orderNumber); setOrder(res.data.data); }
+    try {
+      const res = await getOrder(orderNumber);
+      setOrder(res.data.data);
+      if (res.data.data.feedbackRating) setFeedbackSubmitted(true);
+    }
     catch (e) { console.error(e); }
     finally { setLoading(false); }
+  };
+
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    if (rating === 0) return;
+    setSubmittingFeedback(true);
+    try {
+      await submitFeedback({ orderNumber, rating, comment });
+      setFeedbackSubmitted(true);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSubmittingFeedback(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen bg-surface-50 flex items-center justify-center"><p className="text-surface-400">Loading...</p></div>;
   if (!order) return <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center"><h2 className="text-xl font-bold mb-4">Order not found</h2><Link to={menuLink} className="btn-primary" style={{ backgroundColor: brandingColor }}>Back to Menu</Link></div>;
 
   const handleCancelOrder = async () => {
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    setShowCancelModal(false);
     try {
       await cancelOrder(orderNumber);
       loadOrder();
@@ -127,6 +174,7 @@ export default function OrderConfirmation() {
   const currentStep = STATUS_STEPS.findIndex(s => s.key === order.status);
   const isCancelled = order.status === 'cancelled';
   const isCompleted = order.status === 'completed';
+  const isReady = order.status === 'ready';
   const canCancel = order.status === 'pending' && order.paymentStatus === 'unpaid';
 
   return (
@@ -139,18 +187,14 @@ export default function OrderConfirmation() {
 
       <div className="max-w-lg mx-auto px-4 pt-4 md:pt-8">
 
-        {/* Cancelled Banner */}
-
-
         {/* Queue Ticket */}
         <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 text-center mb-4 sm:mb-6 shadow-xl relative animate-fade-in-up border-t-[12px] sm:border-t-[16px]" style={{ animationDelay: '0.1s', borderTopColor: brandingColor }}>
           <p className="text-[10px] sm:text-xs md:text-sm font-bold text-slate-400 uppercase tracking-[0.15em] mb-3 sm:mb-4">Your Queue Number</p>
           <p className="font-heading text-6xl sm:text-8xl md:text-9xl font-black text-slate-900 tracking-tighter mb-2 leading-none">
             {order.orderNumber.includes('-') ? order.orderNumber.split('-')[1] : order.orderNumber}
           </p>
-          <p className="text-[10px] text-slate-400 mb-6 sm:mb-8 font-mono break-all px-4">Full ID: {order.orderNumber}</p>
 
-          {order.estimatedPrepTime && (
+          {order.estimatedPrepTime && !isReady && !isCompleted && !isCancelled && (
             <div className="mb-6 animate-bounce-in">
               <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-100 px-4 py-2 rounded-2xl shadow-sm">
                 <span className="text-xl">🕒</span>
@@ -163,7 +207,7 @@ export default function OrderConfirmation() {
           )}
 
           <p className="text-slate-700 font-medium mb-6 sm:mb-8 text-xs sm:text-sm md:text-base px-1 sm:px-2">
-            Please wait for your number to be called or displayed on the queue screen.
+            {isReady ? "YOUR ORDER IS READY! Please proceed to the counter." : "Please wait for your number to be called or displayed on the queue screen."}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
             <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -180,6 +224,74 @@ export default function OrderConfirmation() {
             )}
           </div>
         </div>
+
+        {/* Feedback Section - Shows when Ready or Completed */}
+        {(isReady || isCompleted) && !isCancelled && (
+          <div className="bg-white rounded-[2rem] p-8 mb-6 shadow-xl border border-surface-100 animate-fade-in-up relative overflow-hidden group">
+            {!feedbackSubmitted ? (
+              <>
+                <div className="relative z-10 text-center">
+                  <h4 className="text-2xl font-black text-slate-900 mb-2">How was your meal? 🍔</h4>
+                  <p className="text-slate-500 text-xs mb-6">Your feedback helps us make your next visit even better!</p>
+
+                  <div className="flex justify-center gap-3 mb-8">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setRating(star)}
+                        className={`text-4xl transition-all hover:scale-125 active:scale-95 ${rating >= star ? 'drop-shadow-lg scale-110' : 'opacity-30 grayscale'}`}
+                      >
+                        {star === 1 ? '😞' : star === 2 ? '😐' : star === 3 ? '😊' : star === 4 ? '😋' : '😍'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {rating > 0 && (
+                    <form onSubmit={handleFeedbackSubmit} className="animate-fade-in">
+                      <textarea
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary-500/20 outline-none transition-all mb-4 h-24 resize-none"
+                        placeholder="Any comments or suggestions? (Optional)"
+                      />
+                      <button
+                        type="submit"
+                        disabled={submittingFeedback}
+                        className="w-full py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl shadow-primary-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        style={{ backgroundColor: brandingColor }}
+                      >
+                        {submittingFeedback ? 'Sending...' : 'Send Feedback →'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4 animate-bounce-in">
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✨</div>
+                <h4 className="text-xl font-black text-slate-900 mb-1">Thank you!</h4>
+                <p className="text-slate-500 text-xs">We've received your feedback. Enjoy your meal!</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Guest Hook / VIP Invite */}
+        {!order.customerId && !isCancelled && !isCompleted && !isReady && (
+          <div className="bg-slate-900 rounded-[2rem] p-6 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary-500/30 transition-all duration-500"></div>
+            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl shadow-xl backdrop-blur-md border border-white/20">💎</div>
+              <div className="flex-1">
+                <h4 className="text-lg font-black text-white mb-1 tracking-tight">Save this meal to your story!</h4>
+                <p className="text-slate-400 text-[11px] leading-relaxed mb-4">Sign up now to start your Personal Timeline and earn <span className="text-primary-400 font-bold">{Math.floor(order.total / 10)} points</span> on this order.</p>
+                <Link to={tenantSlug ? `/member-portal?tenant=${tenantSlug}&action=register` : '/member-portal?action=register'} className="inline-block px-6 py-2.5 bg-primary-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/40 active:scale-95">
+                  Create My VIP Account
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Progress Tracker */}
         {!isCancelled && !isCompleted && (
@@ -215,15 +327,16 @@ export default function OrderConfirmation() {
           <div className="border-t border-surface-100 mt-3 pt-3">
             {order.items?.map(item => (
               <div key={item.id} className="flex justify-between text-xs sm:text-sm py-1 gap-2">
-                <span className="text-surface-600 flex-1 min-w-0">{item.quantity}× {item.productName}{item.addons ? ` (${JSON.parse(item.addons).map(a => a.name).join(', ')})` : ''}</span>
+                <span className="text-surface-600 flex-1 min-w-0">
+                  {item.quantity}× {item.productName}
+                  {item.addons ? ` (${JSON.parse(item.addons).map(a => a.name).join(', ')})` : ''}
+                </span>
                 <span className="font-medium flex-shrink-0">{formatCurrency(item.subtotal)}</span>
               </div>
             ))}
           </div>
           <div className="border-t border-surface-200 mt-3 pt-3 space-y-1">
             <div className="flex justify-between text-xs sm:text-sm"><span className="text-surface-500">Subtotal</span><span>{formatCurrency(order.subtotal)}</span></div>
-            {order.discountAmount > 0 && <div className="flex justify-between text-xs sm:text-sm text-emerald-600"><span>Discount ({order.discountType})</span><span>-{formatCurrency(order.discountAmount)}</span></div>}
-            <div className="flex justify-between text-xs sm:text-sm"><span className="text-surface-500">Tax</span><span>{formatCurrency(order.taxAmount)}</span></div>
             <div className="flex justify-between font-bold text-base sm:text-lg font-heading pt-2 border-t border-surface-200"><span>Total</span><span style={{ color: brandingColor }}>{formatCurrency(order.total)}</span></div>
           </div>
         </div>
@@ -245,101 +358,142 @@ export default function OrderConfirmation() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up mb-4 no-print" style={{ animationDelay: '0.5s' }}>
-          <button onClick={() => window.print()} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3">🖨️ Print Receipt</button>
           <Link to={queueLink} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3">📋 View Queue</Link>
           <Link to={menuLink} className="btn-primary flex-1 justify-center text-sm sm:text-base py-3" style={{ backgroundColor: brandingColor }}>🍽️ Order Again</Link>
         </div>
+      </div>
 
-        {/* Hidden Printable Receipt */}
-        <div className="print-only receipt-container">
-          <div className="receipt-header">
-            <h1 className="receipt-title">{user?.tenantName || 'Project Million'}</h1>
-            <p>{user?.tenantAddress || 'Quality Food & Service'}</p>
-            <p>Tel: {user?.tenantPhone || 'N/A'}</p>
-          </div>
-          <div className="receipt-divider"></div>
-          <p><strong>Order:</strong> {order.orderNumber}</p>
-          <p><strong>Date:</strong> {formatDate(order.createdAt)}</p>
-          <p><strong>Type:</strong> {order.orderType === 'dine_in' ? 'DINE-IN' : 'TAKE-OUT'}</p>
-          <div className="receipt-divider"></div>
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-dashed border-black">
-                <th className="py-1">QTY</th>
-                <th className="py-1">ITEM</th>
-                <th className="py-1 text-right">PRICE</th>
-              </tr>
-            </thead>
-            <tbody>
-              {order.items?.map(item => (
-                <tr key={item.id} className="text-xs">
-                  <td className="py-1 align-top">{item.quantity}</td>
-                  <td className="py-1 align-top">
-                    {item.productName}
-                    {item.addons && <div className="text-[10px] opacity-70">- {JSON.parse(item.addons).map(a => a.name).join(', ')}</div>}
-                  </td>
-                  <td className="py-1 text-right align-top">{formatCurrency(item.subtotal)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="receipt-divider"></div>
-          <div className="flex justify-between"><span>SUBTOTAL</span><span>{formatCurrency(order.subtotal)}</span></div>
-          {order.discountAmount > 0 && <div className="flex justify-between"><span>DISCOUNT ({order.discountType})</span><span>-{formatCurrency(order.discountAmount)}</span></div>}
-          <div className="flex justify-between"><span>TAX (12%)</span><span>{formatCurrency(order.taxAmount)}</span></div>
-          <div className="flex justify-between font-bold text-lg pt-1"><span>TOTAL</span><span>{formatCurrency(order.total)}</span></div>
-          <div className="receipt-divider"></div>
-          <div className="flex justify-between text-xs"><span>METHOD</span><span>{order.paymentMethod?.toUpperCase()}</span></div>
-          <div className="flex justify-between text-xs"><span>STATUS</span><span>{order.paymentStatus?.toUpperCase()}</span></div>
-          <div className="receipt-footer mt-6">
-            <p className="font-bold">Thank you for your business!</p>
-            <p>Please come again!</p>
+      {/* GCash Payment Modal */}
+      {paymentRequest && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl animate-fade-in">
+          <style>
+            {`
+              @keyframes scan {
+                0% { top: 0; opacity: 0; }
+                10% { opacity: 1; }
+                90% { opacity: 1; }
+                100% { top: 100%; opacity: 0; }
+              }
+              .animate-scan {
+                animation: scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+              }
+            `}
+          </style>
+
+          <div className="bg-white w-full max-w-sm sm:max-w-md rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 relative">
+
+            {/* Header */}
+            <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-8 sm:p-10 text-white text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl -ml-10 -mb-10"></div>
+
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="bg-white px-6 py-3 rounded-2xl shadow-xl mb-5 flex items-center justify-center transform transition-transform hover:scale-105 duration-300">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/5/52/GCash_logo.svg" alt="GCash Official Logo" className="h-8 object-contain" />
+                </div>
+                <h3 className="text-3xl font-black mb-2 tracking-tight">Scan to Pay</h3>
+                <p className="text-blue-100 text-sm font-medium opacity-90">Open your GCash app and upload the QR code</p>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setPaymentRequest(null)}
+                className="absolute top-6 right-6 w-10 h-10 bg-black/20 hover:bg-black/40 rounded-full flex items-center justify-center transition-colors text-white z-20 backdrop-blur-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 sm:p-8 space-y-8 text-center bg-slate-50 relative">
+              {/* Decorative notch */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-1 w-16 h-1.5 bg-slate-200/80 rounded-full"></div>
+
+              {/* Amount Display - Premium Card */}
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/60 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1 relative z-10">Total Amount Due</p>
+                <div className="flex items-center justify-center gap-1.5 relative z-10">
+                  <span className="text-3xl font-bold text-slate-300 mt-1">₱</span>
+                  <p className="text-5xl font-black text-slate-900 tracking-tighter">
+                    {paymentRequest.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+
+              {/* QR Code Container */}
+              <div className="flex flex-col items-center gap-5">
+                <div className="relative mx-auto w-fit">
+                  {/* Glowing ring backdrop */}
+                  <div className="absolute inset-0 bg-blue-500 rounded-[2rem] blur-2xl opacity-20 animate-pulse-slow"></div>
+
+                  <div className="relative bg-white p-4 sm:p-5 rounded-[2rem] shadow-xl border border-slate-100 z-10">
+                    {paymentRequest.gcashQr ? (
+                      <div className="relative rounded-2xl overflow-hidden bg-slate-50 group">
+                        <img
+                          src={paymentRequest.gcashQr}
+                          alt="GCash QR"
+                          className="w-56 h-56 sm:w-64 sm:h-64 object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
+                        />
+                        {/* Scanning Line Animation */}
+                        <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)] animate-scan z-20"></div>
+                        <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-blue-500/20 to-transparent animate-scan z-10 pointer-events-none"></div>
+                      </div>
+                    ) : (
+                      <div className="w-56 h-56 sm:w-64 sm:h-64 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 italic text-sm p-8 text-center border-2 border-dashed border-slate-200">
+                        <div className="space-y-3">
+                          <div className="text-3xl">⚠️</div>
+                          <p>No QR code uploaded.<br />Please pay at the counter.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Scanner Corner Accents */}
+                  <div className="absolute -top-3 -left-3 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-xl z-20"></div>
+                  <div className="absolute -top-3 -right-3 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-xl z-20"></div>
+                  <div className="absolute -bottom-3 -left-3 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-xl z-20"></div>
+                  <div className="absolute -bottom-3 -right-3 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-xl z-20"></div>
+                </div>
+
+                {/* Save QR Button */}
+                {paymentRequest.gcashQr && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(paymentRequest.gcashQr);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `GCash-QR-${orderNumber}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                      } catch (e) {
+                        // Fallback
+                        const link = document.createElement('a');
+                        link.href = paymentRequest.gcashQr;
+                        link.download = `GCash-QR-${orderNumber}.png`;
+                        link.target = '_blank';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full text-xs font-bold uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-95"
+                  >
+                    💾 Save QR to Gallery
+                  </button>
+                )}
+              </div>
+
+
+
+            </div>
           </div>
         </div>
-
-        {canCancel && (
-          <button
-            onClick={handleCancelOrder}
-            className="w-full py-3 mb-8 text-xs font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all animate-fade-in-up border border-transparent hover:border-red-100 rounded-xl"
-            style={{ animationDelay: '0.45s' }}
-          >
-            ✕ Cancel This Order
-          </button>
-        )}
-
-        {/* Other Active Orders Switcher */}
-        {(() => {
-          const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
-          const activeOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
-          const otherOrders = activeOrders.filter(num => num !== orderNumber);
-          if (otherOrders.length === 0) return null;
-
-          return (
-            <div className="animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-px flex-1 bg-surface-200"></div>
-                <span className="text-[10px] font-black text-surface-400 uppercase tracking-widest">My Other Active Orders</span>
-                <div className="h-px flex-1 bg-surface-200"></div>
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                {otherOrders.map(num => (
-                  <Link
-                    key={num}
-                    to={tenantSlug ? `/order/${num}?tenant=${tenantSlug}` : `/order/${num}`}
-                    className="flex items-center justify-between p-4 bg-white rounded-2xl border border-surface-200 hover:border-primary-300 hover:bg-primary-50 transition-all group shadow-sm"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-surface-100 flex items-center justify-center text-sm group-hover:bg-primary-100 transition-colors">📄</div>
-                      <span className="font-bold text-surface-700 group-hover:text-primary-700">{num}</span>
-                    </div>
-                    <span className="text-primary-500 font-bold text-sm">View Ticket →</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-      </div>
+      )}
     </div>
   );
 }

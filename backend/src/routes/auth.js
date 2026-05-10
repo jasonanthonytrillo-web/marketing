@@ -22,10 +22,15 @@ router.post('/login', async (req, res) => {
 
     // TENANT DETECTION: Determine which shop the user is trying to log into
     const { tenantSlug } = req.body;
-    let tenantId = 1; // Default
+    let tenantId = null;
+
     if (tenantSlug && tenantSlug !== 'project-million') {
       const tenantRecord = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
       if (tenantRecord) tenantId = tenantRecord.id;
+    } else {
+      // MASTER TENANT: Find the project-million ID dynamically
+      const masterTenant = await prisma.tenant.findUnique({ where: { slug: 'project-million' } });
+      if (masterTenant) tenantId = masterTenant.id;
     }
 
     // FIND USER: Look for the email specifically within this store
@@ -99,6 +104,8 @@ router.post('/login', async (req, res) => {
           tenantSlug: user.tenant?.slug,
           tenantLogo: user.tenant?.logo,
           tenantFavicon: user.tenant?.favicon,
+          tenantColor: user.tenant?.primaryColor,
+          tenantSecondaryColor: user.tenant?.secondaryColor,
           points: user.points || 0,
           isGoogle: user.isGoogle
         }
@@ -124,11 +131,16 @@ router.post('/google', async (req, res) => {
     const payload = ticket.getPayload();
     const { email, name } = payload;
 
-    // Resolve Tenant ID based on slug
-    let tenantId = 1; // Default
-    if (tenantSlug && tenantSlug !== 'project-million') {
+    // Resolve Tenant ID based on slug dynamically
+    let tenantId = null;
+    if (tenantSlug) {
       const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
       if (tenant) tenantId = tenant.id;
+    }
+    // Fallback to Master Tenant if slug is missing
+    if (!tenantId) {
+      const masterTenant = await prisma.tenant.findUnique({ where: { slug: 'project-million' } });
+      if (masterTenant) tenantId = masterTenant.id;
     }
 
     // Find user by email WITHIN this specific tenant
@@ -188,6 +200,8 @@ router.post('/google', async (req, res) => {
           tenantSlug: user.tenant?.slug,
           tenantLogo: user.tenant?.logo,
           tenantFavicon: user.tenant?.favicon,
+          tenantColor: user.tenant?.primaryColor,
+          tenantSecondaryColor: user.tenant?.secondaryColor,
           points: user.points || 0,
           isGoogle: user.isGoogle
         }
@@ -209,11 +223,16 @@ router.post('/register-customer', async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required.' });
     }
 
-    // Resolve tenantId from slug
-    let tenantId = 1;
-    if (tenantSlug && tenantSlug !== 'project-million') {
+    // Resolve tenantId from slug dynamically
+    let tenantId = null;
+    if (tenantSlug) {
       const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
       if (tenant) tenantId = tenant.id;
+    }
+    // Fallback to Master Tenant if slug is missing
+    if (!tenantId) {
+      const masterTenant = await prisma.tenant.findUnique({ where: { slug: 'project-million' } });
+      if (masterTenant) tenantId = masterTenant.id;
     }
 
     const existing = await prisma.user.findFirst({ where: { email, tenantId } });
@@ -257,9 +276,14 @@ router.post('/register', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email, password, and name are required.' });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findFirst({ 
+      where: { 
+        email, 
+        tenantId: req.tenantId // Use the active tenant context
+      } 
+    });
     if (existing) {
-      return res.status(400).json({ success: false, message: 'Email already registered.' });
+      return res.status(400).json({ success: false, message: 'Email already registered in this store.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -279,18 +303,19 @@ router.post('/register', authenticate, async (req, res) => {
         role: finalRole,
         pin: hashedPin,
         points: 0,
-        tenantId: req.user.tenantId // IMPORTANT: Bind to the creator's tenant
+        tenantId: req.tenantId // Bind to the active tenant context
       },
       select: { id: true, email: true, name: true, role: true, active: true, createdAt: true, points: true, tenantId: true }
     });
 
     await prisma.auditLog.create({
       data: { 
+        tenantId: req.tenantId,
         userId: req.user.id, 
         action: 'create_user', 
         entityType: 'user', 
         entityId: user.id.toString(), 
-        details: `Created user: ${name} (${finalRole}) for Tenant ID: ${req.user.tenantId}` 
+        details: `Created user: ${name} (${finalRole}) for Tenant ID: ${req.tenantId}` 
       }
     });
 
@@ -313,7 +338,9 @@ router.get('/me', authenticate, async (req, res) => {
       data: {
         ...fullUser,
         isGoogle: fullUser.isGoogle,
-        tenantName: fullUser.tenant?.name
+        tenantName: fullUser.tenant?.name,
+        tenantColor: fullUser.tenant?.primaryColor,
+        tenantSecondaryColor: fullUser.tenant?.secondaryColor
       } 
     });
   } catch (error) {

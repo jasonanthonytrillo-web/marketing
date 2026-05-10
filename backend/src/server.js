@@ -32,8 +32,13 @@ app.set('prisma', prisma);
 app.use((req, res, next) => {
   req.io = io;
   req.prisma = prisma;
-  // Support for Google Sign-In (Popups)
+  
+  // SECURE HEADERS FOR GOOGLE LOGIN
+  // 'same-origin-allow-popups' allows Google login popups to communicate back to your app
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  // 'unsafe-none' is sometimes needed on localhost to prevent COOP/COEP conflicts
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  
   next();
 });
 
@@ -49,6 +54,9 @@ app.use('/api/reports', require('./routes/reports'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/superadmin', require('./routes/superadmin'));
+app.use('/api/suppliers', require('./routes/suppliers'));
+app.use('/api/customer', require('./routes/customer'));
+app.use('/api/feedback', require('./routes/feedback'));
 
 // Socket.io
 require('./socket')(io, prisma);

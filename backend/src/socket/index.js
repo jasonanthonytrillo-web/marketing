@@ -83,4 +83,22 @@ module.exports = (io, prisma) => {
       timestamp: new Date().toISOString()
     });
   };
+
+  // Helper: send payment request to kiosk
+  io.emitPaymentRequest = (order, tenant) => {
+    const tId = order.tenantId;
+    io.to(`tenant-${tId}-kiosk`).emit('payment_request', {
+      orderNumber: order.orderNumber,
+      amount: order.total,
+      gcashQr: tenant.gcashQr,
+      timestamp: new Date().toISOString()
+    });
+    // Also notify specific order page
+    io.to(`tenant-${tId}-order-${order.orderNumber}`).emit('payment_request', {
+      orderNumber: order.orderNumber,
+      amount: order.total,
+      gcashQr: tenant.gcashQr,
+      timestamp: new Date().toISOString()
+    });
+  };
 };

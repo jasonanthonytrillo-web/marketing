@@ -18,6 +18,7 @@ model Tenant {
   primaryColor   String  @default("#f97316") // Default orange
   secondaryColor String  @default("#fbbf24") // Default amber
   bannerImage    String? // Dynamic background for landing page
+  gcashQr        String?
   bannerAssets   Json?    // Array of URLs for slideshow/video
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -28,6 +29,8 @@ model Tenant {
   products      Product[]
   orders        Order[]
   systemSettings SystemSetting[]
+  expenses      Expense[]
+  suppliers     Supplier[]
 }
 
 model User {
@@ -94,6 +97,8 @@ model Product {
   inventoryLogs InventoryLog[]
   comboOptions  ComboOption[]  @relation("ComboParent")
   asOptionIn    ComboOption[]  @relation("OptionProduct")
+  
+  costPrice     Float          @default(0) // Internal cost of product
 }
 
 model ProductAddon {
@@ -143,6 +148,8 @@ model Order {
   kitchenStartedAt   DateTime?
   estimatedPrepTime  Int?      // Duration in minutes
   kitchenCompletedAt DateTime?
+  feedbackRating     Int?
+  feedbackComment    String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -189,6 +196,21 @@ model Payment {
   cashier User? @relation(fields: [cashierId], references: [id])
 }
 
+model Supplier {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int      @default(1)
+  name          String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  inventoryLogs InventoryLog[]
+}
+
 model InventoryLog {
   id             Int      @id @default(autoincrement())
   productId      Int
@@ -197,6 +219,9 @@ model InventoryLog {
   referenceId    String?
   staffId        Int?
   createdAt      DateTime @default(now())
+  
+  supplierId     Int?
+  supplier       Supplier? @relation(fields: [supplierId], references: [id])
 
   product Product @relation(fields: [productId], references: [id])
 }
@@ -236,3 +261,17 @@ model SystemSetting {
 
   @@unique([tenantId, key])
 }
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int      @default(1)
+  name        String
+  amount      Float
+  category    String   // e.g. Supplies, Utilities, Salary, Rent
+  date        DateTime @default(now())
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}
+

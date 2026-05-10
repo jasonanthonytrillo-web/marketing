@@ -6,7 +6,7 @@ const STORAGE_KEY = 'pos_cart';
 function cartReducer(state, action) {
   switch (action.type) {
     case 'ADD_ITEM': {
-      const key = `${action.payload.id}-${action.payload.size || ''}-${action.payload.flavor || ''}-${action.payload.isRedemption ? 'free' : 'paid'}-${JSON.stringify(action.payload.selectedAddons || [])}`;
+      const key = `${action.payload.id}-${action.payload.size || ''}-${action.payload.flavor || ''}-${action.payload.isRedemption ? 'free' : 'paid'}-${JSON.stringify(action.payload.selectedAddons || [])}-${JSON.stringify(action.payload.comboChoices || null)}`;
       const idx = state.items.findIndex(i => i.cartKey === key);
       if (idx >= 0) {
         const items = [...state.items];

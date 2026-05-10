@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { createOrder, createXenditInvoice, getPublicTenant } from '../services/api';
+import { createOrder, getPublicTenant } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 
@@ -89,30 +89,6 @@ export default function Checkout() {
       }
       localStorage.setItem(lastOrderKey, order.orderNumber);
 
-      if (paymentMethod === 'gcash' || paymentMethod === 'maya' || paymentMethod === 'card') {
-        try {
-          const xenditRes = await createXenditInvoice({
-            orderId: order.id,
-            orderNumber: order.orderNumber,
-            amount: total,
-            customerName: customerName || 'Guest',
-            paymentMethod: paymentMethod,
-            tenant: tenantSlug
-          });
-          
-          if (xenditRes.data.success && xenditRes.data.invoice_url) {
-            await refreshUser();
-            window.location.href = xenditRes.data.invoice_url;
-            return;
-          }
-        } catch (xErr) {
-          console.error('Xendit Error:', xErr);
-          setError('Online payment failed to initialize. Please pay at the counter.');
-          setSubmitting(false);
-          return;
-        }
-      }
-      
       await refreshUser();
       clearCart();
       navigate(tenantSlug ? `/order/${order.orderNumber}?tenant=${tenantSlug}` : `/order/${order.orderNumber}`);

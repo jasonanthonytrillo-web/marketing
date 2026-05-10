@@ -7,7 +7,7 @@ const prisma = require('../lib/prisma');
 router.get('/orders', authenticate, authorize('cashier', 'admin'), async (req, res) => {
   try {
     const { status } = req.query;
-    const where = { tenantId: req.user.tenantId };
+    const where = { tenantId: req.tenantId };
     
     if (status && status !== 'all') {
       where.status = status;
@@ -32,11 +32,11 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
   let currentStep = 'initializing';
   try {
     const orderId = parseInt(req.params.id);
-    const { amountReceived, paymentMethod, discountType, discountPercent } = req.body;
+    const { amountReceived, paymentMethod, discountType, discountPercent, referenceNumber } = req.body;
     
     currentStep = 'fetching order';
     const order = await prisma.order.findUnique({
-      where: { id: orderId, tenantId: req.user.tenantId },
+      where: { id: orderId, tenantId: req.tenantId },
       include: { items: true }
     });
 
@@ -93,7 +93,7 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
         });
         
         if (req.io && req.io.emitLoyaltyUpdate) {
-          req.io.emitLoyaltyUpdate(order.customerId, earnedPoints);
+          req.io.emitLoyaltyUpdate(order.customerId, earnedPoints, order.tenantId);
         }
       }
     }
@@ -106,8 +106,13 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
     }
 
     currentStep = 'updating order';
+    let newNotes = order.notes || '';
+    if (referenceNumber) {
+      newNotes = newNotes ? `${newNotes} | Ref: ${referenceNumber}` : `Ref: ${referenceNumber}`;
+    }
+
     const updated = await prisma.order.update({
-      where: { id: orderId, tenantId: req.user.tenantId },
+      where: { id: orderId, tenantId: req.tenantId },
       data: {
         status: 'confirmed',
         paymentStatus: 'paid',
@@ -117,7 +122,8 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
         taxAmount,
         total,
         cashierId: req.user.id,
-        confirmedAt: new Date()
+        confirmedAt: new Date(),
+        notes: newNotes !== '' ? newNotes : null
       },
       include: { items: true }
     });
@@ -186,7 +192,7 @@ router.post('/orders/:id/cancel', authenticate, authorize('cashier', 'admin'), a
     const { reason } = req.body;
 
     const order = await prisma.order.findUnique({
-      where: { id: orderId, tenantId: req.user.tenantId },
+      where: { id: orderId, tenantId: req.tenantId },
       include: { items: true }
     });
 
@@ -252,7 +258,7 @@ router.post('/orders/:id/cancel', authenticate, authorize('cashier', 'admin'), a
     }
 
     const updated = await prisma.order.update({
-      where: { id: orderId, tenantId: req.user.tenantId },
+      where: { id: orderId, tenantId: req.tenantId },
       data: {
         status: 'cancelled',
         paymentStatus: order.paymentStatus === 'paid' ? 'refunded' : 'unpaid',
@@ -318,6 +324,33 @@ router.post('/calculate', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Calculation failed.' });
+  }
+});
+
+// POST /api/cashier/orders/:id/request-payment — Trigger payment popup on kiosk
+router.post('/orders/:id/request-payment', authenticate, authorize('cashier', 'admin'), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const order = await prisma.order.findUnique({
+      where: { id: orderId, tenantId: req.tenantId }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found.' });
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.tenantId }
+    });
+
+    if (req.io && req.io.emitPaymentRequest) {
+      req.io.emitPaymentRequest(order, tenant);
+    }
+
+    res.json({ success: true, message: 'Payment request sent to kiosk.' });
+  } catch (error) {
+    console.error('Request Payment Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send payment request.' });
   }
 });
 

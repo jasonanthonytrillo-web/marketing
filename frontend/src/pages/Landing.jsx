@@ -204,12 +204,12 @@ export default function Landing() {
       <div className="relative z-20 w-full max-w-5xl mx-auto px-6 py-20 flex flex-col items-center justify-center text-center animate-fade-in-up">
         {isCustomer ? (
           <div className="inline-flex flex-col items-center gap-2 mb-8 animate-fade-in">
-            <div className="bg-emerald-500/10 border border-emerald-500/20 px-6 py-2 rounded-full text-emerald-400 font-bold text-sm backdrop-blur-sm">
-              👋 Welcome back, {user.name}!
-            </div>
-            <div className="text-xs text-emerald-500/60 font-black uppercase tracking-widest">
-              Available Balance: {Math.floor(user.points)} Points
-            </div>
+             <div className="bg-emerald-500/10 border border-emerald-500/20 px-8 py-3 rounded-[2rem] text-emerald-400 font-bold text-lg backdrop-blur-md shadow-xl shadow-emerald-500/10 flex flex-col items-center">
+               <span className="text-white">Welcome back, <span className="text-emerald-400">{user.name}</span>!</span>
+             </div>
+             <div className="text-[10px] text-emerald-500/60 font-black uppercase tracking-[0.3em] mt-2">
+               💎 {Math.floor(user.points)} Loyalty Points Available
+             </div>
           </div>
         ) : (
           <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-2 rounded-full text-sm font-medium mb-8 backdrop-blur-sm" style={{ color: primaryColor }}>
@@ -306,7 +306,7 @@ export default function Landing() {
               onClick={logoutUser}
               className="text-red-400 text-[10px] font-black uppercase tracking-widest hover:text-red-300 transition-colors mt-6"
             >
-              Log Out System [{user.role}]
+              {user.role === 'customer' ? `Not ${user.name.split(' ')[0]}? Sign Out` : `Log Out System [${user.role}]`}
             </button>
           )}
         </div>

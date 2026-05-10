@@ -6,6 +6,7 @@ import { useSocket } from '../context/SocketContext';
 import { formatCurrency, unlockAudio } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
+import { applyTheme, clearTheme } from '../utils/theme';
 
 export default function Menu() {
   const { user, logoutUser } = useAuth();
@@ -31,13 +32,23 @@ export default function Menu() {
       const res = await getProducts();
       setCategories(res.data.data || []);
       if (res.data.tenantName) setTenantName(res.data.tenantName);
-      if (res.data.branding) setBranding(res.data.branding);
+      if (res.data.branding) {
+        setBranding(res.data.branding);
+        if (res.data.branding.primaryColor) {
+          applyTheme(res.data.branding.primaryColor);
+        }
+      }
     } catch (e) {
       console.error('Failed to load products:', e);
     } finally {
       setLoading(false);
     }
   };
+
+  // Cleanup theme on unmount
+  useEffect(() => {
+    return () => clearTheme();
+  }, []);
 
   const handleProductClick = (product) => {
     if (product.isCombo) {
@@ -566,7 +577,8 @@ export default function Menu() {
                   required
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-1 outline-none transition-all"
+                  style={{ '--tw-ring-color': brandingColor, borderColor: brandingColor }}
                   placeholder="••••••••"
                 />
               </div>
@@ -578,7 +590,8 @@ export default function Menu() {
                   required
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-1 outline-none transition-all"
+                  style={{ '--tw-ring-color': brandingColor, borderColor: brandingColor }}
                   placeholder="••••••••"
                 />
               </div>
@@ -590,13 +603,14 @@ export default function Menu() {
                   required
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-sm focus:ring-1 outline-none transition-all"
+                  style={{ '--tw-ring-color': brandingColor, borderColor: brandingColor }}
                   placeholder="••••••••"
                 />
               </div>
 
               {passwordMessage.text && (
-                <div className={`p-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest ${passwordMessage.type === 'success' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'}`}>
+                <div className={`p-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest ${passwordMessage.type === 'success' ? 'bg-surface-50' : 'bg-red-50 text-red-600'}`} style={passwordMessage.type === 'success' ? { color: brandingColor } : {}}>
                   {passwordMessage.text}
                 </div>
               )}
@@ -612,7 +626,8 @@ export default function Menu() {
                 <button
                   type="submit"
                   disabled={passwordLoading}
-                  className="flex-1 bg-orange-600 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-500 shadow-lg shadow-orange-600/20 disabled:opacity-50 transition-all"
+                  className="flex-1 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg disabled:opacity-50 transition-all"
+                  style={{ backgroundColor: brandingColor, boxShadow: `0 10px 15px -3px ${brandingColor}33` }}
                 >
                   {passwordLoading ? 'Updating...' : 'Save Password'}
                 </button>

@@ -328,6 +328,16 @@ function OrderCard({ order, now, onAction, processing }) {
                   + {JSON.parse(item.addons).map(a => a.name).join(', ')}
                 </div>
               )}
+              {item.comboChoices && (
+                <div className="ml-6 text-xs text-emerald-300 mt-1 font-bold">
+                  + {(() => {
+                    try {
+                      const choices = JSON.parse(item.comboChoices);
+                      return Object.values(choices).filter(Boolean).map(c => c.name).join(' + ');
+                    } catch (e) { return ''; }
+                  })()}
+                </div>
+              )}
               {item.notes && (
                 <div className="ml-6 text-xs text-amber-400 mt-1 bg-amber-400/10 px-2 py-1 rounded inline-block border border-amber-400/20">
                   ⚠️ {item.notes}

@@ -24,7 +24,7 @@ router.post('/upload-image', authenticate, authorize('admin'), async (req, res) 
     
     const base64Data = image.split(';base64,').pop();
     const buffer = Buffer.from(base64Data, 'base64');
-    const fileName = `${req.user.tenantId || 'global'}/${Date.now()}-${name?.replace(/\s+/g, '-').toLowerCase() || 'media'}.${extension}`;
+    const fileName = `${req.tenantId || 'global'}/${Date.now()}-${name?.replace(/\s+/g, '-').toLowerCase() || 'media'}.${extension}`;
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
@@ -85,7 +85,7 @@ router.get('/products', authenticate, authorize('admin'), async (req, res) => {
 
 router.post('/products', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { name, description, price, image, categoryId, stock, available, pointsCost, addons } = req.body;
+    const { name, description, price, costPrice, image, categoryId, stock, available, pointsCost, addons, isCombo, comboGroup1Name, comboGroup2Name } = req.body;
     if (!name || !price || !categoryId) {
       return res.status(400).json({ success: false, message: 'Name, price, and category are required.' });
     }
@@ -93,15 +93,19 @@ router.post('/products', authenticate, authorize('admin'), async (req, res) => {
       data: {
         tenantId: req.tenantId,
         name, description, price: parseFloat(price), image,
+        costPrice: costPrice ? parseFloat(costPrice) : 0,
         categoryId: parseInt(categoryId), stock: parseInt(stock) || 100,
         available: available !== false,
         pointsCost: pointsCost ? parseInt(pointsCost) : null,
-        addons: addons ? { create: addons.map(a => ({ tenantId: req.user.tenantId, name: a.name, price: parseFloat(a.price) })) } : undefined
+        isCombo: isCombo || false,
+        comboGroup1Name: comboGroup1Name || null,
+        comboGroup2Name: comboGroup2Name || null,
+        addons: addons ? { create: addons.map(a => ({ tenantId: req.tenantId, name: a.name, price: parseFloat(a.price) })) } : undefined
       },
       include: { category: true, addons: true }
     });
     await prisma.auditLog.create({
-      data: { userId: req.user.id, action: 'create_product', entityType: 'product', entityId: product.name, details: `Created new product "${product.name}" in category "${product.category?.name || 'N/A'}" at ₱${product.price}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'create_product', entityType: 'product', entityId: product.name, details: `Created new product "${product.name}" in category "${product.category?.name || 'N/A'}" at ₱${product.price}` }
     });
     res.status(201).json({ success: true, data: product });
   } catch (error) {
@@ -112,7 +116,7 @@ router.post('/products', authenticate, authorize('admin'), async (req, res) => {
 
 router.put('/products/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { name, description, price, image, categoryId, stock, available, pointsCost, addons } = req.body;
+    const { name, description, price, costPrice, image, categoryId, stock, available, pointsCost, addons, isCombo, comboGroup1Name, comboGroup2Name } = req.body;
 
     // Handle addons: Delete old ones and create new ones (sync)
     if (addons) {
@@ -128,10 +132,14 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
       where: { id: parseInt(req.params.id), tenantId: req.tenantId },
       data: {
         name, description, price: price ? parseFloat(price) : undefined,
+        costPrice: costPrice !== undefined ? parseFloat(costPrice) : undefined,
         image, categoryId: categoryId ? parseInt(categoryId) : undefined,
         stock: stock !== undefined ? parseInt(stock) : undefined, 
         available,
         pointsCost: pointsCost !== undefined ? (pointsCost ? parseInt(pointsCost) : null) : undefined,
+        isCombo: isCombo !== undefined ? isCombo : undefined,
+        comboGroup1Name: comboGroup1Name !== undefined ? comboGroup1Name : undefined,
+        comboGroup2Name: comboGroup2Name !== undefined ? comboGroup2Name : undefined,
         addons: addons ? { 
           create: addons.map(a => ({ 
             tenantId: req.tenantId, 
@@ -143,7 +151,7 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
       include: { category: true, addons: true }
     });
     await prisma.auditLog.create({
-      data: { userId: req.user.id, action: 'update_product', entityType: 'product', entityId: product.name, details: `Updated product "${product.name}": Price=₱${product.price}, Stock=${product.stock}, Active=${product.available}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'update_product', entityType: 'product', entityId: product.name, details: `Updated product "${product.name}": Price=₱${product.price}, Stock=${product.stock}, Active=${product.available}` }
     });
     res.json({ success: true, data: product });
   } catch (error) {
@@ -200,8 +208,13 @@ router.post('/staff', authenticate, authorize('admin'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required.' });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(400).json({ success: false, message: 'Email already exists.' });
+    const existing = await prisma.user.findFirst({ 
+      where: { 
+        email,
+        tenantId: req.tenantId 
+      } 
+    });
+    if (existing) return res.status(400).json({ success: false, message: 'Email already exists in this shop.' });
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
@@ -210,7 +223,7 @@ router.post('/staff', authenticate, authorize('admin'), async (req, res) => {
     });
 
     await prisma.auditLog.create({
-      data: { userId: req.user.id, action: 'create_staff', entityType: 'user', entityId: user.name, details: `Created new ${user.role}: ${user.name} (${user.email})` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'create_staff', entityType: 'user', entityId: user.name, details: `Created new ${user.role}: ${user.name} (${user.email})` }
     });
 
     res.status(201).json({ success: true, data: user });
@@ -231,7 +244,7 @@ router.put('/staff/:id', authenticate, authorize('admin'), async (req, res) => {
       select: { id: true, email: true, name: true, role: true, active: true }
     });
     await prisma.auditLog.create({
-      data: { userId: req.user.id, action: 'update_staff', entityType: 'staff', entityId: user.name, details: `Updated staff "${user.name}" (${user.email}): Role=${user.role}, Active=${user.active}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'update_staff', entityType: 'staff', entityId: user.name, details: `Updated staff "${user.name}" (${user.email}): Role=${user.role}, Active=${user.active}` }
     });
     res.json({ success: true, data: user });
   } catch (error) {
@@ -243,7 +256,7 @@ router.delete('/staff/:id', authenticate, authorize('admin'), async (req, res) =
   try {
     await prisma.user.update({ where: { id: parseInt(req.params.id) }, data: { active: false } });
     await prisma.auditLog.create({
-      data: { userId: req.user.id, action: 'deactivate_staff', entityType: 'user', entityId: parseInt(req.params.id), details: `Deactivated staff ID: ${req.params.id}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'deactivate_staff', entityType: 'user', entityId: parseInt(req.params.id), details: `Deactivated staff ID: ${req.params.id}` }
     });
     res.json({ success: true, message: 'Staff deactivated.' });
   } catch (error) {
@@ -267,20 +280,86 @@ router.get('/inventory', authenticate, authorize('admin'), async (req, res) => {
 
 router.post('/inventory/:id/restock', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { quantity } = req.body;
+    const { quantity, supplierId } = req.body;
     const product = await prisma.product.update({
       where: { id: parseInt(req.params.id) },
       data: { stock: { increment: parseInt(quantity) } }
     });
     await prisma.inventoryLog.create({
-      data: { productId: product.id, quantityChange: parseInt(quantity), reason: 'restock', staffId: req.user.id }
+      data: { 
+        productId: product.id, 
+        quantityChange: parseInt(quantity), 
+        reason: 'restock', 
+        staffId: req.user.id,
+        supplierId: supplierId ? parseInt(supplierId) : null
+      }
     });
     await prisma.auditLog.create({
-      data: { userId: req.user.id, action: 'restock_product', entityType: 'product', entityId: product.id, details: `Added ${quantity} units to ${product.name}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'restock_product', entityType: 'product', entityId: product.id, details: `Added ${quantity} units to ${product.name}` }
     });
     res.json({ success: true, data: product });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to restock.' });
+  }
+});
+
+router.get('/inventory/logs', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const logs = await prisma.inventoryLog.findMany({
+      where: { product: { tenantId: req.tenantId } },
+      include: { 
+        product: { select: { name: true } },
+        supplier: { select: { name: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200
+    });
+    res.json({ success: true, data: logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load inventory logs.' });
+  }
+});
+
+// Expenses
+router.get('/expenses', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const expenses = await prisma.expense.findMany({
+      where: { tenantId: req.tenantId },
+      orderBy: { date: 'desc' }
+    });
+    res.json({ success: true, data: expenses });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load expenses.' });
+  }
+});
+
+router.post('/expenses', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, amount, category, date, notes } = req.body;
+    const expense = await prisma.expense.create({
+      data: {
+        tenantId: req.tenantId,
+        name,
+        amount: parseFloat(amount),
+        category,
+        date: date ? new Date(date) : new Date(),
+        notes
+      }
+    });
+    res.status(201).json({ success: true, data: expense });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to add expense.' });
+  }
+});
+
+router.delete('/expenses/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    await prisma.expense.delete({
+      where: { id: parseInt(req.params.id) }
+    });
+    res.json({ success: true, message: 'Expense deleted.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to delete expense.' });
   }
 });
 
@@ -321,6 +400,7 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
       settingsMap.tenant_assets = tenant.bannerAssets || [];
       settingsMap.primary_color = tenant.primaryColor;
       settingsMap.secondary_color = tenant.secondaryColor;
+      settingsMap.gcash_qr = tenant.gcashQr;
     }
 
     res.json({ success: true, data: settingsMap });
@@ -342,7 +422,8 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
       tenant_banner: 'bannerImage',
       tenant_assets: 'bannerAssets',
       primary_color: 'primaryColor',
-      secondary_color: 'secondaryColor'
+      secondary_color: 'secondaryColor',
+      gcash_qr: 'gcashQr'
     };
 
     const brandingUpdate = {};

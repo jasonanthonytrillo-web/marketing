@@ -9,7 +9,7 @@ router.get('/orders', authenticate, authorize('kitchen', 'admin', 'cashier'), as
     const orders = await prisma.order.findMany({
       where: { 
         status: { in: ['confirmed', 'preparing', 'ready'] },
-        tenantId: req.user.tenantId
+        tenantId: req.tenantId
       },
       include: { items: true },
       orderBy: { confirmedAt: 'asc' }
@@ -26,13 +26,13 @@ router.post('/orders/:id/start', authenticate, authorize('kitchen', 'admin'), as
     const orderId = parseInt(req.params.id);
     const { prepTime } = req.body; // Minutes from kitchen
     const order = await prisma.order.findUnique({ 
-      where: { id: orderId, tenantId: req.user.tenantId } 
+      where: { id: orderId, tenantId: req.tenantId } 
     });
     if (!order || order.status !== 'confirmed') {
       return res.status(400).json({ success: false, message: 'Order not found or not confirmed.' });
     }
     const updated = await prisma.order.update({
-      where: { id: orderId, tenantId: req.user.tenantId },
+      where: { id: orderId, tenantId: req.tenantId },
       data: { 
         status: 'preparing', 
         kitchenStartedAt: new Date(),
@@ -64,13 +64,13 @@ router.post('/orders/:id/complete', authenticate, authorize('kitchen', 'admin'),
   try {
     const orderId = parseInt(req.params.id);
     const order = await prisma.order.findUnique({ 
-      where: { id: orderId, tenantId: req.user.tenantId } 
+      where: { id: orderId, tenantId: req.tenantId } 
     });
     if (!order || !['confirmed', 'preparing'].includes(order.status)) {
       return res.status(400).json({ success: false, message: 'Invalid order state.' });
     }
     const updated = await prisma.order.update({
-      where: { id: orderId, tenantId: req.user.tenantId },
+      where: { id: orderId, tenantId: req.tenantId },
       data: { status: 'ready', kitchenCompletedAt: new Date(), kitchenStartedAt: order.kitchenStartedAt || new Date() },
       include: { items: true }
     });
@@ -99,7 +99,7 @@ router.post('/orders/:id/served', authenticate, authorize('kitchen', 'admin', 'c
   try {
     const orderId = parseInt(req.params.id);
     const updated = await prisma.order.update({
-      where: { id: orderId, tenantId: req.user.tenantId },
+      where: { id: orderId, tenantId: req.tenantId },
       data: { status: 'completed' },
       include: { items: true }
     });

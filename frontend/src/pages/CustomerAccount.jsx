@@ -3,10 +3,14 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getOrderHistory, changePassword } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate } from '../utils/helpers';
+import axios from 'axios';
+import { useSocket } from '../context/SocketContext';
 
 export default function CustomerAccount() {
-  const { user, logoutUser, loading: authLoading } = useAuth();
-  const [orders, setOrders] = useState([]);
+  const { user, logoutUser, loading: authLoading, refreshUser } = useAuth();
+  const { joinRoom, onEvent, connected } = useSocket();
+  const [activity, setActivity] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -20,17 +24,38 @@ export default function CustomerAccount() {
     if (!authLoading && !user) {
       navigate('/member-portal');
     } else if (user) {
-      loadHistory();
+      loadActivity();
       if (searchParams.get('action') === 'change-password') {
         setShowPasswordModal(true);
       }
     }
   }, [user, authLoading, navigate, searchParams]);
 
-  const loadHistory = async () => {
+  // Real-time Points Listener
+  useEffect(() => {
+    if (user && connected) {
+      const room = `user-${user.id}`;
+      joinRoom(room, user.tenantId);
+      
+      const cleanup = onEvent('loyalty_updated', (data) => {
+        console.log('✨ Live Points Update Received:', data);
+        refreshUser(); // Refresh AuthContext user (points)
+        loadActivity(); // Refresh activity timeline
+      });
+
+      return cleanup;
+    }
+  }, [user, connected, joinRoom, onEvent, refreshUser]);
+
+  const loadActivity = async () => {
     try {
-      const res = await getOrderHistory();
-      setOrders(res.data.data);
+      const token = localStorage.getItem('pos_token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const res = await axios.get(`${API_URL}/customer/activity`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setActivity(res.data.data.timeline);
+      setFavorites(res.data.data.favorites);
     } catch (error) {
       console.error(error);
     } finally {
@@ -70,7 +95,7 @@ export default function CustomerAccount() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'bg-orange-50 text-orange-600 border-orange-100';
+      case 'completed': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'cancelled': return 'bg-red-50 text-red-600 border-red-100';
       case 'ready': return 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse';
       case 'preparing': return 'bg-sky-50 text-sky-600 border-sky-100';
@@ -79,118 +104,197 @@ export default function CustomerAccount() {
   };
 
   if (authLoading || loading) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-      <div className="text-orange-600 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">Loading History...</div>
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="text-primary-600 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">Loading VIP Profile...</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
-      {/* Header */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
+      {/* Premium Header */}
       <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex items-center justify-between">
-          <div className="flex-1 flex justify-start">
-            <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : "/menu"} className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-100 rounded-xl sm:rounded-2xl hover:bg-slate-200 transition-all text-orange-600 font-bold whitespace-nowrap">
-              <span className="text-lg sm:text-xl leading-none">←</span>
-              <span className="text-[9px] sm:text-[10px] uppercase tracking-widest hidden sm:block">back to menu</span>
-            </Link>
-          </div>
-          <h1 className="flex-1 text-center text-[10px] sm:text-sm font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-orange-600 whitespace-nowrap px-2">Order History</h1>
-          <div className="flex-1 flex justify-end">
-            {/* Space reserved for balance/layout symmetry */}
-          </div>
+        <div className="max-w-xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : "/menu"} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <span className="text-2xl leading-none">←</span>
+          </Link>
+          <h1 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">My VIP Journey</h1>
+          <button onClick={() => logoutUser()} className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">Logout</button>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pt-8">
-        {/* Profile Card */}
-        <div className="bg-gradient-to-br from-orange-500 via-orange-600 to-red-700 rounded-[40px] p-8 mb-10 shadow-2xl relative overflow-hidden border border-white/10">
-          {/* Decorative Elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-orange-400/10 rounded-full -ml-24 -mb-24 blur-2xl"></div>
+      <div className="max-w-xl mx-auto px-6 pt-8">
+        {/* VIP Member Card */}
+        <div className="relative bg-slate-900 rounded-[2.5rem] p-8 mb-10 shadow-2xl overflow-hidden border border-white/5">
+          {/* Animated Background Glow */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/20 rounded-full -mr-20 -mt-20 blur-[80px] animate-pulse"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full -ml-20 -mb-20 blur-[60px]"></div>
 
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 text-center sm:text-left">
-            <div className="w-20 h-20 bg-white/10 rounded-[28px] flex items-center justify-center text-4xl shadow-2xl backdrop-blur-md border border-white/20 ring-4 ring-white/5">
-              💎
-            </div>
-            <div className="flex-1">
-              <h2 className="text-3xl font-black mb-1 tracking-tight">{user?.name}</h2>
-              <p className="text-orange-100/60 text-sm font-medium mb-4">{user?.email}</p>
-
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
-                <div className="bg-black/30 backdrop-blur-md border border-white/10 px-6 py-2 rounded-2xl">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-orange-300/70 mb-0.5">Points Balance</p>
-                  <p className="text-xl font-black text-white">{Math.floor(user?.points || 0)} <span className="text-[10px] opacity-60">PTS</span></p>
+          <div className="relative z-10">
+            <div className="flex justify-between items-start mb-8">
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-2xl backdrop-blur-md border border-white/20 ring-4 ring-white/5">
+                💎
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-black text-primary-400 uppercase tracking-[0.2em] mb-1">Loyalty Level</p>
+                <div className="px-4 py-1.5 bg-primary-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-primary-500/40">
+                  Gold Member
                 </div>
+              </div>
+            </div>
+
+            <h2 className="text-3xl font-black text-white mb-1 tracking-tight">{user?.name}</h2>
+            <p className="text-slate-400 text-sm font-medium mb-6">Member since {new Date(user?.createdAt).getFullYear()}</p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl">
+                <p className="text-[9px] font-black uppercase tracking-widest text-primary-300/70 mb-1">Available Points</p>
+                <p className="text-2xl font-black text-white">{Math.floor(user?.points || 0)} <span className="text-[10px] text-slate-500">PTS</span></p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl">
+                <p className="text-[9px] font-black uppercase tracking-widest text-primary-300/70 mb-1">Orders Placed</p>
+                <p className="text-2xl font-black text-white">{activity.filter(a => a.type === 'order').length}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Order History Section */}
-        <div className="mb-6 flex items-center justify-between px-2">
-          <h3 className="text-xl font-black tracking-tight text-slate-800">Order History</h3>
-          <span className="text-[10px] font-black text-orange-600/50 uppercase tracking-widest">{orders.length} Orders</span>
+        {/* Favorites Quick View */}
+        {favorites.length > 0 && (
+          <div className="mb-10 animate-fade-in-up">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">My Top Favorites</h3>
+            <div className="flex flex-wrap gap-2">
+              {favorites.map(f => (
+                <div key={f.name} className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center gap-2">
+                  <span className="text-sm">❤️</span>
+                  <span className="text-xs font-bold text-slate-700">{f.name}</span>
+                  <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full font-black text-slate-400">{f.count}x</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* The VIP Activity Timeline */}
+        <div className="mb-6 ml-2">
+          <h3 className="text-xl font-black tracking-tight text-slate-900">Personal Timeline</h3>
         </div>
 
-        <div className="space-y-4">
-          {orders.map((order, idx) => (
-            <div key={order.id} className="bg-white border border-slate-200 rounded-[2rem] sm:rounded-[32px] p-4 sm:p-6 hover:border-orange-500/30 transition-all group animate-fade-in-up shadow-sm" style={{ animationDelay: `${idx * 0.1}s` }}>
-              <div className="flex justify-between items-start mb-4 sm:mb-6">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="w-2 h-2 rounded-full bg-orange-500 shadow-lg shadow-orange-500/20"></span>
-                    <span className="text-sm font-black text-slate-900 tracking-wide">#{order.orderNumber}</span>
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-5">{formatDate(order.createdAt)}</p>
-                </div>
-                <span className={`px-3 sm:px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] border ${getStatusColor(order.status)} transition-colors`}>
-                  {order.status}
-                </span>
-              </div>
+        <div className="relative space-y-8 pb-10">
+          {/* Timeline Connector Line */}
+          <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-slate-200"></div>
 
-              <div className="space-y-3 mb-4 sm:mb-6 ml-2 sm:ml-5">
-                {order.items?.map(item => (
-                  <div key={item.id} className="flex justify-between items-center text-xs">
-                    <div className="flex items-center gap-2 pr-2">
-                      <span className="text-orange-600/50 font-black">{item.quantity}×</span>
-                      <span className="text-slate-600 font-medium truncate max-w-[120px] sm:max-w-none">{item.productName}</span>
+          {activity.map((item, idx) => (
+            <div key={idx} className="relative pl-14 group animate-fade-in-up" style={{ animationDelay: `${idx * 0.1}s` }}>
+              {/* Timeline Indicator */}
+              <div className={`absolute left-4 w-4.5 h-4.5 rounded-full border-4 border-slate-50 z-10 transition-transform group-hover:scale-125 ${
+                item.type === 'milestone' ? 'bg-primary-500 ring-4 ring-primary-500/20' : 'bg-slate-300'
+              }`}></div>
+
+              <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm hover:border-primary-500/30 transition-all">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="text-sm font-black text-slate-900 tracking-tight">{item.title}</h4>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">{formatDate(item.date)}</span>
+                </div>
+                
+                <p className="text-xs text-slate-500 leading-relaxed mb-4">{item.description}</p>
+
+                {item.type === 'order' && (
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Amount</span>
+                      <span className="text-sm font-black text-slate-900">{formatCurrency(item.total)}</span>
                     </div>
-                    <span className="text-slate-500 font-bold whitespace-nowrap">{formatCurrency(item.subtotal)}</span>
+                    <Link 
+                      to={`/menu?reorder=${item.id}`} 
+                      className="px-5 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
+                    >
+                      Re-order Again
+                    </Link>
                   </div>
-                ))}
-              </div>
+                )}
 
-              <div className="pt-4 sm:pt-5 border-t border-slate-100 space-y-2 ml-2 sm:ml-5">
-                <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  <span>Subtotal</span>
-                  <span>{formatCurrency(order.subtotal || (order.total / 1.12))}</span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                  <span>VAT (12%)</span>
-                  <span>{formatCurrency(order.taxAmount || (order.total - (order.total / 1.12)))}</span>
-                </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Total Paid</span>
-                  <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{formatCurrency(order.total)}</span>
-                </div>
+                {item.type === 'milestone' && (
+                  <div className="p-3 bg-primary-50 rounded-xl border border-primary-100">
+                    <p className="text-[10px] font-bold text-primary-600">You earned a permanent loyalty spot! 🏆</p>
+                  </div>
+                )}
               </div>
             </div>
           ))}
 
-          {orders.length === 0 && (
-            <div className="py-24 text-center">
-              <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
-                🍔
-              </div>
-              <p className="text-slate-500 font-bold mb-8">No past feasts found in your history.</p>
-              <Link to="/menu" className="inline-block bg-orange-600 text-white font-black px-10 py-4 rounded-2xl hover:bg-orange-500 transition-all uppercase tracking-widest text-[10px] shadow-xl shadow-orange-600/20 active:scale-95">
-                Start My First Order
-              </Link>
+          {activity.length === 0 && (
+            <div className="py-20 text-center">
+              <p className="text-slate-400 font-bold mb-6">No activity recorded yet.</p>
+              <Link to="/menu" className="bg-primary-500 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px]">Start Your Journey</Link>
             </div>
           )}
         </div>
       </div>
+
+      {/* Account Settings Shortcut */}
+      <div className="max-w-xl mx-auto px-6 mt-10">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">⚙️</div>
+            <div>
+              <p className="text-xs font-black text-slate-900">Security Settings</p>
+              <p className="text-[10px] text-slate-400">Update your account password</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setShowPasswordModal(true)}
+            className="text-[10px] font-black text-primary-600 uppercase tracking-widest hover:underline"
+          >
+            Manage
+          </button>
+        </div>
+      </div>
+
+      {/* Password Modal Restored */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl animate-scale-in">
+            <h3 className="font-heading text-xl font-black text-slate-900 mb-6 text-center">Update Password</h3>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <input 
+                type="password" 
+                placeholder="Current Password" 
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-primary-500" 
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                required
+              />
+              <input 
+                type="password" 
+                placeholder="New Password" 
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-primary-500" 
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                required
+              />
+              <input 
+                type="password" 
+                placeholder="Confirm New Password" 
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-sm outline-none focus:border-primary-500" 
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                required
+              />
+              {passwordMessage.text && (
+                <p className={`text-[10px] font-bold text-center ${passwordMessage.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
+                  {passwordMessage.text}
+                </p>
+              )}
+              <div className="flex gap-2 pt-4">
+                <button type="button" onClick={() => setShowPasswordModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl">Cancel</button>
+                <button type="submit" disabled={passwordLoading} className="flex-2 py-4 bg-primary-500 text-white font-bold rounded-2xl shadow-lg shadow-primary-500/20">
+                  {passwordLoading ? 'Updating...' : 'Save Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

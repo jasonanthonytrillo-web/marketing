@@ -91,9 +91,6 @@ export const getSettings = () => api.get('/admin/settings');
 export const updateSettings = (settings) => api.post('/admin/settings', { settings });
 export const uploadImage = (data) => api.post('/admin/upload-image', data);
 
-// Payments
-export const createXenditInvoice = (data) => api.post('/payments/xendit/create-invoice', data);
-
 // Categories Admin
 export const createCategory = (data) => api.post('/categories', data);
 export const updateCategory = (id, data) => api.put(`/categories/${id}`, data);
@@ -104,6 +101,13 @@ export const getDailyReport = (days) => api.get(`/reports/daily?days=${days || 7
 export const getBestsellers = () => api.get('/reports/bestsellers');
 export const getAdminSummary = () => api.get('/reports/summary');
 export const getKitchenTimes = () => api.get('/reports/kitchen-times');
+export const getForecasting = () => api.get('/reports/forecasting');
+
+// Suppliers
+export const getSuppliers = () => api.get('/suppliers');
+export const createSupplier = (data) => api.post('/suppliers', data);
+export const updateSupplier = (id, data) => api.put(`/suppliers/${id}`, data);
+export const deleteSupplier = (id) => api.delete(`/suppliers/${id}`);
 
 // Combos
 export const getComboOptions = (productId) => api.get(`/admin/products/${productId}/combo-options`);
@@ -113,5 +117,10 @@ export const updateComboOptions = (productId, data) => api.post(`/admin/products
 export const getTenants = () => api.get('/superadmin/tenants');
 export const createTenant = (data) => api.post('/superadmin/tenants', data);
 export const updateTenant = (id, data) => api.patch(`/superadmin/tenants/${id}`, data);
+
+// Feedback
+export const submitFeedback = (data) => api.post('/feedback/submit', data);
+export const getFeedbackStats = () => api.get('/feedback/stats');
+export const requestPayment = (orderId) => api.post(`/cashier/orders/${orderId}/request-payment`);
 
 export default api;

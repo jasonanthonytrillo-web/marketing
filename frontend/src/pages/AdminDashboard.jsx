@@ -1,22 +1,33 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAdminSummary } from '../services/api';
 import ProductsTab from '../components/admin/ProductsTab';
 import CategoriesTab from '../components/admin/CategoriesTab';
 import OrdersTab from '../components/admin/OrdersTab';
 import InventoryTab from '../components/admin/InventoryTab';
+import InventoryLogsTab from '../components/admin/InventoryLogsTab';
+import ExpensesTab from '../components/admin/ExpensesTab';
 import ReportsTab from '../components/admin/ReportsTab';
 import SettingsTab from '../components/admin/SettingsTab';
 import AuditLogsTab from '../components/admin/LogsTab';
 import StaffTab from '../components/admin/StaffTab';
+import SuppliersTab from '../components/admin/SuppliersTab';
+import FeedbackTab from '../components/admin/FeedbackTab';
 import { formatCurrency } from '../utils/helpers';
+import { applyTheme, clearTheme } from '../utils/theme';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 
 export default function AdminDashboard() {
   const { user, logoutUser } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'overview';
+
+  const setActiveTab = (tab) => {
+    setSearchParams({ tab });
+  };
+
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,14 +39,26 @@ export default function AdminDashboard() {
       navigate('/login');
       return;
     }
+    
+    // Apply initial colors
+    const initialColor = user.tenantColor || user.tenant?.primaryColor;
+    if (initialColor) applyTheme(initialColor);
+
     loadSummary();
+
+    // CLEANUP: Wipe the theme when leaving the dashboard
+    return () => clearTheme();
   }, [user, navigate]);
 
   const loadSummary = async () => {
     setLoading(true);
     try {
       const res = await getAdminSummary();
-      setSummary(res.data.data);
+      const data = res.data.data;
+      setSummary(data);
+
+      const tenantColor = data.branding?.primaryColor || user?.tenant?.primaryColor || user?.tenantColor;
+      if (tenantColor) applyTheme(tenantColor);
     } catch (error) {
       console.error(error);
     } finally {
@@ -49,8 +72,12 @@ export default function AdminDashboard() {
     { id: 'categories', label: 'Categories', icon: '📁' },
     { id: 'products', label: 'Products', icon: '🍔' },
     { id: 'staff', label: 'Staff', icon: '👥' },
+    { id: 'suppliers', label: 'Suppliers', icon: '🤝' },
     { id: 'inventory', label: 'Inventory', icon: '📦' },
+    { id: 'inventory-logs', label: 'Stock History', icon: '📜' },
+    { id: 'expenses', label: 'Expenses', icon: '💸' },
     { id: 'reports', label: 'Reports', icon: '📈' },
+    { id: 'feedback', label: 'Feedback', icon: '💬' },
     { id: 'audit', label: 'Audit Logs', icon: '📜' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];
@@ -72,7 +99,7 @@ export default function AdminDashboard() {
             {user?.tenantLogo ? (
               <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover" alt={user.tenantName} />
             ) : (
-              <span className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-sm shadow-lg shadow-primary-500/20">POS</span>
+              <span className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-sm shadow-lg shadow-primary-500/20" style={{ backgroundColor: user.tenantColor || user.tenant?.primaryColor || (user.tenantName?.toLowerCase().includes('burger') ? '#e11d48' : '#f97316') }}>POS</span>
             )}
             <span className="truncate">{user?.tenantName || 'ADMIN'}</span>
           </h1>
@@ -149,10 +176,10 @@ export default function AdminDashboard() {
               
               {/* Main KPI Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Revenue" value={formatCurrency(summary.revenue)} icon="💰" color="blue" />
+                <StatCard title="Today's Revenue" value={formatCurrency(summary.revenue)} icon="💰" color="blue" />
+                <StatCard title="Today's Expenses" value={formatCurrency(summary.totalExpenses || 0)} icon="💸" color="red" />
+                <StatCard title="Net Profit" value={formatCurrency((summary.revenue || 0) - (summary.totalExpenses || 0))} icon="📈" color="emerald" />
                 <StatCard title="Orders Today" value={summary.ordersCount} icon="🛒" color="purple" />
-                <StatCard title="Total Products" value={summary.productsCount} icon="📦" color="amber" />
-                <StatCard title="Avg. Ticket" value={formatCurrency(summary.avgTicket)} icon="🎫" color="emerald" />
               </div>
 
               {/* Secondary Metrics */}
@@ -202,9 +229,13 @@ export default function AdminDashboard() {
           {activeTab === 'categories' && <CategoriesTab />}
           {activeTab === 'products' && <ProductsTab />}
           {activeTab === 'staff' && <StaffTab />}
+          {activeTab === 'suppliers' && <SuppliersTab />}
           {activeTab === 'inventory' && <InventoryTab />}
-          {activeTab === 'reports' && <ReportsTab />}
-          {activeTab === 'audit' && <AuditLogsTab />}
+          {activeTab === 'inventory-logs' && <InventoryLogsTab />}
+          {activeTab === 'expenses' && <ExpensesTab />}
+          { activeTab === 'reports' && <ReportsTab /> }
+          { activeTab === 'feedback' && <FeedbackTab /> }
+          { activeTab === 'audit' && <AuditLogsTab /> }
           {activeTab === 'settings' && <SettingsTab />}
         </div>
       </main>
@@ -218,6 +249,7 @@ function StatCard({ title, value, icon, color }) {
     purple: 'bg-purple-50 text-purple-600',
     amber: 'bg-amber-50 text-amber-600',
     emerald: 'bg-emerald-50 text-emerald-600',
+    red: 'bg-red-50 text-red-600',
   };
 
   return (

@@ -10,7 +10,7 @@ export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('pending'); // pending, confirmed, preparing, ready
-  const [paymentData, setPaymentData] = useState({ received: '', method: 'cash', discountType: '', discountPercent: '' });
+  const [paymentData, setPaymentData] = useState({ received: '', method: 'cash', discountType: '', discountPercent: '', referenceNumber: '' });
   const [calcResult, setCalcResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -18,6 +18,9 @@ export default function CashierDashboard() {
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('Customer changed mind');
+  const [qrStatus, setQrStatus] = useState(null);
+  const [showKeypad, setShowKeypad] = useState(false);
+  const [showRefKeypad, setShowRefKeypad] = useState(false);
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
 
@@ -96,6 +99,7 @@ export default function CashierDashboard() {
 
   useEffect(() => {
     if (selectedOrder) {
+      setQrStatus(null);
       setPaymentData(p => ({
         ...p,
         method: selectedOrder.paymentMethod,
@@ -128,10 +132,11 @@ export default function CashierDashboard() {
         amountReceived: parseFloat(paymentData.received) || calcResult.total,
         paymentMethod: paymentData.method,
         discountType: paymentData.discountType || undefined,
-        discountPercent: paymentData.discountPercent ? parseFloat(paymentData.discountPercent) : undefined
+        discountPercent: paymentData.discountPercent ? parseFloat(paymentData.discountPercent) : undefined,
+        referenceNumber: paymentData.referenceNumber || undefined
       });
       setSelectedOrder(null);
-      setPaymentData({ received: '', method: 'cash', discountType: '', discountPercent: '' });
+      setPaymentData({ received: '', method: 'cash', discountType: '', discountPercent: '', referenceNumber: '' });
       setCalcResult(null);
       loadOrders();
     } catch (e) {
@@ -156,7 +161,7 @@ export default function CashierDashboard() {
       // Clear panel immediately for better UX
       setSelectedOrder(null);
       setShowCancelModal(false);
-      setPaymentData({ method: 'cash', received: '', discountType: '', discountAmount: 0 });
+      setPaymentData({ method: 'cash', received: '', discountType: '', discountAmount: 0, referenceNumber: '' });
       setCalcResult(null);
 
       await cashierCancelOrder(orderId, { reason: cancelReason });
@@ -327,132 +332,289 @@ export default function CashierDashboard() {
                 <span className={`badge text-sm px-3 py-1 badge-${selectedOrder.status}`}>{selectedOrder.status.toUpperCase()}</span>
               </div>
 
-              {/* Points Redemption Banner */}
-              {selectedOrder.paymentMethod === 'points' && (
-                <div className="mx-6 mt-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">🎁</div>
-                  <div>
-                    <p className="font-bold text-purple-700 text-sm">Points Redemption Order</p>
-                    <p className="text-xs text-purple-500">This order was claimed using loyalty points — no cash payment needed.</p>
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-y-auto flex flex-col">
+                {/* Points Redemption Banner */}
+                {selectedOrder.paymentMethod === 'points' && (
+                  <div className="mx-6 mt-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center gap-3 flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">🎁</div>
+                    <div>
+                      <p className="font-bold text-purple-700 text-sm">Points Redemption Order</p>
+                      <p className="text-xs text-purple-500">This order was claimed using loyalty points — no cash payment needed.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Order Items Area */}
+                <div className="p-6 border-b border-surface-200 bg-white flex-shrink-0">
+                  <h3 className="font-semibold text-surface-700 mb-4">Order Items</h3>
+                  <div className="space-y-3">
+                    {selectedOrder.items?.map(item => (
+                      <div key={item.id} className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-surface-900"><span className="text-surface-500 mr-2">{item.quantity}×</span>{item.productName}</p>
+                          {item.addons && <p className="text-xs text-surface-500 ml-6">+ {JSON.parse(item.addons).map(a => a.name).join(', ')}</p>}
+                          {item.comboChoices && (
+                            <p className="text-xs text-primary-500 ml-6 font-semibold">
+                              + {(() => {
+                                try {
+                                  const choices = JSON.parse(item.comboChoices);
+                                  return Object.values(choices).filter(Boolean).map(c => c.name).join(' + ');
+                                } catch (e) { return ''; }
+                              })()}
+                            </p>
+                          )}
+                          {item.notes && <p className="text-xs text-amber-600 ml-6 italic">Note: {item.notes}</p>}
+                        </div>
+                        <span className="font-medium text-surface-900">{formatCurrency(item.subtotal)}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
 
-              {/* Order Items Scrollable Area */}
-              <div className="flex-1 overflow-y-auto p-6 border-b border-surface-200 bg-white">
-                <h3 className="font-semibold text-surface-700 mb-4">Order Items</h3>
-                <div className="space-y-3">
-                  {selectedOrder.items?.map(item => (
-                    <div key={item.id} className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium text-surface-900"><span className="text-surface-500 mr-2">{item.quantity}×</span>{item.productName}</p>
-                        {item.addons && <p className="text-xs text-surface-500 ml-6">+ {JSON.parse(item.addons).map(a => a.name).join(', ')}</p>}
-                        {item.notes && <p className="text-xs text-amber-600 ml-6 italic">Note: {item.notes}</p>}
-                      </div>
-                      <span className="font-medium text-surface-900">{formatCurrency(item.subtotal)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Cash Register / Payment Section */}
-              <div className="p-6 bg-surface-50 flex-shrink-0">
-                {selectedOrder.status === 'pending' ? (
-                  <div className="space-y-4">
-                    {/* Payment Calculator */}
-                    {calcResult && (
-                      <div className="bg-white p-4 rounded-2xl border border-surface-200 shadow-sm space-y-2">
-                        <div className="flex justify-between text-sm"><span className="text-surface-500">Subtotal</span><span>{formatCurrency(calcResult.subtotal)}</span></div>
-                        {calcResult.discountAmount > 0 && <div className="flex justify-between text-sm text-emerald-600"><span>Discount</span><span>-{formatCurrency(calcResult.discountAmount)}</span></div>}
-                        <div className="flex justify-between text-sm"><span className="text-surface-500">Tax (12%)</span><span>{formatCurrency(calcResult.taxAmount)}</span></div>
-                        <div className="flex justify-between items-center pt-2 mt-2 border-t border-surface-100">
-                          <span className="font-bold text-surface-900">Total Due</span>
-                          <span className="font-heading text-2xl font-black text-primary-600">{formatCurrency(calcResult.total)}</span>
-                        </div>
-
-                        <div className="pt-4 border-t border-surface-200 mt-4">
-                          <label className="block text-xs font-semibold text-surface-500 uppercase tracking-wider mb-2">Amount Received</label>
-                          <div className="flex gap-2">
-                            <input type="number" value={paymentData.received} onChange={e => setPaymentData(p => ({ ...p, received: e.target.value }))}
-                              className={`input-field flex-1 text-lg font-bold font-heading ${calcResult.isInsufficient && paymentData.received ? 'border-red-500 focus:ring-red-500/50 text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'}`} placeholder="0.00" />
-                            <button onClick={exactCash} className="btn-secondary px-4 whitespace-nowrap">Exact</button>
+                {/* Cash Register / Payment Section */}
+                <div className="p-6 bg-surface-50 flex-1">
+                  {selectedOrder.status === 'pending' ? (
+                    <div className="space-y-4">
+                      {/* Payment Calculator */}
+                      {calcResult && (
+                        <div className="bg-white p-4 rounded-2xl border border-surface-200 shadow-sm space-y-2">
+                          <div className="flex justify-between text-sm"><span className="text-surface-500">Subtotal</span><span>{formatCurrency(calcResult.subtotal)}</span></div>
+                          {calcResult.discountAmount > 0 && <div className="flex justify-between text-sm text-emerald-600"><span>Discount</span><span>-{formatCurrency(calcResult.discountAmount)}</span></div>}
+                          <div className="flex justify-between text-sm"><span className="text-surface-500">Tax (12%)</span><span>{formatCurrency(calcResult.taxAmount)}</span></div>
+                          <div className="flex justify-between items-center pt-2 mt-2 border-t border-surface-100">
+                            <span className="font-bold text-surface-900">Total Due</span>
+                            <span className="font-heading text-2xl font-black text-primary-600">{formatCurrency(calcResult.total)}</span>
                           </div>
 
-                          <div className="grid grid-cols-4 gap-2 mt-2">
-                            {[50, 100, 500, 1000].map(amt => (
-                              <button key={amt} onClick={() => addCash(amt)} className="py-2 bg-white border border-surface-200 rounded-lg text-sm font-medium hover:bg-surface-50 hover:border-primary-300 transition-colors">+{amt}</button>
-                            ))}
-                          </div>
+                          <div className="pt-4 border-t border-surface-200 mt-4">
+                            <div className="flex justify-between items-end mb-2">
+                              <label className="block text-xs font-semibold text-surface-500 uppercase tracking-wider">Amount Received</label>
+                              <button onClick={exactCash} className="text-[10px] font-black uppercase tracking-widest text-primary-600 bg-primary-50 px-3 py-1.5 rounded-lg hover:bg-primary-100 transition-colors">Exact Amount</button>
+                            </div>
 
-                          <div className={`flex justify-between items-center mt-4 p-3 rounded-xl ${calcResult.isInsufficient && paymentData.received ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
-                            <span className="font-bold">{calcResult.isInsufficient ? 'Insufficient' : 'Change Due'}</span>
-                            <span className="font-heading text-xl font-black">{calcResult.isInsufficient ? '-' : formatCurrency(calcResult.change)}</span>
+                            {/* Display Screen (Clickable to toggle keypad) */}
+                            <button
+                              type="button"
+                              onClick={() => setShowKeypad(!showKeypad)}
+                              className={`w-full p-4 mb-4 rounded-2xl border-2 flex items-center justify-between shadow-inner transition-all hover:scale-[1.01] active:scale-[0.99] focus:outline-none ${calcResult.isInsufficient && paymentData.received
+                                ? 'bg-red-50 border-red-300 text-red-600'
+                                : 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                                }`}
+                            >
+                              <span className="text-xl font-bold opacity-50">₱</span>
+                              <span className="text-4xl font-heading font-black tracking-tighter">
+                                {paymentData.received || '0.00'}
+                              </span>
+                            </button>
+
+                            {/* Numeric Keypad (Collapsible) */}
+                            {showKeypad && (
+                              <div className="grid grid-cols-3 gap-2 animate-fade-in-up">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                  <button key={num} onClick={() => setPaymentData(p => ({ ...p, received: p.received === '0' ? num.toString() : p.received + num }))} className="py-4 bg-white border border-surface-200 hover:bg-surface-50 active:bg-surface-100 rounded-2xl text-2xl font-black text-surface-800 transition-all shadow-sm active:scale-95">
+                                    {num}
+                                  </button>
+                                ))}
+                                <button onClick={() => {
+                                  if (!paymentData.received.includes('.')) {
+                                    setPaymentData(p => ({ ...p, received: p.received ? p.received + '.' : '0.' }));
+                                  }
+                                }} className="py-4 bg-surface-100 border border-surface-200 hover:bg-surface-200 rounded-2xl text-2xl font-black text-surface-800 transition-all shadow-sm active:scale-95">
+                                  .
+                                </button>
+                                <button onClick={() => setPaymentData(p => ({ ...p, received: p.received === '0' ? '0' : p.received + '0' }))} className="py-4 bg-white border border-surface-200 hover:bg-surface-50 active:bg-surface-100 rounded-2xl text-2xl font-black text-surface-800 transition-all shadow-sm active:scale-95">
+                                  0
+                                </button>
+                                <button onClick={() => setPaymentData(p => ({ ...p, received: p.received.slice(0, -1) }))} className="py-4 bg-surface-200 border border-surface-300 hover:bg-surface-300 rounded-2xl text-2xl font-black text-surface-900 transition-all shadow-sm flex items-center justify-center active:scale-95">
+                                  ⌫
+                                </button>
+                                <button
+                                  onClick={() => setPaymentData(p => ({ ...p, received: '' }))}
+                                  className="col-span-3 py-3 mt-1 bg-red-50 hover:bg-red-100 border border-red-100 text-red-600 rounded-xl font-black uppercase tracking-widest text-xs shadow-sm transition-all active:scale-[0.98]"
+                                >
+                                  Clear Amount
+                                </button>
+                              </div>
+                            )}
+
+                            <div className={`flex justify-between items-center mt-4 p-4 rounded-2xl shadow-sm border ${calcResult.isInsufficient && paymentData.received ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                              <span className="font-bold text-sm uppercase tracking-wider">{calcResult.isInsufficient ? 'Insufficient' : 'Change Due'}</span>
+                              <span className="font-heading text-2xl font-black">{calcResult.isInsufficient ? '-' : formatCurrency(calcResult.change)}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Payment controls — simplified for points redemption */}
-                    {selectedOrder.paymentMethod === 'points' ? (
-                      <div className="flex gap-3 pt-2">
-                        <button onClick={handleCancel} disabled={processing} className="btn-danger flex-1 py-4">Cancel Order</button>
-                        <button
-                          onClick={() => {
-                            setPaymentData(p => ({ ...p, received: '0', method: 'points' }));
-                            setTimeout(() => handleConfirmPayment(), 100);
-                          }}
-                          disabled={processing}
-                          className="flex-[2] py-4 shadow-xl font-bold transition-all btn-primary bg-purple-600 hover:bg-purple-700"
-                        >
-                          {processing ? 'Processing...' : '🎁 Confirm Reward Claim'}
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex gap-3">
-                          <select value={paymentData.method} onChange={e => setPaymentData(p => ({ ...p, method: e.target.value }))} className="input-field py-3 bg-white w-1/2">
-                            <option value="cash">💵 Cash</option>
-                            <option value="gcash">📱 GCash</option>
-                            <option value="maya">💳 Maya</option>
-                            <option value="card">💳 Card</option>
-                          </select>
-                          <select value={paymentData.discountType} onChange={e => setPaymentData(p => ({ ...p, discountType: e.target.value }))} className="input-field py-3 bg-white w-1/2">
-                            <option value="">No Discount</option>
-                            <option value="senior">Senior Citizen (20%)</option>
-                            <option value="pwd">PWD (20%)</option>
-                          </select>
-                        </div>
-
+                      {/* Payment controls — simplified for points redemption */}
+                      {selectedOrder.paymentMethod === 'points' ? (
                         <div className="flex gap-3 pt-2">
                           <button onClick={handleCancel} disabled={processing} className="btn-danger flex-1 py-4">Cancel Order</button>
                           <button
-                            onClick={handleConfirmPayment}
-                            disabled={processing || !paymentData.received || calcResult?.isInsufficient}
-                            className={`flex-[2] py-4 shadow-xl font-bold transition-all ${(!paymentData.received || calcResult?.isInsufficient) ? 'bg-surface-300 text-surface-500 cursor-not-allowed opacity-50' : 'btn-primary'}`}
+                            onClick={() => {
+                              setPaymentData(p => ({ ...p, received: '0', method: 'points' }));
+                              setTimeout(() => handleConfirmPayment(), 100);
+                            }}
+                            disabled={processing}
+                            className="flex-[2] py-4 shadow-xl font-bold transition-all btn-primary bg-purple-600 hover:bg-purple-700"
                           >
-                            {processing ? 'Processing...' : (!paymentData.received ? 'Enter Amount' : calcResult?.isInsufficient ? 'Insufficient' : 'Confirm Payment')}
+                            {processing ? 'Processing...' : '🎁 Confirm Reward Claim'}
                           </button>
                         </div>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="bg-white p-6 rounded-2xl border border-surface-200 shadow-sm">
-                    <h3 className="font-bold text-surface-900 mb-4 text-center">Payment Summary</h3>
-                    <div className="space-y-2 text-sm mb-6">
-                      <div className="flex justify-between"><span className="text-surface-500">Subtotal</span><span className="font-medium">{formatCurrency(selectedOrder.subtotal)}</span></div>
-                      {selectedOrder.discountAmount > 0 && <div className="flex justify-between text-emerald-600"><span>Discount ({selectedOrder.discountType})</span><span>-{formatCurrency(selectedOrder.discountAmount)}</span></div>}
-                      <div className="flex justify-between"><span className="text-surface-500">Tax</span><span className="font-medium">{formatCurrency(selectedOrder.taxAmount)}</span></div>
-                      <div className="flex justify-between font-bold text-lg pt-2 border-t border-surface-100"><span>Total</span><span className="text-primary-600">{formatCurrency(selectedOrder.total)}</span></div>
-                      <div className="flex justify-between pt-2"><span className="text-surface-500">Method</span><span className="font-medium uppercase">{selectedOrder.paymentMethod}</span></div>
-                    </div>
+                      ) : (
+                        <>
+                          <div className="flex gap-3">
+                            <select value={paymentData.method} onChange={e => setPaymentData(p => ({ ...p, method: e.target.value }))} className="input-field py-3 bg-white w-1/2">
+                              <option value="cash">💵 Cash</option>
+                              <option value="gcash">📱 GCash</option>
+                              <option value="maya">💳 Maya</option>
+                              <option value="card">💳 Card</option>
+                            </select>
+                            <select value={paymentData.discountType} onChange={e => setPaymentData(p => ({ ...p, discountType: e.target.value }))} className="input-field py-3 bg-white w-1/2">
+                              <option value="">No Discount</option>
+                              <option value="senior">Senior Citizen (20%)</option>
+                              <option value="pwd">PWD (20%)</option>
+                            </select>
+                          </div>
 
-                    {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
-                      <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3 mb-3">Cancel Order</button>
-                    )}
-                    <button onClick={() => window.print()} className="btn-secondary w-full py-3">🖨️ Print Receipt</button>
-                  </div>
-                )}
+                          {paymentData.method === 'gcash' && (
+                            <div className="animate-fade-in space-y-4 mt-2">
+                              <div className="bg-white p-4 rounded-xl border border-surface-200 shadow-sm">
+                                <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-3 text-center">Enter GCash Ref No. (Last 4 Digits)</label>
+
+                                {/* Display Screen (Clickable) */}
+                                <button
+                                  onClick={() => setShowRefKeypad(!showRefKeypad)}
+                                  className="w-full flex justify-center gap-3 mb-2 focus:outline-none transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                                  type="button"
+                                >
+                                  {[0, 1, 2, 3].map(i => (
+                                    <div key={i} className={`w-12 h-14 rounded-xl flex items-center justify-center text-2xl font-mono font-black transition-all duration-200 ${paymentData.referenceNumber[i]
+                                      ? 'bg-blue-50 text-blue-700 border-2 border-blue-500 shadow-sm scale-105'
+                                      : 'bg-surface-100 text-surface-300 border-2 border-transparent'
+                                      }`}>
+                                      {paymentData.referenceNumber[i] || '•'}
+                                    </div>
+                                  ))}
+                                </button>
+
+
+                                {/* Keypad (Collapsible) */}
+                                {showRefKeypad && (
+                                  <div className="grid grid-cols-3 gap-2 px-2 sm:px-6 pt-3 border-t border-surface-100 animate-fade-in-up">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                      <button
+                                        key={num}
+                                        type="button"
+                                        onClick={() => setPaymentData(p => ({ ...p, referenceNumber: (p.referenceNumber + num).slice(0, 4) }))}
+                                        className="py-3 sm:py-4 bg-surface-50 hover:bg-surface-100 active:bg-surface-200 active:scale-95 rounded-xl text-xl font-bold text-surface-700 transition-all shadow-sm border border-surface-200/60"
+                                      >
+                                        {num}
+                                      </button>
+                                    ))}
+                                    <button
+                                      type="button"
+                                      onClick={() => setPaymentData(p => ({ ...p, referenceNumber: '' }))}
+                                      className="py-3 sm:py-4 bg-red-50 hover:bg-red-100 active:bg-red-200 active:scale-95 rounded-xl text-xs font-black text-red-600 transition-all shadow-sm border border-red-100 uppercase tracking-wider"
+                                    >
+                                      Clear
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setPaymentData(p => ({ ...p, referenceNumber: (p.referenceNumber + '0').slice(0, 4) }))}
+                                      className="py-3 sm:py-4 bg-surface-50 hover:bg-surface-100 active:bg-surface-200 active:scale-95 rounded-xl text-xl font-bold text-surface-700 transition-all shadow-sm border border-surface-200/60"
+                                    >
+                                      0
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setPaymentData(p => ({ ...p, referenceNumber: p.referenceNumber.slice(0, -1) }))}
+                                      className="py-3 sm:py-4 bg-surface-200 hover:bg-surface-300 active:bg-surface-400 active:scale-95 rounded-xl text-xl font-bold text-surface-800 transition-all shadow-sm border border-surface-300"
+                                    >
+                                      ⌫
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="space-y-2">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      setQrStatus('sending');
+                                      await (await import('../services/api')).requestPayment(selectedOrder.id);
+                                      setQrStatus('sent');
+                                      setTimeout(() => setQrStatus(null), 3500);
+                                    } catch (e) {
+                                      setQrStatus('error');
+                                      setTimeout(() => setQrStatus(null), 3500);
+                                    }
+                                  }}
+                                  disabled={qrStatus === 'sending' || qrStatus === 'sent'}
+                                  className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center justify-center gap-2 border ${qrStatus === 'sent'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-inner'
+                                    : qrStatus === 'error'
+                                      ? 'bg-red-50 text-red-600 border-red-200'
+                                      : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-600 shadow-md hover:shadow-lg hover:-translate-y-0.5'
+                                    }`}
+                                >
+                                  {qrStatus === 'sending' ? (
+                                    <>
+                                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                      Sending to Kiosk...
+                                    </>
+                                  ) : qrStatus === 'sent' ? (
+                                    <>
+                                      <span className="text-emerald-500 text-lg drop-shadow-sm">✅</span> GCash QR Sent to Kiosk!
+                                    </>
+                                  ) : qrStatus === 'error' ? (
+                                    <>
+                                      <span className="text-red-500 text-lg">⚠️</span> Failed to Send
+                                    </>
+                                  ) : (
+                                    <>📱 Send GCash QR to Kiosk</>
+                                  )}
+                                </button>
+                                {qrStatus === 'sent' && (
+                                  <p className="text-xs text-center text-emerald-600 font-semibold animate-fade-in-up">
+                                    Customer is now viewing the QR code.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex gap-3 pt-2">
+                            <button onClick={handleCancel} disabled={processing} className="btn-danger flex-1 py-4">Cancel Order</button>
+                            <button
+                              onClick={handleConfirmPayment}
+                              disabled={processing || !paymentData.received || calcResult?.isInsufficient}
+                              className={`flex-[2] py-4 shadow-xl font-bold transition-all ${(!paymentData.received || calcResult?.isInsufficient) ? 'bg-surface-300 text-surface-500 cursor-not-allowed opacity-50' : 'btn-primary'}`}
+                            >
+                              {processing ? 'Processing...' : (!paymentData.received ? 'Enter Amount' : calcResult?.isInsufficient ? 'Insufficient' : 'Confirm Payment')}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white p-6 rounded-2xl border border-surface-200 shadow-sm">
+                      <h3 className="font-bold text-surface-900 mb-4 text-center">Payment Summary</h3>
+                      <div className="space-y-2 text-sm mb-6">
+                        <div className="flex justify-between"><span className="text-surface-500">Subtotal</span><span className="font-medium">{formatCurrency(selectedOrder.subtotal)}</span></div>
+                        {selectedOrder.discountAmount > 0 && <div className="flex justify-between text-emerald-600"><span>Discount ({selectedOrder.discountType})</span><span>-{formatCurrency(selectedOrder.discountAmount)}</span></div>}
+                        <div className="flex justify-between"><span className="text-surface-500">Tax</span><span className="font-medium">{formatCurrency(selectedOrder.taxAmount)}</span></div>
+                        <div className="flex justify-between font-bold text-lg pt-2 border-t border-surface-100"><span>Total</span><span className="text-primary-600">{formatCurrency(selectedOrder.total)}</span></div>
+                        <div className="flex justify-between pt-2"><span className="text-surface-500">Method</span><span className="font-medium uppercase">{selectedOrder.paymentMethod}</span></div>
+                      </div>
+
+                      {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
+                        <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3 mb-3">Cancel Order</button>
+                      )}
+                      <button onClick={() => window.print()} className="btn-secondary w-full py-3">🖨️ Print Receipt</button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Printable Receipt */}
@@ -487,6 +649,16 @@ export default function CashierDashboard() {
                           {item.addons && JSON.parse(item.addons).map(a => (
                             <div key={a.name} style={{ fontSize: '9px', opacity: 0.7 }}>+ {a.name}</div>
                           ))}
+                          {item.comboChoices && (
+                            <div style={{ fontSize: '9px', opacity: 0.8, fontWeight: 'bold' }}>
+                              + {(() => {
+                                try {
+                                  const choices = JSON.parse(item.comboChoices);
+                                  return Object.values(choices).filter(Boolean).map(c => c.name).join(' + ');
+                                } catch (e) { return ''; }
+                              })()}
+                            </div>
+                          )}
                         </td>
                         <td className="text-center">{item.quantity}</td>
                         <td className="text-right">{formatCurrency(item.subtotal)}</td>
