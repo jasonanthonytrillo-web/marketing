@@ -398,7 +398,7 @@ router.post('/register-customer', async (req, res) => {
     // Send the email
     console.log('Attempting to send OTP to:', email);
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
-    await sendOTPEmail(email, otp, tenant?.name || 'Elevate POS');
+    await sendOTPEmail(email, otp, tenant);
 
     console.log('OTP Sent Successfully');
     res.status(201).json({ 
