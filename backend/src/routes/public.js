@@ -109,7 +109,8 @@ router.get('/share/:slug', async (req, res) => {
     // Resolve the full OG Image URL (must be absolute)
     let ogImage = tenant.ogImage || tenant.logo;
     
-    if (!ogImage) {
+    // Fallback to a professional high-res icon since emojis can't be scraped
+    if (!ogImage || ogImage === '/logo.png') {
       ogImage = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
     }
 

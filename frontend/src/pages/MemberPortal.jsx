@@ -136,7 +136,7 @@ export default function MemberPortal() {
                 Welcome to the club. <br />
                 You can now sign in to start earning points.
               </p>
-              <button 
+              <button
                 onClick={() => setSuccess(false)}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-5 rounded-2xl shadow-xl shadow-emerald-600/20 transition-all uppercase tracking-widest"
               >
@@ -162,8 +162,8 @@ export default function MemberPortal() {
                   </p>
                 ) : (
                   <p className="text-slate-400 text-sm">
-                    {mode === 'login' 
-                      ? `Sign in to ${tenantData?.name || 'the shop'} to earn points.` 
+                    {mode === 'login'
+                      ? `Sign in to ${tenantData?.name || 'the shop'} to earn points.`
                       : (mode === 'verify' ? `Enter the code sent to ${formData.email}` : `Create a ${tenantData?.name || ''} account to start earning rewards.`)}
                   </p>
                 )}
@@ -173,7 +173,7 @@ export default function MemberPortal() {
                 <div className="space-y-6 animate-fade-in-up">
                   <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center">
                     <p className="text-slate-400 text-sm mb-4">You are currently signed in as <span className="text-white font-bold">{user.email}</span></p>
-                    <Link 
+                    <Link
                       to={tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu'}
                       className="w-full inline-block bg-primary-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-primary-600/20 hover:bg-primary-500 active:scale-[0.98] transition-all uppercase tracking-widest"
                     >
@@ -216,8 +216,8 @@ export default function MemberPortal() {
                     {mode === 'verify' ? (
                       <div className="animate-fade-in">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">6-Digit Code</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           maxLength="6"
                           value={otp}
                           onChange={(e) => setOtp(e.target.value)}
@@ -225,7 +225,7 @@ export default function MemberPortal() {
                           placeholder="000000"
                           required
                         />
-                        <button 
+                        <button
                           type="button"
                           onClick={() => setMode('register')}
                           className="text-primary-400 text-[10px] font-bold uppercase mt-4 hover:text-primary-300 transition-colors px-1"
@@ -238,8 +238,8 @@ export default function MemberPortal() {
                         {mode === 'register' && (
                           <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                               className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
@@ -250,8 +250,8 @@ export default function MemberPortal() {
                         )}
                         <div>
                           <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Email Address</label>
-                          <input 
-                            type="email" 
+                          <input
+                            type="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
@@ -261,8 +261,8 @@ export default function MemberPortal() {
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Password</label>
-                          <input 
-                            type="password" 
+                          <input
+                            type="password"
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
@@ -273,15 +273,15 @@ export default function MemberPortal() {
                       </>
                     )}
 
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       disabled={loading}
                       className="w-full py-5 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
                     >
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                       ) : (
-                        mode === 'login' ? 'Sign In' : (mode === 'verify' ? 'Verify & Finish' : 'Create Account')
+                        mode === 'login' ? 'Sign In' : (mode === 'verify' ? 'Verify Email' : 'Create Account')
                       )}
                     </button>
                   </form>
@@ -290,7 +290,7 @@ export default function MemberPortal() {
                     <div className="mt-8 pt-8 border-t border-white/5 text-center">
                       <p className="text-slate-500 text-sm mb-4">
                         {mode === 'login' ? "Don't have an account?" : "Already a member?"}
-                        <button 
+                        <button
                           onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
                           className="ml-2 text-indigo-400 font-bold hover:text-indigo-300 transition-colors"
                         >
