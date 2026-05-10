@@ -481,7 +481,8 @@ router.post('/verify-registration', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Verification failed.' });
+    console.error('VERIFICATION CRASH:', error);
+    res.status(500).json({ success: false, message: error.message || 'Verification failed.' });
   }
 });
 
