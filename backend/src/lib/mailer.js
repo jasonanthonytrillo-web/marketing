@@ -1,14 +1,13 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 2525, // Fallback port that some cloud providers don't block
+  host: 'smtp-relay.brevo.com',
+  port: 587,
   secure: false, 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  connectionTimeout: 10000,
 });
 
 const sendOTPEmail = async (email, otp, tenantName = 'Elevate POS') => {
