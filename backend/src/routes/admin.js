@@ -393,6 +393,7 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
     
     if (tenant) {
       settingsMap.tenant_name = tenant.name;
+      settingsMap.tenant_slug = tenant.slug;
       settingsMap.tenant_logo = tenant.logo;
       settingsMap.tenant_favicon = tenant.favicon;
       settingsMap.tenant_og_image = tenant.ogImage;

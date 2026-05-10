@@ -230,13 +230,14 @@ export default function SettingsTab() {
                   <input 
                     type="text" 
                     readOnly
-                    value={`${import.meta.env.VITE_API_URL}/public/share/${user.tenantSlug}`}
+                    value={`${import.meta.env.VITE_API_URL}/public/share/${settings.tenant_slug || user?.tenantSlug}`}
                     className="input-field flex-1 py-3 text-[10px] font-mono bg-white"
                   />
                   <button 
                     type="button"
                     onClick={() => {
-                      navigator.clipboard.writeText(`${import.meta.env.VITE_API_URL}/public/share/${user.tenantSlug}`);
+                      const link = `${import.meta.env.VITE_API_URL}/public/share/${settings.tenant_slug || user?.tenantSlug}`;
+                      navigator.clipboard.writeText(link);
                       setMessage('📋 Link copied to clipboard!');
                       setTimeout(() => setMessage(''), 3000);
                     }}
