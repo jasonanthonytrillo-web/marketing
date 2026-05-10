@@ -9,13 +9,21 @@ export function SocketProvider({ children }) {
 
   useEffect(() => {
     const url = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
-    console.log('🔌 Initializing WebSocket connection to:', url);
+    const token = localStorage.getItem('pos_token');
     
-    const newSocket = io(url, { transports: ['websocket', 'polling'], reconnection: true, reconnectionDelay: 2000 });
+    console.log('🔌 Initializing Secure WebSocket connection...');
+    
+    const newSocket = io(url, { 
+      auth: { token },
+      transports: ['websocket', 'polling'], 
+      reconnection: true, 
+      reconnectionDelay: 2000 
+    });
+    
     socketRef.current = newSocket;
 
     newSocket.on('connect', () => {
-      console.log('✅ WebSocket Connected');
+      console.log('✅ WebSocket Connected (Secure)');
       setConnected(true);
     });
 
@@ -31,7 +39,7 @@ export function SocketProvider({ children }) {
         socketRef.current = null;
       }
     };
-  }, []);
+  }, []); // Re-init if token changes would be better, but simple re-init on page refresh works for now
 
   const joinRoom = (room, tenantId) => { 
     if (socketRef.current && connected) {

@@ -1,11 +1,47 @@
+const jwt = require('jsonwebtoken');
+
 module.exports = (io, prisma) => {
   io.on('connection', (socket) => {
     console.log(`📱 Client connected: ${socket.id}`);
 
-    // Join specific rooms based on module
-    socket.on('join', (room) => {
-      socket.join(room);
-      console.log(`👤 ${socket.id} joined room: ${room}`);
+    // Join specific rooms based on module (Secure)
+    socket.on('join', async (room) => {
+      // Security: Only allow joining sensitive rooms if authenticated
+      if (room.includes('cashier') || room.includes('kitchen') || room.includes('admin')) {
+        const token = socket.handshake.auth.token || socket.handshake.query.token;
+        if (!token) {
+          console.warn(`🛑 Unauthorized join attempt: No token for ${room}`);
+          return;
+        }
+
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+          
+          if (!user || !user.active) {
+            console.warn(`🛑 Unauthorized join attempt: Invalid user for ${room}`);
+            return;
+          }
+
+          // Verify user belongs to this tenant room
+          if (room.includes(`tenant-${user.tenantId}`)) {
+            socket.join(room);
+            console.log(`👤 Verified: ${user.name} joined room: ${room}`);
+          } else if (user.role === 'superadmin') {
+            socket.join(room);
+            console.log(`👤 Superadmin joined room: ${room}`);
+          } else {
+            console.warn(`🛑 Cross-tenant join blocked: ${user.name} tried to join ${room}`);
+          }
+        } catch (err) {
+          console.warn(`🛑 Unauthorized join attempt: Token error for ${room}`);
+          return;
+        }
+      } else {
+        // Public rooms (queue, kiosk, etc.)
+        socket.join(room);
+        console.log(`👤 Guest joined room: ${room}`);
+      }
     });
 
     // Leave room

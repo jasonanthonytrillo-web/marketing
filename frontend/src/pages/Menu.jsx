@@ -121,6 +121,7 @@ export default function Menu() {
   useEffect(() => {
     if (branding?.id) {
       joinRoom('kiosk', branding.id);
+      return () => leaveRoom('kiosk', branding.id);
     }
   }, [branding?.id, connected]);
 

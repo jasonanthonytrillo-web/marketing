@@ -148,13 +148,17 @@ router.post('/', async (req, res) => {
     }
 
     // Create order with items
-    let tenantId = req.headers['x-tenant-id'] ? parseInt(req.headers['x-tenant-id']) : 1;
+    // Determine Tenant ID securely from slug
     const tenantSlug = req.headers['x-tenant-slug'];
-
-    if (tenantSlug) {
-      const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
-      if (tenant) tenantId = tenant.id;
+    if (!tenantSlug) {
+      return res.status(400).json({ success: false, message: 'Shop identification is required.' });
     }
+
+    const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+    if (!tenant) {
+      return res.status(404).json({ success: false, message: 'Shop not found.' });
+    }
+    const tenantId = tenant.id;
 
     const order = await prisma.order.create({
       data: {

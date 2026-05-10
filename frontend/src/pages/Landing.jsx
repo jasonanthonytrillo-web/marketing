@@ -23,6 +23,7 @@ export default function Landing() {
   useEffect(() => {
     if (tenant?.id) {
       joinRoom('kiosk', tenant.id);
+      return () => leaveRoom('kiosk', tenant.id);
     }
   }, [tenant?.id, connected]);
 

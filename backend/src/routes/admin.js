@@ -239,7 +239,7 @@ router.put('/staff/:id', authenticate, authorize('admin'), async (req, res) => {
     const data = { name, email, role, active };
     if (password) data.password = await bcrypt.hash(password, 12);
     const user = await prisma.user.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id: parseInt(req.params.id), tenantId: req.tenantId },
       data,
       select: { id: true, email: true, name: true, role: true, active: true }
     });
@@ -254,7 +254,10 @@ router.put('/staff/:id', authenticate, authorize('admin'), async (req, res) => {
 
 router.delete('/staff/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
-    await prisma.user.update({ where: { id: parseInt(req.params.id) }, data: { active: false } });
+    await prisma.user.update({ 
+      where: { id: parseInt(req.params.id), tenantId: req.tenantId }, 
+      data: { active: false } 
+    });
     await prisma.auditLog.create({
       data: { tenantId: req.tenantId, userId: req.user.id, action: 'deactivate_staff', entityType: 'user', entityId: parseInt(req.params.id), details: `Deactivated staff ID: ${req.params.id}` }
     });
@@ -282,7 +285,7 @@ router.post('/inventory/:id/restock', authenticate, authorize('admin'), async (r
   try {
     const { quantity, supplierId } = req.body;
     const product = await prisma.product.update({
-      where: { id: parseInt(req.params.id) },
+      where: { id: parseInt(req.params.id), tenantId: req.tenantId },
       data: { stock: { increment: parseInt(quantity) } }
     });
     await prisma.inventoryLog.create({
@@ -355,7 +358,7 @@ router.post('/expenses', authenticate, authorize('admin'), async (req, res) => {
 router.delete('/expenses/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
     await prisma.expense.delete({
-      where: { id: parseInt(req.params.id) }
+      where: { id: parseInt(req.params.id), tenantId: req.tenantId }
     });
     res.json({ success: true, message: 'Expense deleted.' });
   } catch (error) {

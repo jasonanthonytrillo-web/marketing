@@ -46,8 +46,13 @@ router.get('/tenant/:slug', async (req, res) => {
 
     res.json({ success: true, data: tenant });
   } catch (error) {
-    console.error('CRITICAL Public Tenant Error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('CRITICAL Public Tenant Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message, 
+      stack: error.stack,
+      hint: "Check if DIRECT_URL and DATABASE_URL are correct in Render" 
+    });
   }
 });
 
