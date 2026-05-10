@@ -249,9 +249,9 @@ export default function Landing() {
         </h1>
 
         <p className="text-lg md:text-2xl text-surface-300 max-w-2xl mx-auto font-medium leading-relaxed mb-12">
-          {tenant?.slug === 'burger-palace'
+          {tenant?.landing_description || (tenant?.slug === 'burger-palace'
             ? 'The most royal burgers in the palace. Order now and skip the wait!'
-            : 'Fresh food, fast service. Order right from this screen and enjoy your meal.'}
+            : 'Fresh food, fast service. Order right from this screen and enjoy your meal.')}
         </p>
 
         {/* Action Buttons */}

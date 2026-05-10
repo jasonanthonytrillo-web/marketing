@@ -218,6 +218,46 @@ export default function SettingsTab() {
                 <p className="text-[10px] text-slate-400 mt-2 italic font-medium">Recommended: 1200×630px. This image appears when you share your link on Facebook, Messenger, etc.</p>
               </div>
 
+              <div className="bg-primary-50/50 border border-primary-100 rounded-3xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-primary-500 text-white rounded-full flex items-center justify-center text-sm shadow-lg">🔗</div>
+                  <h4 className="text-xs font-black text-primary-900 uppercase tracking-widest">Social Media Share Link</h4>
+                </div>
+                <p className="text-[11px] text-primary-700 mb-4 font-medium leading-relaxed">
+                  Use this specific link when sharing on <strong>Facebook, Messenger, or Twitter</strong>. It ensures your logo and description appear correctly in the preview!
+                </p>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    readOnly
+                    value={`${import.meta.env.VITE_API_URL}/public/share/${user.tenantSlug}`}
+                    className="input-field flex-1 py-3 text-[10px] font-mono bg-white"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${import.meta.env.VITE_API_URL}/public/share/${user.tenantSlug}`);
+                      setMessage('📋 Link copied to clipboard!');
+                      setTimeout(() => setMessage(''), 3000);
+                    }}
+                    className="px-4 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all text-xs font-black uppercase tracking-widest shadow-lg shadow-primary-500/20"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Landing Page Tagline / Description</label>
+                <textarea 
+                  value={settings.landing_description || ''} 
+                  onChange={e => setSettings({...settings, landing_description: e.target.value})}
+                  className="input-field w-full py-4 px-5 text-sm min-h-[100px] leading-relaxed" 
+                  placeholder="e.g. Fresh food, fast service. Order right from this screen and enjoy your meal."
+                />
+                <p className="text-[10px] text-slate-400 mt-2 italic font-medium">This text appears on the main landing page to greet your customers.</p>
+              </div>
+
               <div>
                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Landing Page Background Assets (Slideshow / Video)</label>
                 <div className="space-y-4">

@@ -27,6 +27,13 @@ router.get('/tenant/:slug', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Tenant not found' });
     }
 
+    // Fetch landing description from settings
+    const setting = await prisma.systemSetting.findUnique({
+      where: { tenantId_key: { tenantId: tenant.id, key: 'landing_description' } }
+    });
+    
+    tenant.landing_description = setting ? setting.value : null;
+
     res.json({ success: true, data: tenant });
   } catch (error) {
     console.error('Public Tenant Error:', error);
@@ -85,8 +92,13 @@ router.get('/share/:slug', async (req, res) => {
 
     if (!tenant) return res.redirect('/');
 
+    // Fetch custom description for social media
+    const setting = await prisma.systemSetting.findUnique({
+      where: { tenantId_key: { tenantId: tenant.id, key: 'landing_description' } }
+    });
+    
     const title = tenant.name;
-    const description = `Order fresh food from ${tenant.name} - Skip the line and order online!`;
+    const description = setting?.value || `Order fresh food from ${tenant.name} - Skip the line and order online!`;
     const host = req.get('host');
     const protocol = req.protocol === 'http' && host.includes('localhost') ? 'http' : 'https';
     
