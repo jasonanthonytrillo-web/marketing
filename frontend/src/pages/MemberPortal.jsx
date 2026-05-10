@@ -14,10 +14,18 @@ export default function MemberPortal() {
   const [loading, setLoading] = useState(false);
   const [tenantData, setTenantData] = useState(null);
   const [searchParams] = useSearchParams();
-  const { loginUser } = useAuth();
+  const { loginUser, logoutUser, user } = useAuth();
   const navigate = useNavigate();
 
   const tenantSlug = searchParams.get('tenant');
+  const actionParam = searchParams.get('action');
+
+  // Handle ?action=register from OrderConfirmation VIP invite link
+  useEffect(() => {
+    if (actionParam === 'register') {
+      setMode('register');
+    }
+  }, [actionParam]);
 
   // Dynamic Title & Favicon
   useDynamicBranding(

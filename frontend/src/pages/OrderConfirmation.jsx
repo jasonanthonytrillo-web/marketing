@@ -27,6 +27,7 @@ export default function OrderConfirmation() {
   const tenantSlug = searchParams.get('tenant');
   const [branding, setBranding] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const lastAnnouncedStatusRef = useRef(null);
 
   // Feedback State
   const [rating, setRating] = useState(0);
@@ -103,7 +104,9 @@ export default function OrderConfirmation() {
     if (!onEvent) return;
     const unsub = onEvent('order_update', (data) => {
       if (data.order?.orderNumber === orderNumber) {
-        if (data.order.status === 'ready' && order?.status !== 'ready') {
+        // Only announce 'ready' once — use a ref to prevent double-read
+        if (data.order.status === 'ready' && lastAnnouncedStatusRef.current !== 'ready') {
+          lastAnnouncedStatusRef.current = 'ready';
           playNotificationSound('ready');
           setTimeout(() => {
             const msg = new SpeechSynthesisUtterance(`Order number ${orderNumber.split('-')[1] || orderNumber} is now ready for pickup`);
@@ -130,7 +133,7 @@ export default function OrderConfirmation() {
       unsub();
       unsub2();
     };
-  }, [onEvent, orderNumber, order?.status]);
+  }, [onEvent, orderNumber]);
 
   const [paymentRequest, setPaymentRequest] = useState(null);
 

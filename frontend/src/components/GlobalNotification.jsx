@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { playNotificationSound } from '../utils/helpers';
@@ -8,10 +8,25 @@ export default function GlobalNotification() {
   const [readyOrderNumbers, setReadyOrderNumbers] = useState([]);
   const [cancelledOrderNumbers, setCancelledOrderNumbers] = useState([]);
   const alertIntervalRef = useRef(null);
+  const alertFlowTimerRef = useRef(null);
+  const alertActiveRef = useRef(false);
   const { onEvent } = useSocket();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tenantSlug = searchParams.get('tenant');
+
+  // Helper to safely clear the chime loop
+  const clearChimeLoop = useCallback(() => {
+    if (alertFlowTimerRef.current) {
+      clearTimeout(alertFlowTimerRef.current);
+      alertFlowTimerRef.current = null;
+    }
+    if (alertIntervalRef.current) {
+      clearInterval(alertIntervalRef.current);
+      alertIntervalRef.current = null;
+    }
+    alertActiveRef.current = false;
+  }, []);
 
   // Listen for socket events
   useEffect(() => {
@@ -91,14 +106,10 @@ export default function GlobalNotification() {
     return () => clearInterval(int);
   }, [tenantSlug]);
 
-  // Cleanup
+  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (alertIntervalRef.current && alertIntervalRef.current !== 'starting') {
-        clearInterval(alertIntervalRef.current);
-      }
-    };
-  }, []);
+    return () => clearChimeLoop();
+  }, [clearChimeLoop]);
 
   const triggerReadyAlert = (orderNum) => {
     const dismissed = sessionStorage.getItem(`ready_dismissed_${orderNum}`);
@@ -108,8 +119,11 @@ export default function GlobalNotification() {
       if (prev.includes(orderNum)) return prev;
       const next = [...prev, orderNum];
       
-      // Start/Restart alert logic with updated numbers
-      startAlertFlow(next);
+      // Only start the alert flow if one isn't already active
+      // This prevents socket + polling from double-triggering the chime sequence
+      if (!alertActiveRef.current) {
+        startAlertFlow(next);
+      }
       return next;
     });
   };
@@ -123,7 +137,7 @@ export default function GlobalNotification() {
       const next = [...prev, { number: orderNum, reason: reason || 'Cancelled by staff' }];
       
       // Stop any ready chimes and play a single warning chime
-      if (alertIntervalRef.current) clearInterval(alertIntervalRef.current);
+      clearChimeLoop();
       playNotificationSound('default');
       
       return next;
@@ -131,10 +145,14 @@ export default function GlobalNotification() {
   };
 
   const startAlertFlow = (orderNums) => {
-    if (alertIntervalRef.current && alertIntervalRef.current !== 'starting') {
-      clearInterval(alertIntervalRef.current);
-    }
-    alertIntervalRef.current = 'starting';
+    // Prevent re-entry if already running
+    if (alertActiveRef.current) return;
+    alertActiveRef.current = true;
+
+    // Clear any previous timers/intervals
+    clearChimeLoop();
+    // Re-set active since clearChimeLoop resets it
+    alertActiveRef.current = true;
 
     // 1. Play initial chime
     playNotificationSound('ready');
@@ -165,21 +183,16 @@ export default function GlobalNotification() {
       }
     }, 600);
 
-    // 3. Start chime loop on a fixed timer — don't depend on speech onend (unreliable on many browsers)
-    setTimeout(() => {
+    // 3. Start chime loop after speech has had time to play
+    alertFlowTimerRef.current = setTimeout(() => {
+      alertFlowTimerRef.current = null;
       playNotificationSound('ready');
-      startChimeLoop();
+      // Start the repeating chime interval
+      alertIntervalRef.current = setInterval(() => {
+        playNotificationSound('ready');
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+      }, 3000);
     }, 4000);
-  };
-
-  const startChimeLoop = () => {
-    if (alertIntervalRef.current && alertIntervalRef.current !== 'starting') {
-      clearInterval(alertIntervalRef.current);
-    }
-    alertIntervalRef.current = setInterval(() => {
-      playNotificationSound('ready');
-      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
-    }, 3000);
   };
 
   const dismissReadyAlert = () => {
@@ -187,10 +200,7 @@ export default function GlobalNotification() {
     const lastNum = readyOrderNumbers[readyOrderNumbers.length - 1];
     setReadyOrderNumbers([]);
     
-    if (alertIntervalRef.current && alertIntervalRef.current !== 'starting') {
-      clearInterval(alertIntervalRef.current);
-    }
-    alertIntervalRef.current = null;
+    clearChimeLoop();
     if (navigator.vibrate) navigator.vibrate(0);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     
