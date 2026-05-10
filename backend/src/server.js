@@ -43,6 +43,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/share', require('./routes/public')); // For clean social links
 app.use('/api/public', require('./routes/public'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));

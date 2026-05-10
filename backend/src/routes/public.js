@@ -19,7 +19,8 @@ router.get('/tenant/:slug', async (req, res) => {
         secondaryColor: true,
         bannerImage: true,
         bannerAssets: true,
-        active: true
+        active: true,
+        tagline: true
       }
     });
 
@@ -82,77 +83,44 @@ router.get('/manifest/:slug', async (req, res) => {
   }
 });
 
-// Social Share Bridge - Serves dynamic OG tags for social media scrapers
-router.get('/share/:slug', async (req, res) => {
+// Social Share Bridge
+router.get('/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    const tenant = await prisma.tenant.findUnique({
-      where: { slug }
-    });
-
+    const tenant = await prisma.tenant.findUnique({ where: { slug } });
     if (!tenant) return res.redirect('/');
 
-    // Fetch custom description for social media
-    const setting = await prisma.systemSetting.findUnique({
-      where: { tenantId_key: { tenantId: tenant.id, key: 'landing_description' } }
-    });
-    
     const title = tenant.name;
-    const description = setting?.value || `Order fresh food from ${tenant.name} - Skip the line and order online!`;
-    const host = req.get('host');
-    const protocol = req.protocol === 'http' && host.includes('localhost') ? 'http' : 'https';
-    
-    // Resolve the Frontend URL 
-    const baseUrl = 'https://elevatepos.vercel.app';
-    const redirectUrl = `${baseUrl}/menu?tenant=${slug}`;
-    
-    // Resolve the full OG Image URL (must be absolute)
+    const description = tenant.tagline || 'Explore our premium store.';
+    const redirectUrl = `https://elevatepos.vercel.app/menu?tenant=${slug}`;
+
     let ogImage = tenant.ogImage || tenant.logo;
-    
-    // Fallback to a professional high-res icon since emojis can't be scraped
     if (!ogImage || ogImage === '/logo.png') {
       ogImage = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
     }
-
-    // Ensure it's absolute - Point to the frontend (Vercel) where images actually live
     if (ogImage && ogImage.startsWith('/')) {
       ogImage = `https://elevatepos.vercel.app${ogImage}`;
     }
 
-    // Serve a simple meta page
     res.send(`
       <!DOCTYPE html>
       <html>
       <head>
         <title>${title}</title>
-        <meta name="description" content="${description}">
-        
-        <!-- Facebook / Open Graph -->
-        <meta property="og:type" content="website">
-        <meta property="og:url" content="${redirectUrl}">
         <meta property="og:title" content="${title}">
         <meta property="og:description" content="${description}">
         <meta property="og:image" content="${ogImage}">
-        <meta property="og:image:width" content="1200">
-        <meta property="og:image:height" content="630">
-
-        <!-- Twitter -->
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="${title}">
-        <meta name="twitter:description" content="${description}">
-        <meta name="twitter:image" content="${ogImage}">
-
-        <!-- Redirect -->
+        <meta property="og:url" content="${redirectUrl}">
+        <meta property="og:type" content="website">
         <meta http-equiv="refresh" content="0;url=${redirectUrl}">
-        <script>window.location.href = "${redirectUrl}";</script>
       </head>
-      <body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:20vh;">
+      <body style="background: #000; color: #fff; font-family: sans-serif; text-align: center; padding-top: 20%;">
         <h2>Redirecting to ${title}...</h2>
       </body>
       </html>
     `);
-  } catch (error) {
-    console.error('Share Bridge Error:', error);
+  } catch (err) {
+    console.error('Share Error:', err);
     res.redirect('/');
   }
 });
