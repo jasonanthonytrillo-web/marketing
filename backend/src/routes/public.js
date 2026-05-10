@@ -86,6 +86,7 @@ router.get('/manifest/:slug', async (req, res) => {
 // Social Share Bridge
 router.get('/:slug', async (req, res) => {
   try {
+    res.setHeader('X-Robots-Tag', 'all');
     const { slug } = req.params;
     const tenant = await prisma.tenant.findUnique({ where: { slug } });
     if (!tenant) return res.redirect('/');

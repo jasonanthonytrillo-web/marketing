@@ -65,6 +65,7 @@ require('./socket')(io, prisma);
 // Robots.txt for Social Scrapers
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
+  res.setHeader('X-Robots-Tag', 'all');
   res.send("User-agent: *\nAllow: /");
 });
 
