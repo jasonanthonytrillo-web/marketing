@@ -12,7 +12,7 @@ export default function Landing() {
   const { user, logoutUser } = useAuth();
   const [searchParams] = useSearchParams();
   const isCustomer = user && user.role === 'customer';
-  const { joinRoom, connected } = useSocket();
+  const { joinRoom, leaveRoom, connected } = useSocket();
 
   // Dynamic favicon, title & OG meta
   useDynamicBranding(tenant?.name || 'PROJECT MILLION', tenant?.favicon, {

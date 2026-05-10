@@ -106,7 +106,7 @@ export default function Menu() {
   const brandingColor = branding?.primaryColor || '#f97316';
   const itemCount = getItemCount();
 
-  const { joinRoom, connected } = useSocket();
+  const { joinRoom, leaveRoom, connected } = useSocket();
 
   useEffect(() => {
     const unlock = () => unlockAudio();
