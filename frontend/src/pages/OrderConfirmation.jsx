@@ -104,15 +104,10 @@ export default function OrderConfirmation() {
     if (!onEvent) return;
     const unsub = onEvent('order_update', (data) => {
       if (data.order?.orderNumber === orderNumber) {
-        // Only announce 'ready' once — use a ref to prevent double-read
+        // Status update logic
         if (data.order.status === 'ready' && lastAnnouncedStatusRef.current !== 'ready') {
           lastAnnouncedStatusRef.current = 'ready';
-          playNotificationSound('ready');
-          setTimeout(() => {
-            const msg = new SpeechSynthesisUtterance(`Order number ${orderNumber.split('-')[1] || orderNumber} is now ready for pickup`);
-            msg.rate = 0.9;
-            window.speechSynthesis.speak(msg);
-          }, 800);
+          // Audio is handled by GlobalNotification to prevent echo
         }
         setOrder(data.order);
         // Automatically close payment modal if order is confirmed
@@ -199,11 +194,11 @@ export default function OrderConfirmation() {
 
           {order.estimatedPrepTime && !isReady && !isCompleted && !isCancelled && (
             <div className="mb-6 animate-bounce-in">
-              <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-100 px-4 py-2 rounded-2xl shadow-sm">
-                <span className="text-xl">🕒</span>
+              <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 px-5 py-3 rounded-2xl shadow-lg" style={{ backgroundColor: `${brandingColor}15` }}>
+                <span className="text-2xl">🕒</span>
                 <div className="text-left">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary-400 leading-none mb-1">Estimated Wait</p>
-                  <p className="text-lg font-black text-primary-600 leading-none">{formatMinutes(order.estimatedPrepTime)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70 mb-0.5" style={{ color: brandingColor }}>Estimated Wait</p>
+                  <p className="text-xl font-black leading-none" style={{ color: brandingColor }}>{formatMinutes(order.estimatedPrepTime)}</p>
                 </div>
               </div>
             </div>

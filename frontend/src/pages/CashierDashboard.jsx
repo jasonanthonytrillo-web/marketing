@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getCashierOrders, confirmOrder, cashierCancelOrder, calculatePayment } from '../services/api';
+import { getCashierOrders, confirmOrder, cashierCancelOrder, calculatePayment, markServed } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, unlockAudio } from '../utils/helpers';
@@ -141,6 +141,20 @@ export default function CashierDashboard() {
       loadOrders();
     } catch (e) {
       alert(e.response?.data?.message || 'Failed to confirm order');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleServeOrder = async () => {
+    if (!selectedOrder) return;
+    setProcessing(true);
+    try {
+      await markServed(selectedOrder.id);
+      setSelectedOrder(null);
+      loadOrders();
+    } catch (e) {
+      alert('Failed to mark order as served');
     } finally {
       setProcessing(false);
     }
@@ -609,7 +623,23 @@ export default function CashierDashboard() {
                       </div>
 
                       {selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
-                        <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3 mb-3">Cancel Order</button>
+                        <div className="space-y-3 mb-3">
+                          {selectedOrder.status === 'ready' && (
+                            <button 
+                              onClick={handleServeOrder} 
+                              disabled={processing} 
+                              className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 animate-bounce-in"
+                            >
+                              {processing ? 'Processing...' : (
+                                <>
+                                  <span className="text-xl">🥡</span>
+                                  <span>MARK AS SERVED</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                          <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3">Cancel Order</button>
+                        </div>
                       )}
                       <button onClick={() => window.print()} className="btn-secondary w-full py-3">🖨️ Print Receipt</button>
                     </div>

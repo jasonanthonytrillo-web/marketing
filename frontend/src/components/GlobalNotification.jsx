@@ -158,7 +158,7 @@ export default function GlobalNotification() {
     playNotificationSound('ready');
     if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
 
-    // 2. Speech (fire and forget — don't rely on onend for the chime loop)
+    // 2. Speech (Re-enabled - Only one source to prevent double voice)
     setTimeout(() => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
