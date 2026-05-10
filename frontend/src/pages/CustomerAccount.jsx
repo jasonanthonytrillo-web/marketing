@@ -22,7 +22,7 @@ export default function CustomerAccount() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/member-portal');
+      navigate(tenantSlug ? `/member-portal?tenant=${tenantSlug}` : '/member-portal');
     } else if (user) {
       loadActivity();
       if (searchParams.get('action') === 'change-password') {
@@ -205,7 +205,7 @@ export default function CustomerAccount() {
                       <span className="text-sm font-black text-slate-900">{formatCurrency(item.total)}</span>
                     </div>
                     <Link 
-                      to={`/menu?reorder=${item.id}`} 
+                      to={tenantSlug ? `/menu?tenant=${tenantSlug}&reorder=${item.id}` : `/menu?reorder=${item.id}`} 
                       className="px-5 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
                     >
                       Re-order Again
@@ -225,7 +225,7 @@ export default function CustomerAccount() {
           {activity.length === 0 && (
             <div className="py-20 text-center">
               <p className="text-slate-400 font-bold mb-6">No activity recorded yet.</p>
-              <Link to="/menu" className="bg-primary-500 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px]">Start Your Journey</Link>
+              <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu'} className="bg-primary-500 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px]">Start Your Journey</Link>
             </div>
           )}
         </div>
