@@ -101,7 +101,6 @@ export default function InventoryTab() {
             onClick={() => window.open(`${import.meta.env.VITE_API_URL}/reports/export/inventory?token=${localStorage.getItem('pos_token')}`, '_blank')}
             className="px-4 py-2 bg-white border border-surface-200 hover:border-emerald-500 hover:text-emerald-600 text-surface-600 font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 text-xs group"
           >
-            <span>📥</span>
             Export CSV
           </button>
         </div>

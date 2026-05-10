@@ -205,7 +205,7 @@ export default function CustomerAccount() {
                       <span className="text-sm font-black text-slate-900">{formatCurrency(item.total)}</span>
                     </div>
                     <Link 
-                      to={tenantSlug ? `/menu?tenant=${tenantSlug}&reorder=${item.id}` : `/menu?reorder=${item.id}`} 
+                      to={tenantSlug ? `/menu?tenant=${tenantSlug}&reorder=${item.orderNumber}` : `/menu?reorder=${item.orderNumber}`} 
                       className="px-5 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
                     >
                       Re-order Again

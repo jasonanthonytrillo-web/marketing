@@ -27,6 +27,7 @@ router.get('/activity', authenticate, async (req, res) => {
       ...orders.map(o => ({
         type: 'order',
         id: o.id,
+        orderNumber: o.orderNumber,
         date: o.createdAt,
         title: `🍔 Order #${o.orderNumber}`,
         description: o.items.map(i => i.productName).join(', '),

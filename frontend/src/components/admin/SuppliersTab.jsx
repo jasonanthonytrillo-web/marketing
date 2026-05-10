@@ -84,7 +84,7 @@ export default function SuppliersTab() {
             onClick={() => window.open(`${import.meta.env.VITE_API_URL}/reports/export/suppliers?token=${localStorage.getItem('pos_token')}`, '_blank')}
             className="px-4 py-2 bg-white border border-surface-200 hover:border-primary-500 hover:text-primary-600 text-surface-600 font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-xs group"
           >
-            <span>📥</span> Export List
+            Export List
           </button>
           <button 
             onClick={() => handleOpenModal()}

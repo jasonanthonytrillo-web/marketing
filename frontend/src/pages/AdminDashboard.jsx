@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { getAdminSummary } from '../services/api';
 import ProductsTab from '../components/admin/ProductsTab';
@@ -186,25 +187,27 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
                   <h3 className="font-heading font-bold text-surface-900 mb-6">Sales Performance (Last 14 Days)</h3>
-                  <div className="h-64 w-full flex items-end gap-2 px-2 pt-4">
-                    {(() => {
-                      const maxVal = Math.max(...(summary.dailySales?.map(s => s.revenue) || [1]));
-                      return (summary.dailySales || []).map((data, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
-                          <div className="relative w-full flex flex-col justify-end h-full">
-                            {/* Tooltip on hover */}
-                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-surface-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30 font-black shadow-xl">
-                              {formatCurrency(data.revenue)}
-                            </div>
-                            <div 
-                              className="w-full bg-gradient-to-t from-primary-500/20 to-primary-500 rounded-t-lg transition-all duration-1000 group-hover:brightness-110" 
-                              style={{ height: `${(data.revenue / (maxVal || 1)) * 100}%`, minHeight: data.revenue > 0 ? '4px' : '2px' }}
-                            ></div>
-                          </div>
-                          <span className="text-[8px] font-bold text-surface-400 uppercase rotate-45 mt-2 origin-left">{data.label}</span>
-                        </div>
-                      ));
-                    })()}
+                  <div className="h-[300px] w-full pt-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={summary.dailySales || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={user?.tenantColor || user?.tenant?.primaryColor || '#f97316'} stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor={user?.tenantColor || user?.tenant?.primaryColor || '#f97316'} stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }} tickFormatter={(value) => `₱${value}`} />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
+                          itemStyle={{ fontWeight: 900, color: '#0f172a' }}
+                          labelStyle={{ fontWeight: 700, color: '#64748b', marginBottom: '4px' }}
+                          formatter={(value) => [formatCurrency(value), 'Revenue']}
+                        />
+                        <Area type="monotone" dataKey="revenue" stroke={user?.tenantColor || user?.tenant?.primaryColor || '#f97316'} strokeWidth={4} fillOpacity={1} fill="url(#colorRevenue)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200">

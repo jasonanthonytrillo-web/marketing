@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getProducts, changePassword } from '../services/api';
+import { getProducts, changePassword, getOrder } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
 import { formatCurrency, unlockAudio } from '../utils/helpers';
@@ -22,9 +22,52 @@ export default function Menu() {
   const [comboStep, setComboStep] = useState(1); // 1 or 2
   const { addToCart, getItemCount, items, getSubtotal } = useCart();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  useEffect(() => { loadProducts(); }, [searchParams]);
+  useEffect(() => { loadProducts(); }, [searchParams.get('tenant')]);
+
+  useEffect(() => {
+    const reorderNumber = searchParams.get('reorder');
+    if (reorderNumber) {
+      handleReorder(reorderNumber);
+    }
+  }, [searchParams]);
+
+  const handleReorder = async (orderNumber) => {
+    try {
+      const res = await getOrder(orderNumber);
+      if (res.data && res.data.data && res.data.data.items) {
+        const orderItems = res.data.data.items;
+        for (const item of orderItems) {
+          const productObj = {
+            id: item.productId,
+            name: item.productName,
+            price: item.productPrice,
+            stock: 999, // default to high so cart accepts it
+          };
+          
+          const options = {
+            size: item.size || '',
+            flavor: item.flavor || '',
+            notes: item.notes || '',
+            addons: item.addons ? JSON.parse(item.addons) : [],
+            comboChoices: item.comboChoices ? (typeof item.comboChoices === 'string' ? JSON.parse(item.comboChoices) : item.comboChoices) : null,
+            isRedemption: item.isRedemption || false
+          };
+          
+          for (let i = 0; i < item.quantity; i++) {
+            addToCart(productObj, options);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to reorder:', e);
+    } finally {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('reorder');
+      setSearchParams(newParams, { replace: true });
+    }
+  };
 
   const loadProducts = async () => {
     setLoading(true);
