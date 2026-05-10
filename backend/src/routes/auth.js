@@ -366,39 +366,52 @@ router.post('/register-customer', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    await prisma.user.upsert({
-      where: { email_tenantId: { email, tenantId } },
-      update: {
-        password: hashedPassword,
-        name,
-        otpCode: otp,
-        otpExpires: expires,
-        isVerified: false
-      },
-      create: {
-        email,
-        password: hashedPassword,
-        name,
-        tenantId,
-        role: 'customer',
-        otpCode: otp,
-        otpExpires: expires,
-        isVerified: false
-      }
-    });
+    let user;
+    if (existing) {
+      console.log('Updating unverified user:', email);
+      user = await prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          password: hashedPassword,
+          name,
+          otpCode: otp,
+          otpExpires: expires,
+          isVerified: false
+        }
+      });
+    } else {
+      console.log('Creating new unverified user:', email);
+      user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          name,
+          tenantId,
+          role: 'customer',
+          otpCode: otp,
+          otpExpires: expires,
+          isVerified: false
+        }
+      });
+    }
 
     // Send the email
+    console.log('Attempting to send OTP to:', email);
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     await sendOTPEmail(email, otp, tenant?.name || 'Elevate POS');
 
+    console.log('OTP Sent Successfully');
     res.status(201).json({ 
       success: true, 
       message: 'OTP sent! Please verify your email to complete registration.',
       email 
     });
   } catch (error) {
-    console.error('Registration Error:', error);
-    res.status(500).json({ success: false, message: error.message || 'Failed to create account.' });
+    console.error('CRITICAL REGISTRATION ERROR:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Server error during registration.' 
+    });
   }
 });
 
