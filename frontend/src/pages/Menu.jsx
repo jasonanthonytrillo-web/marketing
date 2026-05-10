@@ -564,43 +564,116 @@ export default function Menu() {
         </div>
       )}
 
-      {/* Rewards Gallery Modal */}
+      {/* Premium Rewards Gallery Modal */}
       {showRewards && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={() => setShowRewards(false)}>
-          <div className="bg-white rounded-[40px] w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="p-8 bg-emerald-600 text-white flex justify-between items-start">
-              <div>
-                <h2 className="text-3xl font-black tracking-tight uppercase mb-1">Rewards Gallery</h2>
-                <p className="text-emerald-100 font-bold">💎 {Math.floor(user?.points || 0)} Points Available</p>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+          {/* Dark blurred backdrop */}
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setShowRewards(false)}></div>
+          
+          <div className="relative bg-white rounded-[2.5rem] w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
+            
+            {/* Header Section */}
+            <div className="relative p-8 md:p-10 text-white overflow-hidden shrink-0" style={{ backgroundColor: brandingColor }}>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+              
+              <div className="relative z-10 flex justify-between items-start">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-white/20 shadow-sm backdrop-blur-md">
+                    <span>💎</span> VIP Member
+                  </div>
+                  <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-2 drop-shadow-sm">Rewards Gallery</h2>
+                  <p className="text-white/90 font-bold text-lg flex items-center gap-2">
+                    You have <span className="text-2xl font-black bg-white/20 px-3 py-1 rounded-xl shadow-inner">{Math.floor(user?.points || 0)}</span> Points
+                  </p>
+                </div>
+                <button onClick={() => setShowRewards(false)} className="w-12 h-12 bg-black/20 hover:bg-black/40 rounded-full flex items-center justify-center text-xl transition-all shadow-sm backdrop-blur-md">✕</button>
               </div>
-              <button onClick={() => setShowRewards(false)} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl hover:bg-white/30 transition-all">✕</button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {categories.flatMap(c => c.products).filter(p => p.pointsCost).map(product => {
-                const canAfford = (user?.points || 0) >= product.pointsCost;
-                return (
-                  <div key={product.id} className={`bg-surface-50 border border-surface-100 rounded-3xl p-4 ${!canAfford && 'opacity-60'}`}>
-                    <div className="flex gap-4 items-center mb-4">
-                      <img src={product.image || 'https://via.placeholder.com/150'} className="w-16 h-16 rounded-2xl object-cover border border-white shadow-sm" />
-                      <div>
-                        <h4 className="font-bold text-surface-900 leading-tight mb-1">{product.name}</h4>
-                        <p className="text-emerald-600 font-black">💎 {product.pointsCost} Pts</p>
+            {/* Info Banner */}
+            <div className="bg-slate-50 border-b border-slate-100 p-4 px-8 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 shadow-sm z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg shadow-inner shrink-0">
+                  ℹ️
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">How to earn points</h4>
+                  <p className="text-[11px] font-bold text-slate-500">Earn <strong className="text-slate-700">1 Point</strong> for every <strong className="text-slate-700">₱100</strong> spent on your orders!</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50/50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {categories.flatMap(c => c.products).filter(p => p.pointsCost).map(product => {
+                  const canAfford = (user?.points || 0) >= product.pointsCost;
+                  const progress = Math.min(100, ((user?.points || 0) / product.pointsCost) * 100);
+                  
+                  return (
+                    <div key={product.id} className="group bg-white border border-slate-200 rounded-[2rem] p-5 shadow-sm hover:shadow-xl transition-all relative overflow-hidden flex flex-col justify-between h-full">
+                      
+                      {/* Decorative background element for affordable items */}
+                      {canAfford && (
+                        <div className="absolute top-0 right-0 w-32 h-32 opacity-10 rounded-full blur-2xl transition-all group-hover:scale-150" style={{ backgroundColor: brandingColor }}></div>
+                      )}
+
+                      <div className="relative z-10 flex gap-5 items-center mb-6">
+                        <div className="relative shrink-0">
+                          <img src={product.image || 'https://via.placeholder.com/150'} className={`w-20 h-20 rounded-2xl object-cover shadow-md transition-transform group-hover:scale-105 ${!canAfford ? 'grayscale opacity-80' : ''}`} />
+                          {canAfford && (
+                            <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 text-white text-xs flex items-center justify-center rounded-full shadow-md border-2 border-white">✓</div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className={`font-black text-lg leading-tight mb-1 ${canAfford ? 'text-slate-900' : 'text-slate-500'}`}>{product.name}</h4>
+                          <p className="font-black text-sm flex items-center gap-1" style={{ color: brandingColor }}>
+                            💎 {product.pointsCost} <span className="text-[10px] text-slate-400 uppercase tracking-widest ml-1">Pts</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="relative z-10 mt-auto">
+                        {!canAfford && (
+                          <div className="mb-4">
+                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                              <span>Progress</span>
+                              <span>{Math.floor(user?.points || 0)} / {product.pointsCost}</span>
+                            </div>
+                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${progress}%`, backgroundColor: brandingColor }}></div>
+                            </div>
+                          </div>
+                        )}
+
+                        <button
+                          disabled={!canAfford || !product.available}
+                          onClick={() => {
+                            addToCart(product, { isRedemption: true });
+                            setShowRewards(false);
+                          }}
+                          className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                            canAfford 
+                              ? 'text-white shadow-lg ring-2 ring-transparent ring-offset-2' 
+                              : 'bg-slate-100 text-slate-400 border border-slate-200'
+                          }`}
+                          style={canAfford ? { backgroundColor: brandingColor, '--tw-ring-color': brandingColor } : {}}
+                        >
+                          {canAfford ? 'Redeem Reward' : `Need ${product.pointsCost - Math.floor(user?.points || 0)} More Points`}
+                        </button>
                       </div>
                     </div>
-                    <button
-                      disabled={!canAfford || !product.available}
-                      onClick={() => {
-                        addToCart(product, { isRedemption: true });
-                        setShowRewards(false);
-                      }}
-                      className={`w-full py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${canAfford ? 'bg-emerald-600 text-white shadow-lg hover:bg-emerald-700' : 'bg-surface-200 text-surface-500'}`}
-                    >
-                      {canAfford ? 'Claim Reward' : `Need ${product.pointsCost - Math.floor(user?.points || 0)} More`}
-                    </button>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              
+              {categories.flatMap(c => c.products).filter(p => p.pointsCost).length === 0 && (
+                <div className="text-center py-20">
+                  <div className="text-6xl mb-4 opacity-50">🎁</div>
+                  <h3 className="text-xl font-black text-slate-800">No Rewards Available</h3>
+                  <p className="text-slate-500 font-medium">Check back later for exciting items you can redeem!</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
