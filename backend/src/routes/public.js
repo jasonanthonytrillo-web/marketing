@@ -21,8 +21,7 @@ router.get('/tenant/:slug', async (req, res) => {
         secondaryColor: true,
         bannerImage: true,
         bannerAssets: true,
-        active: true,
-        tagline: true
+        active: true
       }
     });
 
@@ -106,7 +105,7 @@ router.get('/:slug', async (req, res) => {
     if (!tenant) return res.redirect('/');
 
     const title = tenant.name;
-    const description = tenant.tagline || 'Explore our premium store.';
+    const description = 'Explore our premium store.';
     const redirectUrl = `https://elevatepos.vercel.app/menu?tenant=${slug}`;
 
     let ogImage = tenant.ogImage || tenant.logo;
