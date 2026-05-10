@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { login, googleLogin, registerCustomer, getPublicTenant, requestOTP, verifyOTP } from '../services/api';
+import { login, googleLogin, registerCustomer, getPublicTenant, requestOTP, verifyOTP, verifyRegistration } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 import { GoogleLogin } from '@react-oauth/google';
