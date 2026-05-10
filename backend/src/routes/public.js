@@ -102,17 +102,12 @@ router.get('/share/:slug', async (req, res) => {
     const host = req.get('host');
     const protocol = req.protocol === 'http' && host.includes('localhost') ? 'http' : 'https';
     
-    // Resolve the Frontend URL (Priority: Env Var > Request Host)
-    const baseUrl = (process.env.FRONTEND_URL || `${protocol}://${host}`).replace(/\/$/, '');
-    const redirectUrl = `${baseUrl}/?tenant=${slug}`;
+    // Resolve the Frontend URL 
+    const baseUrl = 'https://elevatepos.vercel.app';
+    const redirectUrl = `${baseUrl}/menu?tenant=${slug}`;
     
     // Resolve the full OG Image URL (must be absolute)
     let ogImage = tenant.ogImage || tenant.logo;
-    
-    // Default fallback for Burger Palace
-    if (!ogImage && slug === 'burger-palace') {
-      ogImage = '/og-default.png';
-    }
     
     if (!ogImage) {
       ogImage = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
@@ -128,27 +123,45 @@ router.get('/share/:slug', async (req, res) => {
       <html lang="en">
       <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${title}</title>
+        
+        <!-- Primary Meta Tags -->
+        <meta name="title" content="${title}">
+        <meta name="description" content="${description}">
+
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">
         <meta property="og:url" content="${redirectUrl}">
         <meta property="og:title" content="${title}">
         <meta property="og:description" content="${description}">
         <meta property="og:image" content="${ogImage}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image">
         <meta property="twitter:url" content="${redirectUrl}">
         <meta property="twitter:title" content="${title}">
         <meta property="twitter:description" content="${description}">
         <meta property="twitter:image" content="${ogImage}">
-        <!-- Immediate Redirect -->
-        <script>window.location.href = "${redirectUrl}";</script>
-        <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+
+        <!-- Immediate Redirect for Humans -->
+        <script>
+          // Only redirect if NOT a scraper bot (simple check)
+          if (!/bot|googlebot|crawler|spider|robot|crawling|facebookexternalhit|facebookcatalog/i.test(navigator.userAgent)) {
+            window.location.href = "${redirectUrl}";
+          }
+        </script>
+        <meta http-equiv="refresh" content="3;url=${redirectUrl}">
       </head>
-      <body style="background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-center; height: 100vh; margin: 0;">
-        <div style="text-align: center; width: 100%;">
-          <p>Redirecting to ${title}...</p>
+      <body style="background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center;">
+        <div>
+          <div style="width: 60px; height: 60px; border: 4px solid #f97316; border-top-color: transparent; border-radius: 50%; animate: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+          <h2 style="font-weight: 900; letter-spacing: -0.05em;">WELCOME TO ${title.toUpperCase()}</h2>
+          <p style="color: #666; font-size: 14px;">Redirecting you to our menu...</p>
         </div>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
       </body>
       </html>
     `);
