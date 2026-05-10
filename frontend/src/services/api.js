@@ -46,6 +46,9 @@ export const register = (data) => api.post('/auth/register', data);
 export const registerCustomer = (data) => api.post('/auth/register-customer', data);
 export const getMe = () => api.get('/auth/me');
 export const changePassword = (data) => api.post('/auth/change-password', data);
+export const requestOTP = (data) => api.post('/auth/request-otp', data);
+export const verifyOTP = (data) => api.post('/auth/verify-otp', data);
+export const verifyRegistration = (data) => api.post('/auth/verify-registration', data);
 
 // Products (Public)
 export const getProducts = () => api.get('/products');

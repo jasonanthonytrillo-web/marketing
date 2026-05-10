@@ -7,8 +7,119 @@ const prisma = require('../lib/prisma');
 const { OAuth2Client } = require('google-auth-library');
 const GOOGLE_CLIENT_ID = '542194625185-rd9qq05qqgej9n6qkhlgcdgfagid601l.apps.googleusercontent.com';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+const { sendOTPEmail } = require('../lib/mailer');
 
 
+
+
+// POST /api/auth/request-otp — Send a code to email
+router.post('/request-otp', async (req, res) => {
+  const { email, tenantSlug } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+  try {
+    // Determine tenant
+    let tenantId = null;
+    let tenantName = 'Elevate POS';
+    if (tenantSlug && tenantSlug !== 'project-million') {
+      const tenantRecord = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+      if (tenantRecord) {
+        tenantId = tenantRecord.id;
+        tenantName = tenantRecord.name;
+      }
+    } else {
+      const masterTenant = await prisma.tenant.findUnique({ where: { slug: 'project-million' } });
+      if (masterTenant) tenantId = masterTenant.id;
+    }
+
+    // Find user in this tenant
+    const user = await prisma.user.findFirst({
+      where: { email, tenantId: tenantId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Account not found in this shop.' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpCode: otp, otpExpires: expires }
+    });
+
+    await sendOTPEmail(email, otp, tenantName);
+
+    res.json({ success: true, message: 'OTP sent to your email.' });
+  } catch (error) {
+    console.error('OTP Request Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send OTP.' });
+  }
+});
+
+// POST /api/auth/verify-otp — Login using code
+router.post('/verify-otp', async (req, res) => {
+  const { email, otp, tenantSlug } = req.body;
+  if (!email || !otp) return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+
+  try {
+    // Find tenant
+    let tenantId = null;
+    if (tenantSlug && tenantSlug !== 'project-million') {
+      const t = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+      if (t) tenantId = t.id;
+    } else {
+      const masterTenant = await prisma.tenant.findUnique({ where: { slug: 'project-million' } });
+      if (masterTenant) tenantId = masterTenant.id;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { 
+        email, 
+        tenantId, 
+        otpCode: otp, 
+        otpExpires: { gt: new Date() } 
+      },
+      include: { tenant: true }
+    });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired code.' });
+    }
+
+    // Clear OTP after success
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpCode: null, otpExpires: null }
+    });
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        tenantId: user.tenantId,
+        tenantName: user.tenant?.name,
+        tenantSlug: user.tenant?.slug,
+        points: user.points || 0
+      }
+    });
+  } catch (error) {
+    console.error('OTP Verify Error:', error);
+    res.status(500).json({ success: false, message: 'Verification failed.' });
+  }
+});
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -47,6 +158,15 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
+
+    // VERIFICATION CHECK: Customers MUST be verified to log in
+    if (user.role === 'customer' && !user.isVerified) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Email not verified. Please check your inbox or sign up again to receive a new code.',
+        unverified: true
+      });
     }
 
     // TENANT SECURITY CHECK: 
@@ -236,30 +356,106 @@ router.post('/register-customer', async (req, res) => {
     }
 
     const existing = await prisma.user.findFirst({ where: { email, tenantId } });
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'Email already registered in this store.' });
+    if (existing && existing.isVerified) {
+      return res.status(400).json({ success: false, message: 'Email already registered.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
-      data: {
+    
+    // OTP Generation
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.user.upsert({
+      where: { email_tenantId: { email, tenantId } },
+      update: {
+        password: hashedPassword,
+        name,
+        otpCode: otp,
+        otpExpires: expires,
+        isVerified: false
+      },
+      create: {
         email,
         password: hashedPassword,
         name,
+        tenantId,
         role: 'customer',
-        points: 0,
-        tenantId: tenantId
+        otpCode: otp,
+        otpExpires: expires,
+        isVerified: false
       }
     });
 
+    // Send the email
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    await sendOTPEmail(email, otp, tenant?.name || 'Elevate POS');
+
     res.status(201).json({ 
       success: true, 
-      message: 'Account created! Please log in.',
-      data: { id: user.id, name: user.name, email: user.email } 
+      message: 'OTP sent! Please verify your email to complete registration.',
+      email 
     });
   } catch (error) {
-    console.error('Customer Register error:', error);
+    console.error('Registration Error:', error);
     res.status(500).json({ success: false, message: 'Failed to create account.' });
+  }
+});
+
+// POST /api/auth/verify-registration — Complete signup
+router.post('/verify-registration', async (req, res) => {
+  const { email, otp, tenantSlug } = req.body;
+  try {
+    let tenantId = null;
+    if (tenantSlug) {
+      const t = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+      if (t) tenantId = t.id;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { 
+        email, 
+        tenantId, 
+        otpCode: otp, 
+        otpExpires: { gt: new Date() } 
+      }
+    });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid or expired code.' });
+    }
+
+    // Mark as verified
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { isVerified: true, otpCode: null, otpExpires: null },
+      include: { tenant: true }
+    });
+
+    // Generate login token immediately after verification
+    const token = jwt.sign(
+      { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role, tenantId: updatedUser.tenantId },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully!',
+      token,
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        role: updatedUser.role,
+        tenantId: updatedUser.tenantId,
+        tenantName: updatedUser.tenant?.name,
+        tenantSlug: updatedUser.tenant?.slug,
+        points: updatedUser.points || 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Verification failed.' });
   }
 });
 

@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { login, googleLogin, registerCustomer, getPublicTenant } from '../services/api';
+import { login, googleLogin, registerCustomer, getPublicTenant, requestOTP, verifyOTP } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+
 import { GoogleLogin } from '@react-oauth/google';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 
 export default function MemberPortal() {
-  const [mode, setMode] = useState('login'); // login, register
+  const [mode, setMode] = useState('login'); // login, register, verify
   const [formData, setFormData] = useState({ email: '', password: '', name: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState('');
+
   const [tenantData, setTenantData] = useState(null);
   const [searchParams] = useSearchParams();
   const { loginUser, logoutUser, user } = useAuth();
@@ -20,14 +23,13 @@ export default function MemberPortal() {
   const tenantSlug = searchParams.get('tenant');
   const actionParam = searchParams.get('action');
 
-  // Handle ?action=register from OrderConfirmation VIP invite link
+  // Handle ?action=register
   useEffect(() => {
     if (actionParam === 'register') {
       setMode('register');
     }
   }, [actionParam]);
 
-  // Dynamic Title & Favicon
   useDynamicBranding(
     tenantData ? `${tenantData.name} - Member Portal` : 'Member Portal',
     tenantData?.favicon
@@ -62,17 +64,27 @@ export default function MemberPortal() {
         const res = await login({ email: formData.email, password: formData.password, tenantSlug });
         loginUser(res.data.data.token, res.data.data.user);
         navigate(tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu');
-      } else {
+      } else if (mode === 'register') {
         await registerCustomer({ ...formData, tenantSlug });
+        setMode('verify');
+      } else if (mode === 'verify') {
+        const res = await verifyRegistration({ email: formData.email, otp, tenantSlug });
+        loginUser(res.data.token, res.data.user);
         setSuccess(true);
-        setMode('login');
+        setTimeout(() => {
+          navigate(tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu');
+        }, 2000);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      if (err.response?.data?.unverified) {
+        setMode('register'); // Let them re-register to get a new code
+      }
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');
@@ -136,7 +148,7 @@ export default function MemberPortal() {
                   </div>
                 )}
                 <h1 className="text-3xl font-black text-white mb-2 tracking-tight">
-                  {user ? `Welcome back, ${user.name.split(' ')[0]}!` : (mode === 'login' ? 'Welcome Back!' : 'Join the Club')}
+                  {user ? `Welcome back, ${user.name.split(' ')[0]}!` : (mode === 'login' ? 'Welcome Back!' : (mode === 'verify' ? 'Verify Email' : 'Join the Club'))}
                 </h1>
                 {user ? (
                   <p className="text-slate-400 text-sm">
@@ -145,8 +157,8 @@ export default function MemberPortal() {
                 ) : (
                   <p className="text-slate-400 text-sm">
                     {mode === 'login' 
-                      ? `Sign in to ${tenantData?.name || 'burger palace'} to earn points.` 
-                      : `Create a ${tenantData?.name || ''} account to start earning rewards.`}
+                      ? `Sign in to ${tenantData?.name || 'the shop'} to earn points.` 
+                      : (mode === 'verify' ? `Enter the code sent to ${formData.email}` : `Create a ${tenantData?.name || ''} account to start earning rewards.`)}
                   </p>
                 )}
               </div>
@@ -171,87 +183,119 @@ export default function MemberPortal() {
                     </div>
                   )}
 
-                  <div className="mb-6 flex flex-col items-center gap-3">
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleError}
-                      theme="filled_black"
-                      shape="pill"
-                      width="300"
-                    />
-                  </div>
+                  {mode !== 'verify' && (
+                    <div className="mb-6 flex flex-col items-center gap-3">
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        theme="filled_black"
+                        shape="pill"
+                        width="300"
+                      />
+                    </div>
+                  )}
 
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-white/10"></div>
+                  {mode !== 'verify' && (
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/10"></div>
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="bg-slate-900/50 px-2 text-slate-500 uppercase tracking-widest font-bold">Or use email</span>
+                      </div>
                     </div>
-                    <div className="relative flex justify-center text-xs">
-                      <span className="bg-slate-900/50 px-2 text-slate-500 uppercase tracking-widest font-bold">Or continue with email</span>
-                    </div>
-                  </div>
+                  )}
 
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    {mode === 'register' && (
-                      <div>
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                    {mode === 'verify' ? (
+                      <div className="animate-fade-in">
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">6-Digit Code</label>
                         <input 
                           type="text" 
+                          maxLength="6"
+                          value={otp}
+                          onChange={(e) => setOtp(e.target.value)}
+                          className="w-full bg-white/5 border border-primary-500/50 rounded-2xl px-5 py-4 text-center text-3xl font-black tracking-[0.5em] text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
+                          placeholder="000000"
                           required
-                          placeholder="Your Name"
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
-                          value={formData.name}
-                          onChange={e => setFormData({...formData, name: e.target.value})}
                         />
+                        <button 
+                          type="button"
+                          onClick={() => setMode('register')}
+                          className="text-primary-400 text-[10px] font-bold uppercase mt-4 hover:text-primary-300 transition-colors px-1"
+                        >
+                          ← Change Email
+                        </button>
                       </div>
+                    ) : (
+                      <>
+                        {mode === 'register' && (
+                          <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                            <input 
+                              type="text" 
+                              value={formData.name}
+                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
+                              placeholder="John Doe"
+                              required
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Email Address</label>
+                          <input 
+                            type="email" 
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
+                            placeholder="you@example.com"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Password</label>
+                          <input 
+                            type="password" 
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
+                            placeholder="••••••••"
+                            required
+                          />
+                        </div>
+                      </>
                     )}
-
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Email Address</label>
-                      <input 
-                        type="email" 
-                        required
-                        placeholder="email@example.com"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
-                        value={formData.email}
-                        onChange={e => setFormData({...formData, email: e.target.value})}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Password</label>
-                      <input 
-                        type="password" 
-                        required
-                        placeholder="••••••••"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
-                        value={formData.password}
-                        onChange={e => setFormData({...formData, password: e.target.value})}
-                      />
-                    </div>
 
                     <button 
                       type="submit" 
                       disabled={loading}
-                      className="w-full bg-primary-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-primary-600/20 hover:bg-primary-500 active:scale-[0.98] transition-all uppercase tracking-widest mt-4 disabled:opacity-50"
+                      className="w-full py-5 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
                     >
-                      {loading ? 'Processing...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
+                      {loading ? (
+                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        mode === 'login' ? 'Sign In' : (mode === 'verify' ? 'Verify & Finish' : 'Create Account')
+                      )}
                     </button>
                   </form>
 
-                  <div className="mt-8 pt-8 border-t border-white/5 text-center">
-                    <p className="text-slate-500 text-sm mb-4">
-                      {mode === 'login' ? "Don't have an account?" : "Already a member?"}
-                      <button 
-                        onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
-                        className="ml-2 text-indigo-400 font-bold hover:text-indigo-300 transition-colors"
-                      >
-                        {mode === 'login' ? 'Join Now' : 'Sign In'}
-                      </button>
-                    </p>
-                    <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu'} className="text-slate-600 text-xs font-bold hover:text-slate-400 transition-colors uppercase tracking-tighter">
-                      Continue as Guest →
-                    </Link>
-                  </div>
+                  {mode !== 'verify' && (
+                    <div className="mt-8 pt-8 border-t border-white/5 text-center">
+                      <p className="text-slate-500 text-sm mb-4">
+                        {mode === 'login' ? "Don't have an account?" : "Already a member?"}
+                        <button 
+                          onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+                          className="ml-2 text-indigo-400 font-bold hover:text-indigo-300 transition-colors"
+                        >
+                          {mode === 'login' ? 'Join Now' : 'Sign In'}
+                        </button>
+                      </p>
+                      <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu'} className="text-slate-600 text-xs font-bold hover:text-slate-400 transition-colors uppercase tracking-tighter">
+                        Continue as Guest →
+                      </Link>
+                    </div>
+                  )}
                 </>
               )}
             </>
