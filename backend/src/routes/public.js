@@ -6,6 +6,8 @@ const prisma = require('../lib/prisma');
 router.get('/tenant/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
+    if (!slug) return res.status(400).json({ success: false, message: 'Slug required' });
+
     const tenant = await prisma.tenant.findUnique({
       where: { slug: slug },
       select: {
@@ -25,20 +27,27 @@ router.get('/tenant/:slug', async (req, res) => {
     });
 
     if (!tenant) {
-      return res.status(404).json({ success: false, message: 'Tenant not found' });
+      return res.status(404).json({ success: false, message: 'Store not found' });
     }
 
-    // Fetch landing description from settings
-    const setting = await prisma.systemSetting.findUnique({
-      where: { tenantId_key: { tenantId: tenant.id, key: 'landing_description' } }
-    });
-    
-    tenant.landing_description = setting ? setting.value : null;
+    // Attempt to fetch landing description, but don't fail if it's missing
+    try {
+      const setting = await prisma.systemSetting.findFirst({
+        where: { 
+          tenantId: tenant.id, 
+          key: 'landing_description' 
+        }
+      });
+      tenant.landing_description = setting ? setting.value : null;
+    } catch (settingError) {
+      console.warn('Non-critical: Could not fetch landing description:', settingError.message);
+      tenant.landing_description = null;
+    }
 
     res.json({ success: true, data: tenant });
   } catch (error) {
-    console.error('Public Tenant Error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error('CRITICAL Public Tenant Error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
