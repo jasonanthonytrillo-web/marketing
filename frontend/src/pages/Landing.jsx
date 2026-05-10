@@ -160,9 +160,10 @@ export default function Landing() {
           // 1. If it's a full URL or data URI, use it as is.
           // 2. If it's an upload (/uploads/...), prefix with backend API URL.
           // 3. If it's a local public asset (starts with / but not /uploads/), use it as is.
+          const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || (import.meta.env.PROD ? '' : 'http://localhost:5000');
           const fullUrl = (asset.startsWith('http') || asset.startsWith('data:') || (asset.startsWith('/') && !asset.startsWith('/uploads/')))
             ? asset 
-            : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${asset}`;
+            : `${backendUrl}${asset}`;
           
           const isVid = typeof asset === 'string' && (
             /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(asset.split(/[?#]/)[0]) || 

@@ -1,7 +1,10 @@
 {
+  "redirects": [
+    { "source": "/share/:slug", "destination": "/api/share?slug=:slug", "permanent": false }
+  ],
   "routes": [
-    { "src": "/share/(?<slug>[^/]+)", "dest": "/api/share?slug=$slug" },
     { "src": "/api/share", "dest": "/api/share" },
+    { "src": "/api/public/(.*)", "dest": "https://marketing-pqi1.onrender.com/api/public/$1" },
     { "src": "/api/(.*)", "dest": "https://marketing-pqi1.onrender.com/api/$1" },
     { "src": "/uploads/(.*)", "dest": "https://marketing-pqi1.onrender.com/uploads/$1" },
     { "handle": "filesystem" },
