@@ -432,8 +432,9 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
     for (const [key, value] of Object.entries(settings)) {
       if (brandingMap[key]) {
         const field = brandingMap[key];
-        // SECURITY: Only superadmins can change critical branding
-        if (['name', 'logo', 'favicon'].includes(field) && req.user.role !== 'superadmin') {
+        // SECURITY: Only superadmins can change the internal tenant name.
+        // Admins CAN change their logo and favicon.
+        if (['name'].includes(field) && req.user.role !== 'superadmin') {
           continue;
         }
         brandingUpdate[field] = value;

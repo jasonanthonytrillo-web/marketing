@@ -72,7 +72,6 @@ export default function SettingsTab() {
           <div className="p-8 space-y-8">
             <div className="grid grid-cols-1 gap-8">
               {isSuper && (
-                <>
                   <div>
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Display Store Name</label>
                     <input 
@@ -83,44 +82,96 @@ export default function SettingsTab() {
                       placeholder="e.g. BURGER PALACE"
                     />
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Store Logo URL</label>
-                      <div className="flex gap-4">
-                        <input 
-                          type="text" 
-                          value={settings.tenant_logo || ''} 
-                          onChange={e => setSettings({...settings, tenant_logo: e.target.value})}
-                          className="input-field flex-1 py-3 text-sm" 
-                          placeholder="https://example.com/logo.png"
-                        />
-                        {settings.tenant_logo && (
-                          <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
-                            <img src={settings.tenant_logo} className="w-full h-full object-cover" alt="Preview" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Favicon URL (Tab Icon)</label>
-                      <div className="flex gap-4">
-                        <input 
-                          type="text" 
-                          value={settings.tenant_favicon || ''} 
-                          onChange={e => setSettings({...settings, tenant_favicon: e.target.value})}
-                          className="input-field flex-1 py-3 text-sm" 
-                          placeholder="https://example.com/favicon.ico"
-                        />
-                        {settings.tenant_favicon && (
-                          <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center p-2">
-                            <img src={settings.tenant_favicon} className="w-full h-full object-contain" alt="Preview" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </>
               )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Store Logo</label>
+                  <div className="flex flex-col xl:flex-row gap-4">
+                    <div className="flex-1 flex gap-2">
+                      <input 
+                        type="text" 
+                        value={settings.tenant_logo || ''} 
+                        onChange={e => setSettings({...settings, tenant_logo: e.target.value})}
+                        className="input-field flex-1 py-3 text-sm" 
+                        placeholder="https://example.com/logo.png"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => document.getElementById('logoUpload').click()}
+                        className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold whitespace-nowrap"
+                      >
+                        📁 Upload
+                      </button>
+                      <input 
+                        type="file" id="logoUpload" accept="image/*" className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onloadend = async () => {
+                            setMessage('📤 Uploading Logo...');
+                            try {
+                              const res = await uploadImage({ image: reader.result, name: 'logo' });
+                              setSettings({ ...settings, tenant_logo: res.data.url });
+                              setMessage('Logo updated! ✅');
+                            } catch (error) { alert('Upload failed'); }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </div>
+                    {settings.tenant_logo && (
+                      <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0">
+                        <img src={settings.tenant_logo.startsWith('http') ? settings.tenant_logo : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${settings.tenant_logo}`} className="w-full h-full object-cover" alt="Preview" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Favicon (Tab Icon)</label>
+                  <div className="flex flex-col xl:flex-row gap-4">
+                    <div className="flex-1 flex gap-2">
+                      <input 
+                        type="text" 
+                        value={settings.tenant_favicon || ''} 
+                        onChange={e => setSettings({...settings, tenant_favicon: e.target.value})}
+                        className="input-field flex-1 py-3 text-sm" 
+                        placeholder="https://example.com/favicon.png"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => document.getElementById('faviconUpload').click()}
+                        className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold whitespace-nowrap"
+                      >
+                        📁 Upload
+                      </button>
+                      <input 
+                        type="file" id="faviconUpload" accept="image/*" className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onloadend = async () => {
+                            setMessage('📤 Uploading Favicon...');
+                            try {
+                              const res = await uploadImage({ image: reader.result, name: 'favicon' });
+                              setSettings({ ...settings, tenant_favicon: res.data.url });
+                              setMessage('Favicon updated! ✅');
+                            } catch (error) { alert('Upload failed'); }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </div>
+                    {settings.tenant_favicon && (
+                      <div className="w-12 h-12 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center p-2">
+                        <img src={settings.tenant_favicon.startsWith('http') ? settings.tenant_favicon : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${settings.tenant_favicon}`} className="w-full h-full object-contain" alt="Preview" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">OG Image (Social Media Preview)</label>
