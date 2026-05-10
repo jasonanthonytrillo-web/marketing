@@ -113,9 +113,9 @@ router.get('/share/:slug', async (req, res) => {
       ogImage = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
     }
 
-    // Ensure it's absolute
+    // Ensure it's absolute - Point to the frontend (Vercel) where images actually live
     if (ogImage && ogImage.startsWith('/')) {
-      ogImage = `https://marketing-pqi1.onrender.com${ogImage}`;
+      ogImage = `https://elevatepos.vercel.app${ogImage}`;
     }
 
     // Serve a simple meta page
