@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/share/:slug", "destination": "/api/share?slug=:slug" },
     { "source": "/api/(.*)", "destination": "https://marketing-pqi1.onrender.com/api/$1" },
     { "source": "/uploads/(.*)", "destination": "https://marketing-pqi1.onrender.com/uploads/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
