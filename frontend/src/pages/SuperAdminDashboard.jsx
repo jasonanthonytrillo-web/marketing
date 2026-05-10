@@ -10,7 +10,8 @@ export default function SuperAdminDashboard() {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ name: '', slug: '', primaryColor: '#f97316' });
+  const [tenantToToggle, setTenantToToggle] = useState(null);
+  const [formData, setFormData] = useState({ name: '', slug: '', primaryColor: '#f97316', adminName: '', adminEmail: '', adminPassword: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function SuperAdminDashboard() {
     try {
       await createTenant(formData);
       setShowModal(false);
-      setFormData({ name: '', slug: '', primaryColor: '#f97316' });
+      setFormData({ name: '', slug: '', primaryColor: '#f97316', adminName: '', adminEmail: '', adminPassword: '' });
       loadTenants();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to create tenant');
@@ -48,11 +49,16 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  const toggleStatus = async (tenant) => {
-    if (!confirm(`Are you sure you want to ${tenant.active ? 'deactivate' : 'activate'} ${tenant.name}?`)) return;
+  const toggleStatus = (tenant) => {
+    setTenantToToggle(tenant);
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!tenantToToggle) return;
     try {
-      await updateTenant(tenant.id, { active: !tenant.active });
+      await updateTenant(tenantToToggle.id, { active: !tenantToToggle.active });
       loadTenants();
+      setTenantToToggle(null);
     } catch (error) {
       alert('Failed to update status');
     }
@@ -262,6 +268,44 @@ export default function SuperAdminDashboard() {
                   </div>
                 </div>
 
+                {/* Divider */}
+                <div className="flex items-center gap-4 pt-2">
+                  <div className="flex-1 h-px bg-white/10"></div>
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Initial Admin Account</span>
+                  <div className="flex-1 h-px bg-white/10"></div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Admin Full Name</label>
+                  <input 
+                    type="text" required
+                    className="w-full bg-slate-800 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder-slate-600"
+                    placeholder="e.g. Juan Dela Cruz"
+                    value={formData.adminName}
+                    onChange={e => setFormData({...formData, adminName: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Admin Email</label>
+                  <input 
+                    type="email" required
+                    className="w-full bg-slate-800 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder-slate-600"
+                    placeholder="e.g. admin@mkfood.com"
+                    value={formData.adminEmail}
+                    onChange={e => setFormData({...formData, adminEmail: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Admin Password</label>
+                  <input 
+                    type="password" required minLength={6}
+                    className="w-full bg-slate-800 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder-slate-600"
+                    placeholder="Minimum 6 characters"
+                    value={formData.adminPassword}
+                    onChange={e => setFormData({...formData, adminPassword: e.target.value})}
+                  />
+                </div>
+
                 <button 
                   type="submit" 
                   disabled={saving}
@@ -270,6 +314,35 @@ export default function SuperAdminDashboard() {
                   {saving ? 'Provisioning...' : 'Deploy Tenant Instance'}
                 </button>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Toggle Modal */}
+      {tenantToToggle && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl animate-scale-in text-center">
+            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl mb-5 border-4 ${tenantToToggle.active ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'}`}>
+              {tenantToToggle.active ? '⚠️' : '✅'}
+            </div>
+            <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Confirm Action</h3>
+            <p className="text-slate-400 mb-8 text-sm leading-relaxed">
+              Are you sure you want to <span className={`font-bold uppercase tracking-wider ${tenantToToggle.active ? 'text-red-400' : 'text-emerald-400'}`}>{tenantToToggle.active ? 'deactivate' : 'activate'}</span> <br/><span className="text-white font-bold text-lg">{tenantToToggle.name}</span>?
+            </p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setTenantToToggle(null)} 
+                className="flex-1 py-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all text-[10px] uppercase tracking-widest"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmToggleStatus} 
+                className={`flex-1 py-3.5 rounded-xl font-bold transition-all text-white text-[10px] uppercase tracking-widest ${tenantToToggle.active ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-600/20' : 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/20'}`}
+              >
+                Yes, {tenantToToggle.active ? 'Deactivate' : 'Activate'}
+              </button>
             </div>
           </div>
         </div>

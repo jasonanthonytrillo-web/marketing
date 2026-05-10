@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const { authenticate, authorize } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
 
@@ -23,30 +24,57 @@ router.get('/tenants', async (req, res) => {
   }
 });
 
-// POST /api/superadmin/tenants
+// POST /api/superadmin/tenants — Creates tenant + initial admin account atomically
 router.post('/tenants', async (req, res) => {
   try {
-    const { name, slug, primaryColor, logo, bannerImage } = req.body;
+    const { name, slug, primaryColor, logo, bannerImage, adminEmail, adminPassword, adminName } = req.body;
     
     if (!name || !slug) {
       return res.status(400).json({ success: false, message: 'Name and slug are required' });
     }
 
-    const tenant = await prisma.tenant.create({
-      data: {
-        name,
-        slug,
-        primaryColor: primaryColor || '#f97316',
-        logo,
-        bannerImage
-      }
+    if (!adminEmail || !adminPassword) {
+      return res.status(400).json({ success: false, message: 'Admin email and password are required' });
+    }
+
+    const hashedPassword = await bcrypt.hash(adminPassword, 12);
+
+    // Use a transaction to create both tenant + admin atomically
+    const result = await prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.create({
+        data: {
+          name,
+          slug,
+          primaryColor: primaryColor || '#f97316',
+          logo,
+          bannerImage
+        }
+      });
+
+      const admin = await tx.user.create({
+        data: {
+          email: adminEmail,
+          password: hashedPassword,
+          name: adminName || `${name} Admin`,
+          role: 'admin',
+          active: true,
+          tenantId: tenant.id
+        }
+      });
+
+      return { tenant, admin };
     });
 
-    res.status(201).json({ success: true, data: tenant });
+    res.status(201).json({ 
+      success: true, 
+      data: result.tenant,
+      admin: { email: result.admin.email, name: result.admin.name }
+    });
   } catch (error) {
     if (error.code === 'P2002') {
-      return res.status(400).json({ success: false, message: 'Slug already exists' });
+      return res.status(400).json({ success: false, message: 'Slug or admin email already exists' });
     }
+    console.error('Provision tenant error:', error);
     res.status(500).json({ success: false, message: 'Failed to create tenant' });
   }
 });
