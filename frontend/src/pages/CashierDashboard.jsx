@@ -45,7 +45,7 @@ export default function CashierDashboard() {
       document.removeEventListener('click', unlock);
       document.removeEventListener('touchstart', unlock);
     };
-  }, [connected]);
+  }, [connected, user?.tenantId]);
 
   useEffect(() => {
     if (!connected || !onEvent) return;
