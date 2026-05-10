@@ -9,6 +9,10 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendOTPEmail = async (email, otp, tenantName = 'Elevate POS') => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('❌ EMAIL SETTINGS MISSING: Please add EMAIL_USER and EMAIL_PASS to your environment variables.');
+    throw new Error('Email service not configured. Please contact support.');
+  }
   const mailOptions = {
     from: `"Elevate POS" <${process.env.EMAIL_USER}>`,
     to: email,

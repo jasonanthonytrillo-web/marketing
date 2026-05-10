@@ -398,7 +398,7 @@ router.post('/register-customer', async (req, res) => {
     });
   } catch (error) {
     console.error('Registration Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to create account.' });
+    res.status(500).json({ success: false, message: error.message || 'Failed to create account.' });
   }
 });
 

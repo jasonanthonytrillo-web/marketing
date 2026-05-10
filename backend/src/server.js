@@ -43,6 +43,7 @@ app.use((req, res, next) => {
 });
 
 // Routes
+app.use('/api/public', require('./routes/public'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
@@ -52,7 +53,6 @@ app.use('/api/kitchen', require('./routes/kitchen'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/payments', require('./routes/payments'));
-app.use('/api/public', require('./routes/public'));
 app.use('/api/superadmin', require('./routes/superadmin'));
 app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/customer', require('./routes/customer'));

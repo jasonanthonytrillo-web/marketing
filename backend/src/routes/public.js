@@ -113,24 +113,20 @@ router.get('/share/:slug', async (req, res) => {
       ogImage = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
     }
 
-    if (ogImage.startsWith('/')) {
-      ogImage = `${protocol}://${host}${ogImage}`;
+    // Ensure it's absolute
+    if (ogImage && ogImage.startsWith('/')) {
+      ogImage = `https://marketing-pqi1.onrender.com${ogImage}`;
     }
 
-    // Serve a meta-only page that redirects to the actual landing page
+    // Serve a simple meta page
     res.send(`
       <!DOCTYPE html>
-      <html lang="en">
+      <html>
       <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${title}</title>
-        
-        <!-- Primary Meta Tags -->
-        <meta name="title" content="${title}">
         <meta name="description" content="${description}">
-
-        <!-- Open Graph / Facebook -->
+        
+        <!-- Facebook / Open Graph -->
         <meta property="og:type" content="website">
         <meta property="og:url" content="${redirectUrl}">
         <meta property="og:title" content="${title}">
@@ -140,28 +136,17 @@ router.get('/share/:slug', async (req, res) => {
         <meta property="og:image:height" content="630">
 
         <!-- Twitter -->
-        <meta property="twitter:card" content="summary_large_image">
-        <meta property="twitter:url" content="${redirectUrl}">
-        <meta property="twitter:title" content="${title}">
-        <meta property="twitter:description" content="${description}">
-        <meta property="twitter:image" content="${ogImage}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="${title}">
+        <meta name="twitter:description" content="${description}">
+        <meta name="twitter:image" content="${ogImage}">
 
-        <!-- Immediate Redirect for Humans -->
-        <script>
-          // Only redirect if NOT a scraper bot (simple check)
-          if (!/bot|googlebot|crawler|spider|robot|crawling|facebookexternalhit|facebookcatalog/i.test(navigator.userAgent)) {
-            window.location.href = "${redirectUrl}";
-          }
-        </script>
-        <meta http-equiv="refresh" content="3;url=${redirectUrl}">
+        <!-- Redirect -->
+        <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+        <script>window.location.href = "${redirectUrl}";</script>
       </head>
-      <body style="background: #000; color: #fff; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center;">
-        <div>
-          <div style="width: 60px; height: 60px; border: 4px solid #f97316; border-top-color: transparent; border-radius: 50%; animate: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-          <h2 style="font-weight: 900; letter-spacing: -0.05em;">WELCOME TO ${title.toUpperCase()}</h2>
-          <p style="color: #666; font-size: 14px;">Redirecting you to our menu...</p>
-        </div>
-        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+      <body style="background:#000; color:#fff; text-align:center; font-family:sans-serif; padding-top:20vh;">
+        <h2>Redirecting to ${title}...</h2>
       </body>
       </html>
     `);
