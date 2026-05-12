@@ -1,36 +1,50 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTenants, createTenant, updateTenant } from '../services/api';
+import { getTenants, createTenant, updateTenant, getBetaApplications } from '../services/api';
 import { formatCurrency, formatDate } from '../utils/helpers';
 
 export default function SuperAdminDashboard() {
   const { user, logoutUser } = useAuth();
   const navigate = useNavigate();
   const [tenants, setTenants] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [tenantToToggle, setTenantToToggle] = useState(null);
   const [formData, setFormData] = useState({ name: '', slug: '', primaryColor: '#f97316', adminName: '', adminEmail: '', adminPassword: '' });
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('tenants'); // 'tenants' or 'applications'
 
   useEffect(() => {
     if (!user || user.role !== 'superadmin') {
       navigate('/login');
       return;
     }
-    loadTenants();
+    loadData();
   }, [user, navigate]);
 
-  const loadTenants = async () => {
+  const loadData = async () => {
     setLoading(true);
+    await Promise.all([loadTenants(), loadApplications()]);
+    setLoading(false);
+  };
+
+  const loadTenants = async () => {
     try {
       const res = await getTenants();
       setTenants(res.data.data);
     } catch (error) {
       console.error(error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const loadApplications = async () => {
+    try {
+      const res = await getBetaApplications();
+      setApplications(res.data.data);
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -78,9 +92,20 @@ export default function SuperAdminDashboard() {
         
         {/* Navigation Tabs */}
         <nav className="flex md:flex-col overflow-x-auto md:overflow-y-auto px-2 py-3 md:p-4 gap-2 scrollbar-hide justify-center md:justify-start">
-          <button className="flex-1 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl font-bold bg-indigo-600/10 md:bg-indigo-600 text-indigo-400 md:text-white shadow-none md:shadow-lg md:shadow-indigo-600/20 whitespace-nowrap transition-all">
+          <button 
+            onClick={() => setActiveTab('tenants')}
+            className={`flex-1 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl font-bold transition-all ${activeTab === 'tenants' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-transparent text-slate-500 hover:text-white hover:bg-white/5'}`}
+          >
             <span className="text-xl md:text-lg leading-none">🏢</span>
             <span className="text-[10px] md:text-sm">Manage Tenants</span>
+          </button>
+          <button 
+            onClick={() => setActiveTab('applications')}
+            className={`flex-1 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl font-bold transition-all ${activeTab === 'applications' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-transparent text-slate-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <span className="text-xl md:text-lg leading-none">✉️</span>
+            <span className="text-[10px] md:text-sm">Beta Applications</span>
+            {applications.length > 0 && <span className="ml-auto bg-red-500 text-[8px] px-1.5 py-0.5 rounded-full">{applications.length}</span>}
           </button>
         </nav>
 
@@ -156,66 +181,114 @@ export default function SuperAdminDashboard() {
         </div>
 
         {/* Tenants Table */}
-        <div className="bg-slate-900 rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-800/50 border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  <th className="p-6">Store Instance</th>
-                  <th className="p-6">Slug / URL</th>
-                  <th className="p-6">Usage</th>
-                  <th className="p-6">Status</th>
-                  <th className="p-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-sm">
-                {tenants.map(tenant => (
-                  <tr key={tenant.id} className="hover:bg-white/5 transition-colors group">
-                    <td className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg border border-white/10" style={{ backgroundColor: tenant.primaryColor }}>
-                          {tenant.logo ? <img src={tenant.logo} className="w-full h-full object-cover rounded-2xl" alt="" /> : tenant.name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-black text-white text-base">{tenant.name}</p>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase">ID: #{tenant.id} • Created {formatDate(tenant.createdAt)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-6">
-                      <code className="bg-slate-800 text-indigo-400 px-3 py-1 rounded-lg text-xs font-bold">{tenant.slug}.elevatepos.com</code>
-                    </td>
-                    <td className="p-6">
-                      <div className="flex gap-4">
-                        <div className="text-center">
-                          <p className="text-xs font-black text-white">{tenant._count?.users || 0}</p>
-                          <p className="text-[8px] font-bold text-slate-500 uppercase">Users</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs font-black text-white">{tenant._count?.orders || 0}</p>
-                          <p className="text-[8px] font-bold text-slate-500 uppercase">Orders</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-6">
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${tenant.active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                        {tenant.active ? 'Healthy' : 'Suspended'}
-                      </span>
-                    </td>
-                    <td className="p-6 text-right">
-                      <button 
-                        onClick={() => toggleStatus(tenant)}
-                        className={`font-black text-[10px] uppercase tracking-widest transition-all ${tenant.active ? 'text-red-400 hover:text-red-300' : 'text-emerald-400 hover:text-emerald-300'}`}
-                      >
-                        {tenant.active ? 'Deactivate Shop' : 'Activate Shop'}
-                      </button>
-                    </td>
+        {activeTab === 'tenants' ? (
+          <div className="bg-slate-900 rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-800/50 border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <th className="p-6">Store Instance</th>
+                    <th className="p-6">Slug / URL</th>
+                    <th className="p-6">Usage</th>
+                    <th className="p-6">Status</th>
+                    <th className="p-6 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-sm">
+                  {tenants.map(tenant => (
+                    <tr key={tenant.id} className="hover:bg-white/5 transition-colors group">
+                      <td className="p-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg border border-white/10" style={{ backgroundColor: tenant.primaryColor }}>
+                            {tenant.logo ? <img src={tenant.logo} className="w-full h-full object-cover rounded-2xl" alt="" /> : tenant.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-black text-white text-base">{tenant.name}</p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase">ID: #{tenant.id} • Created {formatDate(tenant.createdAt)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-6">
+                        <code className="bg-slate-800 text-indigo-400 px-3 py-1 rounded-lg text-xs font-bold">{tenant.slug}.elevatepos.com</code>
+                      </td>
+                      <td className="p-6">
+                        <div className="flex gap-4">
+                          <div className="text-center">
+                            <p className="text-xs font-black text-white">{tenant._count?.users || 0}</p>
+                            <p className="text-[8px] font-bold text-slate-500 uppercase">Users</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs font-black text-white">{tenant._count?.orders || 0}</p>
+                            <p className="text-[8px] font-bold text-slate-500 uppercase">Orders</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-6">
+                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${tenant.active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                          {tenant.active ? 'Healthy' : 'Suspended'}
+                        </span>
+                      </td>
+                      <td className="p-6 text-right">
+                        <button 
+                          onClick={() => toggleStatus(tenant)}
+                          className={`font-black text-[10px] uppercase tracking-widest transition-all ${tenant.active ? 'text-red-400 hover:text-red-300' : 'text-emerald-400 hover:text-emerald-300'}`}
+                        >
+                          {tenant.active ? 'Deactivate Shop' : 'Activate Shop'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-slate-900 rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-800/50 border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <th className="p-6">Applicant</th>
+                    <th className="p-6">Business Details</th>
+                    <th className="p-6">Contact Email</th>
+                    <th className="p-6">Status</th>
+                    <th className="p-6 text-right">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-sm">
+                  {applications.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-10 text-center text-slate-500 font-bold uppercase tracking-widest text-xs">No applications yet</td>
+                    </tr>
+                  ) : (
+                    applications.map(app => (
+                      <tr key={app.id} className="hover:bg-white/5 transition-colors group">
+                        <td className="p-6">
+                          <div>
+                            <p className="font-black text-white text-base">{app.name}</p>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase">Candidate</p>
+                          </div>
+                        </td>
+                        <td className="p-6 text-white font-bold">{app.businessName}</td>
+                        <td className="p-6">
+                          <a href={`mailto:${app.email}`} className="text-indigo-400 hover:underline">{app.email}</a>
+                        </td>
+                        <td className="p-6">
+                          <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="p-6 text-right text-slate-500 text-xs font-bold">
+                          {formatDate(app.createdAt)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </main>
 

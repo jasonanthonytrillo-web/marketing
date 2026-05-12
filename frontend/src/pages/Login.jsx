@@ -81,7 +81,12 @@ export default function Login() {
         </form>
 
         <div className="text-center mt-6">
-          <a href={tenantSlug ? `/?tenant=${tenantSlug}` : '/'} className="text-surface-500 text-sm hover:text-primary-400 transition-colors">← Back to Kiosk</a>
+          <a 
+            href={tenantSlug ? `/?tenant=${tenantSlug}` : (searchParams.get('from') === 'marketing' ? '/advertise' : '/')} 
+            className="text-surface-500 text-sm hover:text-primary-400 transition-colors"
+          >
+            ← Back to {searchParams.get('from') === 'marketing' ? 'Home' : 'Kiosk'}
+          </a>
         </div>
       </div>
     </div>

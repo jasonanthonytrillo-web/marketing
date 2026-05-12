@@ -139,4 +139,23 @@ router.get('/:slug', async (req, res) => {
   }
 });
 
+// Beta Registration
+router.post('/beta/apply', async (req, res) => {
+  try {
+    const { name, businessName, email } = req.body;
+    if (!name || !businessName || !email) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const application = await prisma.betaApplication.create({
+      data: { name, businessName, email }
+    });
+
+    res.json({ success: true, data: application });
+  } catch (error) {
+    console.error('Beta Application Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to submit application' });
+  }
+});
+
 module.exports = router;

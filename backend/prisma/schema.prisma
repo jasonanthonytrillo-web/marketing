@@ -278,3 +278,12 @@ model Expense {
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
 }
 
+model BetaApplication {
+  id           Int      @id @default(autoincrement())
+  name         String
+  businessName String
+  email        String
+  status       String   @default("pending") // pending, contacted, approved, rejected
+  createdAt    DateTime @default(now())
+}
+

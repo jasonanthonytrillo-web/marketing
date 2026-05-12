@@ -93,4 +93,16 @@ router.patch('/tenants/:id', async (req, res) => {
   }
 });
 
+// GET /api/superadmin/beta-applications
+router.get('/beta-applications', async (req, res) => {
+  try {
+    const apps = await prisma.betaApplication.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: apps });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load applications' });
+  }
+});
+
 module.exports = router;

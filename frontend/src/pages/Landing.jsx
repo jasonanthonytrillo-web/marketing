@@ -78,13 +78,13 @@ export default function Landing() {
   const bannerImage = tenant?.bannerImage || (tenant?.slug === 'burger-palace' ? burgerBackground : defaultBackground);
 
   const [currentAssetIndex, setCurrentAssetIndex] = useState(0);
-  
+
   // Safe asset resolution (handles JSON objects and string-encoded JSON from API)
   let rawAssets = tenant?.bannerAssets || [];
   if (typeof rawAssets === 'string') {
     try { rawAssets = JSON.parse(rawAssets); } catch (e) { rawAssets = []; }
   }
-  
+
   const assets = (Array.isArray(rawAssets) && rawAssets.length > 0)
     ? rawAssets.filter(a => a && typeof a === 'string' && a.trim() !== '')
     : [bannerImage];
@@ -163,11 +163,11 @@ export default function Landing() {
           // 3. If it's a local public asset (starts with / but not /uploads/), use it as is.
           const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || (import.meta.env.PROD ? '' : 'http://localhost:5000');
           const fullUrl = (asset.startsWith('http') || asset.startsWith('data:') || (asset.startsWith('/') && !asset.startsWith('/uploads/')))
-            ? asset 
+            ? asset
             : `${backendUrl}${asset}`;
-          
+
           const isVid = typeof asset === 'string' && (
-            /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(asset.split(/[?#]/)[0]) || 
+            /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(asset.split(/[?#]/)[0]) ||
             (asset.includes('/uploads/') && !/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(asset))
           );
           const isActive = index === currentAssetIndex;
@@ -204,18 +204,14 @@ export default function Landing() {
 
       {/* Main Content Wrapper - Centered */}
       <div className="relative z-20 w-full max-w-5xl mx-auto px-6 py-20 flex flex-col items-center justify-center text-center animate-fade-in-up">
-        {isCustomer ? (
+        {isCustomer && (
           <div className="inline-flex flex-col items-center gap-2 mb-8 animate-fade-in">
-             <div className="bg-emerald-500/10 border border-emerald-500/20 px-8 py-3 rounded-[2rem] text-emerald-400 font-bold text-lg backdrop-blur-md shadow-xl shadow-emerald-500/10 flex flex-col items-center">
-               <span className="text-white">Welcome back, <span className="text-emerald-400">{user.name}</span>!</span>
-             </div>
-             <div className="text-[10px] text-emerald-500/60 font-black uppercase tracking-[0.3em] mt-2">
-               💎 {Math.floor(user.points)} Loyalty Points Available
-             </div>
-          </div>
-        ) : (
-          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-2 rounded-full text-sm font-medium mb-8 backdrop-blur-sm" style={{ color: primaryColor }}>
-            ✨ {tenant ? `Exclusive to ${tenant.name}` : 'Self-Service Kiosk v2.0'}
+            <div className="bg-emerald-500/10 border border-emerald-500/20 px-8 py-3 rounded-[2rem] text-emerald-400 font-bold text-lg backdrop-blur-md shadow-xl shadow-emerald-500/10 flex flex-col items-center">
+              <span className="text-white">Welcome back, <span className="text-emerald-400">{user.name}</span>!</span>
+            </div>
+            <div className="text-[10px] text-emerald-500/60 font-black uppercase tracking-[0.3em] mt-2">
+              💎 {Math.floor(user.points)} Loyalty Points Available
+            </div>
           </div>
         )}
 
@@ -289,11 +285,11 @@ export default function Landing() {
               </div>
 
               {lastOrder && (
-                <Link 
-                  to={tenant ? `/order/${lastOrder}?tenant=${tenant.slug}` : `/order/${lastOrder}`} 
+                <Link
+                  to={tenant ? `/order/${lastOrder}?tenant=${tenant.slug}` : `/order/${lastOrder}`}
                   className="w-full mt-2 py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse"
                 >
-                  <span></span> View Recent Receipt
+                  <span></span> View Order
                 </Link>
               )}
             </>

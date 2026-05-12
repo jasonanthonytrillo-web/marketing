@@ -120,10 +120,14 @@ export const updateComboOptions = (productId, data) => api.post(`/admin/products
 export const getTenants = () => api.get('/superadmin/tenants');
 export const createTenant = (data) => api.post('/superadmin/tenants', data);
 export const updateTenant = (id, data) => api.patch(`/superadmin/tenants/${id}`, data);
+export const getBetaApplications = () => api.get('/superadmin/beta-applications');
 
 // Feedback
 export const submitFeedback = (data) => api.post('/feedback/submit', data);
 export const getFeedbackStats = () => api.get('/feedback/stats');
 export const requestPayment = (orderId) => api.post(`/cashier/orders/${orderId}/request-payment`);
+
+// Public Beta
+export const submitBetaApplication = (data) => api.post('/public/beta/apply', data);
 
 export default api;
