@@ -3,15 +3,29 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
   <link id="manifest-link" rel="manifest" href="/manifest.json" />
   <script>
-    // Dynamic Manifest Logic
+    // Dynamic Branding Logic (Manifest & Favicon)
     const urlParams = new URLSearchParams(window.location.search);
     const tenant = urlParams.get('tenant');
     if (tenant && tenant !== 'project-million') {
       const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+      
+      // Update Manifest
       document.getElementById('manifest-link').setAttribute('href', `${apiUrl}/api/public/manifest/${tenant}`);
+      
+      // Update Favicon to Tenant Logo
+      fetch(`${apiUrl}/api/public/tenants/${tenant}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data?.data?.logo) {
+            const favicon = document.querySelector('link[rel="icon"]');
+            if (favicon) favicon.href = data.data.logo;
+            document.title = `${data.data.name} | Elevate POS`;
+          }
+        })
+        .catch(() => {});
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -31,7 +45,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
-  <title>POS System</title>
+  <title>Elevate POS</title>
 </head>
 
 <body>

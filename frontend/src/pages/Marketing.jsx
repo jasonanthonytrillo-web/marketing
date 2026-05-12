@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { submitBetaApplication } from '../services/api';
 
 export default function Marketing() {
@@ -8,6 +8,10 @@ export default function Marketing() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    document.title = "Elevate POS";
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
