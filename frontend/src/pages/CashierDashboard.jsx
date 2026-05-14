@@ -126,6 +126,11 @@ export default function CashierDashboard() {
     if (!paymentData.received) return alert('Please enter the amount received.');
     if (calcResult.isInsufficient) return alert('Insufficient payment amount. The total due is ' + calcResult.total);
 
+    // Enforce reference number for online payments
+    if ((paymentData.method === 'gcash' || paymentData.method === 'maya') && !paymentData.referenceNumber) {
+      return alert(`Please enter the Reference Number (Last 4 Digits) for ${paymentData.method.toUpperCase()} payment.`);
+    }
+
     setProcessing(true);
     try {
       await confirmOrder(selectedOrder.id, {
@@ -264,8 +269,17 @@ export default function CashierDashboard() {
           ) : (
             <div className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center text-sm shadow-inner">🏢</div>
           )}
-          <h2 className="font-heading font-black text-lg sm:text-xl text-primary-600 tracking-tight uppercase truncate">{user?.tenantName || 'Cashier'} Dashboard</h2>
+          <div className="flex flex-col">
+            <h2 className="font-heading font-black text-lg sm:text-xl text-primary-600 tracking-tight uppercase truncate leading-tight">{user?.tenantName || 'Cashier'} Dashboard</h2>
+            <div className="flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
+              <span className="text-[10px] font-bold text-surface-400 uppercase tracking-widest">
+                {connected ? 'Live Sync Active' : 'Connection Lost'}
+              </span>
+            </div>
+          </div>
         </div>
+
         <div className="flex items-center gap-2 sm:gap-4">
           <span className="text-xs sm:text-sm font-medium text-surface-600 hidden sm:inline">👤 {user?.name}</span>
           <button onClick={logoutUser} className="text-surface-400 hover:text-red-500 text-xs sm:text-sm font-medium transition-colors">Log Out</button>
@@ -491,10 +505,12 @@ export default function CashierDashboard() {
                             </select>
                           </div>
 
-                          {paymentData.method === 'gcash' && (
+                          {(paymentData.method === 'gcash' || paymentData.method === 'maya') && (
                             <div className="animate-fade-in space-y-4 mt-2">
                               <div className="bg-white p-4 rounded-xl border border-surface-200 shadow-sm">
-                                <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-3 text-center">Enter GCash Ref No. (Last 4 Digits)</label>
+                                <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-3 text-center">
+                                  Enter {paymentData.method.toUpperCase()} Ref No. <span className="text-red-500 font-black">*REQUIRED</span>
+                                </label>
 
                                 {/* Display Screen (Clickable) */}
                                 <button
@@ -579,14 +595,14 @@ export default function CashierDashboard() {
                                     </>
                                   ) : qrStatus === 'sent' ? (
                                     <>
-                                      <span className="text-emerald-500 text-lg drop-shadow-sm">✅</span> GCash QR Sent to Kiosk!
+                                      <span className="text-emerald-500 text-lg drop-shadow-sm">✅</span> {paymentData.method.toUpperCase()} QR Sent to Kiosk!
                                     </>
                                   ) : qrStatus === 'error' ? (
                                     <>
                                       <span className="text-red-500 text-lg">⚠️</span> Failed to Send
                                     </>
                                   ) : (
-                                    <>📱 Send GCash QR to Kiosk</>
+                                    <>📱 Send {paymentData.method.toUpperCase()} QR to Kiosk</>
                                   )}
                                 </button>
                                 {qrStatus === 'sent' && (
@@ -602,10 +618,27 @@ export default function CashierDashboard() {
                             <button onClick={handleCancel} disabled={processing} className="btn-danger flex-1 py-4">Cancel Order</button>
                             <button
                               onClick={handleConfirmPayment}
-                              disabled={processing || !paymentData.received || calcResult?.isInsufficient}
-                              className={`flex-[2] py-4 shadow-xl font-bold transition-all ${(!paymentData.received || calcResult?.isInsufficient) ? 'bg-surface-300 text-surface-500 cursor-not-allowed opacity-50' : 'btn-primary'}`}
+                              disabled={
+                                processing || 
+                                !paymentData.received || 
+                                calcResult?.isInsufficient || 
+                                ((paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4)
+                              }
+                              className={`flex-[2] py-4 shadow-xl font-bold transition-all ${
+                                (!paymentData.received || calcResult?.isInsufficient || ((paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4)) 
+                                ? 'bg-surface-300 text-surface-500 cursor-not-allowed opacity-50' 
+                                : 'btn-primary'
+                              }`}
                             >
-                              {processing ? 'Processing...' : (!paymentData.received ? 'Enter Amount' : calcResult?.isInsufficient ? 'Insufficient' : 'Confirm Payment')}
+                              {processing 
+                                ? 'Processing...' 
+                                : !paymentData.received 
+                                  ? 'Enter Amount' 
+                                  : calcResult?.isInsufficient 
+                                    ? 'Insufficient' 
+                                    : (paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4
+                                      ? 'Enter Ref ID'
+                                      : 'Confirm Payment'}
                             </button>
                           </div>
                         </>

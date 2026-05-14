@@ -149,3 +149,18 @@ export function hexToRgb(hex) {
     `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
     null;
 }
+
+/**
+ * Generates a basic EMVCo QR string for GCash (QR Ph)
+ * @param {string} account - GCash mobile number (e.g. 09123456789)
+ * @param {number} amount - Amount to pay
+ * @param {string} name - Merchant/Account name
+ */
+
+
+
+
+
+
+
+

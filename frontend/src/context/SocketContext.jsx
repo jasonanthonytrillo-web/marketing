@@ -7,12 +7,28 @@ export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false);
   const socketRef = useRef(null);
 
+  const [token, setToken] = useState(localStorage.getItem('pos_token'));
+
+  useEffect(() => {
+    const handleStorage = () => setToken(localStorage.getItem('pos_token'));
+    window.addEventListener('storage', handleStorage);
+    // Also poll slightly or provide a way to update it
+    const interval = setInterval(handleStorage, 2000);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
+  }, []);
+
   useEffect(() => {
     const url = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
-    const token = localStorage.getItem('pos_token');
     
     console.log('🔌 Initializing Secure WebSocket connection...');
     
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+
     const newSocket = io(url, { 
       auth: { token },
       transports: ['websocket', 'polling'], 
@@ -39,7 +55,8 @@ export function SocketProvider({ children }) {
         socketRef.current = null;
       }
     };
-  }, []); // Re-init if token changes would be better, but simple re-init on page refresh works for now
+  }, [token]);
+
 
   const joinRoom = (room, tenantId) => { 
     if (socketRef.current && connected) {

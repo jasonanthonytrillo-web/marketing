@@ -101,7 +101,7 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
     // For points redemption orders, still emit a loyalty update so the customer's UI refreshes
     if (isPointsRedemption && order.customerId) {
       if (req.io && req.io.emitLoyaltyUpdate) {
-        req.io.emitLoyaltyUpdate(order.customerId, 0);
+        req.io.emitLoyaltyUpdate(order.customerId, 0, order.tenantId);
       }
     }
 
@@ -252,7 +252,7 @@ router.post('/orders/:id/cancel', authenticate, authorize('cashier', 'admin'), a
 
         // Emit loyalty update to customer
         if (req.io && req.io.emitLoyaltyUpdate) {
-          req.io.emitLoyaltyUpdate(order.customerId, pointAdjustment);
+          req.io.emitLoyaltyUpdate(order.customerId, pointAdjustment, order.tenantId);
         }
       }
     }

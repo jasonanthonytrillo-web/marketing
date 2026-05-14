@@ -195,7 +195,7 @@ model Payment {
   cashierId      Int?
   createdAt      DateTime @default(now())
 
-  order   Order @relation(fields: [orderId], references: [id])
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   cashier User? @relation(fields: [cashierId], references: [id])
 }
 
@@ -251,7 +251,7 @@ model Notification {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  order Order? @relation(fields: [orderId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model SystemSetting {

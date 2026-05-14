@@ -33,7 +33,8 @@ router.get('/activity', authenticate, async (req, res) => {
         description: o.items.map(i => i.productName).join(', '),
         total: o.total,
         status: o.status,
-        items: o.items
+        items: o.items,
+        hasRedemption: o.items.some(i => i.isRedemption)
       }))
     ];
 

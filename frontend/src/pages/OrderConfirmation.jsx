@@ -4,7 +4,7 @@ import { getOrder, cancelOrder, getPublicTenant, submitFeedback } from '../servi
 import { useSocket } from '../context/SocketContext';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { formatCurrency, formatDate, playNotificationSound, unlockAudio, formatMinutes } from '../utils/helpers';
+import { formatCurrency, formatDate, unlockAudio, formatMinutes } from '../utils/helpers';
 
 import { applyTheme, clearTheme } from '../utils/theme';
 
@@ -104,13 +104,10 @@ export default function OrderConfirmation() {
     if (!onEvent) return;
     const unsub = onEvent('order_update', (data) => {
       if (data.order?.orderNumber === orderNumber) {
-        // Status update logic
         if (data.order.status === 'ready' && lastAnnouncedStatusRef.current !== 'ready') {
           lastAnnouncedStatusRef.current = 'ready';
-          // Audio is handled by GlobalNotification to prevent echo
         }
         setOrder(data.order);
-        // Automatically close payment modal if order is confirmed
         if (data.order.status !== 'pending') {
           setPaymentRequest(null);
         }
@@ -118,7 +115,6 @@ export default function OrderConfirmation() {
     });
 
     const unsub2 = onEvent('payment_request', (data) => {
-      console.log('Payment request received:', data);
       if (data.orderNumber === orderNumber) {
         setPaymentRequest(data);
       }
@@ -159,21 +155,10 @@ export default function OrderConfirmation() {
   if (loading) return <div className="min-h-screen bg-surface-50 flex items-center justify-center"><p className="text-surface-400">Loading...</p></div>;
   if (!order) return <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center"><h2 className="text-xl font-bold mb-4">Order not found</h2><Link to={menuLink} className="btn-primary" style={{ backgroundColor: brandingColor }}>Back to Menu</Link></div>;
 
-  const handleCancelOrder = async () => {
-    setShowCancelModal(false);
-    try {
-      await cancelOrder(orderNumber);
-      loadOrder();
-    } catch (e) {
-      alert(e.response?.data?.message || 'Failed to cancel order');
-    }
-  };
-
   const currentStep = STATUS_STEPS.findIndex(s => s.key === order.status);
   const isCancelled = order.status === 'cancelled';
   const isCompleted = order.status === 'completed';
   const isReady = order.status === 'ready';
-  const canCancel = order.status === 'pending' && order.paymentStatus === 'unpaid';
 
   return (
     <div className="min-h-screen bg-surface-50 pb-8" style={{ '--primary-custom': brandingColor }}>
@@ -185,7 +170,6 @@ export default function OrderConfirmation() {
 
       <div className="max-w-lg mx-auto px-4 pt-4 md:pt-8">
 
-        {/* Queue Ticket */}
         <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 text-center mb-4 sm:mb-6 shadow-xl relative animate-fade-in-up border-t-[12px] sm:border-t-[16px]" style={{ animationDelay: '0.1s', borderTopColor: brandingColor }}>
           <p className="text-[10px] sm:text-xs md:text-sm font-bold text-slate-400 uppercase tracking-[0.15em] mb-3 sm:mb-4">Your Queue Number</p>
           <p className="font-heading text-6xl sm:text-8xl md:text-9xl font-black text-slate-900 tracking-tighter mb-2 leading-none">
@@ -223,7 +207,6 @@ export default function OrderConfirmation() {
           </div>
         </div>
 
-        {/* Feedback Section - Shows when Ready or Completed */}
         {(isReady || isCompleted) && !isCancelled && (
           <div className="bg-white rounded-[2rem] p-8 mb-6 shadow-xl border border-surface-100 animate-fade-in-up relative overflow-hidden group">
             {!feedbackSubmitted ? (
@@ -274,7 +257,6 @@ export default function OrderConfirmation() {
           </div>
         )}
 
-        {/* Guest Hook / VIP Invite */}
         {!order.customerId && !isCancelled && !isCompleted && !isReady && (
           <div className="bg-slate-900 rounded-[2rem] p-6 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary-500/30 transition-all duration-500"></div>
@@ -291,7 +273,6 @@ export default function OrderConfirmation() {
           </div>
         )}
 
-        {/* Progress Tracker */}
         {!isCancelled && !isCompleted && (
           <div className="bg-white rounded-3xl p-6 md:p-8 mb-6 animate-fade-in-up shadow-sm" style={{ animationDelay: '0.2s' }}>
             <div className="space-y-6">
@@ -314,7 +295,6 @@ export default function OrderConfirmation() {
           </div>
         )}
 
-        {/* Order Details */}
         <div className="glass-card p-4 sm:p-5 mb-4 sm:mb-6 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <h3 className="font-heading font-bold text-surface-900 mb-3 text-sm sm:text-base">Order Details</h3>
           <div className="space-y-1 text-xs sm:text-sm">
@@ -339,7 +319,6 @@ export default function OrderConfirmation() {
           </div>
         </div>
 
-        {/* Points Reward Card */}
         {order.paymentStatus === 'paid' && order.customerId && (
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-6 mb-6 text-white shadow-xl shadow-emerald-200 overflow-hidden relative animate-bounce-in" style={{ animationDelay: '0.4s' }}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
@@ -354,46 +333,28 @@ export default function OrderConfirmation() {
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up mb-4 no-print" style={{ animationDelay: '0.5s' }}>
           <Link to={queueLink} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3">📋 View Queue</Link>
           <Link to={menuLink} className="btn-primary flex-1 justify-center text-sm sm:text-base py-3" style={{ backgroundColor: brandingColor }}>🍽️ Order Again</Link>
         </div>
       </div>
 
-      {/* GCash Payment Modal */}
       {paymentRequest && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl animate-fade-in">
-          <style>
-            {`
-              @keyframes scan {
-                0% { top: 0; opacity: 0; }
-                10% { opacity: 1; }
-                90% { opacity: 1; }
-                100% { top: 100%; opacity: 0; }
-              }
-              .animate-scan {
-                animation: scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-              }
-            `}
-          </style>
-
           <div className="bg-white w-full max-w-sm sm:max-w-md rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 relative">
 
-            {/* Header */}
             <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-8 sm:p-10 text-white text-center relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl -ml-10 -mb-10"></div>
 
               <div className="relative z-10 flex flex-col items-center">
-                <div className="bg-white px-6 py-3 rounded-2xl shadow-xl mb-5 flex items-center justify-center transform transition-transform hover:scale-105 duration-300">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/5/52/GCash_logo.svg" alt="GCash Official Logo" className="h-8 object-contain" />
+                <div className="bg-white px-6 py-3 rounded-2xl shadow-xl mb-5 flex items-center justify-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/5/52/GCash_logo.svg" alt="GCash" className="h-8 object-contain" />
                 </div>
                 <h3 className="text-3xl font-black mb-2 tracking-tight">Scan to Pay</h3>
-                <p className="text-blue-100 text-sm font-medium opacity-90">Open your GCash app and upload the QR code</p>
+                <p className="text-blue-100 text-sm font-medium opacity-90">Open your GCash app and scan the code below</p>
               </div>
 
-              {/* Close Button */}
               <button
                 onClick={() => setPaymentRequest(null)}
                 className="absolute top-6 right-6 w-10 h-10 bg-black/20 hover:bg-black/40 rounded-full flex items-center justify-center transition-colors text-white z-20 backdrop-blur-sm"
@@ -403,91 +364,57 @@ export default function OrderConfirmation() {
             </div>
 
             <div className="p-6 sm:p-8 space-y-8 text-center bg-slate-50 relative">
-              {/* Decorative notch */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-1 w-16 h-1.5 bg-slate-200/80 rounded-full"></div>
 
-              {/* Amount Display - Premium Card */}
-              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/60 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1 relative z-10">Total Amount Due</p>
-                <div className="flex items-center justify-center gap-1.5 relative z-10">
-                  <span className="text-3xl font-bold text-slate-300 mt-1">₱</span>
-                  <p className="text-5xl font-black text-slate-900 tracking-tighter">
-                    {paymentRequest.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
+              <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/60">
+                <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1">Total Amount Due</p>
+                <p className="text-5xl font-black text-slate-900 tracking-tighter">
+                  {formatCurrency(paymentRequest.amount)}
+                </p>
               </div>
 
-              {/* QR Code Container */}
-              <div className="flex flex-col items-center gap-5">
-                <div className="relative mx-auto w-fit">
-                  {/* Glowing ring backdrop */}
-                  <div className="absolute inset-0 bg-blue-500 rounded-[2rem] blur-2xl opacity-20 animate-pulse-slow"></div>
-
-                  <div className="relative bg-white p-4 sm:p-5 rounded-[2rem] shadow-xl border border-slate-100 z-10">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="bg-white p-4 rounded-3xl shadow-xl border border-slate-100">
                     {paymentRequest.gcashQr ? (
-                      <div className="relative rounded-2xl overflow-hidden bg-slate-50 group">
-                        <img
-                          src={paymentRequest.gcashQr}
-                          alt="GCash QR"
-                          className="w-56 h-56 sm:w-64 sm:h-64 object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
-                        />
-                        {/* Scanning Line Animation */}
-                        <div className="absolute top-0 left-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,1)] animate-scan z-20"></div>
-                        <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-blue-500/20 to-transparent animate-scan z-10 pointer-events-none"></div>
-                      </div>
+                      <img 
+                        src={paymentRequest.gcashQr.startsWith('http') ? paymentRequest.gcashQr : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${paymentRequest.gcashQr}`} 
+                        alt="GCash QR" 
+                        className="w-full max-w-[400px] h-auto rounded-xl" 
+                      />
                     ) : (
-                      <div className="w-56 h-56 sm:w-64 sm:h-64 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 italic text-sm p-8 text-center border-2 border-dashed border-slate-200">
-                        <div className="space-y-3">
-                          <div className="text-3xl">⚠️</div>
-                          <p>No QR code uploaded.<br />Please pay at the counter.</p>
-                        </div>
+                      <div className="w-56 h-56 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 text-sm p-8 text-center border-2 border-dashed border-slate-200">
+                        <p>No QR code uploaded.<br />Please pay at the counter.</p>
                       </div>
                     )}
                   </div>
-
-                  {/* Scanner Corner Accents */}
-                  <div className="absolute -top-3 -left-3 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-xl z-20"></div>
-                  <div className="absolute -top-3 -right-3 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-xl z-20"></div>
-                  <div className="absolute -bottom-3 -left-3 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-xl z-20"></div>
-                  <div className="absolute -bottom-3 -right-3 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-xl z-20"></div>
+                  
+                  {paymentRequest.gcashQr && (
+                    <button 
+                      onClick={async () => {
+                        const url = paymentRequest.gcashQr.startsWith('http') ? paymentRequest.gcashQr : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${paymentRequest.gcashQr}`;
+                        try {
+                          const response = await fetch(url);
+                          const blob = await response.blob();
+                          const blobUrl = window.URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = blobUrl;
+                          link.download = `GCash_QR_Order_${orderNumber}.png`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          window.URL.revokeObjectURL(blobUrl);
+                        } catch (error) {
+                          console.error('Download failed:', error);
+                          // Fallback: open in new tab if blob fails
+                          window.open(url, '_blank');
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-100 text-blue-700 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                    >
+                      <span>📥</span> Save QR Image
+                    </button>
+                  )}
                 </div>
-
-                {/* Save QR Button */}
-                {paymentRequest.gcashQr && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(paymentRequest.gcashQr);
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `GCash-QR-${orderNumber}.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(url);
-                      } catch (e) {
-                        // Fallback
-                        const link = document.createElement('a');
-                        link.href = paymentRequest.gcashQr;
-                        link.download = `GCash-QR-${orderNumber}.png`;
-                        link.target = '_blank';
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }
-                    }}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-full text-xs font-bold uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-95"
-                  >
-                    💾 Save QR to Gallery
-                  </button>
-                )}
-              </div>
-
-
-
             </div>
           </div>
         </div>

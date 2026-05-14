@@ -21,6 +21,7 @@ router.get('/tenant/:slug', async (req, res) => {
         secondaryColor: true,
         bannerImage: true,
         bannerAssets: true,
+        gcashQr: true,
         active: true
       }
     });

@@ -9,29 +9,35 @@ const ORDER_TYPES = [{ id: 'dine_in', label: 'Dine In', icon: '🍽️' }, { id:
 const PAYMENT_METHODS = [{ id: 'cash', label: 'Cash', icon: '💵' }, { id: 'gcash', label: 'GCash', icon: '📱' }, { id: 'maya', label: 'Maya', icon: '💳' }, { id: 'card', label: 'Card', icon: '💳' }];
 
 export default function Checkout() {
-  const { items, getSubtotal, clearCart } = useCart();
+  const { items, getSubtotal, getTotalPointsCost, clearCart } = useCart();
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const tenantSlug = searchParams.get('tenant');
+  const tenantSlug = searchParams.get('tenant') || 'project-million';
   const [branding, setBranding] = useState(null);
+
 
   const [customerName, setCustomerName] = useState(user?.name || '');
   const [orderType, setOrderType] = useState('dine_in');
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    if (tenantSlug) {
-      getPublicTenant(tenantSlug).then(res => {
+    const slug = tenantSlug || user?.tenantSlug;
+    if (slug) {
+      getPublicTenant(slug).then(res => {
         if (res.data.success) setBranding(res.data.data);
       });
     }
-  }, [tenantSlug]);
+  }, [tenantSlug, user?.tenantSlug]);
+
 
   const brandingColor = branding?.primaryColor || '#f97316';
   const cartLink = tenantSlug ? `/cart?tenant=${tenantSlug}` : '/cart';
   const menuLink = tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu';
   const isFullRedemption = items.length > 0 && items.every(item => item.isRedemption);
+  const totalPointsCost = getTotalPointsCost();
+  const hasInsufficientPoints = totalPointsCost > (user?.points || 0);
+
   const [paymentMethod, setPaymentMethod] = useState(isFullRedemption ? 'points' : 'cash');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +45,7 @@ export default function Checkout() {
   const subtotal = getSubtotal();
   const tax = subtotal * 0.12;
   const total = subtotal + tax;
+
 
   if (items.length === 0 && !submitting) {
     return (
@@ -55,6 +62,18 @@ export default function Checkout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (totalPointsCost > 0) {
+      if (!user) {
+        setError('You must be logged in to claim rewards.');
+        return;
+      }
+      if (hasInsufficientPoints) {
+        setError(`Insufficient points. You need ${totalPointsCost} points but only have ${user.points || 0}.`);
+        return;
+      }
+    }
+
     setSubmitting(true);
     setError('');
     try {
@@ -155,7 +174,7 @@ export default function Checkout() {
           </div>
         )}
 
-        {/* Notes */}
+
         <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
           <label className="block text-sm font-semibold text-surface-700 mb-2">Order Notes</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} className="input-field h-20 resize-none text-sm" placeholder="Any special requests..." />
@@ -183,8 +202,18 @@ export default function Checkout() {
           </div>
         </div>
 
-        <button type="submit" disabled={submitting} className="btn-primary w-full py-4 text-lg" id="place-order-btn">
-          {submitting ? 'Placing Order...' : isFullRedemption ? '🎁 Claim Reward' : `Place Order — ${formatCurrency(total)}`}
+        <button 
+          type="submit" 
+          disabled={submitting || (totalPointsCost > 0 && hasInsufficientPoints)} 
+          className={`w-full py-4 text-lg transition-all rounded-xl font-bold ${hasInsufficientPoints && totalPointsCost > 0 ? 'bg-red-100 text-red-400 cursor-not-allowed' : 'btn-primary'}`} 
+          id="place-order-btn"
+          style={!(hasInsufficientPoints && totalPointsCost > 0) ? { backgroundColor: brandingColor } : {}}
+        >
+          {submitting ? 'Placing Order...' : 
+           hasInsufficientPoints && totalPointsCost > 0 ? `Insufficient Points (${totalPointsCost} Needed)` :
+           isFullRedemption ? `Claim for ${totalPointsCost} Points` : 
+           totalPointsCost > 0 ? `Order — ${formatCurrency(total)} + ${totalPointsCost} pts` :
+           `Place Order — ${formatCurrency(total)}`}
         </button>
       </form>
     </div>

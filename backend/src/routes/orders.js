@@ -108,29 +108,31 @@ router.post('/', async (req, res) => {
 
     // Handle Loyalty Redemptions & Role Check
     let validCustomerId = null;
+    let pointsToDeduct = 0;
+
+    // Calculate points to deduct for redemptions first
+    for (const item of orderItems) {
+      if (item.isRedemption) {
+        if (!customerId) {
+          // GUESTS CANNOT REDEEM
+          item.isRedemption = false;
+          continue;
+        }
+        const product = await prisma.product.findUnique({ where: { id: item.productId } });
+        if (product && product.pointsCost) {
+          pointsToDeduct += (product.pointsCost * item.quantity);
+        }
+      }
+    }
+
     if (customerId) {
       const customer = await prisma.user.findUnique({ where: { id: parseInt(customerId) } });
       if (customer && customer.role === 'customer') {
         validCustomerId = customer.id;
-        
-        // Calculate points to deduct for redemptions
-        let pointsToDeduct = 0;
-        for (const item of orderItems) {
-          if (item.isRedemption) {
-            const product = await prisma.product.findUnique({ where: { id: item.productId } });
-            if (product && product.pointsCost) {
-              pointsToDeduct += (product.pointsCost * item.quantity);
-            }
-          }
-        }
 
         if (pointsToDeduct > 0) {
-          if (!validCustomerId) {
-            return res.status(400).json({ success: false, message: 'You must be logged in to redeem rewards.' });
-          }
-          const customerCheck = await prisma.user.findUnique({ where: { id: validCustomerId } });
-          if (!customerCheck || (customerCheck.points || 0) < pointsToDeduct) {
-            return res.status(400).json({ success: false, message: 'Insufficient points for this redemption.' });
+          if ((customer.points || 0) < pointsToDeduct) {
+            return res.status(400).json({ success: false, message: `Insufficient points. You need ${pointsToDeduct} points but only have ${customer.points || 0}.` });
           }
 
           // Deduct points
@@ -139,12 +141,17 @@ router.post('/', async (req, res) => {
             data: { points: { decrement: pointsToDeduct } }
           });
 
-          // Emit real-time loyalty update so customer UI refreshes instantly
+          // Emit real-time loyalty update
           if (req.io && req.io.emitLoyaltyUpdate) {
-            req.io.emitLoyaltyUpdate(customer.id, -pointsToDeduct);
+            const tenantSlug = req.headers['x-tenant-slug'];
+            const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug || 'project-million' } });
+            req.io.emitLoyaltyUpdate(customer.id, -pointsToDeduct, tenant?.id || 1);
           }
         }
       }
+    } else if (pointsToDeduct > 0) {
+        // This handles edge cases where pointsToDeduct was calculated but customerId is missing/invalid
+        return res.status(400).json({ success: false, message: 'You must be logged in as a customer to redeem points.' });
     }
 
     // Create order with items
@@ -370,6 +377,30 @@ router.post('/:orderNumber/cancel', async (req, res) => {
           referenceId: `CANCEL-${order.orderNumber}`
         }
       });
+    }
+
+    // Points Reversal Logic for Customer Cancellation
+    if (order.customerId) {
+      let pointsToReturn = 0;
+      for (const item of order.items) {
+        if (item.isRedemption || order.paymentMethod === 'points') {
+          const product = await prisma.product.findUnique({ where: { id: item.productId } });
+          if (product && product.pointsCost) {
+            pointsToReturn += (product.pointsCost * item.quantity);
+          }
+        }
+      }
+
+      if (pointsToReturn > 0) {
+        await prisma.user.update({
+          where: { id: order.customerId },
+          data: { points: { increment: pointsToReturn } }
+        });
+
+        if (req.io && req.io.emitLoyaltyUpdate) {
+          req.io.emitLoyaltyUpdate(order.customerId, pointsToReturn, order.tenantId);
+        }
+      }
     }
 
     const updated = await prisma.order.update({

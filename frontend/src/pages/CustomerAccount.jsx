@@ -143,15 +143,15 @@ export default function CustomerAccount() {
             </div>
 
             <h2 className="text-3xl font-black text-white mb-1 tracking-tight">{user?.name}</h2>
-            <p className="text-slate-400 text-sm font-medium mb-6">Member since {new Date(user?.createdAt).getFullYear()}</p>
-
+            <p className="text-slate-300 text-sm font-medium mb-6 opacity-90">Member since {new Date(user?.createdAt).getFullYear()}</p>
+    
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl">
-                <p className="text-[9px] font-black uppercase tracking-widest text-primary-300/70 mb-1">Available Points</p>
-                <p className="text-2xl font-black text-white">{Math.floor(user?.points || 0)} <span className="text-[10px] text-slate-500">PTS</span></p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-primary-100 mb-1">Available Points</p>
+                <p className="text-2xl font-black text-white">{Math.floor(user?.points || 0)} <span className="text-[10px] text-slate-400">PTS</span></p>
               </div>
               <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl">
-                <p className="text-[9px] font-black uppercase tracking-widest text-primary-300/70 mb-1">Orders Placed</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-primary-100 mb-1">Orders Placed</p>
                 <p className="text-2xl font-black text-white">{activity.filter(a => a.type === 'order').length}</p>
               </div>
             </div>
@@ -204,12 +204,19 @@ export default function CustomerAccount() {
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Amount</span>
                       <span className="text-sm font-black text-slate-900">{formatCurrency(item.total)}</span>
                     </div>
-                    <Link 
-                      to={tenantSlug ? `/menu?tenant=${tenantSlug}&reorder=${item.orderNumber}` : `/menu?reorder=${item.orderNumber}`} 
-                      className="px-5 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
-                    >
-                      Re-order Again
-                    </Link>
+                    {item.hasRedemption ? (
+                      <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 shadow-inner">
+                        <span className="text-xs">🎁</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Reward Order</span>
+                      </div>
+                    ) : (
+                      <Link 
+                        to={tenantSlug ? `/menu?tenant=${tenantSlug}&reorder=${item.orderNumber}` : `/menu?reorder=${item.orderNumber}`} 
+                        className="px-5 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
+                      >
+                        Re-order Again
+                      </Link>
+                    )}
                   </div>
                 )}
 
@@ -231,24 +238,26 @@ export default function CustomerAccount() {
         </div>
       </div>
 
-      {/* Account Settings Shortcut */}
-      <div className="max-w-xl mx-auto px-6 mt-10">
-        <div className="bg-white border border-slate-200 rounded-[2rem] p-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">⚙️</div>
-            <div>
-              <p className="text-xs font-black text-slate-900">Security Settings</p>
-              <p className="text-[10px] text-slate-400">Update your account password</p>
+      {/* Account Settings Shortcut - Hide if Google User */}
+      {!user?.isGoogle && (
+        <div className="max-w-xl mx-auto px-6 mt-10">
+          <div className="bg-white border border-slate-200 rounded-[2rem] p-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">⚙️</div>
+              <div>
+                <p className="text-xs font-black text-slate-900">Security Settings</p>
+                <p className="text-[10px] text-slate-400">Update your account password</p>
+              </div>
             </div>
+            <button 
+              onClick={() => setShowPasswordModal(true)}
+              className="text-[10px] font-black text-primary-600 uppercase tracking-widest hover:underline"
+            >
+              Manage
+            </button>
           </div>
-          <button 
-            onClick={() => setShowPasswordModal(true)}
-            className="text-[10px] font-black text-primary-600 uppercase tracking-widest hover:underline"
-          >
-            Manage
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Password Modal Restored */}
       {showPasswordModal && (

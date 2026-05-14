@@ -146,8 +146,17 @@ export default function KitchenDashboard() {
           ) : (
             <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center text-sm shadow-inner">👨‍🍳</div>
           )}
-          <h2 className="font-heading font-black text-emerald-500 text-lg sm:text-xl tracking-tight uppercase truncate">{user?.tenantName || 'Kitchen'} Dashboard</h2>
+          <div className="flex flex-col">
+            <h2 className="font-heading font-black text-emerald-500 text-lg sm:text-xl tracking-tight uppercase truncate leading-tight">{user?.tenantName || 'Kitchen'} Dashboard</h2>
+            <div className="flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
+              <span className="text-[10px] font-bold text-surface-500 uppercase tracking-widest">
+                {connected ? 'Realtime Active' : 'Offline'}
+              </span>
+            </div>
+          </div>
         </div>
+
         <div className="flex items-center gap-2 sm:gap-4">
           <span className="text-xs sm:text-sm font-medium text-surface-400 hidden sm:inline">👨‍🍳 {user?.name}</span>
           <button onClick={logoutUser} className="text-surface-500 hover:text-red-400 text-xs sm:text-sm font-medium transition-colors">Log Out</button>
