@@ -3,6 +3,11 @@ const axios = require('axios');
 const sendOTPEmail = async (email, otp, tenant = {}) => {
   const { name = 'Hometown Brew', logo, primaryColor = '#f97316' } = tenant;
 
+  let absoluteLogo = logo;
+  if (logo && logo.startsWith('/')) {
+    absoluteLogo = `https://hometownbrew.vercel.app${logo}`;
+  }
+
   if (!process.env.EMAIL_PASS) {
     console.log('\n=============================================');
     console.log(`🔑 [DEV MODE] OTP Code for ${email}: ${otp}`);
@@ -40,7 +45,7 @@ const sendOTPEmail = async (email, otp, tenant = {}) => {
         <body>
           <div class="container">
             <div class="header">
-              ${logo ? `<img src="${logo}" class="logo" alt="${name}">` : ''}
+              ${absoluteLogo ? `<img src="${absoluteLogo}" class="logo" alt="${name}">` : ''}
               <h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.05em;">JOIN THE CLUB</h1>
             </div>
             <div class="content">
