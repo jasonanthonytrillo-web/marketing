@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Specifically allow social scrapers and search crawlers
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Facebot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: Googlebot
+Allow: /

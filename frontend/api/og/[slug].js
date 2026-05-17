@@ -26,6 +26,11 @@ export default async function handler(req, res) {
       description = `Order from ${title} — Self-Service Kiosk`;
       image = tenant.ogImage || tenant.logo || image;
     }
+    
+    // Resolve relative path to absolute URL
+    if (image && image.startsWith('/')) {
+      image = `https://${req.headers.host}${image}`;
+    }
   } catch (e) {
     // Fallback to defaults if API call fails
     console.error('OG fetch error:', e.message);
