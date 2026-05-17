@@ -157,10 +157,67 @@ export function hexToRgb(hex) {
  * @param {string} name - Merchant/Account name
  */
 
+/**
+ * Updates the native PWA home screen app badge
+ * @param {number} count - Number of updates/notifications
+ */
+export function updateAppBadge(count) {
+  try {
+    if ('setAppBadge' in navigator) {
+      if (count > 0) {
+        navigator.setAppBadge(count).catch(err => console.warn('PWA: Failed to set app badge:', err));
+      } else {
+        navigator.clearAppBadge().catch(err => console.warn('PWA: Failed to clear app badge:', err));
+      }
+    }
+  } catch (e) {
+    console.warn('PWA: App Badge API not supported or failed:', e);
+  }
+}
 
+/**
+ * Requests native system notification permissions
+ */
+export function requestNotificationPermission() {
+  try {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        console.log(`PWA: Notification permission response: ${permission}`);
+      });
+    }
+  } catch (e) {
+    console.warn('PWA: Notification permissions API failed:', e);
+  }
+}
 
+/**
+ * Shows a native OS system notification (notification bar / drawer banner)
+ * @param {string} title - The title of the notification
+ * @param {string} body - The body copy text
+ * @param {string} icon - Absolute or relative path to icon image
+ */
+export function showSystemNotification(title, body, icon = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png') {
+  try {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      const options = {
+        body,
+        icon,
+        badge: icon,
+        vibrate: [200, 100, 200],
+        tag: 'project-million-pos',
+        renotify: true
+      };
 
-
-
-
-
+      if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.showNotification(title, options);
+        });
+      } else {
+        new Notification(title, options);
+      }
+    }
+  } catch (e) {
+    console.warn('PWA: Failed to display system notification:', e);
+  }
+}

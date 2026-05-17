@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
-import { playNotificationSound } from '../utils/helpers';
+import { playNotificationSound, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { getOrder } from '../services/api';
 
 export default function GlobalNotification() {
@@ -42,6 +42,7 @@ export default function GlobalNotification() {
                        data.order?.orderNumber === lastOrderNumber;
 
       if (isMyOrder) {
+        requestNotificationPermission();
         if (data.eventType === 'ready' || data.order.status === 'ready') {
           triggerReadyAlert(data.order.orderNumber);
         } else if (data.eventType === 'cancelled' || data.order.status === 'cancelled') {
@@ -71,6 +72,8 @@ export default function GlobalNotification() {
       const lastOrderNumber = localStorage.getItem(lastOrderKey);
       const ordersToCheck = Array.from(new Set([...activeOrders, lastOrderNumber].filter(Boolean)));
       if (ordersToCheck.length === 0) return;
+
+      requestNotificationPermission();
 
       for (const orderNum of ordersToCheck) {
         try {
@@ -111,9 +114,20 @@ export default function GlobalNotification() {
     return () => clearChimeLoop();
   }, [clearChimeLoop]);
 
+  // Update native PWA app badge with customer's ready orders count
+  useEffect(() => {
+    updateAppBadge(readyOrderNumbers.length);
+    return () => {
+      updateAppBadge(0);
+    };
+  }, [readyOrderNumbers]);
+
   const triggerReadyAlert = (orderNum) => {
     const dismissed = sessionStorage.getItem(`ready_dismissed_${orderNum}`);
     if (dismissed) return;
+
+    const displayNum = orderNum?.includes('-') ? orderNum.split('-')[1] : orderNum;
+    showSystemNotification('Order is Ready! 🍽️', `Your Order #${displayNum} is ready to be picked up at the counter.`);
 
     setReadyOrderNumbers(prev => {
       if (prev.includes(orderNum)) return prev;
@@ -131,6 +145,9 @@ export default function GlobalNotification() {
   const triggerCancelledAlert = (orderNum, reason) => {
     const dismissed = sessionStorage.getItem(`cancel_dismissed_${orderNum}`);
     if (dismissed) return;
+
+    const displayNum = orderNum?.includes('-') ? orderNum.split('-')[1] : orderNum;
+    showSystemNotification('Order Cancelled ⚠️', `Order #${displayNum} has been cancelled: ${reason || 'Please contact counter.'}`);
 
     setCancelledOrderNumbers(prev => {
       if (prev.find(o => o.number === orderNum)) return prev;

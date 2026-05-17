@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { getCashierOrders, confirmOrder, cashierCancelOrder, calculatePayment, markServed } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, unlockAudio } from '../utils/helpers';
+import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 
 export default function CashierDashboard() {
@@ -33,6 +33,9 @@ export default function CashierDashboard() {
       joinRoom('cashier', user.tenantId);
     }
 
+    // Request system push notification permissions
+    requestNotificationPermission();
+
     // Unlock audio for dashboard notifications
     const unlock = () => {
       unlockAudio();
@@ -53,6 +56,10 @@ export default function CashierDashboard() {
     const unsub = onEvent('new_order', (data) => {
       console.log('Realtime New Order:', data);
       playNotificationSound('newOrder');
+
+      const displayNum = data.order?.orderNumber?.includes('-') ? data.order.orderNumber.split('-')[1] : data.order?.orderNumber;
+      showSystemNotification('New Order Received! 💵', `Order #${displayNum} is waiting for payment/confirmation.`);
+
       loadOrders(); // Refresh list to show the new order
     });
 
@@ -107,6 +114,15 @@ export default function CashierDashboard() {
       }));
     }
   }, [selectedOrder?.id]);
+
+  // Update native PWA app badge with pending orders count
+  useEffect(() => {
+    const pendingCount = orders.filter(o => o.status === 'pending').length;
+    updateAppBadge(pendingCount);
+    return () => {
+      updateAppBadge(0);
+    };
+  }, [orders]);
 
   const calculateTotals = async () => {
     if (!selectedOrder) return;

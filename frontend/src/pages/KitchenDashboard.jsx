@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { getKitchenOrders, startPreparing, completeOrder, markServed } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import { getElapsedMinutes, playNotificationSound, unlockAudio } from '../utils/helpers';
+import { getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 
 export default function KitchenDashboard() {
@@ -28,6 +28,10 @@ export default function KitchenDashboard() {
     if (connected && user?.tenantId) {
       joinRoom('kitchen', user.tenantId);
     }
+
+    // Request push notification permissions
+    requestNotificationPermission();
+
     const timer = setInterval(() => setNow(new Date()), 30000); // Update timers every 30s
 
     // Unlock audio for KDS notifications
@@ -62,7 +66,10 @@ export default function KitchenDashboard() {
       setIsAlerting(true);
       setShowNewOrderAlert(true);
       playNotificationSound('newOrder');
-      
+
+      const displayNum = data.order?.orderNumber?.includes('-') ? data.order.orderNumber.split('-')[1] : data.order?.orderNumber;
+      showSystemNotification('New Kitchen Order! 👨‍🍳', `Order #${displayNum} is confirmed. Start preparing now.`);
+
       // Clear existing interval if any
       if (alertInterval.current) clearInterval(alertInterval.current);
       
@@ -86,6 +93,15 @@ export default function KitchenDashboard() {
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
+
+  // Update native PWA app badge with new/confirmed orders count
+  useEffect(() => {
+    const newCount = orders.filter(o => o.status === 'confirmed').length;
+    updateAppBadge(newCount);
+    return () => {
+      updateAppBadge(0);
+    };
+  }, [orders]);
 
   const handleAction = async (orderId, action) => {
     setProcessing(true);
