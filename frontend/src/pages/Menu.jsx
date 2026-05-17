@@ -8,6 +8,77 @@ import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 
+const TRANSLATIONS = {
+  en: {
+    backHome: "Back Home",
+    back: "Back",
+    points: "Points",
+    changePassword: "Change Password",
+    orderHistory: "Order History",
+    signOut: "Sign Out",
+    allItems: "All Items",
+    searchInstructions: "Tap an item to customize and add to cart",
+    reviewCart: "Review Cart →",
+    items: "Items",
+    addToCart: "Add to Cart",
+    soldOut: "Sold Out",
+    customAddons: "Custom Add-ons",
+    specialInstructions: "Special Instructions",
+    instructionsPlaceholder: "e.g. No onions, extra sauce...",
+    rewardsGallery: "Rewards Gallery",
+    vipMember: "VIP Member",
+    howToEarn: "How to earn points",
+    earnInfo: "Earn 1 Point for every ₱100 spent!",
+    redeemReward: "Redeem Reward",
+    needPoints: "Need More Points",
+    noRewards: "No Rewards Available",
+    checkBackLater: "Check back later for exciting items!",
+    selectSide: "Select Side/Drink",
+    summary: "Selection Summary",
+    addCombo: "Add Combo to Cart",
+    changeSelections: "Change Selections",
+    step1: "Step 1: Choose Item",
+    step2: "Step 2: Choose Side/Drink",
+    updateSecurity: "Update Security",
+    cancel: "Cancel",
+    savePassword: "Save Password"
+  },
+  tl: {
+    backHome: "Bumalik sa Home",
+    back: "Bumalik",
+    points: "Mga Puntos",
+    changePassword: "Palitan ang Password",
+    orderHistory: "Kasaysayan ng Order",
+    signOut: "Mag-Sign Out",
+    allItems: "Lahat ng Pagkain",
+    searchInstructions: "Pumili ng pagkain para i-customize at ilagay sa cart",
+    reviewCart: "Tingnan ang Cart →",
+    items: "Piraso",
+    addToCart: "Ilagay sa Cart",
+    soldOut: "Ubos Na",
+    customAddons: "Karagdagang Sangkap",
+    specialInstructions: "Espesyal na Habilin",
+    instructionsPlaceholder: "Halimbawa: Walang sibuyas, dagdagan ang sarsa...",
+    rewardsGallery: "Mga Libreng Regalo",
+    vipMember: "VIP Member",
+    howToEarn: "Paano makakuha ng puntos",
+    earnInfo: "Makakuha ng 1 Puntos sa bawat ₱100 na binili mo!",
+    redeemReward: "Kunin ang Regalo",
+    needPoints: "Kailangan pang Puntos",
+    noRewards: "Walang Regalo sa Ngayon",
+    checkBackLater: "Bumalik muli mamaya para sa mga bagong regalo!",
+    selectSide: "Pumili ng Side o Inumin",
+    summary: "Buod ng mga Pinili",
+    addCombo: "Ilagay ang Combo sa Cart",
+    changeSelections: "Palitan ang mga Pinili",
+    step1: "Hakbang 1: Pumili ng Pagkain",
+    step2: "Hakbang 2: Pumili ng Side o Inumin",
+    updateSecurity: "I-update ang Seguridad",
+    cancel: "I-cancel",
+    savePassword: "I-save ang Password"
+  }
+};
+
 export default function Menu() {
   const { user, logoutUser } = useAuth();
   const isCustomer = user && user.role === 'customer';
@@ -23,6 +94,18 @@ export default function Menu() {
   const { addToCart, getItemCount, items, getSubtotal } = useCart();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const [lang, setLang] = useState(localStorage.getItem('pos_lang') || 'en');
+
+  const toggleLanguage = () => {
+    const nextLang = lang === 'en' ? 'tl' : 'en';
+    setLang(nextLang);
+    localStorage.setItem('pos_lang', nextLang);
+  };
+
+  const t = (key) => {
+    return TRANSLATIONS[lang][key] || key;
+  };
 
   useEffect(() => { loadProducts(); }, [searchParams.get('tenant')]);
 
@@ -198,9 +281,18 @@ export default function Menu() {
       {/* Sticky Top Header Row */}
       <div className="sticky top-0 z-40 bg-surface-50/90 backdrop-blur-xl border-b border-surface-200/50 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 flex justify-between items-center">
-          <Link to={searchParams.get('tenant') ? `/?tenant=${searchParams.get('tenant')}` : '/'} className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95">
-            <span className="text-lg md:text-xl leading-none">←</span> <span className="hidden sm:inline">Back Home</span><span className="sm:hidden">Back</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to={searchParams.get('tenant') ? `/?tenant=${searchParams.get('tenant')}` : '/'} className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95">
+              <span className="text-lg md:text-xl leading-none">←</span> <span className="hidden sm:inline">{t('backHome')}</span><span className="sm:hidden">{t('back')}</span>
+            </Link>
+
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 px-3 py-2 md:px-4 md:py-3 bg-white rounded-full text-xs md:text-sm font-black text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95"
+            >
+              <span>{lang === 'en' ? '🇵🇭 PH' : '🇺🇸 EN'}</span>
+            </button>
+          </div>
 
           {isCustomer && user && (
             <div className="flex items-center gap-4 relative">
@@ -210,7 +302,7 @@ export default function Menu() {
               >
                 <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">💎</div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-0.5">Points</p>
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-0.5">{t('points')}</p>
                   <p className="text-sm font-black text-emerald-900 leading-none">{Math.floor(user.points || 0)}</p>
                 </div>
               </button>
@@ -239,14 +331,14 @@ export default function Menu() {
                           }}
                           className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
                         >
-                          <span>🔒</span> Change Password
+                          <span>🔒</span> {t('changePassword')}
                         </button>
                       )}
                       <Link
                         to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}` : '/account'}
                         className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
                       >
-                        <span>📜</span> Order History
+                        <span>📜</span> {t('orderHistory')}
                       </Link>
                       <button
                         onClick={() => {
@@ -255,7 +347,7 @@ export default function Menu() {
                         }}
                         className="flex items-center gap-3 w-full p-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
                       >
-                        <span>👋</span> Sign Out
+                        <span>👋</span> {t('signOut')}
                       </button>
                     </div>
                   </div>
@@ -283,7 +375,7 @@ export default function Menu() {
                 )}
                 <h1 className="font-heading text-2xl md:text-3xl font-bold text-surface-900 uppercase leading-tight" style={{ color: brandingColor }}>{tenantName}</h1>
               </div>
-              <p className="text-surface-500 text-xs md:text-sm mb-3 md:mb-6">Tap an item to customize and add to cart</p>
+              <p className="text-surface-500 text-xs md:text-sm mb-3 md:mb-6">{t('searchInstructions')}</p>
             </div>
 
             <div className="flex overflow-x-auto md:grid md:grid-cols-1 gap-2 md:gap-4 pb-2 md:pb-20 scrollbar-hide px-1 md:overflow-y-auto rounded-xl md:rounded-3xl">
@@ -293,7 +385,7 @@ export default function Menu() {
                 style={activeCategory === 'all' ? { backgroundColor: brandingColor } : {}}
               >
                 <span className="text-3xl md:text-4xl lg:text-5xl mb-1 md:mb-2 lg:mb-3">🍽️</span>
-                <span className="text-[10px] md:text-sm lg:text-base font-bold leading-tight">All Items</span>
+                <span className="text-[10px] md:text-sm lg:text-base font-bold leading-tight">{t('allItems')}</span>
               </button>
               {categories.map(cat => (
                 <button
@@ -373,11 +465,11 @@ export default function Menu() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5.5 8h13l1.5 13H4L5.5 8z" /><path d="M8 11V6a4 4 0 0 1 8 0v5" /></svg>
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none mb-1">{itemCount} Items</p>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none mb-1">{itemCount} {t('items')}</p>
                 <p className="text-lg font-black leading-none">₱{getSubtotal().toFixed(2)}</p>
               </div>
             </div>
-            <span className="font-black uppercase tracking-widest text-sm">Review Cart →</span>
+            <span className="font-black uppercase tracking-widest text-sm">{t('reviewCart')}</span>
           </Link>
         </div>
       )}
@@ -425,7 +517,7 @@ export default function Menu() {
 
                   <div className="animate-fade-in" key={comboStep}>
                     <h3 className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em] mb-4">
-                      {comboStep === 1 ? (selectedProduct.comboGroup1Name || 'Step 1: Choose Item') : (selectedProduct.comboGroup2Name || 'Step 2: Choose Side/Drink')}
+                      {comboStep === 1 ? (selectedProduct.comboGroup1Name || t('step1')) : (selectedProduct.comboGroup2Name || t('step2'))}
                     </h3>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -481,7 +573,7 @@ export default function Menu() {
                           className="w-full py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                           style={{ backgroundColor: brandingColor }}
                         >
-                          {selectedProduct.comboGroup2Name || 'Select Side'} →
+                          {selectedProduct.comboGroup2Name || t('selectSide')} →
                         </button>
                       </div>
                     )}
@@ -490,7 +582,7 @@ export default function Menu() {
                   {comboStep === 2 && addOpts.comboChoices?.group1 && addOpts.comboChoices?.group2 && (
                     <div className="pt-6 border-t border-surface-100 animate-bounce-in">
                       <div className="bg-surface-50 p-4 rounded-2xl mb-6">
-                        <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2">Selection Summary</p>
+                        <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2">{t('summary')}</p>
                         <div className="flex justify-between text-sm font-bold text-surface-700">
                           <span>{addOpts.comboChoices.group1.name}</span>
                           <span>+ {addOpts.comboChoices.group2.name}</span>
@@ -501,10 +593,10 @@ export default function Menu() {
                         className="w-full py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                         style={{ backgroundColor: brandingColor }}
                       >
-                        Add Combo to Cart ₱{selectedProduct.price.toFixed(2)}
+                        {t('addCombo')} ₱{selectedProduct.price.toFixed(2)}
                       </button>
                       <button onClick={() => setComboStep(1)} className="w-full py-3 text-surface-400 text-[10px] font-black uppercase tracking-widest hover:text-surface-600 transition-colors">
-                        ← Change Selections
+                        ← {t('changeSelections')}
                       </button>
                     </div>
                   )}
@@ -524,7 +616,7 @@ export default function Menu() {
                   {/* Add-ons */}
                   {selectedProduct.addons && selectedProduct.addons.length > 0 && (
                     <div className="mb-6">
-                      <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Custom Add-ons</h3>
+                      <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">{t('customAddons')}</h3>
                       <div className="flex flex-wrap gap-2">
                         {selectedProduct.addons.map(addon => (
                           <button key={addon.id} onClick={() => toggleAddon(addon)}
@@ -539,12 +631,12 @@ export default function Menu() {
 
                   {/* Notes */}
                   <div className="mb-8">
-                    <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Special Instructions</h3>
+                    <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">{t('specialInstructions')}</h3>
                     <textarea
                       value={addOpts.notes}
                       onChange={e => setAddOpts(p => ({ ...p, notes: e.target.value }))}
                       className="w-full bg-surface-50 border border-surface-200 rounded-2xl p-4 text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none h-24 resize-none"
-                      placeholder="e.g. No onions, extra sauce..."
+                      placeholder={t('instructionsPlaceholder')}
                     />
                   </div>
 
@@ -555,7 +647,7 @@ export default function Menu() {
                       style={{ backgroundColor: brandingColor }}
                       disabled={!selectedProduct.available}
                     >
-                      Add to Cart
+                      {t('addToCart')}
                     </button>
                   </div>
                 </>

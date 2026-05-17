@@ -5,6 +5,43 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { getPublicTenant, getProducts } from '../services/api';
 
+const TRANSLATIONS = {
+  en: {
+    emptyCartTitle: "Your cart is empty",
+    emptyCartDesc: "Add some delicious items from our menu!",
+    browseMenu: "Browse Menu",
+    backToMenu: "Back to Menu",
+    shoppingCart: "Shopping Cart",
+    orderSummary: "Order Summary",
+    pointsTotal: "Points Total",
+    pointsBalance: "Points Balance",
+    itemsInCart: "Items in Cart",
+    redeemReward: "Redeem reward for",
+    points: "Points",
+    clearCart: "Clear Cart",
+    subtotal: "Subtotal",
+    checkout: "Checkout",
+    addedTogether: "Frequently Added Together"
+  },
+  tl: {
+    emptyCartTitle: "Walang laman ang iyong cart",
+    emptyCartDesc: "Magdagdag ng masasarap na pagkain mula sa aming menu!",
+    browseMenu: "Tingnan ang Menu",
+    backToMenu: "Bumalik sa Menu",
+    shoppingCart: "Iyong Cart",
+    orderSummary: "Buod ng Order",
+    pointsTotal: "Kabuuang Puntos",
+    pointsBalance: "Natitirang Puntos",
+    itemsInCart: "Mga Pagkain sa Cart",
+    redeemReward: "I-redeem bilang regalo gamit ang",
+    points: "Puntos",
+    clearCart: "I-clear ang Cart",
+    subtotal: "Subtotal",
+    checkout: "Magbayad na",
+    addedTogether: "Madalas na Isinasabay"
+  }
+};
+
 export default function Cart() {
   const { items, updateQuantity, removeFromCart, toggleRedemption, clearCart, getSubtotal, getItemCount, getTotalPointsCost, addToCart } = useCart();
   const { user } = useAuth();
@@ -16,6 +53,9 @@ export default function Cart() {
   const subtotal = getSubtotal();
   const totalPoints = getTotalPointsCost();
   const count = getItemCount();
+
+  const lang = localStorage.getItem('pos_lang') || 'en';
+  const t = (key) => TRANSLATIONS[lang][key] || key;
 
   useEffect(() => {
     if (tenantSlug) {
@@ -91,9 +131,9 @@ export default function Cart() {
     return (
       <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center px-4">
         <div className="text-6xl mb-4">🛒</div>
-        <h2 className="font-heading text-2xl font-bold text-surface-900 mb-2">Your cart is empty</h2>
-        <p className="text-surface-500 mb-6">Add some delicious items from our menu!</p>
-        <Link to={menuLink} className="btn-primary" style={{ backgroundColor: brandingColor }}>Browse Menu</Link>
+        <h2 className="font-heading text-2xl font-bold text-surface-900 mb-2">{t('emptyCartTitle')}</h2>
+        <p className="text-surface-500 mb-6">{t('emptyCartDesc')}</p>
+        <Link to={menuLink} className="btn-primary" style={{ backgroundColor: brandingColor }}>{t('browseMenu')}</Link>
       </div>
     );
   }
@@ -103,12 +143,12 @@ export default function Cart() {
       {/* Top Left Back Button */}
       <div className="p-3 sm:p-4 md:p-6 lg:px-8 pb-0 flex justify-between items-center">
         <Link to={menuLink} className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-3 bg-white rounded-full text-xs sm:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all">
-          <span className="text-lg sm:text-xl leading-none">←</span> Back to Menu
+          <span className="text-lg sm:text-xl leading-none">←</span> {t('backToMenu')}
         </Link>
         
         {isCustomer && (
           <div className="bg-white border border-surface-200 px-4 py-2 rounded-2xl shadow-sm">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Your Wallet</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{t('pointsBalance')}</p>
             <p className="text-sm font-black text-emerald-600 leading-none">💎 {Math.floor(user.points)} <span className="text-[10px]">PTS</span></p>
           </div>
         )}
@@ -116,8 +156,8 @@ export default function Cart() {
 
       <div className="max-w-3xl mx-auto px-4 md:px-6 pt-4 md:pt-6">
         <div className="mb-4 md:mb-6">
-          <h1 className="font-heading font-bold text-2xl md:text-3xl text-surface-900 mb-1">Your Cart</h1>
-          <p className="text-surface-500 text-base md:text-lg font-medium">{count} item{count !== 1 ? 's' : ''}</p>
+          <h1 className="font-heading font-bold text-2xl md:text-3xl text-surface-900 mb-1">{t('shoppingCart')}</h1>
+          <p className="text-surface-500 text-base md:text-lg font-medium">{count} {t('items')}</p>
         </div>
 
         <div className="space-y-5">
@@ -180,7 +220,7 @@ export default function Cart() {
 
         <div className="mt-8 flex justify-center md:justify-end animate-fade-in-up" style={{ animationDelay: `${items.length * 0.05}s` }}>
           <button onClick={clearCart} className="flex items-center gap-2 text-red-500 hover:text-red-600 font-bold text-lg px-6 py-3 rounded-2xl bg-white border-2 border-red-100 hover:bg-red-50 hover:border-red-200 transition-all shadow-sm">
-            Clear Cart
+            {t('clearCart')}
           </button>
         </div>
 
@@ -189,7 +229,7 @@ export default function Cart() {
           <div className="mt-12 mb-8 animate-fade-in-up" style={{ animationDelay: `${items.length * 0.05 + 0.1}s` }}>
             <h3 className="font-heading font-black text-slate-800 text-lg md:text-2xl mb-4 flex items-center gap-2">
               <span className="w-1.5 h-6 rounded-full" style={{ backgroundColor: brandingColor }}></span>
-              🔥 Frequently Added Together
+              🔥 {t('addedTogether')}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {recommendations.map(rec => (
@@ -220,11 +260,11 @@ export default function Cart() {
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-surface-200 p-4 md:p-6 z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs md:text-sm font-semibold text-surface-500 uppercase tracking-wider mb-0.5 md:mb-1">Subtotal</p>
+            <p className="text-xs md:text-sm font-semibold text-surface-500 uppercase tracking-wider mb-0.5 md:mb-1">{t('subtotal')}</p>
             <p className="font-heading text-2xl md:text-4xl font-black text-surface-900">{formatCurrency(subtotal)}</p>
           </div>
           <Link to={checkoutLink} className="py-3 md:py-5 px-6 md:px-10 text-base md:text-xl rounded-xl md:rounded-2xl shadow-xl shadow-primary-500/30 whitespace-nowrap text-center flex-1 max-w-[200px] md:max-w-none text-white font-black" style={{ backgroundColor: brandingColor }} id="checkout-btn">
-            Checkout <span className="hidden sm:inline">→</span>
+            {t('checkout')} <span className="hidden sm:inline">→</span>
           </Link>
         </div>
       </div>

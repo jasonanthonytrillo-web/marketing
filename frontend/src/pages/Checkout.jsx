@@ -5,8 +5,62 @@ import { createOrder, getPublicTenant } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 
-const ORDER_TYPES = [{ id: 'dine_in', label: 'Dine In', icon: '🍽️' }, { id: 'take_out', label: 'Take Out', icon: '🥡' }];
-const PAYMENT_METHODS = [{ id: 'cash', label: 'Cash', icon: '💵' }, { id: 'gcash', label: 'GCash', icon: '📱' }, { id: 'maya', label: 'Maya', icon: '💳' }, { id: 'card', label: 'Card', icon: '💳' }];
+const TRANSLATIONS = {
+  en: {
+    checkout: "Checkout",
+    back: "Back",
+    dineIn: "Dine In",
+    takeOut: "Take Out",
+    cash: "Cash",
+    gcash: "GCash",
+    maya: "Maya",
+    card: "Card",
+    nameLabel: "Your Name (Optional)",
+    namePlaceholder: "Enter your name",
+    orderType: "Order Type",
+    paymentMethod: "Payment Method",
+    pointsRedemption: "Points Redemption",
+    noPaymentNeeded: "No payment needed — using your loyalty points",
+    orderNotes: "Order Notes",
+    notesPlaceholder: "Any special requests...",
+    orderSummary: "Order Summary",
+    subtotal: "Subtotal",
+    tax: "Tax (12%)",
+    total: "Total",
+    placingOrder: "Placing Order...",
+    insufficientPoints: "Insufficient Points ({pts} Needed)",
+    claimPoints: "Claim for {pts} Points",
+    orderWithPoints: "Order — {price} + {pts} pts",
+    placeOrderTotal: "Place Order — {price}"
+  },
+  tl: {
+    checkout: "Magbayad na",
+    back: "Bumalik",
+    dineIn: "Kakain Dito",
+    takeOut: "Iuuwi",
+    cash: "Cash",
+    gcash: "GCash",
+    maya: "Maya",
+    card: "Card",
+    nameLabel: "Iyong Pangalan (Opsyonal)",
+    namePlaceholder: "Ilagay ang iyong pangalan",
+    orderType: "Uri ng Order",
+    paymentMethod: "Paraan ng Pagbabayad",
+    pointsRedemption: "Redeem ng Puntos",
+    noPaymentNeeded: "Walang kailangang bayad — gagamitin ang iyong mga puntos",
+    orderNotes: "Habilin sa Order",
+    notesPlaceholder: "Iba pang habilin o request...",
+    orderSummary: "Buod ng Order",
+    subtotal: "Subtotal",
+    tax: "Buwis (12%)",
+    total: "Kabuuan",
+    placingOrder: "Ipinapadala...",
+    insufficientPoints: "Kulang ang Puntos ({pts} Kailangan)",
+    claimPoints: "Kunin gamit ang {pts} Puntos",
+    orderWithPoints: "Order — {price} + {pts} pts",
+    placeOrderTotal: "Ipadala ang Order — {price}"
+  }
+};
 
 export default function Checkout() {
   const { items, getSubtotal, getTotalPointsCost, clearCart } = useCart();
@@ -16,6 +70,20 @@ export default function Checkout() {
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const [branding, setBranding] = useState(null);
 
+  const lang = localStorage.getItem('pos_lang') || 'en';
+  const t = (key) => TRANSLATIONS[lang][key] || key;
+
+  const ORDER_TYPES = [
+    { id: 'dine_in', label: t('dineIn'), icon: '🍽️' },
+    { id: 'take_out', label: t('takeOut'), icon: '🥡' }
+  ];
+
+  const PAYMENT_METHODS = [
+    { id: 'cash', label: t('cash'), icon: '💵' },
+    { id: 'gcash', label: t('gcash'), icon: '📱' },
+    { id: 'maya', label: t('maya'), icon: '💳' },
+    { id: 'card', label: t('card'), icon: '💳' }
+  ];
 
   const [customerName, setCustomerName] = useState(user?.name || '');
   const [orderType, setOrderType] = useState('dine_in');
@@ -51,9 +119,9 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center p-4 text-center">
         <div className="text-6xl mb-4">🛒</div>
-        <h2 className="text-xl font-bold text-surface-900 mb-2">Your cart is empty</h2>
-        <p className="text-surface-500 mb-6">Please add some items from the menu first.</p>
-        <Link to={menuLink} className="btn-primary px-8" style={{ backgroundColor: brandingColor }}>View Menu</Link>
+        <h2 className="text-xl font-bold text-surface-900 mb-2">{t('emptyCartTitle')}</h2>
+        <p className="text-surface-500 mb-6">{t('emptyCartDesc')}</p>
+        <Link to={menuLink} className="btn-primary px-8" style={{ backgroundColor: brandingColor }}>{t('browseMenu')}</Link>
       </div>
     );
   }
@@ -120,8 +188,8 @@ export default function Checkout() {
     <div className="min-h-screen bg-surface-50 pb-8" style={{ '--primary-custom': brandingColor }}>
       <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-surface-200/50">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to={cartLink} className="text-surface-500 hover:text-surface-700 font-medium text-sm">← Back</Link>
-          <h1 className="font-heading font-bold text-lg text-surface-900">Checkout</h1>
+          <Link to={cartLink} className="text-surface-500 hover:text-surface-700 font-medium text-sm">← {t('back')}</Link>
+          <h1 className="font-heading font-bold text-lg text-surface-900">{t('checkout')}</h1>
           <div className="w-16" />
         </div>
       </div>
@@ -131,14 +199,14 @@ export default function Checkout() {
 
         {/* Name */}
         <div className="glass-card p-5 animate-fade-in-up">
-          <label className="block text-sm font-semibold text-surface-700 mb-2">Your Name (Optional)</label>
+          <label className="block text-sm font-semibold text-surface-700 mb-2">{t('nameLabel')}</label>
           <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)}
-            className="input-field" placeholder="Enter your name" id="customer-name" />
+            className="input-field" placeholder={t('namePlaceholder')} id="customer-name" />
         </div>
 
         {/* Order Type */}
         <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-          <label className="block text-sm font-semibold text-surface-700 mb-3">Order Type</label>
+          <label className="block text-sm font-semibold text-surface-700 mb-3">{t('orderType')}</label>
           <div className="grid grid-cols-2 gap-3">
             {ORDER_TYPES.map(t => (
               <button key={t.id} type="button" onClick={() => setOrderType(t.id)}
@@ -155,14 +223,14 @@ export default function Checkout() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-xl">💎</div>
               <div>
-                <p className="font-semibold text-emerald-700">Points Redemption</p>
-                <p className="text-xs text-surface-500">No payment needed — using your loyalty points</p>
+                <p className="font-semibold text-emerald-700">{t('pointsRedemption')}</p>
+                <p className="text-xs text-surface-500">{t('noPaymentNeeded')}</p>
               </div>
             </div>
           </div>
         ) : (
           <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <label className="block text-sm font-semibold text-surface-700 mb-3">Payment Method</label>
+            <label className="block text-sm font-semibold text-surface-700 mb-3">{t('paymentMethod')}</label>
             <div className="grid grid-cols-2 gap-3">
               {PAYMENT_METHODS.map(m => (
                 <button key={m.id} type="button" onClick={() => setPaymentMethod(m.id)}
@@ -176,13 +244,13 @@ export default function Checkout() {
 
 
         <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-          <label className="block text-sm font-semibold text-surface-700 mb-2">Order Notes</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} className="input-field h-20 resize-none text-sm" placeholder="Any special requests..." />
+          <label className="block text-sm font-semibold text-surface-700 mb-2">{t('orderNotes')}</label>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} className="input-field h-20 resize-none text-sm" placeholder={t('notesPlaceholder')} />
         </div>
 
         {/* Summary */}
         <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <h3 className="font-heading font-bold text-surface-900 mb-3">Order Summary</h3>
+          <h3 className="font-heading font-bold text-surface-900 mb-3">{t('orderSummary')}</h3>
           {items.map(item => {
             let price = item.price;
             if (item.selectedAddons) item.selectedAddons.forEach(a => { price += a.price; });
@@ -194,10 +262,10 @@ export default function Checkout() {
             );
           })}
           <div className="border-t border-surface-200 mt-3 pt-3 space-y-1">
-            <div className="flex justify-between text-sm"><span className="text-surface-500">Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-surface-500">Tax (12%)</span><span>{formatCurrency(tax)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-surface-500">{t('subtotal')}</span><span>{formatCurrency(subtotal)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-surface-500">{t('tax')}</span><span>{formatCurrency(tax)}</span></div>
             <div className="flex justify-between text-lg font-bold font-heading mt-2 pt-2 border-t border-surface-200">
-              <span>Total</span><span className="text-primary-600">{formatCurrency(total)}</span>
+              <span>{t('total')}</span><span className="text-primary-600">{formatCurrency(total)}</span>
             </div>
           </div>
         </div>
@@ -209,11 +277,11 @@ export default function Checkout() {
           id="place-order-btn"
           style={!(hasInsufficientPoints && totalPointsCost > 0) ? { backgroundColor: brandingColor } : {}}
         >
-          {submitting ? 'Placing Order...' : 
-           hasInsufficientPoints && totalPointsCost > 0 ? `Insufficient Points (${totalPointsCost} Needed)` :
-           isFullRedemption ? `Claim for ${totalPointsCost} Points` : 
-           totalPointsCost > 0 ? `Order — ${formatCurrency(total)} + ${totalPointsCost} pts` :
-           `Place Order — ${formatCurrency(total)}`}
+          {submitting ? t('placingOrder') : 
+           hasInsufficientPoints && totalPointsCost > 0 ? t('insufficientPoints').replace('{pts}', totalPointsCost) :
+           isFullRedemption ? t('claimPoints').replace('{pts}', totalPointsCost) : 
+           totalPointsCost > 0 ? t('orderWithPoints').replace('{price}', formatCurrency(total)).replace('{pts}', totalPointsCost) :
+           t('placeOrderTotal').replace('{price}', formatCurrency(total))}
         </button>
       </form>
     </div>
