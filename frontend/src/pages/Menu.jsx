@@ -7,6 +7,8 @@ import { formatCurrency, unlockAudio } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
+import SeasonalEffects from '../components/SeasonalEffects';
+
 
 const TRANSLATIONS = {
   en: {
@@ -277,7 +279,8 @@ export default function Menu() {
   const filteredCategories = activeCategory === 'all' ? categories : categories.filter(c => String(c.id) === activeCategory);
 
   return (
-    <div className="min-h-screen bg-surface-50 pb-24" style={{ '--primary-custom': brandingColor }}>
+    <div className="min-h-screen bg-surface-50 pb-24 relative overflow-hidden" style={{ '--primary-custom': brandingColor }}>
+      <SeasonalEffects brandingColor={brandingColor} />
       {/* Sticky Top Header Row */}
       <div className="sticky top-0 z-40 bg-surface-50/90 backdrop-blur-xl border-b border-surface-200/50 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 flex justify-between items-center">

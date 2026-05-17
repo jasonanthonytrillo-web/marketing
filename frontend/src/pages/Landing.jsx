@@ -4,6 +4,7 @@ import { getOrder, getPublicTenant } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
+import SeasonalEffects from '../components/SeasonalEffects';
 
 export default function Landing() {
   const [lastOrder, setLastOrder] = useState(null);
@@ -200,6 +201,7 @@ export default function Landing() {
 
         <div className="absolute inset-0 bg-gradient-to-b from-surface-950/80 via-surface-950/40 to-surface-950/90 z-10" />
         <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full blur-[100px] animate-pulse-slow z-20 opacity-30" style={{ backgroundColor: primaryColor }} />
+        <SeasonalEffects brandingColor={primaryColor} />
       </div>
 
       {/* Main Content Wrapper - Centered */}
