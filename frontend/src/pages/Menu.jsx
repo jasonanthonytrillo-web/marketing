@@ -429,41 +429,41 @@ export default function Menu() {
                         className="w-full h-full object-cover"
                       />
                       {product.tags && (
-                        <div className="absolute top-2 right-2 z-10 flex flex-wrap gap-1 max-w-[75%] justify-end">
+                        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 items-end">
                           {product.tags.split(',').map(tag => {
                             if (tag === 'recommended') return (
-                              <span key={tag} className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-md uppercase tracking-wider flex items-center gap-0.5" title="Best Seller">
-                                ⭐
+                              <span key={tag} className="bg-amber-500/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-amber-400/20">
+                                ⭐ Best Seller
                               </span>
                             );
                             if (tag === 'spicy') return (
-                              <span key={tag} className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-md uppercase tracking-wider flex items-center gap-0.5" title="Spicy">
-                                🌶️
+                              <span key={tag} className="bg-red-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-red-500/20">
+                                🌶️ Spicy
                               </span>
                             );
                             if (tag === 'halal') return (
-                              <span key={tag} className="bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-md uppercase tracking-wider flex items-center gap-0.5" title="Halal Certified">
-                                🕌
+                              <span key={tag} className="bg-emerald-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-emerald-500/20">
+                                🕌 Halal
                               </span>
                             );
                             if (tag === 'sugar_free') return (
-                              <span key={tag} className="bg-cyan-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-md uppercase tracking-wider flex items-center gap-0.5" title="Sugar-Free">
-                                🍬
+                              <span key={tag} className="bg-cyan-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-cyan-500/20">
+                                🍬 Sugar-Free
                               </span>
                             );
                             if (tag === 'gluten_free') return (
-                              <span key={tag} className="bg-yellow-600 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded shadow-md uppercase tracking-wider flex items-center gap-0.5" title="Gluten-Free">
-                                🌾
+                              <span key={tag} className="bg-yellow-600/95 text-slate-900 text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-yellow-500/20">
+                                🌾 Gluten-Free
                               </span>
                             );
                             if (tag === 'nuts') return (
-                              <span key={tag} className="bg-amber-800 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-md uppercase tracking-wider flex items-center gap-0.5" title="Contains Nuts">
-                                🥜
+                              <span key={tag} className="bg-amber-800/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-amber-700/20">
+                                🥜 Has Nuts
                               </span>
                             );
                             if (tag === 'vegan') return (
-                              <span key={tag} className="bg-lime-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-md uppercase tracking-wider flex items-center gap-0.5" title="Vegan">
-                                🌿
+                              <span key={tag} className="bg-lime-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-lime-500/20">
+                                🌿 Vegan
                               </span>
                             );
                             return null;
