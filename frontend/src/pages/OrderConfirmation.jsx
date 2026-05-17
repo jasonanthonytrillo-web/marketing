@@ -170,11 +170,30 @@ export default function OrderConfirmation() {
 
       <div className="max-w-lg mx-auto px-4 pt-4 md:pt-8">
 
-        <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 text-center mb-4 sm:mb-6 shadow-xl relative animate-fade-in-up border-t-[12px] sm:border-t-[16px]" style={{ animationDelay: '0.1s', borderTopColor: brandingColor }}>
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 text-center mb-4 sm:mb-6 shadow-xl relative overflow-hidden animate-fade-in-up border-t-[12px] sm:border-t-[16px]" style={{ animationDelay: '0.1s', borderTopColor: isCancelled ? '#ef4444' : brandingColor }}>
+          {isCancelled && (
+            <div className="absolute top-4 right-4 rotate-12 border-4 border-red-500 text-red-500 font-black px-4 py-1 rounded-xl text-xs sm:text-sm uppercase tracking-widest animate-bounce-in shadow-lg bg-white/95 z-20">
+              Cancelled ❌
+            </div>
+          )}
+
           <p className="text-[10px] sm:text-xs md:text-sm font-bold text-slate-400 uppercase tracking-[0.15em] mb-3 sm:mb-4">Your Queue Number</p>
-          <p className="font-heading text-6xl sm:text-8xl md:text-9xl font-black text-slate-900 tracking-tighter mb-2 leading-none">
+          <p className={`font-heading text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter mb-2 leading-none ${isCancelled ? 'text-slate-300 line-through opacity-70' : 'text-slate-900'}`}>
             {order.orderNumber.includes('-') ? order.orderNumber.split('-')[1] : order.orderNumber}
           </p>
+
+          {isCancelled && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-left mb-6 flex gap-3 items-start animate-fade-in">
+              <span className="text-xl">⚠️</span>
+              <div>
+                <h4 className="font-bold text-red-800 text-sm">Order Cancelled</h4>
+                <p className="text-xs text-red-600 font-medium leading-relaxed">
+                  This transaction was cancelled by the store. {order.cancellationReason && `Reason: ${order.cancellationReason}. `}
+                  If any payments were made, they have been voided. Please proceed to the counter for questions or refunds.
+                </p>
+              </div>
+            </div>
+          )}
 
           {order.estimatedPrepTime && !isReady && !isCompleted && !isCancelled && (
             <div className="mb-6 animate-bounce-in">
@@ -188,14 +207,22 @@ export default function OrderConfirmation() {
             </div>
           )}
 
-          <p className="text-slate-700 font-medium mb-6 sm:mb-8 text-xs sm:text-sm md:text-base px-1 sm:px-2">
-            {isReady ? "YOUR ORDER IS READY! Please proceed to the counter." : "Please wait for your number to be called or displayed on the queue screen."}
+          <p className={`font-medium mb-6 sm:mb-8 text-xs sm:text-sm md:text-base px-1 sm:px-2 ${isCancelled ? 'text-red-500 font-black' : 'text-slate-700'}`}>
+            {isCancelled 
+              ? "THIS ORDER HAS BEEN VOIDED / CANCELLED" 
+              : isReady 
+              ? "YOUR ORDER IS READY! Please proceed to the counter." 
+              : "Please wait for your number to be called or displayed on the queue screen."}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
             <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
               {order.orderType === 'dine_in' ? '🏠 Dine In' : '🥡 Take Out'}
             </span>
-            {order.paymentMethod === 'points' ? (
+            {isCancelled ? (
+              <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-red-100 text-red-700 font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1 border border-red-200">
+                ❌ VOIDED RECEIPT
+              </span>
+            ) : order.paymentMethod === 'points' ? (
               <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-purple-100 text-purple-700 font-bold text-xs sm:text-sm">
                 🎁 Point Redemption
               </span>
@@ -315,7 +342,12 @@ export default function OrderConfirmation() {
           </div>
           <div className="border-t border-surface-200 mt-3 pt-3 space-y-1">
             <div className="flex justify-between text-xs sm:text-sm"><span className="text-surface-500">Subtotal</span><span>{formatCurrency(order.subtotal)}</span></div>
-            <div className="flex justify-between font-bold text-base sm:text-lg font-heading pt-2 border-t border-surface-200"><span>Total</span><span style={{ color: brandingColor }}>{formatCurrency(order.total)}</span></div>
+            <div className="flex justify-between font-bold text-base sm:text-lg font-heading pt-2 border-t border-surface-200">
+              <span>{isCancelled ? 'Total (Voided)' : 'Total'}</span>
+              <span style={{ color: isCancelled ? '#ef4444' : brandingColor }} className={isCancelled ? 'line-through opacity-60' : ''}>
+                {formatCurrency(order.total)}
+              </span>
+            </div>
           </div>
         </div>
 
