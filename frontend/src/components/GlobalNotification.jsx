@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { playNotificationSound, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { getOrder } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function GlobalNotification() {
   const [readyOrderNumbers, setReadyOrderNumbers] = useState([]);
@@ -14,6 +15,7 @@ export default function GlobalNotification() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tenantSlug = searchParams.get('tenant');
+  const { user } = useAuth();
 
   // Helper to safely clear the chime loop
   const clearChimeLoop = useCallback(() => {
@@ -39,28 +41,38 @@ export default function GlobalNotification() {
       const lastOrderNumber = localStorage.getItem(lastOrderKey);
       
       const isMyOrder = activeOrders.includes(data.order?.orderNumber) || 
-                       data.order?.orderNumber === lastOrderNumber;
+                       data.order?.orderNumber === lastOrderNumber ||
+                       (user && data.order?.customerId === user.id);
 
       if (isMyOrder) {
         requestNotificationPermission();
+
+        // Sync order to local active orders list if it matched by user id
+        if (data.order?.orderNumber && !activeOrders.includes(data.order.orderNumber)) {
+          const updated = [...activeOrders, data.order.orderNumber];
+          localStorage.setItem(activeOrdersKey, JSON.stringify(updated));
+        }
+
         if (data.eventType === 'ready' || data.order.status === 'ready') {
           triggerReadyAlert(data.order.orderNumber);
         } else if (data.eventType === 'cancelled' || data.order.status === 'cancelled') {
           triggerCancelledAlert(data.order.orderNumber, data.order.cancellationReason);
           // Auto-remove from active orders list in realtime
-          const updated = activeOrders.filter(num => num !== data.order.orderNumber);
+          const currentActive = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
+          const updated = currentActive.filter(num => num !== data.order.orderNumber);
           localStorage.setItem(activeOrdersKey, updated.length > 0 ? JSON.stringify(updated) : '[]');
           if (updated.length === 0) localStorage.removeItem(activeOrdersKey);
         } else if (data.eventType === 'completed' || data.order.status === 'completed') {
           // Also cleanup completed orders in realtime
-          const updated = activeOrders.filter(num => num !== data.order.orderNumber);
+          const currentActive = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
+          const updated = currentActive.filter(num => num !== data.order.orderNumber);
           localStorage.setItem(activeOrdersKey, updated.length > 0 ? JSON.stringify(updated) : '[]');
           if (updated.length === 0) localStorage.removeItem(activeOrdersKey);
         }
       }
     });
     return unsub;
-  }, [onEvent, tenantSlug]);
+  }, [onEvent, tenantSlug, user]);
 
   // Polling fallback
   useEffect(() => {

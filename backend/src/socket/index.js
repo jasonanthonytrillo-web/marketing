@@ -68,6 +68,11 @@ module.exports = (io, prisma) => {
     
     // For specific order tracking page
     io.to(`tenant-${tId}-order-${order.orderNumber}`).emit('order_update', payload);
+    
+    // For specific customer's logged-in devices
+    if (order.customerId) {
+      io.to(`tenant-${tId}-user-${order.customerId}`).emit('order_update', payload);
+    }
   };
 
   // Helper: send notification to a specific module
