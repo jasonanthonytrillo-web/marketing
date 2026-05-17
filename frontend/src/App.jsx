@@ -24,7 +24,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import MemberPortal from './pages/MemberPortal';
 import CustomerAccount from './pages/CustomerAccount';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import Marketing from './pages/Marketing';
 import { PrivacyPolicy, TermsOfService, DataDeletion } from './pages/Legal';
 
 function ProtectedRoute({ children, roles }) {
@@ -64,9 +63,7 @@ function App() {
             <SocketListener />
             <GlobalThankYou />
             <Routes>
-              {/* Marketing & Advertisement */}
-              <Route path="/advertise" element={<Marketing />} />
-              <Route path="/welcome" element={<Marketing />} />
+
 
               {/* Kiosk Routes */}
               <Route path="/" element={<Landing />} />

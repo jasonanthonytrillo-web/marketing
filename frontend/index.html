@@ -11,10 +11,10 @@
     const tenant = urlParams.get('tenant');
     if (tenant && tenant !== 'project-million') {
       const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
-      
+
       // Update Manifest
       document.getElementById('manifest-link').setAttribute('href', `${apiUrl}/api/public/manifest/${tenant}`);
-      
+
       // Update Favicon to Tenant Logo
       fetch(`${apiUrl}/api/public/tenants/${tenant}`)
         .then(res => res.json())
@@ -22,30 +22,31 @@
           if (data?.data?.logo) {
             const favicon = document.querySelector('link[rel="icon"]');
             if (favicon) favicon.href = data.data.logo;
-            document.title = `${data.data.name} | Elevate POS`;
+            document.title = `${data.data.name} | Hometown Brew`;
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description"
     content="Enterprise POS System - Self-Service Kiosk, Queue Display, Cashier & Kitchen Dashboard" />
-  <meta name="theme-color" content="#f97316" />
+  <meta name="theme-color" content="#0a3d01" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="PROJECT MILLION POS" />
-  <meta property="og:description" content="Professional Multi-Tenant Point of Sale System" />
-  <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/5787/5787016.png" />
+  <meta property="og:url" content="https://elevatepos.vercel.app/" />
+  <meta property="og:title" content="HOMETOWN BREW POS" />
+  <meta property="og:description" content="Professional Point of Sale System" />
+  <meta property="og:image" content="/favicon.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="PROJECT MILLION POS" />
-  <meta name="twitter:description" content="Professional Multi-Tenant Point of Sale System" />
-  <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/512/5787/5787016.png" />
+  <meta name="twitter:title" content="HOMETOWN BREW" />
+  <meta name="twitter:description" content="Professional Point of Sale System" />
+  <meta name="twitter:image" content="/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
-  <title>Elevate POS</title>
+  <title>Hometown Brew</title>
 </head>
 
 <body>

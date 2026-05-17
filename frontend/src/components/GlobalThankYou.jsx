@@ -8,7 +8,7 @@ export default function GlobalThankYou() {
   const { onEvent, joinRoom } = useSocket();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const tenantSlug = searchParams.get('tenant');
+  const tenantSlug = searchParams.get('tenant') || 'project-million';
 
   useEffect(() => {
     const initThankYou = async () => {
@@ -61,7 +61,7 @@ export default function GlobalThankYou() {
           // After 5 seconds, hide the screen and navigate home
           setTimeout(() => {
             setShowThankYou(false);
-            const homePath = tenantSlug ? `/?tenant=${tenantSlug}` : '/';
+            const homePath = '/';
             navigate(homePath);
           }, 5000);
         }
@@ -89,7 +89,7 @@ export default function GlobalThankYou() {
         <button 
           onClick={() => {
             setShowThankYou(false);
-            const homePath = tenantSlug ? `/?tenant=${tenantSlug}` : '/';
+            const homePath = '/';
             navigate(homePath);
           }}
           className="bg-white text-slate-900 font-bold text-lg sm:text-xl px-12 py-5 rounded-2xl shadow-2xl hover:bg-slate-50 transition-all active:scale-95"

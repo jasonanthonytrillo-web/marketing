@@ -56,10 +56,10 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
       discountAmount = order.subtotal * (discountPercent / 100);
     }
 
-    const taxRate = parseFloat(process.env.TAX_RATE || '0.12');
-    const taxableAmount = order.subtotal - discountAmount;
-    const taxAmount = taxableAmount * taxRate;
-    const total = taxableAmount + taxAmount;
+    const taxRate = parseFloat(process.env.TAX_RATE || '0.00');
+    const total = order.subtotal - discountAmount;
+    const taxAmount = taxRate > 0 ? (total - (total / (1 + taxRate))) : 0;
+    const taxableAmount = total - taxAmount;
     const method = paymentMethod || order.paymentMethod;
     const isPointsRedemption = method === 'points';
     const received = isPointsRedemption ? 0 : (parseFloat(amountReceived) || total);
@@ -303,10 +303,10 @@ router.post('/calculate', async (req, res) => {
       discountAmount = subtotal * (discountPercent / 100);
     }
 
-    const taxRate = parseFloat(process.env.TAX_RATE || '0.12');
-    const taxableAmount = subtotal - discountAmount;
-    const taxAmount = taxableAmount * taxRate;
-    const total = taxableAmount + taxAmount;
+    const taxRate = parseFloat(process.env.TAX_RATE || '0.00');
+    const total = subtotal - discountAmount;
+    const taxAmount = taxRate > 0 ? (total - (total / (1 + taxRate))) : 0;
+    const taxableAmount = total - taxAmount;
     const change = (amountReceived || 0) - total;
 
     res.json({

@@ -403,7 +403,18 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
       settingsMap.tenant_favicon = tenant.favicon;
       settingsMap.tenant_og_image = tenant.ogImage;
       settingsMap.tenant_banner = tenant.bannerImage;
-      settingsMap.tenant_assets = tenant.bannerAssets || [];
+      let assets = tenant.bannerAssets || [];
+      if (typeof assets === 'string') {
+        try {
+          assets = JSON.parse(assets);
+          if (typeof assets === 'string') {
+            assets = JSON.parse(assets); // Double stringify guard
+          }
+        } catch (e) {
+          assets = [assets];
+        }
+      }
+      settingsMap.tenant_assets = Array.isArray(assets) ? assets : [];
       settingsMap.primary_color = tenant.primaryColor;
       settingsMap.secondary_color = tenant.secondaryColor;
       settingsMap.gcash_qr = tenant.gcashQr;

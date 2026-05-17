@@ -13,8 +13,82 @@ const io = new Server(server, {
 
 // Test connection on startup
 prisma.$connect()
-  .then(() => console.log('✅ Prisma connected to Database'))
+  .then(async () => {
+    console.log('✅ Prisma connected to Database');
+    await purgeOtherTenants();
+  })
   .catch((err) => console.error('❌ Prisma connection FAILED:', err.message));
+
+async function purgeOtherTenants() {
+  try {
+    const slugsToPurge = ['burger-palace', 'hometownbrew'];
+    
+    for (const slug of slugsToPurge) {
+      const tenant = await prisma.tenant.findUnique({ where: { slug } });
+      if (tenant) {
+        console.log(`🧹 Purging tenant: ${tenant.name} (ID: ${tenant.id}, Slug: ${slug})...`);
+        
+        // 1. Audit logs
+        await prisma.auditLog.deleteMany({ where: { tenantId: tenant.id } });
+        
+        // 2. Expenses
+        await prisma.expense.deleteMany({ where: { tenantId: tenant.id } });
+        
+        // 3. System settings
+        await prisma.systemSetting.deleteMany({ where: { tenantId: tenant.id } });
+        
+        // 4. Notifications
+        await prisma.notification.deleteMany({
+          where: {
+            order: {
+              tenantId: tenant.id
+            }
+          }
+        });
+        
+        // 5. Orders (cascades to order items, payments)
+        await prisma.order.deleteMany({ where: { tenantId: tenant.id } });
+        
+        // 6. Inventory logs for products of this tenant
+        await prisma.inventoryLog.deleteMany({
+          where: {
+            product: {
+              tenantId: tenant.id
+            }
+          }
+        });
+        
+        // 7. ComboOptions and ProductAddons
+        await prisma.comboOption.deleteMany({ where: { tenantId: tenant.id } });
+        await prisma.productAddon.deleteMany({ where: { tenantId: tenant.id } });
+        
+        // 8. Products
+        await prisma.product.deleteMany({ where: { tenantId: tenant.id } });
+        
+        // 9. Suppliers
+        await prisma.supplier.deleteMany({ where: { tenantId: tenant.id } });
+        
+        // 10. Categories
+        await prisma.category.deleteMany({ where: { tenantId: tenant.id } });
+        
+        // 11. Users (Move superadmins to null, then delete other roles)
+        await prisma.user.updateMany({
+          where: { tenantId: tenant.id, role: 'superadmin' },
+          data: { tenantId: null }
+        });
+        await prisma.user.deleteMany({
+          where: { tenantId: tenant.id, role: { not: 'superadmin' } }
+        });
+        
+        // 12. Finally, the Tenant itself
+        await prisma.tenant.delete({ where: { id: tenant.id } });
+        console.log(`✅ Successfully purged tenant ${tenant.name} and all associated data.`);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error during tenant purging:', error);
+  }
+}
 
 const path = require('path');
 

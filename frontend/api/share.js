@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
     const title = tenant.name;
     const description = tenant.landing_description || tenant.tagline || 'Explore our premium store.';
-    const redirectUrl = `https://elevatepos.vercel.app/menu?tenant=${slug}`;
+    const redirectUrl = `https://elevatepos.vercel.app/menu`;
 
     // Resolve Logo
     let ogImage = tenant.ogImage || tenant.logo;
@@ -51,6 +51,6 @@ export default async function handler(req, res) {
     `);
   } catch (err) {
     console.error('Vercel Share Error:', err.message);
-    res.redirect(`https://elevatepos.vercel.app/menu?tenant=${slug}`);
+    res.redirect(`https://elevatepos.vercel.app/menu`);
   }
 }

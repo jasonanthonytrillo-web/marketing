@@ -188,7 +188,7 @@ export default function Menu() {
     setSelectedProduct(product);
   };
 
-  const brandingColor = branding?.primaryColor || '#f97316';
+  const brandingColor = branding?.primaryColor || '#0a3d01';
   const itemCount = getItemCount();
 
   const { joinRoom, leaveRoom, connected } = useSocket();
@@ -272,7 +272,7 @@ export default function Menu() {
 
   if (loading) return (
     <div className="min-h-screen bg-surface-50 flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-12 h-12 border-4 border-[#34d399] border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 
@@ -285,87 +285,89 @@ export default function Menu() {
       <div className="sticky top-0 z-40 bg-surface-50/90 backdrop-blur-xl border-b border-surface-200/50 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Link to={searchParams.get('tenant') ? `/?tenant=${searchParams.get('tenant')}` : '/'} className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95">
+            <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95">
               <span className="text-lg md:text-xl leading-none">←</span> <span className="hidden sm:inline">{t('backHome')}</span><span className="sm:hidden">{t('back')}</span>
             </Link>
+          </div>
 
+          <div className="flex items-center gap-4 relative">
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-3 bg-white rounded-full text-xs md:text-sm font-black shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95"
             >
-              <span className={lang === 'en' ? 'text-primary-500' : 'text-surface-400'} style={lang === 'en' ? { color: brandingColor } : {}}>EN</span>
+              <span className={lang === 'en' ? 'text-primary-500' : 'text-surface-400'} style={lang === 'en' ? { color: brandingColor } : {}}>ENG</span>
               <span className="text-surface-300 font-normal">|</span>
-              <span className={lang === 'tl' ? 'text-primary-500' : 'text-surface-400'} style={lang === 'tl' ? { color: brandingColor } : {}}>TL</span>
+              <span className={lang === 'tl' ? 'text-primary-500' : 'text-surface-400'} style={lang === 'tl' ? { color: brandingColor } : {}}>PH</span>
             </button>
-          </div>
 
-          {isCustomer && user && (
-            <div className="flex items-center gap-4 relative">
-              <button
-                onClick={() => setShowRewards(true)}
-                className="animate-fade-in flex items-center gap-3 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-2xl shadow-sm hover:bg-emerald-100 transition-all active:scale-95 group"
-              >
-                <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">💎</div>
-                <div className="text-left hidden sm:block">
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-0.5">{t('points')}</p>
-                  <p className="text-sm font-black text-emerald-900 leading-none">{Math.floor(user.points || 0)}</p>
-                </div>
-              </button>
-
-              <div className="relative">
+            {isCustomer && user && (
+              <>
                 <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all border-2 border-white"
-                  style={{ backgroundColor: brandingColor }}
+                  onClick={() => setShowRewards(true)}
+                  className="animate-fade-in flex items-center gap-3 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-2xl shadow-sm hover:bg-emerald-100 transition-all active:scale-95 group"
                 >
-                  {getInitials(user.name)}
+                  <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">💎</div>
+                  <div className="text-left hidden sm:block">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-0.5">{t('points')}</p>
+                    <p className="text-sm font-black text-emerald-900 leading-none">{Math.floor(user.points || 0)}</p>
+                  </div>
                 </button>
 
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-3xl shadow-2xl border border-surface-100 overflow-hidden z-50 animate-scale-in origin-top-right">
-                    <div className="p-4 border-b border-surface-50 bg-surface-50/50">
-                      <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-1">Signed in as</p>
-                      <p className="font-bold text-surface-900 truncate">{user.name}</p>
-                    </div>
-                    <div className="p-2">
-                      {!user?.isGoogle && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all border-2 border-white"
+                    style={{ backgroundColor: brandingColor }}
+                  >
+                    {getInitials(user.name)}
+                  </button>
+
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-3 w-56 bg-white rounded-3xl shadow-2xl border border-surface-100 overflow-hidden z-50 animate-scale-in origin-top-right">
+                      <div className="p-4 border-b border-surface-50 bg-surface-50/50">
+                        <p className="text-[10px] font-black text-surface-400 uppercase tracking-widest mb-1">Signed in as</p>
+                        <p className="font-bold text-surface-900 truncate">{user.name}</p>
+                      </div>
+                      <div className="p-2">
+                        {!user?.isGoogle && (
+                          <button
+                            onClick={() => {
+                              setShowUserMenu(false);
+                              setShowPasswordModal(true);
+                            }}
+                            className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                          >
+                            <span>🔒</span> {t('changePassword')}
+                          </button>
+                        )}
+                        <Link
+                          to="/account"
+                          className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                        >
+                          <span>📜</span> {t('orderHistory')}
+                        </Link>
                         <button
                           onClick={() => {
                             setShowUserMenu(false);
-                            setShowPasswordModal(true);
+                            logoutUser();
                           }}
-                          className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                          className="flex items-center gap-3 w-full p-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
                         >
-                          <span>🔒</span> {t('changePassword')}
+                          <span>👋</span> {t('signOut')}
                         </button>
-                      )}
-                      <Link
-                        to={searchParams.get('tenant') ? `/account?tenant=${searchParams.get('tenant')}` : '/account'}
-                        className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
-                      >
-                        <span>📜</span> {t('orderHistory')}
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          logoutUser();
-                        }}
-                        className="flex items-center gap-3 w-full p-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
-                      >
-                        <span>👋</span> {t('signOut')}
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 pt-4 md:pt-6 flex flex-col md:flex-row gap-6 lg:gap-8">
+      <div className="max-w-7xl mx-auto px-4 pt-4 md:pt-6 flex flex-col md:flex-row gap-8 md:gap-12 lg:gap-16">
         {/* Left Sidebar: Categories */}
-        <div className="w-full md:w-48 lg:w-56 flex-shrink-0 animate-fade-in-up relative max-w-full min-w-0">
+        <div className="w-full md:w-56 lg:w-64 flex-shrink-0 animate-fade-in-up relative max-w-full min-w-0">
           <div className="md:sticky md:top-6 md:max-h-[calc(100vh-3rem)] flex flex-col">
             <div className="flex-shrink-0 mb-6">
               <div className="flex items-center gap-3 mb-2 md:mb-3">
@@ -378,7 +380,7 @@ export default function Menu() {
                     💎
                   </div>
                 )}
-                <h1 className="font-heading text-2xl md:text-3xl font-bold text-surface-900 uppercase leading-tight" style={{ color: brandingColor }}>{tenantName}</h1>
+                <h1 className="font-heading text-xl md:text-2xl lg:text-3xl font-bold text-surface-900 uppercase leading-tight" style={{ color: brandingColor }}>{tenantName}</h1>
               </div>
               <p className="text-surface-500 text-xs md:text-sm mb-3 md:mb-6">{t('searchInstructions')}</p>
             </div>
@@ -470,11 +472,6 @@ export default function Menu() {
                           })}
                         </div>
                       )}
-                      {product.pointsCost && isCustomer && (
-                        <div className="absolute top-3 left-3 bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg flex items-center gap-1">
-                          💎 {product.pointsCost} PTS
-                        </div>
-                      )}
                       {(!product.available || product.stock <= 0) && (
                         <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-[2px] flex items-center justify-center">
                           <span className="bg-red-500 text-white font-black px-4 py-1.5 rounded-xl text-xs uppercase tracking-widest -rotate-12">Sold Out</span>
@@ -501,22 +498,22 @@ export default function Menu() {
 
       {/* Floating Cart Button */}
       {itemCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-6">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 sm:px-6">
           <Link
-            to={searchParams.get('tenant') ? `/cart?tenant=${searchParams.get('tenant')}` : '/cart'}
-            className="flex items-center justify-between w-full h-16 px-6 rounded-3xl text-white shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all animate-bounce-in"
+            to="/cart"
+            className="flex items-center justify-between w-full h-16 px-4 sm:px-6 rounded-3xl text-white shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all animate-bounce-in"
             style={{ backgroundColor: brandingColor }}
           >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5.5 8h13l1.5 13H4L5.5 8z" /><path d="M8 11V6a4 4 0 0 1 8 0v5" /></svg>
               </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none mb-1">{itemCount} {t('items')}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none mb-1 truncate">{itemCount} {t('items')}</p>
                 <p className="text-lg font-black leading-none">₱{getSubtotal().toFixed(2)}</p>
               </div>
             </div>
-            <span className="font-black uppercase tracking-widest text-sm">{t('reviewCart')}</span>
+            <span className="font-black uppercase tracking-wide text-xs sm:text-sm whitespace-nowrap ml-2">{t('reviewCart')}</span>
           </Link>
         </div>
       )}
@@ -760,8 +757,14 @@ export default function Menu() {
                   ℹ️
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">How to earn points</h4>
-                  <p className="text-[11px] font-bold text-slate-500">Earn <strong className="text-slate-700">1 Point</strong> for every <strong className="text-slate-700">₱100</strong> spent on your orders!</p>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">{t('howToEarn')}</h4>
+                  <p className="text-[11px] font-bold text-slate-500">
+                    {lang === 'tl' ? (
+                      <>Makakuha ng <strong className="text-slate-700">1 Puntos</strong> sa bawat <strong className="text-slate-700">₱{branding?.pointsRate || '100'}</strong> na binili mo!</>
+                    ) : (
+                      <>Earn <strong className="text-slate-700">1 Point</strong> for every <strong className="text-slate-700">₱{branding?.pointsRate || '100'}</strong> spent on your orders!</>
+                    )}
+                  </p>
                 </div>
               </div>
             </div>

@@ -21,12 +21,17 @@ router.get('/', async (req, res) => {
       }
     } else {
       // 2. Fallback: Use headers for public Kiosk users
-      tenantId = req.headers['x-tenant-id'] ? parseInt(req.headers['x-tenant-id']) : 1;
-      const tenantSlug = req.headers['x-tenant-slug'];
+      tenantId = req.headers['x-tenant-id'] ? parseInt(req.headers['x-tenant-id']) : null;
+      const tenantSlug = req.headers['x-tenant-slug'] || 'project-million';
 
       if (tenantSlug) {
         const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
         if (tenant) tenantId = tenant.id;
+      }
+
+      if (!tenantId) {
+        const firstTenant = await prisma.tenant.findFirst({ where: { active: true } });
+        tenantId = firstTenant ? firstTenant.id : 1;
       }
     }
 

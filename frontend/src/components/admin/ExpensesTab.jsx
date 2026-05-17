@@ -122,7 +122,7 @@ export default function ExpensesTab() {
                 <label className="block text-xs font-black text-surface-400 uppercase tracking-widest mb-1.5">Description</label>
                 <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="input-field w-full" placeholder="e.g. Monthly Rent" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black text-surface-400 uppercase tracking-widest mb-1.5">Amount (₱)</label>
                   <input required type="number" step="0.01" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="input-field w-full" placeholder="0.00" />

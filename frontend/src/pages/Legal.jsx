@@ -2,9 +2,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 const LegalLayout = ({ title, children }) => {
   const [searchParams] = useSearchParams();
-  const tenantSlug = searchParams.get('tenant');
-  const fromMarketing = searchParams.get('from') === 'marketing';
-  const homeLink = tenantSlug ? `/?tenant=${tenantSlug}` : fromMarketing ? '/advertise' : '/';
+  const tenantSlug = searchParams.get('tenant') || 'project-million';
+  const homeLink = '/';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-300 p-8 md:p-20 font-sans leading-relaxed">

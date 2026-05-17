@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { createOrder, getPublicTenant } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
+import { applyTheme } from '../utils/theme';
 
 const TRANSLATIONS = {
   en: {
@@ -81,8 +82,7 @@ export default function Checkout() {
   const PAYMENT_METHODS = [
     { id: 'cash', label: t('cash'), icon: '💵' },
     { id: 'gcash', label: t('gcash'), icon: '📱' },
-    { id: 'maya', label: t('maya'), icon: '💳' },
-    { id: 'card', label: t('card'), icon: '💳' }
+    { id: 'maya', label: t('maya'), icon: '💳' }
   ];
 
   const [customerName, setCustomerName] = useState(user?.name || '');
@@ -93,15 +93,18 @@ export default function Checkout() {
     const slug = tenantSlug || user?.tenantSlug;
     if (slug) {
       getPublicTenant(slug).then(res => {
-        if (res.data.success) setBranding(res.data.data);
+        if (res.data.success) {
+          setBranding(res.data.data);
+          applyTheme(res.data.data.primaryColor);
+        }
       });
     }
   }, [tenantSlug, user?.tenantSlug]);
 
 
-  const brandingColor = branding?.primaryColor || '#f97316';
-  const cartLink = tenantSlug ? `/cart?tenant=${tenantSlug}` : '/cart';
-  const menuLink = tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu';
+  const brandingColor = branding?.primaryColor || '#0a3d01';
+  const cartLink = '/cart';
+  const menuLink = '/menu';
   const isFullRedemption = items.length > 0 && items.every(item => item.isRedemption);
   const totalPointsCost = getTotalPointsCost();
   const hasInsufficientPoints = totalPointsCost > (user?.points || 0);
@@ -111,8 +114,8 @@ export default function Checkout() {
   const [error, setError] = useState('');
 
   const subtotal = getSubtotal();
-  const tax = subtotal * 0.12;
-  const total = subtotal + tax;
+  const tax = 0;
+  const total = subtotal;
 
 
   if (items.length === 0 && !submitting) {
@@ -178,7 +181,7 @@ export default function Checkout() {
 
       await refreshUser();
       clearCart();
-      navigate(tenantSlug ? `/order/${order.orderNumber}?tenant=${tenantSlug}` : `/order/${order.orderNumber}`);
+      navigate(`/order/${order.orderNumber}`);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to place order.');
     } finally { setSubmitting(false); }
@@ -210,7 +213,8 @@ export default function Checkout() {
           <div className="grid grid-cols-2 gap-3">
             {ORDER_TYPES.map(t => (
               <button key={t.id} type="button" onClick={() => setOrderType(t.id)}
-                className={`p-4 rounded-xl border-2 text-center font-semibold transition-all ${orderType === t.id ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}>
+                className={`p-4 rounded-xl border-2 text-center font-semibold transition-all ${orderType === t.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}
+                style={orderType === t.id ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}>
                 <div className="text-2xl mb-1">{t.icon}</div>{t.label}
               </button>
             ))}
@@ -231,10 +235,11 @@ export default function Checkout() {
         ) : (
           <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <label className="block text-sm font-semibold text-surface-700 mb-3">{t('paymentMethod')}</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {PAYMENT_METHODS.map(m => (
                 <button key={m.id} type="button" onClick={() => setPaymentMethod(m.id)}
-                  className={`p-3 rounded-xl border-2 text-center font-medium text-sm transition-all ${paymentMethod === m.id ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}>
+                  className={`p-3 rounded-xl border-2 text-center font-medium text-sm transition-all ${paymentMethod === m.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}
+                  style={paymentMethod === m.id ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}>
                   {m.icon} {m.label}
                 </button>
               ))}
@@ -261,10 +266,8 @@ export default function Checkout() {
               </div>
             );
           })}
-          <div className="border-t border-surface-200 mt-3 pt-3 space-y-1">
-            <div className="flex justify-between text-sm"><span className="text-surface-500">{t('subtotal')}</span><span>{formatCurrency(subtotal)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-surface-500">{t('tax')}</span><span>{formatCurrency(tax)}</span></div>
-            <div className="flex justify-between text-lg font-bold font-heading mt-2 pt-2 border-t border-surface-200">
+          <div className="border-t border-surface-200 mt-3 pt-3">
+            <div className="flex justify-between text-lg font-bold font-heading">
               <span>{t('total')}</span><span className="text-primary-600">{formatCurrency(total)}</span>
             </div>
           </div>

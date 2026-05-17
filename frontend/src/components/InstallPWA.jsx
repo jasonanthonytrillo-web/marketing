@@ -6,7 +6,7 @@ export default function InstallPWA() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [searchParams] = useSearchParams();
-  const tenant = searchParams.get('tenant') || 'Project Million';
+  const tenant = searchParams.get('tenant') || 'Hometown Brew';
   const tenantName = tenant.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function InstallPWA() {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 animate-fade-in-up">
+    <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-fade-in-up">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 p-4 max-w-md mx-auto flex items-center gap-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-primary-500/5 pointer-events-none"></div>
         

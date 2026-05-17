@@ -20,7 +20,7 @@ router.post('/request-otp', async (req, res) => {
   try {
     // Determine tenant
     let tenantId = null;
-    let tenantName = 'Elevate POS';
+    let tenantName = 'Hometown Brew';
     if (tenantSlug && tenantSlug !== 'project-million') {
       const tenantRecord = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
       if (tenantRecord) {
@@ -50,7 +50,8 @@ router.post('/request-otp', async (req, res) => {
       data: { otpCode: otp, otpExpires: expires }
     });
 
-    await sendOTPEmail(email, otp, tenantName);
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    await sendOTPEmail(email, otp, tenant || {});
 
     res.json({ success: true, message: 'OTP sent to your email.' });
   } catch (error) {
@@ -121,6 +122,92 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
+// POST /api/auth/check-otp — Verify code without clearing it
+router.post('/check-otp', async (req, res) => {
+  const { email, otp, tenantSlug } = req.body;
+  if (!email || !otp) return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+
+  try {
+    let tenantId = null;
+    if (tenantSlug && tenantSlug !== 'project-million') {
+      const t = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+      if (t) tenantId = t.id;
+    } else {
+      const masterTenant = await prisma.tenant.findUnique({ where: { slug: 'project-million' } });
+      if (masterTenant) tenantId = masterTenant.id;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { 
+        email, 
+        tenantId, 
+        otpCode: otp, 
+        otpExpires: { gt: new Date() } 
+      }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code.' });
+    }
+
+    res.json({ success: true, message: 'OTP is valid.' });
+  } catch (error) {
+    console.error('OTP Check Error:', error);
+    res.status(500).json({ success: false, message: 'Verification failed.' });
+  }
+});
+
+// POST /api/auth/reset-password — Reset password using OTP code
+router.post('/reset-password', async (req, res) => {
+  const { email, otp, newPassword, tenantSlug } = req.body;
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ success: false, message: 'Email, OTP, and new password are required' });
+  }
+
+  try {
+    // Find tenant
+    let tenantId = null;
+    if (tenantSlug && tenantSlug !== 'project-million') {
+      const t = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+      if (t) tenantId = t.id;
+    } else {
+      const masterTenant = await prisma.tenant.findUnique({ where: { slug: 'project-million' } });
+      if (masterTenant) tenantId = masterTenant.id;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { 
+        email, 
+        tenantId, 
+        otpCode: otp, 
+        otpExpires: { gt: new Date() } 
+      }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code.' });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear OTP
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        password: hashedPassword,
+        otpCode: null, 
+        otpExpires: null 
+      }
+    });
+
+    res.json({ success: true, message: 'Password has been reset successfully.' });
+  } catch (error) {
+    console.error('Password Reset Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to reset password.' });
+  }
+});
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   console.log('Login attempt received for:', req.body.email);
@@ -157,7 +244,7 @@ router.post('/login', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+      return res.status(401).json({ success: false, message: 'Invalid username or password.' });
     }
 
     // VERIFICATION CHECK: Customers MUST be verified to log in
@@ -186,7 +273,7 @@ router.post('/login', async (req, res) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+      return res.status(401).json({ success: false, message: 'Invalid username or password.' });
     }
 
     const token = jwt.sign(
@@ -413,6 +500,48 @@ router.post('/register-customer', async (req, res) => {
       success: false, 
       message: error.message || 'Server error during registration.' 
     });
+  }
+});
+
+// POST /api/auth/resend-registration-otp — Resend registration verification code
+router.post('/resend-registration-otp', async (req, res) => {
+  const { email, tenantSlug } = req.body;
+  if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
+
+  try {
+    let tenantId = null;
+    if (tenantSlug && tenantSlug !== 'project-million') {
+      const t = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+      if (t) tenantId = t.id;
+    } else {
+      const masterTenant = await prisma.tenant.findUnique({ where: { slug: 'project-million' } });
+      if (masterTenant) tenantId = masterTenant.id;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { email, tenantId, isVerified: false }
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No unverified account found with this email.' });
+    }
+
+    // Generate brand new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpCode: otp, otpExpires: expires }
+    });
+
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    await sendOTPEmail(email, otp, tenant || {});
+
+    res.json({ success: true, message: 'A new verification code has been sent to your Gmail!' });
+  } catch (error) {
+    console.error('Resend OTP Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to resend verification code.' });
   }
 });
 

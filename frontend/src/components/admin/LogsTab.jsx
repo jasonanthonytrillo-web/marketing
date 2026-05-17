@@ -99,7 +99,7 @@ export default function LogsTab() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:w-96">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:w-96">
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Action Type</label>
             <select 

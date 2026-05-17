@@ -152,7 +152,7 @@ export default function SuppliersTab() {
                   placeholder="e.g. Acme Bakery"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black text-surface-400 uppercase tracking-widest mb-1.5 ml-1">Contact Person</label>
                   <input 

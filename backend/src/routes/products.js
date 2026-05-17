@@ -30,12 +30,17 @@ router.get('/tenant/:slug', async (req, res) => {
 // GET /api/products — Public: Get all available products grouped by category
 router.get('/', async (req, res) => {
   try {
-    let tenantId = req.headers['x-tenant-id'] ? parseInt(req.headers['x-tenant-id']) : 1;
-    const tenantSlug = req.headers['x-tenant-slug'];
+    let tenantId = req.headers['x-tenant-id'] ? parseInt(req.headers['x-tenant-id']) : null;
+    const tenantSlug = req.headers['x-tenant-slug'] || 'project-million';
 
     if (tenantSlug) {
       const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
       if (tenant) tenantId = tenant.id;
+    }
+
+    if (!tenantId) {
+      const firstTenant = await prisma.tenant.findFirst({ where: { active: true } });
+      tenantId = firstTenant ? firstTenant.id : 1;
     }
 
     const categories = await prisma.category.findMany({
@@ -61,16 +66,21 @@ router.get('/', async (req, res) => {
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
     
     let seasonalEffect = 'auto';
+    let pointsRate = '100';
     try {
-      const setting = await prisma.systemSetting.findFirst({
+      const settings = await prisma.systemSetting.findMany({
         where: { 
-          tenantId: tenantId, 
-          key: 'seasonal_effect' 
+          tenantId: tenantId,
+          key: { in: ['seasonal_effect', 'points_rate'] }
         }
       });
-      if (setting) seasonalEffect = setting.value;
+      const sEffect = settings.find(s => s.key === 'seasonal_effect');
+      const pRate = settings.find(s => s.key === 'points_rate');
+      if (sEffect) seasonalEffect = sEffect.value;
+      if (pRate) pointsRate = pRate.value;
     } catch (settingError) {
       seasonalEffect = 'auto';
+      pointsRate = '100';
     }
 
     res.setHeader('X-Debug-Tenant-ID', tenantId.toString());
@@ -85,7 +95,8 @@ router.get('/', async (req, res) => {
         primaryColor: tenant?.primaryColor,
         secondaryColor: tenant?.secondaryColor,
         bannerImage: tenant?.bannerImage,
-        seasonal_effect: seasonalEffect
+        seasonal_effect: seasonalEffect,
+        pointsRate: pointsRate
       }
     });
   } catch (error) {

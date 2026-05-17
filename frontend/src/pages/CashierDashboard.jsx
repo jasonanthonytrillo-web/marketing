@@ -425,7 +425,7 @@ export default function CashierDashboard() {
                         <div className="bg-white p-4 rounded-2xl border border-surface-200 shadow-sm space-y-2">
                           <div className="flex justify-between text-sm"><span className="text-surface-500">Subtotal</span><span>{formatCurrency(calcResult.subtotal)}</span></div>
                           {calcResult.discountAmount > 0 && <div className="flex justify-between text-sm text-emerald-600"><span>Discount</span><span>-{formatCurrency(calcResult.discountAmount)}</span></div>}
-                          <div className="flex justify-between text-sm"><span className="text-surface-500">Tax (12%)</span><span>{formatCurrency(calcResult.taxAmount)}</span></div>
+                          {calcResult.taxAmount > 0 && <div className="flex justify-between text-sm"><span className="text-surface-500">Tax ({calcResult.taxRate}%)</span><span>{formatCurrency(calcResult.taxAmount)}</span></div>}
                           <div className="flex justify-between items-center pt-2 mt-2 border-t border-surface-100">
                             <span className="font-bold text-surface-900">Total Due</span>
                             <span className="font-heading text-2xl font-black text-primary-600">{formatCurrency(calcResult.total)}</span>
@@ -434,7 +434,7 @@ export default function CashierDashboard() {
                           <div className="pt-4 border-t border-surface-200 mt-4">
                             <div className="flex justify-between items-end mb-2">
                               <label className="block text-xs font-semibold text-surface-500 uppercase tracking-wider">Amount Received</label>
-                              <button onClick={exactCash} className="text-[10px] font-black uppercase tracking-widest text-primary-600 bg-primary-50 px-3 py-1.5 rounded-lg hover:bg-primary-100 transition-colors">Exact Amount</button>
+                              <button onClick={exactCash} className="text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors">Exact Amount</button>
                             </div>
 
                             {/* Display Screen (Clickable to toggle keypad) */}
@@ -448,7 +448,12 @@ export default function CashierDashboard() {
                             >
                               <span className="text-xl font-bold opacity-50">₱</span>
                               <span className="text-4xl font-heading font-black tracking-tighter">
-                                {paymentData.received || '0.00'}
+                                {(() => {
+                                  if (!paymentData.received) return '0.00';
+                                  const parts = paymentData.received.split('.');
+                                  const formattedInt = parseFloat(parts[0] || '0').toLocaleString('en-US');
+                                  return parts.length > 1 ? `${formattedInt}.${parts[1]}` : `${formattedInt}.00`;
+                                })()}
                               </span>
                             </button>
 
@@ -512,7 +517,6 @@ export default function CashierDashboard() {
                               <option value="cash">💵 Cash</option>
                               <option value="gcash">📱 GCash</option>
                               <option value="maya">💳 Maya</option>
-                              <option value="card">💳 Card</option>
                             </select>
                             <select value={paymentData.discountType} onChange={e => setPaymentData(p => ({ ...p, discountType: e.target.value }))} className="input-field py-3 bg-white w-1/2">
                               <option value="">No Discount</option>
@@ -525,7 +529,7 @@ export default function CashierDashboard() {
                             <div className="animate-fade-in space-y-4 mt-2">
                               <div className="bg-white p-4 rounded-xl border border-surface-200 shadow-sm">
                                 <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-3 text-center">
-                                  Enter {paymentData.method.toUpperCase()} Ref No. <span className="text-red-500 font-black">*REQUIRED</span>
+                                  Enter {paymentData.method.toUpperCase()} Ref No.
                                 </label>
 
                                 {/* Display Screen (Clickable) */}
@@ -666,7 +670,7 @@ export default function CashierDashboard() {
                       <div className="space-y-2 text-sm mb-6">
                         <div className="flex justify-between"><span className="text-surface-500">Subtotal</span><span className="font-medium">{formatCurrency(selectedOrder.subtotal)}</span></div>
                         {selectedOrder.discountAmount > 0 && <div className="flex justify-between text-emerald-600"><span>Discount ({selectedOrder.discountType})</span><span>-{formatCurrency(selectedOrder.discountAmount)}</span></div>}
-                        <div className="flex justify-between"><span className="text-surface-500">Tax</span><span className="font-medium">{formatCurrency(selectedOrder.taxAmount)}</span></div>
+                        {selectedOrder.taxAmount > 0 && <div className="flex justify-between"><span className="text-surface-500">Tax</span><span className="font-medium">{formatCurrency(selectedOrder.taxAmount)}</span></div>}
                         <div className="flex justify-between font-bold text-lg pt-2 border-t border-surface-100"><span>Total</span><span className="text-primary-600">{formatCurrency(selectedOrder.total)}</span></div>
                         <div className="flex justify-between pt-2"><span className="text-surface-500">Method</span><span className="font-medium uppercase">{selectedOrder.paymentMethod}</span></div>
                       </div>
@@ -699,7 +703,7 @@ export default function CashierDashboard() {
               {/* Printable Receipt */}
               <div className="print-only receipt-container">
                 <div className="receipt-header">
-                  <span className="receipt-logo">{user?.tenantName || 'Project Million'}</span>
+                  <span className="receipt-logo">{user?.tenantName || 'Hometown Brew'}</span>
                   <span className="receipt-subtitle">Official Receipt</span>
                 </div>
 
@@ -759,10 +763,12 @@ export default function CashierDashboard() {
                       <span>-{formatCurrency(selectedOrder.discountAmount)}</span>
                     </div>
                   )}
-                  <div className="receipt-total-row">
-                    <span>VAT (12%)</span>
-                    <span>{formatCurrency(selectedOrder.taxAmount)}</span>
-                  </div>
+                  {selectedOrder.taxAmount > 0 && (
+                    <div className="receipt-total-row">
+                      <span>VAT (12%)</span>
+                      <span>{formatCurrency(selectedOrder.taxAmount)}</span>
+                    </div>
+                  )}
                   <div className="receipt-total-row receipt-total-main">
                     <span>TOTAL</span>
                     <span>{formatCurrency(selectedOrder.total)}</span>

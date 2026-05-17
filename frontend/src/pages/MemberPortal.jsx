@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { login, googleLogin, registerCustomer, getPublicTenant, requestOTP, verifyOTP, verifyRegistration } from '../services/api';
+import { login, googleLogin, registerCustomer, getPublicTenant, requestOTP, verifyOTP, checkOTP, verifyRegistration, resendRegistrationOTP, resetPassword } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 import { GoogleLogin } from '@react-oauth/google';
@@ -14,13 +14,29 @@ export default function MemberPortal() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otp, setOtp] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resendSuccessMessage, setResendSuccessMessage] = useState('');
+
+  // Forgot password states
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [forgotStep, setForgotStep] = useState(1);
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPasswords, setShowForgotPasswords] = useState(false);
 
   const [tenantData, setTenantData] = useState(null);
+  const [loadingBranding, setLoadingBranding] = useState(true);
   const [searchParams] = useSearchParams();
   const { loginUser, logoutUser, user } = useAuth();
   const navigate = useNavigate();
 
-  const tenantSlug = searchParams.get('tenant');
+  const tenantSlug = searchParams.get('tenant') || 'project-million';
   const actionParam = searchParams.get('action');
 
   // Handle ?action=register
@@ -51,6 +67,8 @@ export default function MemberPortal() {
       }
     } catch (e) {
       console.error('Failed to load tenant branding:', e);
+    } finally {
+      setLoadingBranding(false);
     }
   };
 
@@ -63,8 +81,18 @@ export default function MemberPortal() {
       if (mode === 'login') {
         const res = await login({ email: formData.email, password: formData.password, tenantSlug });
         loginUser(res.data.data.token, res.data.data.user);
-        navigate(tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu');
+        navigate('/menu');
       } else if (mode === 'register') {
+        if (formData.password !== confirmPassword) {
+          setError('Passwords do not match.');
+          setLoading(false);
+          return;
+        }
+        if (formData.password.length < 6) {
+          setError('Password must be at least 6 characters.');
+          setLoading(false);
+          return;
+        }
         await registerCustomer({ ...formData, tenantSlug });
         setMode('verify');
       } else if (mode === 'verify') {
@@ -72,7 +100,7 @@ export default function MemberPortal() {
         loginUser(res.data.token, res.data.user);
         setSuccess(true);
         setTimeout(() => {
-          navigate(tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu');
+          navigate('/menu');
         }, 2000);
       }
     } catch (err) {
@@ -81,7 +109,7 @@ export default function MemberPortal() {
       const status = err.response?.status ? `(${err.response.status}) ` : '';
       setError(`${status}${msg}`);
       if (err.response?.data?.unverified) {
-        setMode('register'); // Let them re-register to get a new code
+        setMode('verify'); // Transition directly to OTP verification view!
       }
     } finally {
       setLoading(false);
@@ -95,7 +123,7 @@ export default function MemberPortal() {
     try {
       const res = await googleLogin({ token: credentialResponse.credential, tenantSlug });
       loginUser(res.data.data.token, res.data.data.user);
-      navigate(tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu');
+      navigate('/menu');
     } catch (err) {
       console.error('Frontend Error:', err);
       const msg = err.response?.data?.message || err.message || 'Unknown Error';
@@ -110,29 +138,142 @@ export default function MemberPortal() {
     setError('Google Login was cancelled or failed.');
   };
 
+  const handleRequestOTP = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    setForgotLoading(true);
+    setForgotError('');
+    setForgotSuccess('');
+    try {
+      await requestOTP({ email: forgotEmail.trim(), tenantSlug });
+      setForgotStep(2);
+      setForgotSuccess('A 6-digit security code has been sent to your email.');
+    } catch (err) {
+      setForgotError(err.response?.data?.message || 'Failed to send security code.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResendForgotOTP = async () => {
+    if (!forgotEmail.trim()) return;
+    setForgotLoading(true);
+    setForgotError('');
+    setForgotSuccess('');
+    try {
+      await requestOTP({ email: forgotEmail.trim(), tenantSlug });
+      setForgotSuccess('A new 6-digit security code has been sent to your Gmail!');
+    } catch (err) {
+      setForgotError(err.response?.data?.message || 'Failed to resend security code.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResendRegisterOTP = async () => {
+    if (!formData.email.trim()) return;
+    setLoading(true);
+    setError('');
+    setResendSuccessMessage('');
+    try {
+      await resendRegistrationOTP({ email: formData.email.trim(), tenantSlug });
+      setResendSuccessMessage('A new verification code has been sent to your Gmail!');
+      setTimeout(() => setResendSuccessMessage(''), 6000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend verification code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    if (!otpCode.trim()) return;
+    setForgotLoading(true);
+    setForgotError('');
+    setForgotSuccess('');
+    try {
+      await checkOTP({ email: forgotEmail.trim(), otp: otpCode.trim(), tenantSlug });
+      setForgotStep(3);
+      setForgotSuccess('Security code verified! Please set your new password below.');
+    } catch (err) {
+      setForgotError(err.response?.data?.message || 'Invalid or expired security code.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!otpCode || !newPassword || !confirmNewPassword) return;
+    if (newPassword !== confirmNewPassword) {
+      setForgotError('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setForgotError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setForgotLoading(true);
+    setForgotError('');
+    setForgotSuccess('');
+    try {
+      await resetPassword({ 
+        email: forgotEmail.trim(), 
+        otp: otpCode, 
+        newPassword,
+        tenantSlug 
+      });
+      setForgotSuccess('Your password has been successfully reset! You can now log in.');
+      setTimeout(() => {
+        setShowForgotModal(false);
+        // Reset states
+        setForgotEmail('');
+        setOtpCode('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setForgotStep(1);
+        setForgotSuccess('');
+      }, 3000);
+    } catch (err) {
+      setForgotError(err.response?.data?.message || 'Failed to reset password.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  if (loadingBranding) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 border-4 border-[#2D241E]/10 border-t-[#2D241E] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#FAF6EE] via-[#FDFBF7] to-[#F5EFE4] flex flex-col items-center justify-center p-4">
       {/* Background Decor */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-64 h-64 bg-indigo-600/20 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-purple-600/20 rounded-full blur-[100px]"></div>
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-[#D09A6A]/5 rounded-full blur-[100px]"></div>
+        <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-[#2D241E]/5 rounded-full blur-[100px]"></div>
       </div>
 
       <div className="w-full max-w-md relative z-10">
         {/* Back Button */}
-        <Link to={tenantSlug ? `/?tenant=${tenantSlug}` : '/'} className="inline-flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-widest">
+        <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-8 text-sm font-bold uppercase tracking-widest">
           ← Back to Kiosk
         </Link>
 
-        <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-[40px] p-8 md:p-10 shadow-2xl relative overflow-hidden">
+        <div className="bg-[#FAF7F2] border border-[#EFEBE4] rounded-[40px] p-8 md:p-10 shadow-2xl shadow-[#DCD6C8]/40 relative overflow-hidden">
           {/* Success State */}
           {success ? (
             <div className="text-center py-6 animate-fade-in">
               <div className="w-20 h-20 bg-emerald-500/20 border-2 border-emerald-500/50 rounded-full flex items-center justify-center text-3xl mx-auto mb-8 shadow-2xl shadow-emerald-500/20 animate-bounce-in">
                 ✅
               </div>
-              <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Account Created!</h2>
-              <p className="text-emerald-400 font-bold mb-10 leading-relaxed">
+              <h2 className="text-3xl font-black text-[#2D241E] mb-4 tracking-tight">Account Created!</h2>
+              <p className="text-emerald-700 font-bold mb-10 leading-relaxed">
                 Welcome to the club. <br />
                 You can now sign in to start earning points.
               </p>
@@ -153,15 +294,15 @@ export default function MemberPortal() {
                     💎
                   </div>
                 )}
-                <h1 className="text-3xl font-black text-white mb-2 tracking-tight">
+                <h1 className="text-3xl font-black text-[#2D241E] mb-2 tracking-tight">
                   {user ? `Welcome back, ${user.name.split(' ')[0]}!` : (mode === 'login' ? 'Welcome Back!' : (mode === 'verify' ? 'Verify Email' : 'Join the Club'))}
                 </h1>
                 {user ? (
-                  <p className="text-slate-400 text-sm">
-                    Not you? <button onClick={logoutUser} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">Sign Out</button>
+                  <p className="text-[#6D5D53] text-sm">
+                    Not you? <button onClick={logoutUser} className="text-indigo-700 font-bold hover:text-indigo-850 transition-colors">Sign Out</button>
                   </p>
                 ) : (
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-[#6D5D53] text-sm">
                     {mode === 'login'
                       ? `Sign in to ${tenantData?.name || 'the shop'} to earn points.`
                       : (mode === 'verify' ? `Enter the code sent to ${formData.email}` : `Create a ${tenantData?.name || ''} account to start earning rewards.`)}
@@ -171,10 +312,10 @@ export default function MemberPortal() {
 
               {user ? (
                 <div className="space-y-6 animate-fade-in-up">
-                  <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center">
-                    <p className="text-slate-400 text-sm mb-4">You are currently signed in as <span className="text-white font-bold">{user.email}</span></p>
+                  <div className="bg-[#F3ECE0] border border-[#E6DEC8] rounded-3xl p-6 text-center">
+                    <p className="text-[#6D5D53] text-sm mb-4">You are currently signed in as <span className="text-[#2D241E] font-bold">{user.email}</span></p>
                     <Link
-                      to={tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu'}
+                      to="/menu"
                       className="w-full inline-block bg-primary-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-primary-600/20 hover:bg-primary-500 active:scale-[0.98] transition-all uppercase tracking-widest"
                     >
                       🚀 Order Now
@@ -184,7 +325,7 @@ export default function MemberPortal() {
               ) : (
                 <>
                   {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-2xl text-xs font-bold mb-6 text-center animate-shake">
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold mb-6 text-center animate-shake">
                       ⚠️ {error}
                     </div>
                   )}
@@ -204,10 +345,10 @@ export default function MemberPortal() {
                   {mode !== 'verify' && (
                     <div className="relative mb-6">
                       <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-white/10"></div>
+                        <div className="w-full border-t border-[#EFEBE4]"></div>
                       </div>
                       <div className="relative flex justify-center text-xs">
-                        <span className="bg-slate-900/50 px-2 text-slate-500 uppercase tracking-widest font-bold">Or use email</span>
+                        <span className="bg-[#FAF7F2] px-3 text-[#8A796E] uppercase tracking-widest font-bold">Or use email</span>
                       </div>
                     </div>
                   )}
@@ -215,61 +356,136 @@ export default function MemberPortal() {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {mode === 'verify' ? (
                       <div className="animate-fade-in">
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">6-Digit Code</label>
+                        {resendSuccessMessage && (
+                          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-emerald-600 text-xs mb-4 text-center font-bold">
+                            🎉 {resendSuccessMessage}
+                          </div>
+                        )}
+                        <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">6-Digit Code</label>
                         <input
                           type="text"
                           maxLength="6"
                           value={otp}
                           onChange={(e) => setOtp(e.target.value)}
-                          className="w-full bg-white/5 border border-primary-500/50 rounded-2xl px-5 py-4 text-center text-3xl font-black tracking-[0.5em] text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
+                          className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 text-center text-3xl font-black tracking-[0.5em] text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none focus:ring-4 focus:ring-primary-500/10"
                           placeholder="000000"
                           required
                         />
-                        <button
-                          type="button"
-                          onClick={() => setMode('register')}
-                          className="text-primary-400 text-[10px] font-bold uppercase mt-4 hover:text-primary-300 transition-colors px-1"
-                        >
-                          ← Change Email
-                        </button>
+                        <div className="flex justify-between items-center mt-4 px-1">
+                          <button
+                            type="button"
+                            onClick={() => setMode('register')}
+                            className="text-[#8A796E] hover:text-[#2D241E] text-xs font-semibold hover:underline transition-colors"
+                          >
+                            ← Change Email
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleResendRegisterOTP}
+                            disabled={loading}
+                            className="text-indigo-600 hover:text-indigo-500 text-xs font-semibold hover:underline transition-colors disabled:opacity-50"
+                          >
+                            Resend Code
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <>
                         {mode === 'register' && (
                           <div>
-                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                            <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">Full Name</label>
                             <input
                               type="text"
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
+                              className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none focus:ring-4 focus:ring-primary-500/10"
                               placeholder="John Doe"
                               required
                             />
                           </div>
                         )}
                         <div>
-                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Email Address</label>
+                          <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">Email Address</label>
                           <input
                             type="email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
+                            className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none focus:ring-4 focus:ring-primary-500/10"
                             placeholder="you@example.com"
                             required
                           />
                         </div>
-                        <div>
-                          <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Password</label>
+                        <div className="relative">
+                          <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">Password</label>
                           <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white focus:border-primary-500 focus:bg-white/10 transition-all outline-none"
+                            className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 pr-12 text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none focus:ring-4 focus:ring-primary-500/10"
                             placeholder="••••••••"
                             required
                           />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-[38px] p-2 text-[#8A796E] hover:text-[#2D241E] transition-colors"
+                          >
+                            {showPassword ? (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            )}
+                          </button>
+                          {mode === 'login' && (
+                            <div className="flex justify-end text-xs pt-2 px-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowForgotModal(true);
+                                  setForgotEmail(formData.email);
+                                }}
+                                className="text-indigo-600 hover:underline hover:text-indigo-550 transition-colors font-semibold"
+                              >
+                                Forgot Password?
+                              </button>
+                            </div>
+                          )}
                         </div>
+
+                        {mode === 'register' && (
+                          <div className="relative">
+                            <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">Confirm Password</label>
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              value={confirmPassword}
+                              onChange={(e) => setConfirmPassword(e.target.value)}
+                              className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 pr-12 text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none focus:ring-4 focus:ring-primary-500/10"
+                              placeholder="••••••••"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword(!showPassword)}
+                              className="absolute right-4 top-[38px] p-2 text-[#8A796E] hover:text-[#2D241E] transition-colors"
+                            >
+                              {showPassword ? (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                              ) : (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
 
@@ -287,17 +503,17 @@ export default function MemberPortal() {
                   </form>
 
                   {mode !== 'verify' && (
-                    <div className="mt-8 pt-8 border-t border-white/5 text-center">
-                      <p className="text-slate-500 text-sm mb-4">
+                    <div className="mt-8 pt-8 border-t border-[#EFEBE4] text-center">
+                      <p className="text-[#8A796E] text-sm mb-4">
                         {mode === 'login' ? "Don't have an account?" : "Already a member?"}
                         <button
                           onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
-                          className="ml-2 text-indigo-400 font-bold hover:text-indigo-300 transition-colors"
+                          className="ml-2 text-indigo-600 font-bold hover:text-indigo-550 transition-colors"
                         >
                           {mode === 'login' ? 'Join Now' : 'Sign In'}
                         </button>
                       </p>
-                      <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu'} className="text-slate-600 text-xs font-bold hover:text-slate-400 transition-colors uppercase tracking-tighter">
+                      <Link to="/menu" className="text-[#8A796E] text-xs font-bold hover:text-[#5C4F46] transition-colors uppercase tracking-tighter">
                         Continue as Guest →
                       </Link>
                     </div>
@@ -308,6 +524,194 @@ export default function MemberPortal() {
           )}
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2D241E]/40 backdrop-blur-md">
+          <div className="bg-[#FAF7F2] border border-[#EFEBE4] w-full max-w-md rounded-[40px] p-8 shadow-2xl shadow-[#2D241E]/20 animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-[#2D241E] tracking-tight">Forgot Password</h3>
+              <button 
+                onClick={() => {
+                  setShowForgotModal(false);
+                  setForgotStep(1);
+                  setForgotError('');
+                  setForgotSuccess('');
+                }} 
+                className="text-[#8A796E] hover:text-[#2D241E] transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {forgotError && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-600 text-xs mb-4">
+                {forgotError}
+              </div>
+            )}
+            {forgotSuccess && (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-emerald-600 text-xs mb-4">
+                {forgotSuccess}
+              </div>
+            )}
+
+            {forgotStep === 1 && (
+              <form onSubmit={handleRequestOTP} className="space-y-4">
+                <p className="text-sm text-[#6D5D53] leading-relaxed">
+                  Enter your email address below, and we will send you a 6-digit security code to verify your identity.
+                </p>
+                <div>
+                  <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">Email Address</label>
+                  <input 
+                    type="email" required
+                    className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none text-sm font-bold focus:ring-4 focus:ring-primary-500/10"
+                    placeholder="you@example.com"
+                    value={forgotEmail}
+                    onChange={e => setForgotEmail(e.target.value)}
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={forgotLoading}
+                  className="w-full py-4 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-600/20 mt-2"
+                >
+                  {forgotLoading ? 'Sending security code...' : 'Request Security Code'}
+                </button>
+              </form>
+            )}
+
+            {forgotStep === 2 && (
+              <form onSubmit={handleVerifyOTP} className="space-y-4">
+                <p className="text-sm text-[#6D5D53] leading-relaxed">
+                  Enter the 6-digit security code sent to <strong className="text-[#2D241E]">{forgotEmail}</strong>.
+                </p>
+                <div>
+                  <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">Security Code</label>
+                  <input 
+                    type="text" required maxLength={6}
+                    className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none text-center text-3xl font-black tracking-[0.5em] font-mono focus:ring-4 focus:ring-primary-500/10"
+                    placeholder="000000"
+                    value={otpCode}
+                    onChange={e => setOtpCode(e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end text-xs px-1">
+                  <button 
+                    type="button" 
+                    onClick={handleResendForgotOTP}
+                    disabled={forgotLoading}
+                    className="text-indigo-600 hover:underline hover:text-indigo-550 transition-colors font-semibold disabled:opacity-50"
+                  >
+                    Didn't receive code? Resend Code
+                  </button>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setForgotStep(1);
+                      setForgotError('');
+                      setForgotSuccess('');
+                    }}
+                    className="flex-1 py-4 bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl text-[#8A796E] hover:text-[#2D241E] transition-all font-bold text-sm uppercase tracking-widest"
+                  >
+                    Back
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={forgotLoading}
+                    className="flex-1 py-4 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-600/20"
+                  >
+                    {forgotLoading ? 'Verifying...' : 'Verify Code'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {forgotStep === 3 && (
+              <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                <p className="text-sm text-[#6D5D53] leading-relaxed">
+                  Your security code was verified! Please set your new password below.
+                </p>
+
+                <div className="relative">
+                  <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">New Password</label>
+                  <input 
+                    type={showForgotPasswords ? "text" : "password"} required minLength={6}
+                    className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 pr-12 text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none text-sm focus:ring-4 focus:ring-primary-500/10"
+                    placeholder="Minimum 6 characters"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPasswords(!showForgotPasswords)}
+                    className="absolute right-4 top-[38px] p-2 text-[#8A796E] hover:text-[#2D241E] transition-colors"
+                  >
+                    {showForgotPasswords ? (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">Confirm New Password</label>
+                  <input 
+                    type={showForgotPasswords ? "text" : "password"} required minLength={6}
+                    className="w-full bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl px-5 py-4 pr-12 text-[#2D241E] placeholder-[#A8968A] focus:bg-white focus:border-primary-500 transition-all outline-none text-sm focus:ring-4 focus:ring-primary-500/10"
+                    placeholder="Repeat new password"
+                    value={confirmNewPassword}
+                    onChange={e => setConfirmNewPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPasswords(!showForgotPasswords)}
+                    className="absolute right-4 top-[38px] p-2 text-[#8A796E] hover:text-[#2D241E] transition-colors"
+                  >
+                    {showForgotPasswords ? (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setForgotStep(2);
+                      setForgotError('');
+                      setForgotSuccess('');
+                    }}
+                    className="flex-1 py-4 bg-[#FAF7F2] border border-[#DCD6C8] rounded-2xl text-[#8A796E] hover:text-[#2D241E] transition-all font-bold text-sm uppercase tracking-widest"
+                  >
+                    Back
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={forgotLoading}
+                    className="flex-1 py-4 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-600/20"
+                  >
+                    {forgotLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -78,7 +78,7 @@ export default function CategoriesTab() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-surface-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-surface-200 overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-surface-50 border-b border-surface-200 text-sm font-medium text-surface-500 uppercase tracking-wider">

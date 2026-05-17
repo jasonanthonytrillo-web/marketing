@@ -24,7 +24,7 @@ export default function OrderConfirmation() {
   const { clearCart } = useCart();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const tenantSlug = searchParams.get('tenant');
+  const tenantSlug = searchParams.get('tenant') || 'project-million';
   const [branding, setBranding] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const lastAnnouncedStatusRef = useRef(null);
@@ -66,10 +66,10 @@ export default function OrderConfirmation() {
     return () => clearTheme();
   }, [tenantSlug]);
 
-  const brandingColor = branding?.primaryColor || '#f97316';
-  const homeLink = tenantSlug ? `/?tenant=${tenantSlug}` : '/';
-  const menuLink = tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu';
-  const queueLink = tenantSlug ? `/queue?tenant=${tenantSlug}` : '/queue';
+  const brandingColor = branding?.primaryColor || '#0a3d01';
+  const homeLink = '/';
+  const menuLink = '/menu';
+  const queueLink = '/queue';
 
   useEffect(() => {
     if (order && (order.status === 'completed' || order.status === 'cancelled')) {

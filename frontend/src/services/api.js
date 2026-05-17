@@ -48,7 +48,10 @@ export const getMe = () => api.get('/auth/me');
 export const changePassword = (data) => api.post('/auth/change-password', data);
 export const requestOTP = (data) => api.post('/auth/request-otp', data);
 export const verifyOTP = (data) => api.post('/auth/verify-otp', data);
+export const checkOTP = (data) => api.post('/auth/check-otp', data);
+export const resetPassword = (data) => api.post('/auth/reset-password', data);
 export const verifyRegistration = (data) => api.post('/auth/verify-registration', data);
+export const resendRegistrationOTP = (data) => api.post('/auth/resend-registration-otp', data);
 
 // Products (Public)
 export const getProducts = () => api.get('/products');

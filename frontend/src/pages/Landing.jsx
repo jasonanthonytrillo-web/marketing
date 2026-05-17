@@ -16,9 +16,21 @@ export default function Landing() {
   const { joinRoom, leaveRoom, connected } = useSocket();
 
   // Dynamic favicon, title & OG meta
-  useDynamicBranding(tenant?.name || 'PROJECT MILLION', tenant?.favicon, {
-    image: tenant?.ogImage || tenant?.logo,
-    description: `Order from ${tenant?.name || 'PROJECT MILLION'} — Self-Service Kiosk`
+  const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+  const getAbsoluteUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:') || (path.startsWith('/') && !path.startsWith('/uploads/'))) {
+      return path;
+    }
+    return `${backendUrl}${path}`;
+  };
+
+  const absoluteFavicon = getAbsoluteUrl(tenant?.favicon);
+  const absoluteOgImage = getAbsoluteUrl(tenant?.ogImage || tenant?.logo);
+
+  useDynamicBranding(tenant?.name || 'Hometown Brew', absoluteFavicon, {
+    image: absoluteOgImage,
+    description: `Order from ${tenant?.name || 'Hometown Brew'} — Self-Service Kiosk`
   });
 
   useEffect(() => {
@@ -64,11 +76,11 @@ export default function Landing() {
     init();
   }, [searchParams]);
 
-  const tenantName = tenant ? tenant.name : 'PROJECT MILLION';
-  const menuLink = tenant ? `/menu?tenant=${tenant.slug}` : '/menu';
-  const queueLink = tenant ? `/queue?tenant=${tenant.slug}` : '/queue';
-  const portalLink = tenant ? `/member-portal?tenant=${tenant.slug}` : '/member-portal';
-  const primaryColor = tenant?.primaryColor || '#f97316';
+  const tenantName = tenant ? tenant.name : 'Hometown Brew';
+  const menuLink = '/menu';
+  const queueLink = '/queue';
+  const portalLink = '/member-portal';
+  const primaryColor = tenant?.primaryColor || '#0a3d01';
 
   // Smart background fallback based on tenant type
   const burgerBackground = 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=2000&auto=format&fit=crop';
@@ -98,7 +110,7 @@ export default function Landing() {
   }, [assets]);
 
   if (loading) return <div className="min-h-screen bg-surface-900 flex items-center justify-center">
-    <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+    <div className="w-12 h-12 border-4 border-[#34d399] border-t-transparent rounded-full animate-spin"></div>
   </div>;
 
   const isSuspended = tenant && !tenant.active && user?.role !== 'superadmin';
@@ -222,7 +234,7 @@ export default function Landing() {
             </div>
           ) : (
             <div className="w-24 h-24 md:w-32 md:h-32 bg-white/10 backdrop-blur-md rounded-[40px] flex items-center justify-center text-5xl shadow-2xl border border-white/20 animate-scale-in ring-8 ring-white/5">
-              {tenant?.slug === 'burger-palace' ? '🍔' : '🍔'}
+              {tenant?.slug === 'burger-palace' ? '🍔' : '☕'}
             </div>
           )}
         </div>
@@ -237,10 +249,10 @@ export default function Landing() {
             </>
           ) : (
             <>
-              PROJECT
+              HOMETOWN
               <br />
-              <span className="bg-gradient-to-r from-primary-400 to-amber-400 bg-clip-text text-transparent">
-                MILLION
+              <span style={{ color: '#0a3d01' }}>
+                BREW
               </span>
             </>
           )}
@@ -257,12 +269,12 @@ export default function Landing() {
           {user && user.role !== 'customer' ? (
             <>
               <Link
-                to={tenant ? `/${user.role === 'admin' ? 'admin' : user.role === 'kitchen' ? 'kitchen' : 'cashier'}?tenant=${tenant.slug}` : `/${user.role === 'admin' ? 'admin' : user.role === 'kitchen' ? 'kitchen' : 'cashier'}`}
+                to={`/${user.role === 'admin' ? 'admin' : user.role === 'kitchen' ? 'kitchen' : 'cashier'}`}
                 className="btn-custom w-full text-lg py-5 rounded-2xl font-black tracking-widest uppercase flex items-center justify-center gap-2 mb-2 shadow-xl"
               >
                 Go to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} 🚀
               </Link>
-
+              
               <Link to={menuLink} className="w-full py-4 px-6 bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-2xl font-bold transition-all flex items-center justify-center">
                 Start New Order
               </Link>
@@ -286,7 +298,7 @@ export default function Landing() {
 
               {lastOrder && (
                 <Link
-                  to={tenant ? `/order/${lastOrder}?tenant=${tenant.slug}` : `/order/${lastOrder}`}
+                  to={`/order/${lastOrder}`}
                   className="w-full mt-2 py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse"
                 >
                   <span></span> View Order
@@ -296,7 +308,7 @@ export default function Landing() {
           )}
 
           {!user ? (
-            <Link to={tenant ? `/login?tenant=${tenant.slug}` : '/login'} className="text-surface-500 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors mt-6">
+            <Link to="/login" className="text-surface-500 text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors mt-6">
               Staff Secure Login →
             </Link>
           ) : (
@@ -313,9 +325,9 @@ export default function Landing() {
       {/* Legal Footer */}
       <div className="relative z-10 mt-auto py-8 text-center border-t border-white/5 w-full max-w-sm mx-auto">
         <div className="flex justify-center gap-6 text-[10px] font-bold text-surface-500 uppercase tracking-widest">
-          <Link to={tenant ? `/privacy?tenant=${tenant.slug}` : '/privacy'} className="hover:text-white transition-colors">Privacy</Link>
-          <Link to={tenant ? `/terms?tenant=${tenant.slug}` : '/terms'} className="hover:text-white transition-colors">Terms</Link>
-          <Link to={tenant ? `/data-deletion?tenant=${tenant.slug}` : '/data-deletion'} className="hover:text-white transition-colors">Conditions</Link>
+          <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+          <Link to="/data-deletion" className="hover:text-white transition-colors">Conditions</Link>
         </div>
       </div>
     </div>

@@ -44,8 +44,18 @@ const authenticate = async (req, res, next) => {
     }
 
     req.user = user;
-    // Always use the user's tenantId for security, ignore the header if not superadmin
-    req.tenantId = user.role === 'superadmin' ? (parseInt(headerTenantId) || user.tenantId) : user.tenantId;
+    
+    // TENANT RESOLUTION FOR SUPERADMIN
+    if (user.role === 'superadmin') {
+      let resolvedTenantId = parseInt(headerTenantId) || user.tenantId;
+      if (!resolvedTenantId) {
+        const firstActiveTenant = await prisma.tenant.findFirst({ where: { active: true } });
+        resolvedTenantId = firstActiveTenant ? firstActiveTenant.id : null;
+      }
+      req.tenantId = resolvedTenantId;
+    } else {
+      req.tenantId = user.tenantId;
+    }
     
     next();
   } catch (error) {
@@ -61,7 +71,8 @@ const authorize = (...roles) => {
     if (!req.user) {
       return res.status(401).json({ success: false, message: 'Not authenticated.' });
     }
-    if (roles.includes(req.user.role)) {
+    // Superadmins automatically inherit all 'admin' permissions
+    if (req.user.role === 'superadmin' || roles.includes(req.user.role)) {
       next();
     } else {
       return res.status(403).json({ success: false, message: 'Insufficient permissions.' });

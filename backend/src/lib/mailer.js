@@ -1,11 +1,13 @@
 const axios = require('axios');
 
 const sendOTPEmail = async (email, otp, tenant = {}) => {
-  const { name = 'Elevate POS', logo, primaryColor = '#f97316' } = tenant;
+  const { name = 'Hometown Brew', logo, primaryColor = '#f97316' } = tenant;
 
   if (!process.env.EMAIL_PASS) {
-    console.error('❌ BREVO API KEY MISSING: Please add EMAIL_PASS to your environment variables.');
-    throw new Error('Email service not configured. Please contact support.');
+    console.log('\n=============================================');
+    console.log(`🔑 [DEV MODE] OTP Code for ${email}: ${otp}`);
+    console.log('=============================================\n');
+    return { success: true, message: 'Mock OTP logged to console' };
   }
 
   console.log('--- SENDING PREMIUM EMAIL ---');
@@ -52,7 +54,7 @@ const sendOTPEmail = async (email, otp, tenant = {}) => {
               <p style="font-size: 14px; color: #94a3b8;">This code will expire in 10 minutes for your security.</p>
             </div>
             <div class="footer">
-              <p>&copy; ${new Date().getFullYear()} ${name}. Powered by Elevate POS.</p>
+              <p>&copy; ${new Date().getFullYear()} ${name}. Powered by Hometown Brew.</p>
               <p>If you didn't request this, you can safely ignore this email.</p>
             </div>
           </div>

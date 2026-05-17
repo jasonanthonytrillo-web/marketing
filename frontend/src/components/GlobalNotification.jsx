@@ -14,7 +14,7 @@ export default function GlobalNotification() {
   const { onEvent } = useSocket();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const tenantSlug = searchParams.get('tenant');
+  const tenantSlug = searchParams.get('tenant') || 'project-million';
   const { user } = useAuth();
 
   // Helper to safely clear the chime loop
@@ -234,7 +234,7 @@ export default function GlobalNotification() {
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     
     if (lastNum) {
-      const targetPath = tenantSlug ? `/order/${lastNum}?tenant=${tenantSlug}` : `/order/${lastNum}`;
+      const targetPath = `/order/${lastNum}`;
       navigate(targetPath);
     }
   };

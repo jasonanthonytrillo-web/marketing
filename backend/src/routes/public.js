@@ -69,6 +69,33 @@ router.get('/tenant/:slug', async (req, res) => {
   }
 });
 
+// GET /api/public/tenant/:slug/og-image
+router.get('/tenant/:slug/og-image', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug },
+      select: { ogImage: true, logo: true }
+    });
+
+    let ogImage = tenant?.ogImage || tenant?.logo;
+    if (!ogImage || ogImage === '/logo.png') {
+      ogImage = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
+    }
+
+    if (ogImage.startsWith('/')) {
+      const host = req.headers.host || 'elevatepos.vercel.app';
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      return res.redirect(`${protocol}://${host}${ogImage}`);
+    }
+
+    return res.redirect(ogImage);
+  } catch (error) {
+    console.error('OG Image Redirect Error:', error);
+    return res.redirect('https://cdn-icons-png.flaticon.com/512/5787/5787016.png');
+  }
+});
+
 // Dynamic PWA Manifest for store-specific installation
 router.get('/manifest/:slug', async (req, res) => {
   try {
@@ -96,7 +123,7 @@ router.get('/manifest/:slug', async (req, res) => {
           "purpose": "any maskable"
         }
       ],
-      start_url: `/?tenant=${slug}`,
+      start_url: "/",
       display: "standalone",
       theme_color: tenant?.primaryColor || "#f97316",
       background_color: "#ffffff"
@@ -120,7 +147,7 @@ router.get('/:slug', async (req, res) => {
 
     const title = tenant.name;
     const description = 'Explore our premium store.';
-    const redirectUrl = `https://elevatepos.vercel.app/menu?tenant=${slug}`;
+    const redirectUrl = `https://elevatepos.vercel.app/menu`;
 
     let ogImage = tenant.ogImage || tenant.logo;
     if (!ogImage || ogImage === '/logo.png') {

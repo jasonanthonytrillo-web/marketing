@@ -102,9 +102,9 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const taxRate = parseFloat(process.env.TAX_RATE || '0.12');
-    const taxAmount = subtotal * taxRate;
-    const total = subtotal + taxAmount;
+    const taxRate = parseFloat(process.env.TAX_RATE || '0.00');
+    const total = subtotal;
+    const taxAmount = taxRate > 0 ? (total - (total / (1 + taxRate))) : 0;
 
     // Handle Loyalty Redemptions & Role Check
     let validCustomerId = null;
@@ -278,13 +278,12 @@ router.get('/queue/active', async (req, res) => {
     const tenantSlug = req.headers['x-tenant-slug'];
     let whereClause = { status: { in: ['confirmed', 'preparing', 'ready'] } };
 
-    if (tenantSlug && tenantSlug !== 'project-million') {
-      const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
-      if (tenant) {
-        whereClause.tenantId = tenant.id;
-      }
+    const resolvedSlug = tenantSlug || 'project-million';
+    const tenant = await prisma.tenant.findUnique({ where: { slug: resolvedSlug } });
+    if (tenant) {
+      whereClause.tenantId = tenant.id;
     } else {
-      // Default to Project Million (ID: 1) if no slug or default slug
+      // Absolute fallback if tenant is not found in database
       whereClause.tenantId = 1;
     }
 
@@ -331,7 +330,8 @@ router.get('/:orderNumber', async (req, res) => {
     }
 
     // SECURITY: Ensure order belongs to the tenant slug from header
-    if (tenantSlug && tenantSlug !== 'project-million' && order.tenant.slug !== tenantSlug) {
+    const resolvedSlug = tenantSlug || 'project-million';
+    if (order.tenant.slug !== resolvedSlug) {
       return res.status(403).json({ success: false, message: 'Unauthorized access to this order.' });
     }
 
@@ -355,7 +355,8 @@ router.post('/:orderNumber/cancel', async (req, res) => {
     }
 
     // SECURITY: Ensure order belongs to the tenant
-    if (tenantSlug && tenantSlug !== 'project-million' && order.tenant.slug !== tenantSlug) {
+    const resolvedSlug = tenantSlug || 'project-million';
+    if (order.tenant.slug !== resolvedSlug) {
       return res.status(403).json({ success: false, message: 'Unauthorized.' });
     }
 

@@ -17,6 +17,7 @@ export default function ProductsTab() {
   const [statusFilter, setStatusFilter] = useState('active'); // active, archived, all
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -121,6 +122,7 @@ export default function ProductsTab() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
+      const isUpdating = !!currentProduct.id;
       let savedProduct;
       if (currentProduct.id) {
         const res = await updateProduct(currentProduct.id, currentProduct);
@@ -144,6 +146,12 @@ export default function ProductsTab() {
 
       setIsEditing(false);
       loadData();
+      
+      // Dynamic High-End Success Notification Toast
+      setSuccessMessage(isUpdating ? 'Update successful!' : 'Product created successfully!');
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
     } catch (error) {
       alert('Failed to save product');
     }
@@ -161,6 +169,11 @@ export default function ProductsTab() {
       setShowDeleteConfirm(false);
       setProductToDelete(null);
       loadData();
+
+      setSuccessMessage('Product archived successfully!');
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
     } catch (error) {
       alert('Failed to deactivate product');
     }
@@ -170,6 +183,11 @@ export default function ProductsTab() {
     try {
       await updateProduct(product.id, { ...product, available: true });
       loadData();
+
+      setSuccessMessage('Product restored successfully!');
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
     } catch (error) {
       alert('Failed to restore product');
     }
@@ -671,6 +689,15 @@ export default function ProductsTab() {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    )}
+    {/* Dynamic centered success notification toast */}
+    {successMessage && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
+        <div className="bg-primary-600 text-white px-8 py-5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-3 border border-white/20 font-black tracking-tight text-lg animate-scale-in pointer-events-auto">
+          <span className="text-xl">✨</span>
+          <span>{successMessage}</span>
         </div>
       </div>
     )}

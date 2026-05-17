@@ -4,6 +4,7 @@ import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { getPublicTenant, getProducts } from '../services/api';
+import { applyTheme } from '../utils/theme';
 
 const TRANSLATIONS = {
   en: {
@@ -46,7 +47,7 @@ export default function Cart() {
   const { items, updateQuantity, removeFromCart, toggleRedemption, clearCart, getSubtotal, getItemCount, getTotalPointsCost, addToCart } = useCart();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const tenantSlug = searchParams.get('tenant');
+  const tenantSlug = searchParams.get('tenant') || 'project-million';
   const [branding, setBranding] = useState(null);
   
   const isCustomer = user && user.role === 'customer';
@@ -60,72 +61,84 @@ export default function Cart() {
   useEffect(() => {
     if (tenantSlug) {
       getPublicTenant(tenantSlug).then(res => {
-        if (res.data.success) setBranding(res.data.data);
+        if (res.data.success) {
+          setBranding(res.data.data);
+          applyTheme(res.data.data.primaryColor);
+        }
       });
     }
   }, [tenantSlug]);
 
   const [recommendations, setRecommendations] = useState([]);
+  const [showUpsell, setShowUpsell] = useState(true);
+  const [allProducts, setAllProducts] = useState([]);
 
+  // Fetch products list once on mount
   useEffect(() => {
     getProducts().then(res => {
       if (res.data && res.data.success) {
-        const allProducts = (res.data.data || []).flatMap(c => 
+        const flatProducts = (res.data.data || []).flatMap(c => 
           (c.products || []).map(p => ({ ...p, categoryName: c.name.toLowerCase() }))
         );
-        
-        // 1. Identify what categories are in the cart
-        const cartProductIds = new Set(items.map(i => i.id));
-        const cartCategoryNames = new Set(items.map(i => {
-          const matched = allProducts.find(p => p.id === i.id);
-          return matched ? matched.categoryName : '';
-        }));
-
-        let suggested = [];
-
-        // Rule A: If cart has a Main/Burger but NO Drinks
-        const hasMain = cartCategoryNames.has('burgers') || cartCategoryNames.has('mains') || cartCategoryNames.has('combo') || cartCategoryNames.has('pizza') || cartCategoryNames.has('meals');
-        const hasDrink = cartCategoryNames.has('drinks') || cartCategoryNames.has('beverages');
-        const hasSide = cartCategoryNames.has('sides') || cartCategoryNames.has('snacks') || cartCategoryNames.has('appetizers');
-
-        if (hasMain && !hasDrink) {
-          suggested = allProducts.filter(p => 
-            (p.categoryName === 'drinks' || p.categoryName === 'beverages') && 
-            !cartProductIds.has(p.id) && p.available && p.stock > 0
-          );
-        } 
-        
-        // Rule B: If cart has a Main but NO Sides
-        if (suggested.length === 0 && hasMain && !hasSide) {
-          suggested = allProducts.filter(p => 
-            (p.categoryName === 'sides' || p.categoryName === 'snacks' || p.categoryName === 'appetizers') && 
-            !cartProductIds.has(p.id) && p.available && p.stock > 0
-          );
-        }
-
-        // Rule C: If they have a Drink but NO Food
-        if (suggested.length === 0 && hasDrink && !hasMain) {
-          suggested = allProducts.filter(p => 
-            (p.categoryName === 'burgers' || p.categoryName === 'mains' || p.categoryName === 'combo') && 
-            !cartProductIds.has(p.id) && p.available && p.stock > 0
-          );
-        }
-
-        // Rule D: Fallback - Popular items (not in cart)
-        if (suggested.length === 0) {
-          suggested = allProducts.filter(p => 
-            !cartProductIds.has(p.id) && p.available && p.stock > 0
-          );
-        }
-
-        setRecommendations(suggested.slice(0, 4));
+        setAllProducts(flatProducts);
       }
     }).catch(err => console.error('Failed to load upselling recommendations:', err));
-  }, [items]);
+  }, []);
 
-  const brandingColor = branding?.primaryColor || '#f97316';
-  const menuLink = tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu';
-  const checkoutLink = tenantSlug ? `/checkout?tenant=${tenantSlug}` : '/checkout';
+  // Compute suggested upsell items instantly whenever items in cart or allProducts list updates
+  useEffect(() => {
+    if (allProducts.length === 0) return;
+
+    // 1. Identify what categories are in the cart
+    const cartProductIds = new Set(items.map(i => i.id));
+    const cartCategoryNames = new Set(items.map(i => {
+      const matched = allProducts.find(p => p.id === i.id);
+      return matched ? matched.categoryName : '';
+    }));
+
+    let suggested = [];
+
+    // Rule A: If cart has a Main/Burger but NO Drinks
+    const hasMain = cartCategoryNames.has('burgers') || cartCategoryNames.has('mains') || cartCategoryNames.has('combo') || cartCategoryNames.has('pizza') || cartCategoryNames.has('meals');
+    const hasDrink = cartCategoryNames.has('drinks') || cartCategoryNames.has('beverages');
+    const hasSide = cartCategoryNames.has('sides') || cartCategoryNames.has('snacks') || cartCategoryNames.has('appetizers');
+
+    if (hasMain && !hasDrink) {
+      suggested = allProducts.filter(p => 
+        (p.categoryName === 'drinks' || p.categoryName === 'beverages') && 
+        !cartProductIds.has(p.id) && p.available && p.stock > 0
+      );
+    } 
+    
+    // Rule B: If cart has a Main but NO Sides
+    if (suggested.length === 0 && hasMain && !hasSide) {
+      suggested = allProducts.filter(p => 
+        (p.categoryName === 'sides' || p.categoryName === 'snacks' || p.categoryName === 'appetizers') && 
+        !cartProductIds.has(p.id) && p.available && p.stock > 0
+      );
+    }
+
+    // Rule C: If they have a Drink but NO Food
+    if (suggested.length === 0 && hasDrink && !hasMain) {
+      suggested = allProducts.filter(p => 
+        (p.categoryName === 'burgers' || p.categoryName === 'mains' || p.categoryName === 'combo') && 
+        !cartProductIds.has(p.id) && p.available && p.stock > 0
+      );
+    }
+
+    // Rule D: Fallback - Popular items (not in cart)
+    if (suggested.length === 0) {
+      suggested = allProducts.filter(p => 
+        !cartProductIds.has(p.id) && p.available && p.stock > 0
+      );
+    }
+
+    setRecommendations(suggested.slice(0, 4));
+  }, [items, allProducts]);
+
+  const brandingColor = branding?.primaryColor || '#0a3d01';
+  const menuLink = '/menu';
+  const checkoutLink = '/checkout';
 
   if (items.length === 0) {
     return (
@@ -225,12 +238,20 @@ export default function Cart() {
         </div>
 
         {/* Smart Upsell Carousel */}
-        {recommendations.length > 0 && (
+        {showUpsell && recommendations.length > 0 && (
           <div className="mt-12 mb-8 animate-fade-in-up" style={{ animationDelay: `${items.length * 0.05 + 0.1}s` }}>
-            <h3 className="font-heading font-black text-slate-800 text-lg md:text-2xl mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-6 rounded-full" style={{ backgroundColor: brandingColor }}></span>
-              🔥 {t('addedTogether')}
-            </h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-heading font-black text-slate-800 text-lg md:text-2xl flex items-center gap-2">
+                <span className="w-1.5 h-6 rounded-full" style={{ backgroundColor: brandingColor }}></span>
+                🔥 {t('addedTogether')}
+              </h3>
+              <button 
+                onClick={() => setShowUpsell(false)} 
+                className="text-xs bg-surface-100 hover:bg-surface-200 text-surface-500 font-bold px-3.5 py-1.5 rounded-full border border-surface-200 transition-all flex items-center gap-1 active:scale-95"
+              >
+                ✕ Close
+              </button>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {recommendations.map(rec => (
                 <div key={rec.id} className="bg-white border border-surface-200 rounded-[2rem] p-3 sm:p-4 flex flex-col justify-between hover:shadow-lg transition-all group relative overflow-hidden">
@@ -257,7 +278,7 @@ export default function Cart() {
       </div>
 
       {/* Bottom checkout bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-surface-200 p-4 md:p-6 z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-surface-200 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-6 z-40 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <div>
             <p className="text-xs md:text-sm font-semibold text-surface-500 uppercase tracking-wider mb-0.5 md:mb-1">{t('subtotal')}</p>

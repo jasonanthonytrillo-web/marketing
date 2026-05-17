@@ -112,7 +112,7 @@ export default function AdminDashboard() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex-1 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-xl font-bold transition-all ${activeTab === item.id ? 'bg-primary-600/10 md:bg-primary-600 text-primary-500 md:text-white shadow-none md:shadow-lg md:shadow-primary-600/20' : 'text-surface-400 hover:text-white md:hover:bg-surface-800'}`}
+              className={`flex-shrink-0 md:flex-1 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-xl font-bold transition-all ${activeTab === item.id ? 'bg-primary-600/10 md:bg-primary-600 text-primary-500 md:text-white shadow-none md:shadow-lg md:shadow-primary-600/20' : 'text-surface-400 hover:text-white md:hover:bg-surface-800'}`}
             >
               <span className="text-xl md:text-lg leading-none">{item.icon}</span>
               <span className="text-[10px] md:text-sm whitespace-nowrap">{item.label}</span>

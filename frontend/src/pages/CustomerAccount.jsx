@@ -18,11 +18,11 @@ export default function CustomerAccount() {
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const tenantSlug = searchParams.get('tenant');
+  const tenantSlug = searchParams.get('tenant') || 'project-million';
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate(tenantSlug ? `/member-portal?tenant=${tenantSlug}` : '/member-portal');
+      navigate('/member-portal');
     } else if (user) {
       loadActivity();
       if (searchParams.get('action') === 'change-password') {
@@ -114,7 +114,7 @@ export default function CustomerAccount() {
       {/* Premium Header */}
       <div className="bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : "/menu"} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+          <Link to="/menu" className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <span className="text-2xl leading-none">←</span>
           </Link>
           <h1 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">My VIP Journey</h1>
@@ -211,7 +211,7 @@ export default function CustomerAccount() {
                       </div>
                     ) : (
                       <Link 
-                        to={tenantSlug ? `/menu?tenant=${tenantSlug}&reorder=${item.orderNumber}` : `/menu?reorder=${item.orderNumber}`} 
+                        to={`/menu?reorder=${item.orderNumber}`} 
                         className="px-5 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
                       >
                         Re-order Again
@@ -232,7 +232,7 @@ export default function CustomerAccount() {
           {activity.length === 0 && (
             <div className="py-20 text-center">
               <p className="text-slate-400 font-bold mb-6">No activity recorded yet.</p>
-              <Link to={tenantSlug ? `/menu?tenant=${tenantSlug}` : '/menu'} className="bg-primary-500 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px]">Start Your Journey</Link>
+              <Link to="/menu" className="bg-primary-500 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px]">Start Your Journey</Link>
             </div>
           )}
         </div>
