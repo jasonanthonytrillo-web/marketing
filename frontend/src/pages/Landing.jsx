@@ -84,7 +84,7 @@ export default function Landing() {
 
   // Smart background fallback based on tenant type
   const burgerBackground = 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=2000&auto=format&fit=crop';
-  const defaultBackground = 'https://images.unsplash.com/photo-1586816001966-79b736744398?q=80&w=2000&auto=format&fit=crop';
+  const defaultBackground = 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=2000&auto=format&fit=crop';
 
   const bannerImage = tenant?.bannerImage || (tenant?.slug === 'burger-palace' ? burgerBackground : defaultBackground);
 
@@ -194,7 +194,7 @@ export default function Landing() {
                   key={fullUrl}
                   autoPlay muted loop playsInline
                   preload="auto"
-                  poster="https://images.unsplash.com/photo-1586816001966-79b736744398?q=80&w=1000&auto=format&fit=crop"
+                  poster="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=1000&auto=format&fit=crop"
                   className="w-full h-full object-cover"
                 >
                   <source src={fullUrl} />
