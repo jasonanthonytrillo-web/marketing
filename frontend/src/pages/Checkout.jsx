@@ -246,22 +246,19 @@ export default function Checkout() {
                     key={m.id}
                     type="button"
                     onClick={() => setPaymentMethod(m.id)}
-                    className={`py-3.5 px-2 rounded-2xl border-2 text-center font-bold text-xs uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm active:scale-95 min-h-[72px] ${isSelected ? 'border-transparent text-white scale-[1.02]' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-500'}`}
-                    style={isSelected ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}
+                    className={`h-20 rounded-2xl border-2 transition-all flex items-center justify-center px-4 shadow-sm active:scale-95 ${isSelected ? 'scale-[1.02]' : 'hover:border-slate-300'}`}
+                    style={{
+                      borderColor: isSelected ? brandingColor : '#e2e8f0',
+                      borderWidth: isSelected ? '3px' : '2px',
+                      backgroundColor: isSelected ? `${brandingColor}0d` : '#ffffff'
+                    }}
                   >
                     {isGCash ? (
-                      <div className={`h-8 w-full flex items-center justify-center rounded-xl p-1 transition-all ${isSelected ? 'bg-white shadow-inner' : ''}`}>
-                        <img src="/logos/GCash-Logo.png" alt="GCash" className="h-full object-contain" />
-                      </div>
+                      <img src="/logos/GCash-Logo.png" alt="GCash" className="h-8 max-w-full object-contain" />
                     ) : isMaya ? (
-                      <div className={`h-8 w-full flex items-center justify-center rounded-xl p-1 transition-all ${isSelected ? 'bg-white shadow-inner' : ''}`}>
-                        <img src="/logos/maya-logo.jpg" alt="Maya" className="h-full object-contain rounded-lg" />
-                      </div>
+                      <img src="/logos/maya-logo.jpg" alt="Maya" className="h-8 max-w-full object-contain rounded-lg" />
                     ) : (
-                      <div className="flex flex-col items-center justify-center gap-1">
-                        <span className="text-xl leading-none">💵</span>
-                        <span>{m.label}</span>
-                      </div>
+                      <span className="text-3xl leading-none">💵</span>
                     )}
                   </button>
                 );
