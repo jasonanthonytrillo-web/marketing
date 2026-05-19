@@ -390,8 +390,8 @@ export default function OrderConfirmation() {
           ? 'from-emerald-600 to-teal-800' 
           : 'from-blue-600 to-blue-800';
         const logoUrl = isMaya 
-          ? 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Maya_New_Logo.svg' 
-          : 'https://upload.wikimedia.org/wikipedia/commons/5/52/GCash_logo.svg';
+          ? '/logos/maya-logo.jpg' 
+          : '/logos/GCash-Logo.png';
         const activeQr = isMaya ? paymentRequest.mayaQr : paymentRequest.gcashQr;
         
         return (
