@@ -234,15 +234,36 @@ export default function Checkout() {
           </div>
         ) : (
           <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <label className="block text-sm font-semibold text-surface-700 mb-3">{t('paymentMethod')}</label>
+            <label className="block text-sm font-bold text-surface-900 mb-3">{t('paymentMethod')}</label>
             <div className="grid grid-cols-3 gap-3">
-              {PAYMENT_METHODS.map(m => (
-                <button key={m.id} type="button" onClick={() => setPaymentMethod(m.id)}
-                  className={`p-3 rounded-xl border-2 text-center font-medium text-sm transition-all ${paymentMethod === m.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}
-                  style={paymentMethod === m.id ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}>
-                  {m.icon} {m.label}
-                </button>
-              ))}
+              {PAYMENT_METHODS.map(m => {
+                const isSelected = paymentMethod === m.id;
+                const isGCash = m.id === 'gcash';
+                const isMaya = m.id === 'maya';
+                
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPaymentMethod(m.id)}
+                    className={`py-3 px-2 rounded-2xl border-2 text-center font-bold text-xs uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm active:scale-95 ${isSelected ? 'border-transparent text-white' : 'border-slate-200 hover:border-slate-300 bg-white text-slate-500'}`}
+                    style={isSelected ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}
+                  >
+                    {isGCash ? (
+                      <div className={`h-6 flex items-center justify-center rounded-lg p-0.5 ${isSelected ? 'bg-white' : ''}`}>
+                        <img src="/logos/GCash-Logo.png" alt="GCash" className="h-full object-contain" />
+                      </div>
+                    ) : isMaya ? (
+                      <div className={`h-6 flex items-center justify-center rounded-lg p-0.5 ${isSelected ? 'bg-white' : ''}`}>
+                        <img src="/logos/maya-logo.jpg" alt="Maya" className="h-full object-contain" />
+                      </div>
+                    ) : (
+                      <span className="text-xl leading-none">💵</span>
+                    )}
+                    <span>{m.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
