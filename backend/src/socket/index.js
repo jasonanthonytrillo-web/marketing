@@ -126,20 +126,18 @@ module.exports = (io, prisma) => {
   };
 
   // Helper: send payment request to kiosk
-  io.emitPaymentRequest = (order, tenant) => {
+  io.emitPaymentRequest = (order, tenant, mayaQr, method) => {
     const tId = order.tenantId;
-    io.to(`tenant-${tId}-kiosk`).emit('payment_request', {
+    const payload = {
       orderNumber: order.orderNumber,
       amount: order.total,
       gcashQr: tenant.gcashQr,
+      mayaQr: mayaQr,
+      method: method || 'gcash',
       timestamp: new Date().toISOString()
-    });
+    };
+    io.to(`tenant-${tId}-kiosk`).emit('payment_request', payload);
     // Also notify specific order page
-    io.to(`tenant-${tId}-order-${order.orderNumber}`).emit('payment_request', {
-      orderNumber: order.orderNumber,
-      amount: order.total,
-      gcashQr: tenant.gcashQr,
-      timestamp: new Date().toISOString()
-    });
+    io.to(`tenant-${tId}-order-${order.orderNumber}`).emit('payment_request', payload);
   };
 };

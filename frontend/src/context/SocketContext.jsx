@@ -21,9 +21,30 @@ export function SocketProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const url = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
+    // Robust WebSocket URL Fallback resolution
+    let url = import.meta.env.VITE_WS_URL;
+    if (!url) {
+      const apiURL = import.meta.env.VITE_API_URL;
+      if (apiURL) {
+        // Strip trailing /api
+        url = apiURL.replace(/\/api$/, '').replace(/\/api\/$/, '');
+      }
+    }
+    if (!url) {
+      // Fallback to origin
+      url = window.location.origin;
+    }
+    // Ensure the WS URL uses ws/wss if absolute, otherwise let io handles it
+    if (url.startsWith('http://')) {
+      url = url.replace('http://', 'ws://');
+    } else if (url.startsWith('https://')) {
+      url = url.replace('https://', 'wss://');
+    } else if (url.startsWith('/')) {
+      // Relative path, socket.io handles it automatically relative to host
+      url = window.location.origin.replace(/^http/, 'ws');
+    }
     
-    console.log('🔌 Initializing Secure WebSocket connection...');
+    console.log(`🔌 Initializing Secure WebSocket connection at: ${url}...`);
     
     if (socketRef.current) {
       socketRef.current.disconnect();

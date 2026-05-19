@@ -36,7 +36,19 @@ router.post('/upload-image', authenticate, authorize('admin'), async (req, res) 
 
     if (error) {
       console.error('Supabase Upload Error:', error);
-      return res.status(500).json({ success: false, message: 'Storage upload failed. Ensure "pos-media" bucket exists and is public.' });
+      let availableBuckets = [];
+      try {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        if (buckets) availableBuckets = buckets.map(b => b.name);
+      } catch (e) {
+        console.error('Failed to list buckets:', e);
+      }
+
+      return res.status(500).json({ 
+        success: false, 
+        message: `Storage upload failed: ${error.message || 'No bucket'}. Existing buckets: [${availableBuckets.join(', ') || 'none'}]. Please name your bucket "pos-media" or rename it.`,
+        error: error
+      });
     }
 
     // Get Public URL
@@ -47,7 +59,11 @@ router.post('/upload-image', authenticate, authorize('admin'), async (req, res) 
     res.json({ success: true, url: publicUrl });
   } catch (error) {
     console.error('Upload Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to upload media' });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to upload media: ${error.message}`,
+      details: error.stack
+    });
   }
 });
 router.get('/orders', authenticate, authorize('admin'), async (req, res) => {

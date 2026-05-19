@@ -306,7 +306,51 @@ export default function SettingsTab() {
                 )}
               </div>
               <p className="text-[10px] text-slate-400 mt-2 italic font-medium">This QR code will be displayed to customers when you trigger a GCash payment request from the cashier dashboard.</p>
+            </div>
 
+            <div className="border-t border-slate-100 pt-6">
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Maya QR Code</label>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 flex gap-2">
+                  <input 
+                    type="text" 
+                    value={settings.maya_qr || ''} 
+                    onChange={e => setSettings({...settings, maya_qr: e.target.value})}
+                    className="input-field flex-1 py-3 text-sm" 
+                    placeholder="https://example.com/maya-qr.png"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => document.getElementById('mayaQrUpload').click()}
+                    className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold"
+                  >
+                    📁 Upload
+                  </button>
+                  <input 
+                    type="file" id="mayaQrUpload" accept="image/*" className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onloadend = async () => {
+                        setMessage('📤 Uploading Maya QR...');
+                        try {
+                          const res = await uploadImage({ image: reader.result, name: 'maya-qr' });
+                          setSettings({ ...settings, maya_qr: res.data.url });
+                          setMessage('Maya QR updated! ✅');
+                        } catch (error) { alert('Upload failed'); }
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </div>
+                {settings.maya_qr && (
+                  <div className="w-20 h-20 rounded-xl border border-slate-200 overflow-hidden bg-slate-50 flex-shrink-0 shadow-sm">
+                    <img src={settings.maya_qr.startsWith('http') ? settings.maya_qr : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${settings.maya_qr}`} className="w-full h-full object-contain" alt="Maya QR Preview" />
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400 mt-2 italic font-medium">This QR code will be displayed to customers when you trigger a Maya payment request from the cashier dashboard.</p>
             </div>
           </div>
         </div>

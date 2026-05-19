@@ -22,6 +22,8 @@ export default function CashierDashboard() {
   const [qrStatus, setQrStatus] = useState(null);
   const [showKeypad, setShowKeypad] = useState(false);
   const [showRefKeypad, setShowRefKeypad] = useState(false);
+  const [showPrepModal, setShowPrepModal] = useState(false);
+  const [prepTime, setPrepTime] = useState(15);
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
 
@@ -187,15 +189,22 @@ export default function CashierDashboard() {
     }
   };
 
-  const handleStartPreparing = async () => {
+  const handleStartPreparing = () => {
+    setPrepTime(15); // reset default
+    setShowPrepModal(true);
+  };
+
+  const handleConfirmPrep = async (minutes) => {
     if (!selectedOrder) return;
+    const time = parseInt(minutes) || 15;
     setProcessing(true);
     try {
-      await startPreparing(selectedOrder.id, 15);
+      await startPreparing(selectedOrder.id, time);
+      setShowPrepModal(false);
       setSelectedOrder(null);
       loadOrders();
     } catch (e) {
-      alert('Failed to start preparing');
+      alert('Failed to start preparing: ' + (e.response?.data?.message || e.message));
     } finally {
       setProcessing(false);
     }
@@ -257,6 +266,74 @@ export default function CashierDashboard() {
 
   return (
     <div className="h-screen flex flex-col bg-surface-100 overflow-hidden relative">
+
+      {/* Prep Time Modal */}
+      {showPrepModal && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in border border-slate-100">
+            <div className="bg-amber-50 p-6 sm:p-8 border-b border-amber-100 flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-amber-500/20">🕒</div>
+              <div>
+                <h3 className="font-heading font-black text-xl text-slate-900">Set Prep Time Estimate</h3>
+                <p className="text-amber-700 text-xs font-semibold">How long will this order take?</p>
+              </div>
+            </div>
+            
+            <div className="p-6 sm:p-8 space-y-6">
+              <div className="grid grid-cols-4 gap-2">
+                {[5, 10, 15, 20, 30, 45, 60, 90].map(mins => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => {
+                      setPrepTime(mins);
+                      handleConfirmPrep(mins);
+                    }}
+                    className={`py-3.5 px-2 rounded-2xl text-base font-black border transition-all hover:scale-[1.02] active:scale-[0.98] ${prepTime === mins ? 'bg-amber-500 border-transparent text-white shadow-lg shadow-amber-500/20' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                  >
+                    {mins}m
+                  </button>
+                ))}
+              </div>
+              
+              <div className="border-t border-slate-100 pt-5">
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Custom Wait Time (Minutes)</label>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      value={prepTime}
+                      onChange={e => setPrepTime(e.target.value)}
+                      placeholder="e.g. 25"
+                      className="input-field w-full py-3.5 px-4 text-base font-black font-heading pr-12"
+                      min="1"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">mins</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmPrep(prepTime)}
+                    disabled={processing || !prepTime}
+                    className="px-6 bg-slate-900 text-white hover:bg-slate-800 rounded-2xl font-black uppercase tracking-wider text-xs shadow-md transition-all flex items-center justify-center"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 sm:p-8 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowPrepModal(false)}
+                className="flex-1 py-3.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-100 transition-all text-xs uppercase tracking-widest"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cancellation Reason Modal */}
       {showCancelModal && (
@@ -546,17 +623,45 @@ export default function CashierDashboard() {
                         </div>
                       ) : (
                         <>
-                          <div className="flex gap-3">
-                            <select value={paymentData.method} onChange={e => setPaymentData(p => ({ ...p, method: e.target.value }))} className="input-field py-3 bg-white w-1/2">
-                              <option value="cash">💵 Cash</option>
-                              <option value="gcash">📱 GCash</option>
-                              <option value="maya">💳 Maya</option>
-                            </select>
-                            <select value={paymentData.discountType} onChange={e => setPaymentData(p => ({ ...p, discountType: e.target.value }))} className="input-field py-3 bg-white w-1/2">
-                              <option value="">No Discount</option>
-                              <option value="senior">Senior Citizen (20%)</option>
-                              <option value="pwd">PWD (20%)</option>
-                            </select>
+                          <div className="space-y-3">
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Payment Method</label>
+                            <div className="grid grid-cols-3 gap-3">
+                              <button
+                                type="button"
+                                onClick={() => setPaymentData(p => ({ ...p, method: 'cash' }))}
+                                className={`py-3 px-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm active:scale-95 ${paymentData.method === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
+                              >
+                                <span className="text-2xl">💵</span>
+                                <span className="text-xs uppercase tracking-wider font-bold">Cash</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPaymentData(p => ({ ...p, method: 'gcash' }))}
+                                className={`py-3 px-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-2 shadow-sm active:scale-95 ${paymentData.method === 'gcash' ? 'border-blue-500 bg-blue-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                              >
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/52/GCash_logo.svg" alt="GCash" className="h-6 object-contain" />
+                                <span className="text-[10px] uppercase tracking-wider font-bold text-blue-700">GCash</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPaymentData(p => ({ ...p, method: 'maya' }))}
+                                className={`py-3 px-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-2 shadow-sm active:scale-95 ${paymentData.method === 'maya' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                              >
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a2/Maya_New_Logo.svg" alt="Maya" className="h-6 object-contain" />
+                                <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-700">Maya</span>
+                              </button>
+                            </div>
+
+                            <div className="flex gap-3 pt-1">
+                              <div className="w-full">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Discount Type</label>
+                                <select value={paymentData.discountType} onChange={e => setPaymentData(p => ({ ...p, discountType: e.target.value }))} className="input-field py-3.5 bg-white w-full text-sm font-semibold cursor-pointer">
+                                  <option value="">No Discount</option>
+                                  <option value="senior">👴 Senior Citizen (20%)</option>
+                                  <option value="pwd">♿ PWD (20%)</option>
+                                </select>
+                              </div>
+                            </div>
                           </div>
 
                           {(paymentData.method === 'gcash' || paymentData.method === 'maya') && (
@@ -626,7 +731,7 @@ export default function CashierDashboard() {
                                   onClick={async () => {
                                     try {
                                       setQrStatus('sending');
-                                      await (await import('../services/api')).requestPayment(selectedOrder.id);
+                                      await (await import('../services/api')).requestPayment(selectedOrder.id, { method: paymentData.method });
                                       setQrStatus('sent');
                                       setTimeout(() => setQrStatus(null), 3500);
                                     } catch (e) {
