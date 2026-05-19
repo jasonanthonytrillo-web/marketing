@@ -637,18 +637,16 @@ export default function CashierDashboard() {
                               <button
                                 type="button"
                                 onClick={() => setPaymentData(p => ({ ...p, method: 'gcash' }))}
-                                className={`py-3 px-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-2 shadow-sm active:scale-95 ${paymentData.method === 'gcash' ? 'border-blue-500 bg-blue-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                                className={`py-3 px-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-2 shadow-sm active:scale-95 min-h-[76px] ${paymentData.method === 'gcash' ? 'border-blue-500 bg-blue-50/50 shadow-inner scale-[1.02]' : 'border-slate-200 bg-white hover:border-slate-300'}`}
                               >
-                                <img src="/logos/GCash-Logo.png" alt="GCash" className="h-6 object-contain" />
-                                <span className="text-[10px] uppercase tracking-wider font-bold text-blue-700">GCash</span>
+                                <img src="/logos/GCash-Logo.png" alt="GCash" className="h-8 object-contain" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setPaymentData(p => ({ ...p, method: 'maya' }))}
-                                className={`py-3 px-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-2 shadow-sm active:scale-95 ${paymentData.method === 'maya' ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                                className={`py-3 px-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-2 shadow-sm active:scale-95 min-h-[76px] ${paymentData.method === 'maya' ? 'border-emerald-500 bg-emerald-50/50 shadow-inner scale-[1.02]' : 'border-slate-200 bg-white hover:border-slate-300'}`}
                               >
-                                <img src="/logos/maya-logo.jpg" alt="Maya" className="h-6 object-contain" />
-                                <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-700">Maya</span>
+                                <img src="/logos/maya-logo.jpg" alt="Maya" className="h-8 object-contain rounded-xl" />
                               </button>
                             </div>
 
