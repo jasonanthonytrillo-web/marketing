@@ -10,9 +10,9 @@ export default async function handler(req, res) {
 
   const apiUrl = process.env.VITE_API_URL || process.env.API_URL || 'http://localhost:5000/api';
 
-  let tenantName = 'Project Million';
-  let tenantLogo = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png';
-  let themeColor = '#f97316';
+  let tenantName = 'Hometown Brew';
+  let tenantLogo = '/hb_logo.jpg';
+  let themeColor = '#0a3d01';
 
   try {
     const response = await fetch(`${apiUrl}/public/tenant/${slug}`);
