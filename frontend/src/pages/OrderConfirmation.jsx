@@ -380,17 +380,8 @@ export default function OrderConfirmation() {
         <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up mb-4 no-print" style={{ animationDelay: '0.5s' }}>
           {order.status === 'pending' && order.paymentStatus !== 'paid' && (
             <button 
-              onClick={async () => {
-                if(window.confirm('Are you sure you want to cancel this order?')) {
-                  try {
-                    await cancelOrder(orderNumber);
-                    loadOrder();
-                  } catch (e) {
-                    alert('Failed to cancel order.');
-                  }
-                }
-              }}
-              className="px-6 py-3 bg-red-100 text-red-700 font-bold rounded-2xl hover:bg-red-200 transition-colors border border-red-200"
+              onClick={() => setShowCancelModal(true)}
+              className="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-2xl hover:bg-red-100 hover:text-red-700 transition-colors border border-red-100"
             >
               Cancel Order
             </button>
@@ -492,6 +483,43 @@ export default function OrderConfirmation() {
           </div>
         );
       })()}
+
+      {/* Modern Cancel Order Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-6 md:p-8 text-center relative pointer-events-auto">
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce-in shadow-inner">
+              ⚠️
+            </div>
+            <h3 className="text-xl md:text-2xl font-black text-slate-800 mb-2 tracking-tight">Cancel Order?</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+              Are you sure you want to cancel this order? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 py-3.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all active:scale-95"
+              >
+                No, Keep it
+              </button>
+              <button
+                onClick={async () => {
+                  setShowCancelModal(false);
+                  try {
+                    await cancelOrder(orderNumber);
+                    loadOrder();
+                  } catch (e) {
+                    alert('Failed to cancel order.');
+                  }
+                }}
+                className="flex-1 py-3.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all active:scale-95"
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
