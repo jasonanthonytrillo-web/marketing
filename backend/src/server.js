@@ -143,8 +143,24 @@ app.get('/robots.txt', (req, res) => {
   res.send("User-agent: *\nAllow: /");
 });
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+const supabase = require('./lib/supabase');
+
+// Health check with DB ping for Better Stack keeping Supabase awake
+app.get('/api/health', async (req, res) => {
+  try {
+    // A lightweight REST API query using Supabase JS client
+    // Supabase explicitly counts REST API (PostgREST) calls as activity to prevent pausing
+    await supabase.from('Tenant').select('id').limit(1);
+    
+    // Fallback: keep Prisma connection alive too
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.json({ status: 'ok', db: 'connected', time: new Date().toISOString() });
+  } catch (error) {
+    console.error('Health check DB ping failed:', error.message);
+    res.status(500).json({ status: 'error', db: 'disconnected', time: new Date().toISOString() });
+  }
+});
 
 // Error handler
 app.use((err, req, res, next) => {
