@@ -378,6 +378,23 @@ export default function OrderConfirmation() {
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up mb-4 no-print" style={{ animationDelay: '0.5s' }}>
+          {order.status === 'pending' && order.paymentStatus !== 'paid' && (
+            <button 
+              onClick={async () => {
+                if(window.confirm('Are you sure you want to cancel this order?')) {
+                  try {
+                    await cancelOrder(orderNumber);
+                    loadOrder();
+                  } catch (e) {
+                    alert('Failed to cancel order.');
+                  }
+                }
+              }}
+              className="px-6 py-3 bg-red-100 text-red-700 font-bold rounded-2xl hover:bg-red-200 transition-colors border border-red-200"
+            >
+              Cancel Order
+            </button>
+          )}
           <Link to={queueLink} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3">📋 View Queue</Link>
           <Link to={menuLink} className="btn-primary flex-1 justify-center text-sm sm:text-base py-3" style={{ backgroundColor: brandingColor }}>🍽️ Order Again</Link>
         </div>
