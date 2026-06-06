@@ -109,9 +109,20 @@ export default function Landing() {
     }
   }, [assets]);
 
-  if (loading) return <div className="min-h-screen bg-surface-900 flex items-center justify-center">
-    <div className="w-12 h-12 border-4 border-[#34d399] border-t-transparent rounded-full animate-spin"></div>
-  </div>;
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a3d01] gap-6">
+      <img src="/favicon.png" alt="Hometown Brew" className="w-24 h-24 rounded-3xl animate-pulse shadow-[0_0_60px_rgba(255,255,255,0.15)]" />
+      <div className="text-center">
+        <h1 className="text-white text-[22px] font-black tracking-tight font-heading">Hometown Brew</h1>
+        <p className="text-white/50 text-[11px] font-semibold tracking-[3px] uppercase mt-1.5">Bringing home closer</p>
+      </div>
+      <div className="flex gap-1.5 mt-2">
+        <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce [animation-delay:0s]"></span>
+        <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce [animation-delay:0.2s]"></span>
+        <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce [animation-delay:0.4s]"></span>
+      </div>
+    </div>
+  );
 
   const isSuspended = tenant && !tenant.active && user?.role !== 'superadmin';
 
