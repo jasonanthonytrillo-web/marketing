@@ -228,7 +228,7 @@ export default function OrderConfirmation() {
               </span>
             ) : (
               <span className={`font-bold text-xs sm:text-sm flex items-center gap-2 ${order.paymentStatus === 'paid' ? 'text-emerald-700' : 'text-slate-800'}`}>
-                {order.paymentStatus === 'paid' ? '✅ PAID: '⏳ PAY AT THE COUNTER'}
+                {order.paymentStatus === 'paid' ? '✅ PAID' : '⏳ PAY AT THE COUNTER'}
               </span>
             )}
           </div>
