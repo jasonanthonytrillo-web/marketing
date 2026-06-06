@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../lib/prisma');
 
-// Generate unique order number like POS-240001
 function generateOrderNumber() {
-  const prefix = 'POS';
-  const random = Math.floor(100000 + Math.random() * 900000);
-  return `${prefix}-${random}`;
+  const prefix = 'POS-0';
+  const random = Math.floor(1000 + Math.random() * 9000); // 4 random digits
+  return `${prefix}${random}`;
 }
+
+
 // GET /api/orders/history — Get logged-in customer's order history
 const { authenticate } = require('../middleware/auth');
 router.get('/history', authenticate, async (req, res) => {
@@ -33,7 +34,19 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Order must have at least one item.' });
     }
 
-    // Generate unique order number
+    // Determine Tenant ID securely from slug
+    const tenantSlug = req.headers['x-tenant-slug'];
+    if (!tenantSlug) {
+      return res.status(400).json({ success: false, message: 'Shop identification is required.' });
+    }
+
+    const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
+    if (!tenant) {
+      return res.status(404).json({ success: false, message: 'Shop not found.' });
+    }
+    const tenantId = tenant.id;
+
+    // Generate unique random order number starting with 0
     let orderNumber;
     let exists = true;
     while (exists) {
@@ -155,17 +168,6 @@ router.post('/', async (req, res) => {
     }
 
     // Create order with items
-    // Determine Tenant ID securely from slug
-    const tenantSlug = req.headers['x-tenant-slug'];
-    if (!tenantSlug) {
-      return res.status(400).json({ success: false, message: 'Shop identification is required.' });
-    }
-
-    const tenant = await prisma.tenant.findUnique({ where: { slug: tenantSlug } });
-    if (!tenant) {
-      return res.status(404).json({ success: false, message: 'Shop not found.' });
-    }
-    const tenantId = tenant.id;
 
     const order = await prisma.order.create({
       data: {
