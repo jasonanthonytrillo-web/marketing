@@ -228,7 +228,7 @@ export default function OrderConfirmation() {
               </span>
             ) : (
               <span className={`font-bold text-xs sm:text-sm flex items-center gap-2 ${order.paymentStatus === 'paid' ? 'text-emerald-700' : 'text-slate-800'}`}>
-                {order.paymentStatus === 'paid' ? '✅ RECEIPT' : '⏳ PAY AT THE COUNTER'}
+                {order.paymentStatus === 'paid' ? '✅ PAID: '⏳ PAY AT THE COUNTER'}
               </span>
             )}
           </div>
@@ -379,7 +379,7 @@ export default function OrderConfirmation() {
 
         <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up mb-4 no-print" style={{ animationDelay: '0.5s' }}>
           {order.status === 'pending' && order.paymentStatus !== 'paid' && (
-            <button 
+            <button
               onClick={() => setShowCancelModal(true)}
               className="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-2xl hover:bg-red-100 hover:text-red-700 transition-colors border border-red-100"
             >
@@ -394,14 +394,14 @@ export default function OrderConfirmation() {
       {paymentRequest && (() => {
         const isMaya = paymentRequest.method === 'maya';
         const methodLabel = isMaya ? 'Maya' : 'GCash';
-        const brandColorGrad = isMaya 
-          ? 'from-emerald-600 to-teal-800' 
+        const brandColorGrad = isMaya
+          ? 'from-emerald-600 to-teal-800'
           : 'from-blue-600 to-blue-800';
-        const logoUrl = isMaya 
-          ? '/logos/maya-logo.jpg' 
+        const logoUrl = isMaya
+          ? '/logos/maya-logo.jpg'
           : '/logos/GCash-Logo.png';
         const activeQr = isMaya ? paymentRequest.mayaQr : paymentRequest.gcashQr;
-        
+
         return (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-xl animate-fade-in overflow-y-auto">
             <div className="bg-white w-full max-w-sm sm:max-w-md rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 relative my-auto max-h-[95vh] flex flex-col">
