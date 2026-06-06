@@ -122,38 +122,39 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-surface-900 via-surface-800 to-surface-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a3d01] via-[#0d4f02] to-[#062800] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8 animate-fade-in-up">
+          <img src="/favicon.png" alt="Hometown Brew" className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-[0_0_40px_rgba(255,255,255,0.1)]" />
           <h1 className="font-heading text-3xl font-bold text-white mb-2">Staff Login</h1>
-          <p className="text-surface-400">
+          <p className="text-white/50">
             {branding?.name ? `Sign in to ${branding.name}` : 'Sign in to Hometown Brew'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-surface-800/50 backdrop-blur-lg border border-surface-700/50 rounded-2xl p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <form onSubmit={handleSubmit} className="bg-white/10 backdrop-blur-lg border border-white/15 rounded-2xl p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           {error && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm">{error}</div>}
 
           <div>
-            <label className="block text-sm font-medium text-surface-400 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-white/60 mb-1.5">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-              className="w-full px-4 py-3 bg-surface-900/50 border border-surface-700 rounded-xl text-white placeholder-surface-500 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all" placeholder="email@example.com" />
+              className="w-full px-4 py-3 bg-black/20 border border-white/15 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all" placeholder="email@example.com" />
           </div>
 
           <div className="relative">
-            <label className="block text-sm font-medium text-surface-400 mb-1.5">Password</label>
+            <label className="block text-sm font-medium text-white/60 mb-1.5">Password</label>
             <input 
               type={showPassword ? "text" : "password"} 
               value={password} 
               onChange={e => setPassword(e.target.value)} 
               required
-              className="w-full px-4 py-3 bg-surface-900/50 border border-surface-700 rounded-xl text-white placeholder-surface-500 focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 transition-all pr-12" 
+              className="w-full px-4 py-3 bg-black/20 border border-white/15 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all pr-12" 
               placeholder="••••••••" 
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-[32px] p-2 flex items-center justify-center text-surface-400 hover:text-white transition-colors"
+              className="absolute right-3 top-[32px] p-2 flex items-center justify-center text-white/40 hover:text-white transition-colors"
             >
               {showPassword ? (
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -176,7 +177,7 @@ export default function Login() {
                 setForgotEmail(email);
               }}
               className="hover:underline transition-colors font-semibold"
-              style={{ color: '#34d399' }}
+              style={{ color: 'rgba(255,255,255,0.7)' }}
             >
               Forgot Password?
             </button>
@@ -190,8 +191,7 @@ export default function Login() {
         <div className="text-center mt-6">
           <a 
             href="/" 
-            className="text-sm font-semibold transition-all hover:opacity-85"
-            style={{ color: '#34d399' }}
+            className="text-sm font-semibold transition-all hover:opacity-85 text-white/60 hover:text-white"
           >
             ← Back to Kiosk
           </a>

@@ -83,12 +83,20 @@ export default function AdminDashboard() {
     { id: 'settings', label: 'Settings', icon: '⚙️' },
   ];
 
-  if (loading && !summary) return <div className="min-h-screen flex items-center justify-center bg-surface-50">
-    <div className="text-center">
-      <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p className="text-surface-500 font-bold uppercase tracking-widest text-xs">Initializing Dashboard...</p>
+  if (loading && !summary) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a3d01] gap-6">
+      <img src="/favicon.png" alt="Hometown Brew" className="w-24 h-24 rounded-3xl animate-pulse shadow-[0_0_60px_rgba(255,255,255,0.15)]" />
+      <div className="text-center">
+        <h1 className="text-white text-[22px] font-black tracking-tight font-heading">Hometown Brew</h1>
+        <p className="text-white/50 text-[11px] font-semibold tracking-[3px] uppercase mt-1.5">Bringing home closer</p>
+      </div>
+      <div className="flex gap-1.5 mt-2">
+        <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce [animation-delay:0s]"></span>
+        <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce [animation-delay:0.2s]"></span>
+        <span className="w-2 h-2 rounded-full bg-white/70 animate-bounce [animation-delay:0.4s]"></span>
+      </div>
     </div>
-  </div>;
+  );
 
   return (
     <div className="h-screen bg-surface-50 flex flex-col md:flex-row overflow-hidden">
@@ -151,12 +159,12 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-surface-900">{user?.name}</p>
+              <p className="text-sm font-bold text-surface-900">{user?.name === 'Project Million Admin' ? 'Hometown Brew Admin' : user?.name}</p>
               <p className="text-[10px] font-bold text-surface-400 uppercase">{user?.role}</p>
             </div>
             <div className="flex items-center gap-2 border-l border-surface-200 pl-2 sm:pl-4">
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-primary-500/20">
-                {user?.name?.charAt(0)}
+                {(user?.name === 'Project Million Admin' ? 'H' : user?.name?.charAt(0))}
               </div>
               <button onClick={logoutUser} className="md:hidden p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                 <span className="text-xl">🚪</span>
