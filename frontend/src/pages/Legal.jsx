@@ -16,7 +16,7 @@ const LegalLayout = ({ title, children }) => {
           {children}
         </div>
         <footer className="mt-12 text-slate-600 text-sm border-t border-white/5 pt-8">
-          <p>&copy; {new Date().getFullYear()} ELEVATEPOS System. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Hometown Brew. All rights reserved.</p>
         </footer>
       </div>
     </div>
@@ -26,7 +26,7 @@ const LegalLayout = ({ title, children }) => {
 export const PrivacyPolicy = () => (
   <LegalLayout title="Privacy Policy">
     <div className="space-y-6">
-      <p>Your privacy is important to us. This Privacy Policy explains how ELEVATEPOS collects, uses, and protects your personal information when you use our multi-tenant POS platform.</p>
+      <p>Your privacy is important to us. This Privacy Policy explains how Hometown Brew collects, uses, and protects your personal information when you use our multi-tenant POS platform.</p>
       
       <section>
         <h2 className="text-white font-bold text-xl mb-3">1. Information We Collect</h2>
@@ -54,7 +54,7 @@ export const PrivacyPolicy = () => (
 export const TermsOfService = () => (
   <LegalLayout title="Terms of Service">
     <div className="space-y-6">
-      <p>By using the ELEVATEPOS system, you agree to comply with and be bound by the following terms and conditions.</p>
+      <p>By using the Hometown Brew system, you agree to comply with and be bound by the following terms and conditions.</p>
       
       <section>
         <h2 className="text-white font-bold text-xl mb-3">1. User Eligibility</h2>
@@ -73,7 +73,7 @@ export const TermsOfService = () => (
 
       <section>
         <h2 className="text-white font-bold text-xl mb-3">4. Limitation of Liability</h2>
-        <p>ELEVATEPOS is provided "as is" and we are not liable for any damages resulting from the use or inability to use our platform.</p>
+        <p>Hometown Brew is provided "as is" and we are not liable for any damages resulting from the use or inability to use our platform.</p>
       </section>
     </div>
   </LegalLayout>
@@ -82,7 +82,7 @@ export const TermsOfService = () => (
 export const DataDeletion = () => (
   <LegalLayout title="Store Conditions">
     <div className="space-y-6">
-      <p>We respect your right to control your personal data. If you wish to delete your ELEVATEPOS account and all associated data, please follow these instructions:</p>
+      <p>We respect your right to control your personal data. If you wish to delete your Hometown Brew account and all associated data, please follow these instructions:</p>
       
       <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
         <h3 className="text-white font-bold mb-4">Steps to Request Deletion:</h3>

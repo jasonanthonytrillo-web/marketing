@@ -1,6 +1,6 @@
 {
   "short_name": "Hometown Brew",
-  "name": "Hometown Brew POS",
+  "name": "Hometown Brew",
   "description": "Professional Multi-Tenant Point of Sale System by Hometown Brew",
   "icons": [
     {
@@ -23,6 +23,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#f97316",
+  "theme_color": "#0a3d01",
   "background_color": "#ffffff"
 }
