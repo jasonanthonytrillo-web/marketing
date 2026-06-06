@@ -329,6 +329,8 @@ function OrderCard({ order, now, onAction, processing }) {
   if (isUrgent) timerColor = 'text-red-400 bg-red-400/10 animate-pulse';
   else if (isWarning) timerColor = 'text-amber-400 bg-amber-400/10';
 
+  const formatElapsed = (mins) => mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+
   return (
     <div className={`bg-surface-800 rounded-xl border ${isUrgent ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : isWarning ? 'border-amber-500/30' : 'border-surface-700'} overflow-hidden animate-fade-in-up`}>
       <div className={`p-3 flex justify-between items-center border-b ${isUrgent ? 'border-red-500/20 bg-red-500/5' : isWarning ? 'border-amber-500/20 bg-amber-500/5' : 'border-surface-700 bg-surface-800/80'}`}>
@@ -342,7 +344,7 @@ function OrderCard({ order, now, onAction, processing }) {
           </span>
         </div>
         <div className={`px-2 py-1 rounded text-sm font-bold font-heading tabular-nums ${timerColor}`}>
-          {elapsed}m
+           {formatElapsed(elapsed)}
         </div>
       </div>
 
