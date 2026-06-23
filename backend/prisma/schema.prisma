@@ -56,6 +56,7 @@ model User {
 
   tenant    Tenant?    @relation(fields: [tenantId], references: [id])
   orders    Order[]
+  riderOrders Order[]    @relation("RiderOrders")
   payments  Payment[]
   auditLogs AuditLog[]
 
@@ -153,6 +154,8 @@ model Order {
   deliveryLat        Float?
   deliveryLng        Float?
   deliveryFee        Float     @default(0)
+  riderId            Int?
+  rider              User?     @relation("RiderOrders", fields: [riderId], references: [id])
   paymentReference   String?
   notes              String?
   cancellationReason String?

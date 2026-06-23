@@ -131,6 +131,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/superadmin', require('./routes/superadmin'));
 app.use('/api/suppliers', require('./routes/suppliers'));
 app.use('/api/customer', require('./routes/customer'));
+app.use('/api/rider', require('./routes/rider'));
 app.use('/api/feedback', require('./routes/feedback'));
 
 // Socket.io

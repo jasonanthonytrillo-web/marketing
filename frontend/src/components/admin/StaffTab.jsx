@@ -136,6 +136,7 @@ export default function StaffTab() {
                         <option value="admin">Admin</option>
                         <option value="cashier">Cashier</option>
                         <option value="kitchen">Kitchen</option>
+                        <option value="rider">Rider</option>
                       </select>
                     )}
                   </td>
@@ -223,6 +224,7 @@ export default function StaffTab() {
                   >
                     <option value="cashier">Cashier</option>
                     <option value="kitchen">Kitchen Staff</option>
+                    <option value="rider">Delivery Rider</option>
                     <option value="admin">System Admin</option>
                     <option value="customer">Loyalty Customer</option>
                   </select>

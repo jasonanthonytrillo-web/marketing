@@ -141,4 +141,10 @@ export const hardDeleteOrder = (id) => api.delete(`/admin/orders/${id}`);
 // Public Beta
 export const submitBetaApplication = (data) => api.post('/public/beta/apply', data);
 
+// Rider
+export const getAvailableRiderOrders = () => api.get('/rider/available');
+export const getActiveRiderOrders = () => api.get('/rider/active');
+export const pickupOrder = (id) => api.post(`/rider/orders/${id}/pickup`);
+export const deliverOrder = (id) => api.post(`/rider/orders/${id}/delivered`);
+
 export default api;

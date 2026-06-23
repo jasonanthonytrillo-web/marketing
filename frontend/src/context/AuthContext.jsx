@@ -69,7 +69,7 @@ export function AuthProvider({ children }) {
 
   const logoutUser = () => {
     const role = user?.role;
-    if (['admin', 'kitchen', 'cashier', 'superadmin'].includes(role)) {
+    if (['admin', 'kitchen', 'cashier', 'superadmin', 'rider'].includes(role)) {
       setShowLogoutConfirm(true);
     } else {
       performLogout();
@@ -84,7 +84,7 @@ export function AuthProvider({ children }) {
     setShowLogoutConfirm(false);
     
     // Redirect staff to /login, customers to landing
-    if (['admin', 'kitchen', 'cashier', 'superadmin'].includes(role)) {
+    if (['admin', 'kitchen', 'cashier', 'superadmin', 'rider'].includes(role)) {
       window.location.href = '/login';
     } else {
       window.location.href = '/';

@@ -24,6 +24,7 @@ import KitchenDashboard from './pages/KitchenDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import MemberPortal from './pages/MemberPortal';
 import CustomerAccount from './pages/CustomerAccount';
+import RiderDashboard from './pages/RiderDashboard';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import { PrivacyPolicy, TermsOfService, DataDeletion } from './pages/Legal';
 
@@ -95,6 +96,9 @@ function App() {
 
               {/* Admin */}
               <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+
+              {/* Rider */}
+              <Route path="/rider" element={<ProtectedRoute roles={['rider', 'admin']}><RiderDashboard /></ProtectedRoute>} />
 
               {/* Superadmin */}
               <Route path="/superadmin" element={<ProtectedRoute roles={['superadmin']}><SuperAdminDashboard /></ProtectedRoute>} />
