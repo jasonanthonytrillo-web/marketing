@@ -242,8 +242,12 @@ export default function OrderConfirmation() {
                 : "Please wait for your number to be called or displayed on the queue screen."}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
-            <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-              {order.orderType === 'dine_in' ? <><Home className="w-4 h-4"/> Dine In</> : <><ShoppingBag className="w-4 h-4"/> Take Out</>}
+            <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 ${
+              order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 
+              order.orderType === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+            }`}>
+              {order.orderType === 'dine_in' ? <><Home className="w-4 h-4"/> Dine In</> : 
+               order.orderType === 'delivery' ? <><Truck className="w-4 h-4"/> Delivery</> : <><ShoppingBag className="w-4 h-4"/> Take Out</>}
             </span>
             {isCancelled ? (
               <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-red-100 text-red-700 font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1.5 border border-red-200">
@@ -255,7 +259,13 @@ export default function OrderConfirmation() {
               </span>
             ) : (
               <span className={`font-bold text-xs sm:text-sm flex items-center gap-1.5 ${order.paymentStatus === 'paid' ? 'text-emerald-700' : 'text-slate-800'}`}>
-                {order.paymentStatus === 'paid' ? <><CheckCircle className="w-4 h-4" /> PAID</> : <><Clock className="w-4 h-4" /> PAY AT THE COUNTER</>}
+                {order.paymentStatus === 'paid' ? (
+                  <><CheckCircle className="w-4 h-4" /> PAID</>
+                ) : order.orderType === 'delivery' ? (
+                  <><Clock className="w-4 h-4" /> CONFIRMING PAYMENT</>
+                ) : (
+                  <><Clock className="w-4 h-4" /> PAY AT THE COUNTER</>
+                )}
               </span>
             )}
           </div>
