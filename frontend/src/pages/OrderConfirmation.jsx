@@ -8,7 +8,7 @@ import { formatCurrency, formatDate, unlockAudio, formatMinutes } from '../utils
 
 import { applyTheme, clearTheme } from '../utils/theme';
 import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon, Truck, MapPin, Navigation } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
 // Fix Leaflet marker icons
@@ -18,6 +18,83 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Custom marker icons
+const storeIcon = new L.DivIcon({
+  className: '',
+  html: `<div style="width:36px;height:36px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  </div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+  popupAnchor: [0, -20],
+});
+
+const customerIcon = new L.DivIcon({
+  className: '',
+  html: `<div style="width:36px;height:36px;border-radius:50%;background:#ef4444;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+  </div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+  popupAnchor: [0, -20],
+});
+
+// Decode OSRM polyline geometry
+function decodePolyline(encoded) {
+  const coords = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    shift = 0; result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    coords.push([lat / 1e5, lng / 1e5]);
+  }
+  return coords;
+}
+
+// RouteLine component — fetches real road directions from OSRM
+function RouteLine({ from, to, storeName }) {
+  const map = useMap();
+  const [routeCoords, setRouteCoords] = useState(null);
+
+  useEffect(() => {
+    if (!from || !to) return;
+    const controller = new AbortController();
+    fetch(`https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=polyline`, { signal: controller.signal })
+      .then(r => r.json())
+      .then(data => {
+        if (data.routes?.[0]?.geometry) {
+          const decoded = decodePolyline(data.routes[0].geometry);
+          setRouteCoords(decoded);
+          // Fit map to show entire route
+          const bounds = L.latLngBounds(decoded);
+          map.fitBounds(bounds, { padding: [30, 30] });
+        } else {
+          setRouteCoords([from, to]); // fallback
+        }
+      })
+      .catch(() => setRouteCoords([from, to])); // fallback
+    return () => controller.abort();
+  }, [from, to, map]);
+
+  return (
+    <>
+      <Marker position={from} icon={storeIcon}>
+        <Popup>{storeName} (Store)</Popup>
+      </Marker>
+      <Marker position={to} icon={customerIcon}>
+        <Popup>Your Location</Popup>
+      </Marker>
+      {routeCoords && (
+        <Polyline positions={routeCoords} color="#3b82f6" weight={5} opacity={0.8} lineJoin="round" lineCap="round" />
+      )}
+    </>
+  );
+}
 
 const GET_STATUS_STEPS = (orderType) => {
   const steps = [
@@ -375,16 +452,14 @@ export default function OrderConfirmation() {
                 center={[(storeLocation[0] + deliveryLocation[0]) / 2, (storeLocation[1] + deliveryLocation[1]) / 2]}
                 zoom={14}
                 style={{ height: '100%', width: '100%' }}
-                zoomControl={false}
+                zoomControl={true}
+                dragging={false}
+                scrollWheelZoom={false}
+                boxZoom={false}
+                keyboard={false}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <Marker position={storeLocation}>
-                  <Popup>Hometown Brew (Store)</Popup>
-                </Marker>
-                <Marker position={deliveryLocation}>
-                  <Popup>Your Location</Popup>
-                </Marker>
-                <Polyline positions={[storeLocation, deliveryLocation]} color="#3b82f6" dashArray="10, 10" weight={3} opacity={0.6} />
+                <RouteLine from={storeLocation} to={deliveryLocation} storeName={branding?.name || 'Hometown Brew'} />
               </MapContainer>
             </div>
 
