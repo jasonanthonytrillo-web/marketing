@@ -294,7 +294,7 @@ router.post('/orders/:id/cancel', authenticate, authorize('cashier', 'admin'), a
 // POST /api/cashier/calculate — Calculate payment totals
 router.post('/calculate', async (req, res) => {
   try {
-    const { subtotal, discountType, discountPercent, amountReceived } = req.body;
+    const { subtotal, deliveryFee, discountType, discountPercent, amountReceived } = req.body;
     
     let discountAmount = 0;
     if (discountType === 'senior' || discountType === 'pwd') {

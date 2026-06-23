@@ -148,9 +148,13 @@ export default function CashierDashboard() {
   };
 
   const handleConfirmPayment = async () => {
-    if (!selectedOrder || !calcResult) return;
+    if (!selectedOrder) return;
+    if (!calcResult) {
+       await calculateTotals(); // Try calculating again 
+       return alert('Calculating totals... Please try again in a second.');
+    }
     if (!paymentData.received) return alert('Please enter the amount received.');
-    if (calcResult.isInsufficient) return alert('Insufficient payment amount. The total due is ' + calcResult.total);
+    if (calcResult.isInsufficient) return alert('Insufficient payment amount. The total due is ' + formatCurrency(calcResult.total));
 
     // Enforce reference number for online payments
     if ((paymentData.method === 'gcash' || paymentData.method === 'maya') && !paymentData.referenceNumber) {
@@ -824,11 +828,12 @@ export default function CashierDashboard() {
                               disabled={
                                 processing || 
                                 !paymentData.received || 
+                                !calcResult ||
                                 calcResult?.isInsufficient || 
                                 ((paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4)
                               }
                               className={`flex-[2] py-4 shadow-xl font-bold transition-all ${
-                                (!paymentData.received || calcResult?.isInsufficient || ((paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4)) 
+                                (processing || !paymentData.received || !calcResult || calcResult?.isInsufficient || ((paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4)) 
                                 ? 'bg-surface-300 text-surface-500 cursor-not-allowed opacity-50' 
                                 : 'btn-primary'
                               }`}
