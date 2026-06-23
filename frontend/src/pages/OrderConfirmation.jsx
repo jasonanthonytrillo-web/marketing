@@ -222,12 +222,14 @@ export default function OrderConfirmation() {
             </div>
           )}
 
-          {order.estimatedPrepTime && !isReady && !isCompleted && !isCancelled && (
+          {order.estimatedPrepTime && (!isReady || (order.orderType === 'delivery' && !isOnTheWay)) && !isCompleted && !isCancelled && (
             <div className="mb-6 animate-bounce-in">
               <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 px-5 py-3 rounded-2xl shadow-lg" style={{ backgroundColor: `${brandingColor}15` }}>
                 <Clock className="w-6 h-6" style={{ color: brandingColor }} />
                 <div className="text-left">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70 mb-0.5" style={{ color: brandingColor }}>Estimated Wait</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70 mb-0.5" style={{ color: brandingColor }}>
+                    {order.orderType === 'delivery' && isReady ? 'Estimated Arrival' : 'Estimated Cooking Time'}
+                  </p>
                   <p className="text-xl font-black leading-none" style={{ color: brandingColor }}>{formatMinutes(order.estimatedPrepTime)}</p>
                 </div>
               </div>
