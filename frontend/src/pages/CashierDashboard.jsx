@@ -263,7 +263,7 @@ export default function CashierDashboard() {
 
   const filteredOrders = orders.filter(o => o.status === activeTab);
 
-  if (loading) return <div className="min-h-screen bg-surface-50 p-6 flex items-center justify-center">Loading...</div>;
+  if (loading) return null;
 
   return (
     <div className="h-screen flex flex-col bg-surface-100 overflow-hidden relative">

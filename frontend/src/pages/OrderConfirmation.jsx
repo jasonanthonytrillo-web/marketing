@@ -153,7 +153,7 @@ export default function OrderConfirmation() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-surface-50 flex items-center justify-center"><p className="text-surface-400">Loading...</p></div>;
+  if (loading) return null;
   if (!order) return <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center"><h2 className="text-xl font-bold mb-4">Order not found</h2><Link to={menuLink} className="btn-primary" style={{ backgroundColor: brandingColor }}>Back to Menu</Link></div>;
 
   const currentStep = STATUS_STEPS.findIndex(s => s.key === order.status);

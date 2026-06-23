@@ -428,18 +428,18 @@ export default function Menu() {
                 <span className="w-2 h-8 rounded-full" style={{ backgroundColor: brandingColor }}></span>
                 {cat.name}
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
                 {cat.products?.map((product, idx) => (
                   <button
                     key={product.id}
                     onClick={() => handleProductClick(product)}
-                    className={`glass-card text-left overflow-hidden group flex flex-col ${(!product.available || product.stock <= 0) ? 'opacity-75 grayscale-[0.5] cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+                    className={`glass-card text-left overflow-hidden group flex flex-row md:flex-col h-[130px] md:h-auto bg-white ${(!product.available || product.stock <= 0) ? 'opacity-75 grayscale-[0.5] cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                     disabled={!product.available || product.stock <= 0}
                   >
-                    <div className="h-32 md:h-48 bg-white flex items-center justify-center text-6xl md:text-8xl transition-transform duration-500 w-full relative">
+                    <div className="w-[130px] md:w-full md:h-48 flex-shrink-0 relative overflow-hidden bg-surface-100">
                       <img
                         src={product.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover absolute inset-0 md:static"
                       />
                       {product.tags && (
                         <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 items-end">
@@ -489,11 +489,11 @@ export default function Menu() {
                         </div>
                       )}
                     </div>
-                    <div className="p-4 md:p-5 flex flex-col flex-1 w-full bg-white">
-                      <h3 className="font-heading font-bold text-surface-900 text-lg md:text-xl mb-1 line-clamp-1">{product.name}</h3>
-                      <p className="text-xs md:text-sm text-surface-500 line-clamp-2 mb-3 md:mb-4 flex-1">{product.description}</p>
+                    <div className="p-3 md:p-5 flex flex-col flex-1 w-full bg-white overflow-hidden">
+                      <h3 className="font-heading font-bold text-surface-900 text-[15px] md:text-xl mb-0.5 md:mb-1 line-clamp-2 md:line-clamp-1 leading-tight">{product.name}</h3>
+                      <p className="text-[11px] md:text-sm text-surface-500 line-clamp-2 md:line-clamp-2 mb-2 md:mb-4 flex-1 leading-snug">{product.description}</p>
                       <div className="flex items-center justify-between mt-auto">
-                        <span className="font-heading font-black text-xl md:text-2xl" style={{ color: brandingColor }}>₱{product.price.toFixed(2)}</span>
+                        <span className="font-heading font-black text-base md:text-2xl" style={{ color: brandingColor }}>₱{product.price.toFixed(2)}</span>
                         <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>
                           +
                         </div>

@@ -104,11 +104,7 @@ export default function CustomerAccount() {
     }
   };
 
-  if (authLoading || loading) return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="text-primary-600 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">Loading VIP Profile...</div>
-    </div>
-  );
+  if (authLoading || loading) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
