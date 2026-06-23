@@ -67,6 +67,7 @@ export const getOrder = (orderNumber) => api.get(`/orders/${orderNumber}`);
 export const getQueue = () => api.get('/orders/queue/active');
 export const cancelOrder = (orderNumber) => api.post(`/orders/${orderNumber}/cancel`);
 export const getOrderHistory = () => api.get('/orders/history');
+export const confirmDeliveryReceived = (orderNumber) => api.post(`/orders/${orderNumber}/received`);
 
 // Cashier
 export const getCashierOrders = (status) => api.get(`/cashier/orders${status ? `?status=${status}` : ''}`);

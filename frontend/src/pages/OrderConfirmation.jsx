@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getOrder, cancelOrder, getPublicTenant, submitFeedback } from '../services/api';
+import { getOrder, cancelOrder, getPublicTenant, submitFeedback, confirmDeliveryReceived } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -184,7 +184,7 @@ export default function OrderConfirmation() {
   const isOnTheWay = order.status === 'on_the_way';
 
   // Store coordinates (assuming a fixed shop location for now, or we can add it to branding)
-  const storeLocation = [14.5995, 120.9842]; // Example coordinates for Manila
+  const storeLocation = [branding?.storeLat || 14.5995, branding?.storeLng || 120.9842]; 
   const deliveryLocation = order.deliveryLat && order.deliveryLng ? [order.deliveryLat, order.deliveryLng] : null;
 
   return (
@@ -374,6 +374,23 @@ export default function OrderConfirmation() {
               <MapPin className="w-5 h-5 text-red-500" />
               <p className="text-xs font-medium text-slate-600 line-clamp-1">{order.deliveryAddress}</p>
             </div>
+
+            <button
+              onClick={async () => {
+                if (window.confirm("Confirm that you've received your order?")) {
+                  try {
+                    await confirmDeliveryReceived(orderNumber);
+                    loadOrder();
+                  } catch (e) {
+                    alert('Failed to confirm receipt. Please try again.');
+                  }
+                }
+              }}
+              className="mt-4 w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 animate-bounce-in"
+            >
+              <CheckCircle className="w-5 h-5" />
+              <span>I'VE RECEIVED MY ORDER</span>
+            </button>
           </div>
         )}
 

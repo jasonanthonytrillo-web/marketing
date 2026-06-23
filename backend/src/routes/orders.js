@@ -434,4 +434,49 @@ router.post('/:orderNumber/cancel', async (req, res) => {
   }
 });
 
+// POST /api/orders/:orderNumber/received — Confirm receipt by customer
+router.post('/:orderNumber/received', async (req, res) => {
+  try {
+    const { orderNumber } = req.params;
+    const order = await prisma.order.findUnique({
+      where: { orderNumber },
+      include: { tenant: true }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found.' });
+    }
+
+    if (order.status !== 'on_the_way') {
+      return res.status(400).json({ success: false, message: 'Wait for your order to be on the way before confirming.' });
+    }
+
+    const updated = await prisma.order.update({
+      where: { id: order.id },
+      data: { status: 'completed' },
+      include: { items: true }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: order.tenantId,
+        action: 'customer_confirmed_received',
+        entityType: 'order',
+        entityId: order.id.toString(),
+        details: `Order #${orderNumber} confirmed as received by customer.`
+      }
+    });
+
+    const io = req.io;
+    if (io && io.emitOrderUpdate) {
+      io.emitOrderUpdate(updated, 'completed');
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Confirm receipt error:', error);
+    res.status(500).json({ success: false, message: 'Failed to confirm receipt.' });
+  }
+});
+
 module.exports = router;
