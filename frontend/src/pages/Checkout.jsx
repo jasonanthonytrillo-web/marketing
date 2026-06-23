@@ -5,7 +5,7 @@ import { createOrder, getPublicTenant } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { applyTheme } from '../utils/theme';
-import { Utensils, ShoppingBag, Banknote, Smartphone, CreditCard, ShoppingCart, Gem, MapPin, Hash } from 'lucide-react';
+import { Utensils, ShoppingBag, Banknote, Smartphone, CreditCard, ShoppingCart, Gem, MapPin, Hash, Truck } from 'lucide-react';
 import LocationPicker from '../components/LocationPicker';
 
 const TRANSLATIONS = {
