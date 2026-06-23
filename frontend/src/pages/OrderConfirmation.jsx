@@ -201,7 +201,7 @@ export default function OrderConfirmation() {
   const isOnTheWay = order.status === 'on_the_way';
 
   // Store coordinates (assuming a fixed shop location for now, or we can add it to branding)
-  const storeLocation = [branding?.storeLat || 14.5995, branding?.storeLng || 120.9842]; 
+  const storeLocation = [branding?.storeLat || 14.5995, branding?.storeLng || 120.9842];
   const deliveryLocation = order.deliveryLat && order.deliveryLng ? [order.deliveryLat, order.deliveryLng] : null;
 
   return (
@@ -261,12 +261,11 @@ export default function OrderConfirmation() {
                 : "Please wait for your number to be called or displayed on the queue screen."}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
-            <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 ${
-              order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 
-              order.orderType === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-            }`}>
-              {order.orderType === 'dine_in' ? <><Home className="w-4 h-4"/> Dine In</> : 
-               order.orderType === 'delivery' ? <><Truck className="w-4 h-4"/> Delivery</> : <><ShoppingBag className="w-4 h-4"/> Take Out</>}
+            <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' :
+                order.orderType === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+              }`}>
+              {order.orderType === 'dine_in' ? <><Home className="w-4 h-4" /> Dine In</> :
+                order.orderType === 'delivery' ? <><Truck className="w-4 h-4" /> Delivery</> : <><ShoppingBag className="w-4 h-4" /> Take Out</>}
             </span>
             {isCancelled ? (
               <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-red-100 text-red-700 font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1.5 border border-red-200">
@@ -370,11 +369,11 @@ export default function OrderConfirmation() {
               </div>
               <Navigation className="w-5 h-5 text-slate-300" />
             </div>
-            
+
             <div className="h-[250px] rounded-2xl overflow-hidden border border-slate-100 relative z-0">
-              <MapContainer 
-                center={[(storeLocation[0] + deliveryLocation[0]) / 2, (storeLocation[1] + deliveryLocation[1]) / 2]} 
-                zoom={14} 
+              <MapContainer
+                center={[(storeLocation[0] + deliveryLocation[0]) / 2, (storeLocation[1] + deliveryLocation[1]) / 2]}
+                zoom={14}
                 style={{ height: '100%', width: '100%' }}
                 zoomControl={false}
               >
@@ -388,7 +387,7 @@ export default function OrderConfirmation() {
                 <Polyline positions={[storeLocation, deliveryLocation]} color="#3b82f6" dashArray="10, 10" weight={3} opacity={0.6} />
               </MapContainer>
             </div>
-            
+
             <div className="mt-4 p-3 bg-slate-50 rounded-xl flex items-center gap-3">
               <MapPin className="w-5 h-5 text-red-500" />
               <p className="text-xs font-medium text-slate-600 line-clamp-1">{order.deliveryAddress}</p>
@@ -496,8 +495,8 @@ export default function OrderConfirmation() {
               Cancel Order
             </button>
           )}
-          <Link to={queueLink} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3 flex items-center gap-2"><ListOrdered className="w-5 h-5"/> View Queue</Link>
-          <Link to={menuLink} className="btn-primary flex-1 justify-center text-sm sm:text-base py-3 flex items-center gap-2" style={{ backgroundColor: brandingColor }}><UtensilsCrossed className="w-5 h-5"/> Order Again</Link>
+          <Link to={queueLink} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3 flex items-center gap-2"><ListOrdered className="w-5 h-5" /> View Queue</Link>
+          <Link to={menuLink} className="btn-primary flex-1 justify-center text-sm sm:text-base py-3 flex items-center gap-2" style={{ backgroundColor: brandingColor }}><UtensilsCrossed className="w-5 h-5" /> Order Again</Link>
         </div>
       </div>
 
@@ -584,7 +583,7 @@ export default function OrderConfirmation() {
                       }}
                       className={`inline-flex items-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-sm ${isMaya ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white'}`}
                     >
-                      <Download className="w-4 h-4"/> Save QR Image
+                      <Download className="w-4 h-4" /> Save QR Image
                     </button>
                   )}
                 </div>
@@ -670,26 +669,25 @@ export default function OrderConfirmation() {
       {/* Rider Arrival Overlay */}
       {showArrivalOverlay && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-fade-in">
-          <div className="bg-white w-full max-w-sm rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-8 text-center relative">
+          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-10 sm:p-12 text-center relative">
             <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl border border-slate-50">
-               <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 animate-bounce">
-                 <Truck className="w-8 h-8" />
-               </div>
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 animate-bounce">
+                <Truck className="w-8 h-8" />
+              </div>
             </div>
-            
+
             <div className="mt-10">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                 </span>
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Live Arrival Info</span>
               </div>
               <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Rider Arrived!</h3>
               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 px-2">
                 Your rider is now at your location. Please prepare to receive your order <span className="font-black text-slate-900">#{orderNumber.includes('-') ? orderNumber.split('-')[1] : orderNumber}</span>.
               </p>
-              
+
               <button
                 onClick={() => setShowArrivalOverlay(false)}
                 className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 active:scale-95 transition-all uppercase tracking-widest text-xs"
