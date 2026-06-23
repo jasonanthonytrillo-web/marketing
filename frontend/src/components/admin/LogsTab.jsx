@@ -36,6 +36,7 @@ export default function LogsTab() {
     if (act.includes('login')) return 'bg-indigo-50 text-indigo-600 border-indigo-100';
     if (act.includes('kitchen')) return 'bg-sky-50 text-sky-600 border-sky-100';
     if (act.includes('confirm') || act.includes('placed') || act.includes('served')) return 'bg-teal-50 text-teal-600 border-teal-100';
+    if (act.includes('rider') || act.includes('delivery')) return 'bg-blue-50 text-blue-600 border-blue-100';
     return 'bg-slate-50 text-slate-600 border-slate-100';
   };
 
@@ -62,6 +63,8 @@ export default function LogsTab() {
         matchesAction = act.includes('login') || act.includes('password');
       } else if (actionFilter === 'catalog') {
         matchesAction = act.includes('product') || act.includes('category');
+      } else if (actionFilter === 'delivery') {
+        matchesAction = act.includes('rider') || act.includes('delivery');
       }
     }
 
@@ -81,7 +84,7 @@ export default function LogsTab() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="font-heading text-3xl font-black text-slate-900 tracking-tight">Security Audit Logs</h2>
-          <p className="text-slate-500 font-medium">Track cashier payments, kitchen updates, and logins in real-time.</p>
+          <p className="text-slate-500 font-medium">Track cashier payments, kitchen updates, rider deliveries, and logins in real-time.</p>
         </div>
       </div>
 
@@ -113,6 +116,7 @@ export default function LogsTab() {
               <option value="kitchen">Kitchen Tasks</option>
               <option value="security">Logins & Security</option>
               <option value="catalog">Product Catalog</option>
+              <option value="delivery">Delivery & Riders</option>
             </select>
           </div>
           <div>
@@ -126,6 +130,7 @@ export default function LogsTab() {
               <option value="admin">Administrator</option>
               <option value="cashier">Cashier Staff</option>
               <option value="kitchen">Kitchen Staff</option>
+              <option value="rider">Rider / Delivery</option>
               <option value="customer">Customer</option>
             </select>
           </div>
