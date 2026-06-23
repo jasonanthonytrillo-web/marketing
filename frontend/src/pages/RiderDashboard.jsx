@@ -64,12 +64,14 @@ const customerIcon = new L.DivIcon({
 const riderIcon = new L.DivIcon({
   className: '',
   html: `<div style="width:40px;height:40px;border-radius:50%;background:#fbbf24;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10 17c-2 0-3-1-3-3s1-3 3-3h4c2 0 3 1 3 3s-1 3-3 3h-4z"/>
-      <circle cx="8" cy="18" r="3"/>
-      <circle cx="18" cy="18" r="3"/>
-      <path d="M10 11l2-4h4l3 4"/>
-      <path d="M12 7l-1-3h-3"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="5" cy="18" r="3"/>
+      <circle cx="19" cy="18" r="3"/>
+      <path d="M10 18h4"/>
+      <path d="M12 12h-4v6"/>
+      <path d="M12 12l3-5h4l2 5h-9z"/>
+      <path d="M4 8h4v4h-4z"/> {/* Delivery Box */}
+      <path d="M15 5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
     </svg>
   </div>`,
   iconSize: [40, 40],
@@ -156,6 +158,7 @@ export default function RiderDashboard() {
   const [activeNavOrder, setActiveNavOrder] = useState(null);
   const [followMode, setFollowMode] = useState(true);
   const [currentRiderPos, setCurrentRiderPos] = useState(null);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -163,7 +166,13 @@ export default function RiderDashboard() {
       const res = activeTab === 'available' 
         ? await getAvailableRiderOrders() 
         : await getActiveRiderOrders();
-      setOrders(res.data.data);
+      const data = res.data.data;
+      setOrders(data);
+      
+      // Auto-expand if only one active order
+      if (activeTab === 'active' && data.length === 1) {
+        setExpandedOrderId(data[0].id);
+      }
     } catch (error) {
       console.error('Failed to load rider orders:', error);
     } finally {
@@ -387,126 +396,152 @@ export default function RiderDashboard() {
             </p>
           </div>
         ) : (
-          orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 flex flex-col gap-6 animate-fade-in-up">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Order #</span>
-                    <span className="text-xl font-black text-slate-900">{order.orderNumber}</span>
-                  </div>
-                  <p className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                    <CheckCircle className="w-4 h-4 text-emerald-500" /> {order.customerName}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-black text-slate-900">{formatCurrency(order.total)}</p>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg">₱{order.deliveryFee} Fee</p>
-                </div>
-              </div>
-
-              {/* Address / Maps */}
+          orders.map((order) => {
+            const isExpanded = expandedOrderId === order.id;
+            
+            return (
               <div 
-                onClick={() => openInMaps(order.deliveryLat, order.deliveryLng, order.deliveryAddress)}
-                className="bg-slate-50 rounded-3xl p-5 border border-slate-100 active:scale-[0.98] transition-all cursor-pointer group"
+                key={order.id} 
+                className={`bg-white rounded-[2.5rem] p-6 shadow-sm border transition-all duration-300 flex flex-col gap-6 animate-fade-in-up ${isExpanded ? 'border-blue-200 ring-4 ring-blue-50' : 'border-slate-100'}`}
               >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 group-hover:text-blue-600 transition-colors">
-                    <MapPin className="w-6 h-6" />
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Order #</span>
+                        <span className="text-xl font-black text-slate-900">{order.orderNumber}</span>
+                      </div>
+                      <p className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                        <CheckCircle className={`w-4 h-4 ${order.status === 'completed' ? 'text-emerald-500' : 'text-slate-300'}`} /> {order.customerName}
+                      </p>
+                    </div>
+                    <div className="text-right flex flex-col items-end">
+                      <p className="text-xl font-black text-slate-900">{formatCurrency(order.total)}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                         <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg">₱{order.deliveryFee} Fee</p>
+                         <ChevronRight className={`w-5 h-5 text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-500' : ''}`} />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Delivery Destination</p>
-                    <p className="text-sm font-bold text-slate-800 leading-relaxed line-clamp-2">{order.deliveryAddress}</p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-slate-300 self-center" />
+
+                  {!isExpanded && (
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                       Tap to view actions
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Items Summary (Small) */}
-              <div className="px-2">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Order Items ({order.items?.length})</p>
-                <div className="flex flex-wrap gap-2">
-                  {order.items?.map(item => (
-                    <span key={item.id} className="text-[11px] font-bold bg-slate-100 text-slate-600 px-3 py-1.5 rounded-xl">
-                      {item.quantity}× {item.productName}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
-                {activeTab === 'available' ? (
-                  <button
-                    onClick={() => handlePickup(order.id)}
-                    className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl shadow-xl shadow-slate-900/20 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
-                  >
-                    <Truck className="w-5 h-5" />
-                    Pickup Order
-                  </button>
-                ) : (
-                  <>
-                    {(() => {
-                      const notifiedAt = lastNotified[order.id];
-                      const diff = notifiedAt ? now - notifiedAt : Infinity;
-                      const isCooldown = diff < 60000;
-                      const secondsLeft = Math.ceil((60000 - diff) / 1000);
-
-                      return (
-                        <button
-                          onClick={() => handleNotifyArrival(order.id)}
-                          disabled={notifyingArrival[order.id] || isCooldown}
-                          className={`w-full py-5 font-black rounded-3xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm ${
-                            isCooldown
-                              ? 'bg-amber-100 text-amber-700 shadow-amber-200/50'
-                              : 'bg-amber-500 text-white shadow-amber-500/20 active:scale-95'
-                          }`}
-                        >
-                          <Bell className={`w-5 h-5 ${isCooldown ? '' : 'animate-pulse'}`} />
-                          {notifyingArrival[order.id] 
-                            ? 'Notifying...' 
-                            : isCooldown 
-                              ? `Nudge in ${secondsLeft}s` 
-                              : notifiedAt 
-                                ? 'Nudge Customer' 
-                                : "I've Arrived"}
-                        </button>
-                      );
-                    })()}
-                    
-                    <button
-                      onClick={() => {
-                        setActiveNavOrder(order);
-                        setShowNavMap(true);
-                        setFollowMode(true);
-                      }}
-                      className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
-                    >
-                      <Navigation className="w-5 h-5 text-blue-400" />
-                      In-App Navigation
-                    </button>
-
-                    <button
+                {isExpanded && (
+                  <div className="space-y-6 animate-fade-in">
+                    {/* Address / Maps */}
+                    <div 
                       onClick={() => openInMaps(order.deliveryLat, order.deliveryLng, order.deliveryAddress)}
-                      className="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 text-xs"
+                      className="bg-slate-50 rounded-3xl p-5 border border-slate-100 active:scale-[0.98] transition-all cursor-pointer group"
                     >
-                      Google Maps (External)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setOrderToDeliver(order);
-                        setShowDeliverModal(true);
-                      }}
-                      className="w-full py-5 bg-emerald-600 text-white font-black rounded-3xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      Mark Delivered
-                    </button>
-                  </>
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100 group-hover:text-blue-600 transition-colors">
+                          <MapPin className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Delivery Destination</p>
+                          <p className="text-sm font-bold text-slate-800 leading-relaxed line-clamp-2">{order.deliveryAddress}</p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-300 self-center" />
+                      </div>
+                    </div>
+
+                    {/* Items Summary (Small) */}
+                    <div className="px-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Order Items ({order.items?.length})</p>
+                      <div className="flex flex-wrap gap-2">
+                        {order.items?.map(item => (
+                          <span key={item.id} className="text-[11px] font-bold bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-xl">
+                            {item.quantity}× {item.productName}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-3">
+                      {activeTab === 'available' ? (
+                        <button
+                          onClick={() => handlePickup(order.id)}
+                          className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl shadow-xl shadow-slate-900/20 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
+                        >
+                          <Truck className="w-5 h-5" />
+                          Pickup Order
+                        </button>
+                      ) : (
+                        <>
+                          {(() => {
+                            const notifiedAt = lastNotified[order.id];
+                            const diff = notifiedAt ? now - notifiedAt : Infinity;
+                            const isCooldown = diff < 60000;
+                            const secondsLeft = Math.ceil((60000 - diff) / 1000);
+
+                            return (
+                              <button
+                                onClick={() => handleNotifyArrival(order.id)}
+                                disabled={notifyingArrival[order.id] || isCooldown}
+                                className={`w-full py-5 font-black rounded-3xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm ${
+                                  isCooldown
+                                    ? 'bg-amber-100 text-amber-700 shadow-amber-200/50'
+                                    : 'bg-amber-500 text-white shadow-amber-500/20 active:scale-95'
+                                }`}
+                              >
+                                <Bell className={`w-5 h-5 ${isCooldown ? '' : 'animate-pulse'}`} />
+                                {notifyingArrival[order.id] 
+                                  ? 'Notifying...' 
+                                  : isCooldown 
+                                    ? `Nudge in ${secondsLeft}s` 
+                                    : notifiedAt 
+                                      ? 'Nudge Customer' 
+                                      : "I've Arrived"}
+                              </button>
+                            );
+                          })()}
+                          
+                          <button
+                            onClick={() => {
+                              setActiveNavOrder(order);
+                              setShowNavMap(true);
+                              setFollowMode(true);
+                            }}
+                            className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
+                          >
+                            <Navigation className="w-5 h-5 text-blue-400" />
+                            In-App Navigation
+                          </button>
+
+                          <button
+                            onClick={() => openInMaps(order.deliveryLat, order.deliveryLng, order.deliveryAddress)}
+                            className="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 text-xs"
+                          >
+                            Google Maps (External)
+                          </button>
+                          <button
+                            onClick={() => {
+                              setOrderToDeliver(order);
+                              setShowDeliverModal(true);
+                            }}
+                            className="w-full py-5 bg-emerald-600 text-white font-black rounded-3xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
+                          >
+                            <CheckCircle className="w-5 h-5" />
+                            Mark Delivered
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 

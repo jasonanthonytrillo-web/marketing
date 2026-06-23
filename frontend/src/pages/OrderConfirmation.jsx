@@ -43,12 +43,14 @@ const customerIcon = new L.DivIcon({
 const riderIcon = new L.DivIcon({
   className: '',
   html: `<div style="width:40px;height:40px;border-radius:50%;background:#fbbf24;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M10 17c-2 0-3-1-3-3s1-3 3-3h4c2 0 3 1 3 3s-1 3-3 3h-4z"/>
-      <circle cx="8" cy="18" r="3"/>
-      <circle cx="18" cy="18" r="3"/>
-      <path d="M10 11l2-4h4l3 4"/>
-      <path d="M12 7l-1-3h-3"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="5" cy="18" r="3"/>
+      <circle cx="19" cy="18" r="3"/>
+      <path d="M10 18h4"/>
+      <path d="M12 12h-4v6"/>
+      <path d="M12 12l3-5h4l2 5h-9z"/>
+      <path d="M4 8h4v4h-4z"/> {/* Delivery Box */}
+      <path d="M15 5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
     </svg>
   </div>`,
   iconSize: [40, 40],
