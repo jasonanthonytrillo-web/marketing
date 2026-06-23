@@ -217,6 +217,24 @@ export default function Checkout() {
     } finally { setSubmitting(false); }
   };
 
+  const calculateDeliveryFee = (lat, lng) => {
+    if (!lat || !lng) return 0;
+    const shopLocation = { lat: 14.5995, lng: 120.9842 }; // Shop Location
+    
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat - shopLocation.lat) * Math.PI / 180;
+    const dLon = (lng - shopLocation.lng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(shopLocation.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distanceKm = R * c;
+    
+    // Every 3km is 20 pesos
+    return Math.ceil(distanceKm / 3) * 20;
+  };
+
   return (
     <div className="min-h-screen bg-surface-50 pb-8" style={{ '--primary-custom': brandingColor }}>
       <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-surface-200/50">
@@ -255,9 +273,20 @@ export default function Checkout() {
             <div className="mt-6 pt-6 border-t border-surface-100 space-y-4 animate-fade-in">
               <label className="block text-sm font-bold text-surface-900 mb-1">{t('pickLocation')}</label>
               <LocationPicker 
-                onLocationSelect={(loc) => setDeliveryInfo({ ...deliveryInfo, ...loc })}
+                onLocationSelect={(loc) => {
+                  const fee = calculateDeliveryFee(loc.lat, loc.lng);
+                  setDeliveryInfo({ ...deliveryInfo, ...loc, fee });
+                }}
                 initialAddress={deliveryInfo.address}
               />
+              {deliveryInfo.fee > 0 && (
+                <div className="p-3 bg-primary-50 border border-primary-100 rounded-xl flex items-center justify-between animate-bounce-in">
+                  <span className="text-xs font-bold text-primary-700 uppercase tracking-wider flex items-center gap-2">
+                    <Truck className="w-4 h-4" /> Distance-Based Fee
+                  </span>
+                  <span className="font-bold text-primary-700">{formatCurrency(deliveryInfo.fee)}</span>
+                </div>
+              )}
             </div>
           )}
         </div>
