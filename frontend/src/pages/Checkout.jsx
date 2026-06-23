@@ -440,19 +440,24 @@ export default function Checkout() {
           </div>
         </div>
 
-        <button 
-          type="submit" 
-          disabled={submitting || (totalPointsCost > 0 && hasInsufficientPoints) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference))} 
-          className={`w-full py-5 text-sm transition-all rounded-2xl font-black uppercase tracking-[2px] shadow-xl ${(hasInsufficientPoints && totalPointsCost > 0) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference)) ? 'bg-surface-100 text-surface-400 cursor-not-allowed' : 'text-white'}`} 
-          id="place-order-btn"
-          style={!((hasInsufficientPoints && totalPointsCost > 0) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference))) ? { backgroundColor: brandingColor } : {}}
-        >
-          {submitting ? 'Placing Order...' : 
-           hasInsufficientPoints && totalPointsCost > 0 ? `Insufficient Points (${totalPointsCost})` :
-           isFullRedemption ? `Claim for ${totalPointsCost} pts` : 
-           totalPointsCost > 0 ? `Order with ${formatCurrency(total)} + ${totalPointsCost} pts` :
-           `Place Order • ${formatCurrency(total)}`}
-        </button>
+        {(() => {
+          const isDisabled = submitting || (totalPointsCost > 0 && hasInsufficientPoints) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference));
+          return (
+            <button 
+              type="submit" 
+              disabled={isDisabled} 
+              className={`w-full py-5 text-sm transition-all rounded-2xl font-black uppercase tracking-[2px] shadow-xl ${isDisabled ? 'bg-surface-200 text-surface-400 cursor-not-allowed' : 'text-white hover:opacity-90 active:scale-[0.98]'}`} 
+              id="place-order-btn"
+              style={!isDisabled ? { backgroundColor: brandingColor } : {}}
+            >
+              {submitting ? 'Placing Order...' : 
+               hasInsufficientPoints && totalPointsCost > 0 ? `Insufficient Points (${totalPointsCost})` :
+               isFullRedemption ? `Claim for ${totalPointsCost} pts` : 
+               totalPointsCost > 0 ? `Order with ${formatCurrency(total)} + ${totalPointsCost} pts` :
+               `Place Order • ${formatCurrency(total)}`}
+            </button>
+          );
+        })()}
       </form>
     </div>
   );

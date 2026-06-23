@@ -107,7 +107,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
   const handleSelectSuggestion = (s) => {
     const newPos = { lat: parseFloat(s.lat), lng: parseFloat(s.lon) };
     setPosition(newPos);
-    setAddress(s.display_name);
+    reverseGeocode(newPos.lat, newPos.lng, setAddress);
     setSearchQuery(s.display_name);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -124,7 +124,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
       if (data && data.length > 0) {
         const newPos = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
         setPosition(newPos);
-        setAddress(data[0].display_name);
+        reverseGeocode(newPos.lat, newPos.lng, setAddress);
       } else {
         alert('Location not found');
       }
