@@ -439,10 +439,10 @@ export default function CashierDashboard() {
         {/* Left Panel: Order List */}
         <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none min-w-0`}>
           <div className="p-2 sm:p-4 border-b border-surface-200 flex gap-1.5 sm:gap-2 overflow-x-auto bg-white flex-shrink-0 scrollbar-hide">
-            {['pending', 'confirmed', 'preparing', 'ready', 'completed'].map(tab => (
+            {['pending', 'confirmed', 'preparing', 'ready', 'on_the_way', 'completed'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold capitalize whitespace-nowrap transition-all ${activeTab === tab ? 'bg-primary-500 text-white shadow-md' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}`}>
-                {tab}
+                {tab === 'on_the_way' ? 'Delivering' : tab}
                 <span className={`ml-1.5 sm:ml-2 inline-flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full text-[10px] sm:text-xs ${activeTab === tab ? 'bg-white/20 text-white' : 'bg-surface-200 text-surface-500'}`}>
                   {orders.filter(o => o.status === tab).length}
                 </span>
@@ -452,7 +452,7 @@ export default function CashierDashboard() {
 
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
             {filteredOrders.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-surface-400 font-medium text-sm">No {activeTab} orders</div>
+              <div className="h-full flex items-center justify-center text-surface-400 font-medium text-sm">No {activeTab === 'on_the_way' ? 'delivering' : activeTab} orders</div>
             ) : (
               filteredOrders.map((order, idx) => (
                 <button key={order.id} onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}

@@ -12,7 +12,7 @@ router.get('/orders', authenticate, authorize('cashier', 'admin'), async (req, r
     if (status && status !== 'all') {
       where.status = status;
     } else {
-      where.status = { in: ['pending', 'confirmed', 'preparing', 'ready', 'completed'] };
+      where.status = { in: ['pending', 'confirmed', 'preparing', 'ready', 'on_the_way', 'completed'] };
     }
 
     const orders = await prisma.order.findMany({
