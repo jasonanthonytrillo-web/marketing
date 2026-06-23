@@ -262,7 +262,7 @@ export default function OrderConfirmation() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
             <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' :
-                order.orderType === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+              order.orderType === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
               }`}>
               {order.orderType === 'dine_in' ? <><Home className="w-4 h-4" /> Dine In</> :
                 order.orderType === 'delivery' ? <><Truck className="w-4 h-4" /> Delivery</> : <><ShoppingBag className="w-4 h-4" /> Take Out</>}
@@ -398,7 +398,7 @@ export default function OrderConfirmation() {
               className="mt-4 w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 animate-bounce-in"
             >
               <CheckCircle className="w-5 h-5" />
-              <span>I'VE RECEIVED MY ORDER</span>
+              <span>ORDER RECEIVED</span>
             </button>
           </div>
         )}
@@ -669,7 +669,7 @@ export default function OrderConfirmation() {
       {/* Rider Arrival Overlay */}
       {showArrivalOverlay && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-10 sm:p-12 text-center relative">
+          <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-10 sm:p-12 text-center relative">
             <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl border border-slate-50">
               <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 animate-bounce">
                 <Truck className="w-8 h-8" />
