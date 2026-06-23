@@ -94,20 +94,22 @@ function decodePolyline(encoded) {
 }
 
 // Navigation View component
-function RiderNavMap({ riderPos, customerPos, storePos, followMode, setFollowMode }) {
+function RiderNavMap({ riderPos, customerPos, storePos, followMode }) {
   const map = useMap();
   const [routeCoords, setRouteCoords] = useState(null);
 
+  const isValidPos = (pos) => pos && pos[0] != null && pos[1] != null && pos[0] !== 0;
+
   // Auto-center logic
   useEffect(() => {
-    if (followMode && riderPos) {
+    if (followMode && isValidPos(riderPos)) {
       map.setView(riderPos, map.getZoom(), { animate: true });
     }
   }, [riderPos, followMode, map]);
 
   // Routing logic
   useEffect(() => {
-    if (!riderPos || !customerPos) return;
+    if (!isValidPos(riderPos) || !isValidPos(customerPos)) return;
     const controller = new AbortController();
     fetch(`https://router.project-osrm.org/route/v1/driving/${riderPos[1]},${riderPos[0]};${customerPos[1]},${customerPos[0]}?overview=full&geometries=polyline`, { signal: controller.signal })
       .then(r => r.json())
@@ -122,14 +124,16 @@ function RiderNavMap({ riderPos, customerPos, storePos, followMode, setFollowMod
       })
       .catch(console.error);
     return () => controller.abort();
-  }, [riderPos, customerPos]);
+  }, [riderPos, decodedCustomerPosStr = JSON.stringify(customerPos)]);
+
+  const decodedCustomerPosStr = JSON.stringify(customerPos); // helper for dependency stability
 
   return (
     <>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      {storePos && <Marker position={storePos} icon={storeIcon}><Popup>Store</Popup></Marker>}
-      {customerPos && <Marker position={customerPos} icon={customerIcon}><Popup>Customer's House</Popup></Marker>}
-      {riderPos && <Marker position={riderPos} icon={riderIcon}><Popup>You are here</Popup></Marker>}
+      {isValidPos(storePos) && <Marker position={storePos} icon={storeIcon}><Popup>Store</Popup></Marker>}
+      {isValidPos(customerPos) && <Marker position={customerPos} icon={customerIcon}><Popup>Customer's House</Popup></Marker>}
+      {isValidPos(riderPos) && <Marker position={riderPos} icon={riderIcon}><Popup>You are here</Popup></Marker>}
       {routeCoords && <Polyline positions={routeCoords} color="#3b82f6" weight={6} opacity={0.8} />}
     </>
   );
