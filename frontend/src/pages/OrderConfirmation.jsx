@@ -56,6 +56,7 @@ export default function OrderConfirmation() {
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
+  const [showArrivalOverlay, setShowArrivalOverlay] = useState(false);
 
   useEffect(() => {
     clearCart();
@@ -142,9 +143,23 @@ export default function OrderConfirmation() {
       }
     });
 
+    const unsub3 = onEvent('rider_arrived', (data) => {
+      if (data.orderNumber === orderNumber) {
+        setShowArrivalOverlay(true);
+        // Play notification sound
+        try {
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          audio.play();
+        } catch (err) {
+          console.warn('Audio play failed:', err);
+        }
+      }
+    });
+
     return () => {
       unsub();
       unsub2();
+      unsub3();
     };
   }, [onEvent, orderNumber]);
 
@@ -646,6 +661,39 @@ export default function OrderConfirmation() {
                 className="flex-1 py-3.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all active:scale-95"
               >
                 Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Rider Arrival Overlay */}
+      {showArrivalOverlay && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-8 text-center relative">
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl border border-slate-50">
+               <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 animate-bounce">
+                 <Truck className="w-8 h-8" />
+               </div>
+            </div>
+            
+            <div className="mt-10">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">Live Arrival Info</span>
+              </div>
+              <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Rider Arrived!</h3>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 px-2">
+                Your rider is now at your location. Please prepare to receive your order <span className="font-black text-slate-900">#{orderNumber.includes('-') ? orderNumber.split('-')[1] : orderNumber}</span>.
+              </p>
+              
+              <button
+                onClick={() => setShowArrivalOverlay(false)}
+                className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 active:scale-95 transition-all uppercase tracking-widest text-xs"
+              >
+                Okay, I'm going!
               </button>
             </div>
           </div>

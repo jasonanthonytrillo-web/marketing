@@ -140,4 +140,13 @@ module.exports = (io, prisma) => {
     // Also notify specific order page
     io.to(`tenant-${tId}-order-${order.orderNumber}`).emit('payment_request', payload);
   };
+  
+  // Helper: broadcast rider arrival
+  io.emitRiderArrival = (order) => {
+    const tId = order.tenantId;
+    io.to(`tenant-${tId}-order-${order.orderNumber}`).emit('rider_arrived', {
+      orderNumber: order.orderNumber,
+      timestamp: new Date().toISOString()
+    });
+  };
 };

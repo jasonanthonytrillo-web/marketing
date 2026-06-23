@@ -111,4 +111,40 @@ router.post('/orders/:id/delivered', authenticate, authorize('rider', 'admin'), 
   }
 });
 
+// POST /api/rider/orders/:id/notify-arrival — Alert customer
+router.post('/orders/:id/notify-arrival', authenticate, authorize('rider', 'admin'), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const order = await prisma.order.findUnique({
+      where: { id: orderId, tenantId: req.tenantId, riderId: req.user.id }
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found or not assigned to you.' });
+    }
+
+    // Emit socket event
+    const io = req.io;
+    if (io && io.emitRiderArrival) {
+      io.emitRiderArrival(order);
+    }
+
+    // Log the arrival notification
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: 'rider_arrival_notify',
+        entityType: 'order',
+        entityId: orderId.toString(),
+        details: `Rider ${req.user.name} notified customer of arrival for Order #${order.orderNumber}`
+      }
+    });
+    
+    res.json({ success: true, message: 'Customer notified of arrival.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to notify arrival.' });
+  }
+});
+
 module.exports = router;

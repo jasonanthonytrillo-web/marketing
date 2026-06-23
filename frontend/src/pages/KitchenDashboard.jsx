@@ -16,7 +16,9 @@ export default function KitchenDashboard() {
   const [audioUnlocked, setAudioUnlocked] = useState(false);
   const [showNewOrderAlert, setShowNewOrderAlert] = useState(false);
   const [showPrepModal, setShowPrepModal] = useState(false);
+  const [showServeModal, setShowServeModal] = useState(false);
   const [prepModalOrder, setPrepModalOrder] = useState(null);
+  const [serveModalOrder, setServeModalOrder] = useState(null);
   const [isAlerting, setIsAlerting] = useState(false);
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
@@ -120,7 +122,12 @@ export default function KitchenDashboard() {
         return;
       }
       else if (action === 'complete') await completeOrder(orderId);
-      else if (action === 'served') await markServed(orderId);
+      else if (action === 'served') {
+        setServeModalOrder(orderId);
+        setShowServeModal(true);
+        setProcessing(false);
+        return;
+      }
       loadOrders();
     } catch (e) {
       alert('Action failed');
@@ -136,6 +143,21 @@ export default function KitchenDashboard() {
     try {
       await startPreparing(prepModalOrder, mins);
       setPrepModalOrder(null);
+      loadOrders();
+    } catch (e) {
+      alert('Action failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+  
+  const handleConfirmServe = async () => {
+    if (!serveModalOrder) return;
+    setProcessing(true);
+    setShowServeModal(false);
+    try {
+      await markServed(serveModalOrder);
+      setServeModalOrder(null);
       loadOrders();
     } catch (e) {
       alert('Action failed');
@@ -325,6 +347,39 @@ export default function KitchenDashboard() {
                 className="w-full py-4 text-surface-500 font-bold hover:text-white transition-colors"
               >
                 Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Serve Confirmation Modal */}
+      {showServeModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-surface-900 border border-surface-800 rounded-[40px] p-8 md:p-12 max-w-sm w-full shadow-2xl animate-scale-in">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-emerald-500/20 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-emerald-500/30"><CheckCircle className="w-10 h-10 text-emerald-500" /></div>
+              <h2 className="text-3xl font-black text-white mb-2">Confirm Order</h2>
+              <p className="text-surface-400 font-medium text-lg">Mark this order as served?</p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={handleConfirmServe}
+                disabled={processing}
+                className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl rounded-2xl shadow-xl shadow-emerald-900/20 transition-all flex items-center justify-center gap-2"
+              >
+                {processing ? 'Processing...' : 'Yes, Order Served'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowServeModal(false);
+                  setServeModalOrder(null);
+                }}
+                disabled={processing}
+                className="w-full py-4 text-surface-500 font-bold hover:text-white transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>

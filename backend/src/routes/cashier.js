@@ -105,12 +105,6 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
       }
     }
 
-    currentStep = 'updating order';
-    let newNotes = order.notes || '';
-    if (referenceNumber) {
-      newNotes = newNotes ? `${newNotes} | Ref: ${referenceNumber}` : `Ref: ${referenceNumber}`;
-    }
-
     const updated = await prisma.order.update({
       where: { id: orderId, tenantId: req.tenantId },
       data: {
@@ -123,7 +117,7 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
         total,
         cashierId: req.user.id,
         confirmedAt: new Date(),
-        notes: newNotes !== '' ? newNotes : null
+        paymentReference: referenceNumber || order.paymentReference
       },
       include: { items: true }
     });

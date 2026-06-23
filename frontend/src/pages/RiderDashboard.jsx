@@ -6,6 +6,7 @@ import {
   getActiveRiderOrders, 
   pickupOrder, 
   deliverOrder,
+  notifyArrival,
   getPublicTenant
 } from '../services/api';
 import { 
@@ -19,7 +20,8 @@ import {
   ChevronRight,
   RefreshCw,
   Phone,
-  MessageSquare
+  MessageSquare,
+  Bell
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/helpers';
 
@@ -30,6 +32,11 @@ export default function RiderDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [branding, setBranding] = useState(null);
+  const [showDeliverModal, setShowDeliverModal] = useState(false);
+  const [orderToDeliver, setOrderToDeliver] = useState(null);
+  const [delivering, setDelivering] = useState(false);
+  const [notifyingArrival, setNotifyingArrival] = useState({});
+  const [arrivedOrders, setArrivedOrders] = useState(new Set());
 
   const loadData = async () => {
     setLoading(true);
@@ -80,13 +87,34 @@ export default function RiderDashboard() {
     }
   };
 
-  const handleDeliver = async (orderId) => {
-    if (!window.confirm('Mark this order as delivered?')) return;
+  const handleDeliver = async () => {
+    if (!orderToDeliver) return;
+    setDelivering(true);
     try {
-      await deliverOrder(orderId);
+      await deliverOrder(orderToDeliver.id);
+      setShowDeliverModal(false);
+      setOrderToDeliver(null);
       loadData();
     } catch (error) {
       alert('Failed to complete delivery.');
+    } finally {
+      setDelivering(false);
+    }
+  };
+
+  const handleNotifyArrival = async (orderId) => {
+    setNotifyingArrival(prev => ({ ...prev, [orderId]: true }));
+    try {
+      await notifyArrival(orderId);
+      setArrivedOrders(prev => {
+        const next = new Set(prev);
+        next.add(orderId);
+        return next;
+      });
+    } catch (error) {
+      alert('Failed to notify customer.');
+    } finally {
+      setNotifyingArrival(prev => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -211,14 +239,30 @@ export default function RiderDashboard() {
                 ) : (
                   <>
                     <button
+                      onClick={() => handleNotifyArrival(order.id)}
+                      disabled={notifyingArrival[order.id] || arrivedOrders.has(order.id)}
+                      className={`w-full py-5 font-black rounded-3xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm ${
+                        arrivedOrders.has(order.id)
+                          ? 'bg-amber-100 text-amber-700 shadow-amber-200/50'
+                          : 'bg-amber-500 text-white shadow-amber-500/20 active:scale-95'
+                      }`}
+                    >
+                      <Bell className="w-5 h-5 transition-transform group-hover:scale-110" />
+                      {arrivedOrders.has(order.id) ? 'Customer Notified' : notifyingArrival[order.id] ? 'Notifying...' : "I've Arrived"}
+                    </button>
+                    
+                    <button
                       onClick={() => openInMaps(order.deliveryLat, order.deliveryLng, order.deliveryAddress)}
                       className="w-full py-5 bg-blue-600 text-white font-black rounded-3xl shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
                     >
-                      <Navigation className="w-5 h-5" />
+                      <Navigation className="w-5 h-5 transition-transform group-hover:scale-110" />
                       Navigate to Maps
                     </button>
                     <button
-                      onClick={() => handleDeliver(order.id)}
+                      onClick={() => {
+                        setOrderToDeliver(order);
+                        setShowDeliverModal(true);
+                      }}
                       className="w-full py-5 bg-emerald-600 text-white font-black rounded-3xl shadow-xl shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
                     >
                       <CheckCircle className="w-5 h-5" />
@@ -253,6 +297,42 @@ export default function RiderDashboard() {
            </button>
         </div>
       </div>
+      {/* Delivery Confirmation Modal */}
+      {showDeliverModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-10 h-10 text-emerald-600" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Confirm Delivery</h3>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
+                Are you sure you want to mark order <span className="font-black text-slate-900">#{orderToDeliver?.orderNumber}</span> as delivered?
+              </p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleDeliver}
+                  disabled={delivering}
+                  className="w-full py-5 bg-emerald-600 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-widest text-xs"
+                >
+                  {delivering ? 'Updating Status...' : 'Yes, Order Delivered'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeliverModal(false);
+                    setOrderToDeliver(null);
+                  }}
+                  disabled={delivering}
+                  className="w-full py-5 bg-slate-100 text-slate-600 font-black rounded-2xl active:scale-95 transition-all uppercase tracking-widest text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
