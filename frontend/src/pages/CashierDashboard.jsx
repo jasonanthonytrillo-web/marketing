@@ -535,6 +535,15 @@ export default function CashierDashboard() {
                         <span className="text-sm font-mono font-black text-red-700 bg-white px-2 py-1 rounded-lg border border-red-100">{selectedOrder.paymentReference}</span>
                       </div>
                     )}
+                    {selectedOrder.notes && (
+                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 animate-fade-in">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 leading-none mb-1">Global Order Note</p>
+                          <p className="text-sm font-medium text-amber-900">{selectedOrder.notes}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

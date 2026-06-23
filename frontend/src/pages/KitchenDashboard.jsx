@@ -367,6 +367,13 @@ function OrderCard({ order, now, onAction, processing }) {
         </div>
       </div>
 
+      {order.notes && (
+        <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-xs font-bold text-amber-200"><span className="text-amber-500 uppercase text-[10px] tracking-widest mr-1">Note:</span> {order.notes}</p>
+        </div>
+      )}
+
       <div className="p-4 bg-surface-900">
         <ul className="space-y-3">
           {order.items?.map(item => (
