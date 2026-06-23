@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
-import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Trash2 } from 'lucide-react';
+import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift } from 'lucide-react';
 
 const TRANSLATIONS = {
   en: {
@@ -130,7 +130,7 @@ export default function Menu() {
             price: item.productPrice,
             stock: 999, // default to high so cart accepts it
           };
-          
+
           const options = {
             size: item.size || '',
             flavor: item.flavor || '',
@@ -139,7 +139,7 @@ export default function Menu() {
             comboChoices: item.comboChoices ? (typeof item.comboChoices === 'string' ? JSON.parse(item.comboChoices) : item.comboChoices) : null,
             isRedemption: item.isRedemption || false
           };
-          
+
           for (let i = 0; i < item.quantity; i++) {
             addToCart(productObj, options);
           }
@@ -510,7 +510,7 @@ export default function Menu() {
       {/* Floating Cart Button */}
       {itemCount > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-sm animate-bounce-in">
-          <div 
+          <div
             className="flex items-stretch justify-between w-full h-16 rounded-3xl text-white shadow-2xl overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-transform"
             style={{ backgroundColor: brandingColor }}
           >
@@ -529,7 +529,7 @@ export default function Menu() {
               </div>
               <span className="font-black uppercase tracking-wide text-xs sm:text-sm whitespace-nowrap flex-shrink-0">{t('reviewCart')}</span>
             </Link>
-            
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -756,13 +756,13 @@ export default function Menu() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-fade-in">
           {/* Dark blurred backdrop */}
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setShowRewards(false)}></div>
-          
+
           <div className="relative bg-white rounded-[2.5rem] w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
-            
+
             {/* Header Section */}
             <div className="relative p-8 md:p-10 text-white overflow-hidden shrink-0" style={{ backgroundColor: brandingColor }}>
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-              
+
               <div className="relative z-10 flex justify-between items-start">
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-white/20 shadow-sm backdrop-blur-md">
@@ -802,10 +802,10 @@ export default function Menu() {
                 {categories.flatMap(c => c.products).filter(p => p.pointsCost).map(product => {
                   const canAfford = (user?.points || 0) >= product.pointsCost;
                   const progress = Math.min(100, ((user?.points || 0) / product.pointsCost) * 100);
-                  
+
                   return (
                     <div key={product.id} className="group bg-white border border-slate-200 rounded-[2rem] p-5 shadow-sm hover:shadow-xl transition-all relative overflow-hidden flex flex-col justify-between h-full">
-                      
+
                       {/* Decorative background element for affordable items */}
                       {canAfford && (
                         <div className="absolute top-0 right-0 w-32 h-32 opacity-10 rounded-full blur-2xl transition-all group-hover:scale-150" style={{ backgroundColor: brandingColor }}></div>
@@ -845,11 +845,10 @@ export default function Menu() {
                             addToCart(product, { isRedemption: true });
                             setShowRewards(false);
                           }}
-                          className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                            canAfford 
-                              ? 'text-white shadow-lg ring-2 ring-transparent ring-offset-2' 
+                          className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] ${canAfford
+                              ? 'text-white shadow-lg ring-2 ring-transparent ring-offset-2'
                               : 'bg-slate-100 text-slate-400 border border-slate-200'
-                          }`}
+                            }`}
                           style={canAfford ? { backgroundColor: brandingColor, '--tw-ring-color': brandingColor } : {}}
                         >
                           {canAfford ? 'Redeem Reward' : `Need ${product.pointsCost - Math.floor(user?.points || 0)} More Points`}
@@ -859,7 +858,7 @@ export default function Menu() {
                   );
                 })}
               </div>
-              
+
               {categories.flatMap(c => c.products).filter(p => p.pointsCost).length === 0 && (
                 <div className="text-center py-20 flex flex-col items-center">
                   <div className="mb-4 opacity-50"><Gift className="w-16 h-16 text-slate-500" /></div>
