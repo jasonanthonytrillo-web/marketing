@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getSettings, updateSettings, uploadImage } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { Palette, Smartphone, Gem, Upload, Plus, ArrowRight, X, CheckCircle, Loader2 } from 'lucide-react';
+import { Palette, Smartphone, Gem, Upload, Plus, ArrowRight, X, CheckCircle, Loader2, MapPin } from 'lucide-react';
+import LocationPicker from '../LocationPicker';
 
 export default function SettingsTab() {
   const { user } = useAuth();
@@ -252,6 +253,40 @@ export default function SettingsTab() {
               </div>
             </div>
             <p className="text-xs text-slate-400 italic font-medium">✨ Tip: You can mix images and videos. The system will automatically play videos and cycle through images in a slideshow.</p>
+          </div>
+        </div>
+
+        {/* Store Location Settings */}
+        <div className="glass-card overflow-hidden">
+          <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20"><MapPin className="w-6 h-6" /></div>
+            <div>
+              <h3 className="font-heading font-bold text-emerald-900">Store Location</h3>
+              <p className="text-emerald-700 text-xs font-medium">Set your shop coordinates for delivery calculations.</p>
+            </div>
+          </div>
+          <div className="p-8 space-y-6">
+            <div className="bg-surface-50 rounded-2xl p-4 border border-surface-200">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">Shop Pin (Coordinates)</p>
+                <div className="flex gap-2">
+                   <span className="text-[10px] font-bold bg-white border border-surface-200 px-2 py-1 rounded text-surface-600">Lat: {Number(settings.storeLat || 0).toFixed(4)}</span>
+                   <span className="text-[10px] font-bold bg-white border border-surface-200 px-2 py-1 rounded text-surface-600">Lng: {Number(settings.storeLng || 0).toFixed(4)}</span>
+                </div>
+              </div>
+              
+              <div className="h-[300px] rounded-xl overflow-hidden border-2 border-surface-100 relative z-0">
+                <LocationPicker 
+                  onLocationSelect={(lat, lng, addr) => {
+                    setSettings(prev => ({ ...prev, storeLat: lat, storeLng: lng }));
+                  }}
+                  initialAddress=""
+                />
+              </div>
+              <p className="mt-3 text-[11px] text-surface-500 font-medium italic">
+                * Tap the map or search to pin your shop's exact location. This will be used to calculate delivery fees (₱20 per 3km) from your store to the customer.
+              </p>
+            </div>
           </div>
         </div>
 

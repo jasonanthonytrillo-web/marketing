@@ -41,9 +41,16 @@ async function reverseGeocode(lat, lng, setAddress) {
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
     const data = await res.json();
-    if (data && data.display_name) {
-      // Shorten to first 3 parts for cleaner display
-      const shortAddress = data.display_name.split(',').slice(0, 3).join(',').trim();
+    if (data && data.address) {
+      const a = data.address;
+      // Build a smart, short address: (Building or Road) + (City or Town)
+      const primary = a.building || a.amenity || a.road || a.suburb || '';
+      const secondary = a.city || a.town || a.village || a.city_district || 'Butuan City';
+      
+      const shortAddress = primary ? `${primary}, ${secondary}` : secondary;
+      setAddress(shortAddress);
+    } else if (data && data.display_name) {
+      const shortAddress = data.display_name.split(',').slice(0, 2).join(',').trim();
       setAddress(shortAddress);
     }
   } catch (error) {
@@ -232,13 +239,13 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
       </div>
 
       {address && (
-        <div className="flex items-start gap-2 bg-white/50 backdrop-blur-sm border border-surface-200 rounded-2xl p-3 animate-fade-in shadow-sm">
-          <div className="mt-0.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white flex-shrink-0">
-            <CheckCircle className="w-3.5 h-3.5" />
+        <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-100 rounded-2xl p-4 animate-fade-in shadow-sm">
+          <div className="mt-0.5 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white flex-shrink-0">
+            <CheckCircle className="w-4 h-4" />
           </div>
           <div className="flex-1">
-            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-0.5">Pinned Address</p>
-            <p className="text-xs text-surface-800 font-bold leading-relaxed">{address}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-0.5">Location Pinned</p>
+            <p className="text-[13px] text-emerald-900 font-bold leading-tight">{address}</p>
           </div>
         </div>
       )}

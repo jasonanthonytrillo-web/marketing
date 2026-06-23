@@ -219,7 +219,11 @@ export default function Checkout() {
 
   const calculateDeliveryFee = (lat, lng) => {
     if (!lat || !lng) return 0;
-    const shopLocation = { lat: 14.5995, lng: 120.9842 }; // Shop Location
+    // Use dynamic shop location from branding, fallback to Manila default
+    const shopLocation = { 
+      lat: branding?.storeLat || 14.5995, 
+      lng: branding?.storeLng || 120.9842 
+    };
     
     const R = 6371; // Earth's radius in km
     const dLat = (lat - shopLocation.lat) * Math.PI / 180;
@@ -229,10 +233,10 @@ export default function Checkout() {
       Math.cos(shopLocation.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) * 
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distanceKm = R * c;
+    const distance = R * c; // Distance in km
     
-    // Every 3km is 20 pesos
-    return Math.ceil(distanceKm / 3) * 20;
+    // ₱20 per 3km
+    return Math.max(1, Math.ceil(distance / 3)) * 20;
   };
 
   return (
