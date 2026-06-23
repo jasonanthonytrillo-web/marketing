@@ -110,6 +110,9 @@ function RiderNavMap({ riderPos, customerPos, storePos, followMode }) {
   }, [riderPos, followMode, map]);
 
   // Routing logic
+  const customerPosStr = JSON.stringify(customerPos);
+  const riderPosStr = JSON.stringify(riderPos);
+
   useEffect(() => {
     if (!isValidPos(riderPos) || !isValidPos(customerPos)) return;
     const controller = new AbortController();
@@ -126,9 +129,7 @@ function RiderNavMap({ riderPos, customerPos, storePos, followMode }) {
       })
       .catch(console.error);
     return () => controller.abort();
-  }, [riderPos, decodedCustomerPosStr = JSON.stringify(customerPos)]);
-
-  const decodedCustomerPosStr = JSON.stringify(customerPos); // helper for dependency stability
+  }, [riderPosStr, customerPosStr, map, followMode]);
 
   return (
     <>
