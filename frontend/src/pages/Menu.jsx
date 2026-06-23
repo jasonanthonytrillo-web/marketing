@@ -509,29 +509,29 @@ export default function Menu() {
 
       {/* Floating Cart Button */}
       {itemCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 sm:px-6 flex gap-2 animate-bounce-in">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-md flex justify-center gap-2 animate-bounce-in">
           <Link
             to="/cart"
-            className="flex-1 flex items-center justify-between h-16 px-4 sm:px-6 rounded-3xl text-white shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="flex-1 min-w-0 flex items-center justify-between h-16 px-4 sm:px-6 rounded-3xl text-white shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
             style={{ backgroundColor: brandingColor }}
           >
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5.5 8h13l1.5 13H4L5.5 8z" /><path d="M8 11V6a4 4 0 0 1 8 0v5" /></svg>
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1 pr-2">
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none mb-1 truncate">{itemCount} {t('items')}</p>
-                <p className="text-lg font-black leading-none">₱{getSubtotal().toFixed(2)}</p>
+                <p className="text-lg font-black leading-none truncate">₱{getSubtotal().toFixed(2)}</p>
               </div>
             </div>
-            <span className="font-black uppercase tracking-wide text-xs sm:text-sm whitespace-nowrap ml-2">{t('reviewCart')}</span>
+            <span className="font-black uppercase tracking-wide text-[10px] sm:text-xs whitespace-nowrap ml-1 flex-shrink-0">{t('reviewCart')}</span>
           </Link>
           <button
             onClick={() => {
               unlockAudio();
               clearCart();
             }}
-            className="w-16 h-16 bg-red-500/90 backdrop-blur-md text-white rounded-3xl shadow-xl border border-red-400/20 flex flex-shrink-0 items-center justify-center hover:bg-red-500 focus:outline-none hover:scale-[1.05] active:scale-[0.95] transition-all"
+            className="w-16 h-16 flex-shrink-0 bg-red-500/90 backdrop-blur-md text-white rounded-3xl shadow-xl border border-red-400/20 flex items-center justify-center hover:bg-red-500 focus:outline-none hover:scale-[1.05] active:scale-[0.95] transition-all"
             aria-label="Clear Cart"
           >
             <Trash2 className="w-6 h-6" />
