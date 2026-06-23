@@ -409,6 +409,12 @@ export default function OrderConfirmation() {
           </div>
           <div className="border-t border-surface-200 mt-3 pt-3 space-y-1">
             <div className="flex justify-between text-xs sm:text-sm"><span className="text-surface-500">Subtotal</span><span>{formatCurrency(order.subtotal)}</span></div>
+            {order.deliveryFee > 0 && (
+              <div className="flex justify-between text-xs sm:text-sm text-surface-500">
+                <span>Delivery Fee</span>
+                <span>{formatCurrency(order.deliveryFee)}</span>
+              </div>
+            )}
             {order.discountAmount > 0 && (
               <div className="flex justify-between text-xs sm:text-sm text-emerald-600 font-semibold">
                 <span>Discount ({order.discountType === 'senior' ? 'Senior Citizen (20%)' : order.discountType === 'pwd' ? 'PWD (20%)' : order.discountType === 'promo' ? 'Promo' : order.discountType})</span>

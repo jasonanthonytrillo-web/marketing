@@ -138,6 +138,7 @@ export default function CashierDashboard() {
     try {
       const res = await calculatePayment({
         subtotal: selectedOrder.subtotal,
+        deliveryFee: selectedOrder.deliveryFee,
         discountType: paymentData.discountType,
         discountPercent: paymentData.discountPercent,
         amountReceived: parseFloat(paymentData.received) || 0
@@ -579,6 +580,7 @@ export default function CashierDashboard() {
                       {calcResult && (
                         <div className="bg-white p-4 rounded-2xl border border-surface-200 shadow-sm space-y-2">
                           <div className="flex justify-between text-sm"><span className="text-surface-500">Subtotal</span><span>{formatCurrency(calcResult.subtotal)}</span></div>
+                          {selectedOrder.deliveryFee > 0 && <div className="flex justify-between text-sm text-surface-500"><span>Delivery Fee</span><span>{formatCurrency(selectedOrder.deliveryFee)}</span></div>}
                           {calcResult.discountAmount > 0 && <div className="flex justify-between text-sm text-emerald-600"><span>Discount</span><span>-{formatCurrency(calcResult.discountAmount)}</span></div>}
                           {calcResult.taxAmount > 0 && <div className="flex justify-between text-sm"><span className="text-surface-500">Tax ({calcResult.taxRate}%)</span><span>{formatCurrency(calcResult.taxAmount)}</span></div>}
                           <div className="flex justify-between items-center pt-2 mt-2 border-t border-surface-100">

@@ -121,8 +121,8 @@ router.post('/', async (req, res) => {
     }
 
     const taxRate = parseFloat(process.env.TAX_RATE || '0.00');
-    const total = subtotal;
-    const taxAmount = taxRate > 0 ? (total - (total / (1 + taxRate))) : 0;
+    const total = subtotal + (deliveryFee ? parseFloat(deliveryFee) : 0);
+    const taxAmount = taxRate > 0 ? (subtotal - (subtotal / (1 + taxRate))) : 0;
 
     // Handle Loyalty Redemptions & Role Check
     let validCustomerId = null;
