@@ -238,7 +238,7 @@ export default function OrderConfirmation() {
             {isCancelled
               ? "THIS ORDER HAS BEEN VOIDED / CANCELLED"
               : isReady
-                ? "YOUR ORDER IS READY! Please proceed to the counter."
+                ? (order.orderType === 'delivery' ? "YOUR ORDER IS READY! Our team is packing it for delivery." : "YOUR ORDER IS READY! Please proceed to the counter.")
                 : "Please wait for your number to be called or displayed on the queue screen."}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">

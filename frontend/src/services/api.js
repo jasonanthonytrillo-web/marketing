@@ -73,6 +73,12 @@ export const getCashierOrders = (status) => api.get(`/cashier/orders${status ? `
 export const confirmOrder = (id, data) => api.post(`/cashier/orders/${id}/confirm`, data);
 export const cashierCancelOrder = (id, data) => api.post(`/cashier/orders/${id}/cancel`, data);
 export const calculatePayment = (data) => api.post('/cashier/calculate', data);
+export const updateOrderStatus = (id, status) => {
+  if (status === 'on_the_way') {
+    return api.post(`/cashier/orders/${id}/dispatch`);
+  }
+  return api.post(`/cashier/orders/${id}/status`, { status });
+};
 
 // Kitchen
 export const getKitchenOrders = () => api.get('/kitchen/orders');

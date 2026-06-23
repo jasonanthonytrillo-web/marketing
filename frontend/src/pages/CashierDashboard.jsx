@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getCashierOrders, confirmOrder, cashierCancelOrder, calculatePayment, markServed, startPreparing, completeOrder } from '../services/api';
+import { getCashierOrders, confirmOrder, cashierCancelOrder, calculatePayment, markServed, startPreparing, completeOrder, updateOrderStatus } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
@@ -234,7 +234,7 @@ export default function CashierDashboard() {
     if (!selectedOrder) return;
     setProcessing(true);
     try {
-      await (await import('../services/api')).updateOrderStatus(selectedOrder.id, 'on_the_way');
+      await updateOrderStatus(selectedOrder.id, 'on_the_way');
       setSelectedOrder(null);
       loadOrders();
     } catch (e) {

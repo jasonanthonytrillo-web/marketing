@@ -368,4 +368,52 @@ router.post('/orders/:id/request-payment', authenticate, authorize('cashier', 'a
   }
 });
 
+// POST /api/cashier/orders/:id/dispatch — Set status to 'on_the_way'
+router.post('/orders/:id/dispatch', authenticate, authorize('cashier', 'admin'), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const updated = await prisma.order.update({
+      where: { id: orderId, tenantId: req.tenantId },
+      data: { status: 'on_the_way' },
+      include: { items: true }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: 'order_dispatched',
+        entityType: 'order',
+        entityId: orderId.toString(),
+        details: `Order #${updated.orderNumber} dispatched for delivery.`
+      }
+    });
+
+    const io = req.io;
+    if (io && io.emitOrderUpdate) io.emitOrderUpdate(updated, 'on_the_way');
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to dispatch order.' });
+  }
+});
+
+// POST /api/cashier/orders/:id/status — Generic status update
+router.post('/orders/:id/status', authenticate, authorize('cashier', 'admin'), async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+    const { status } = req.body;
+    const updated = await prisma.order.update({
+      where: { id: orderId, tenantId: req.tenantId },
+      data: { status },
+      include: { items: true }
+    });
+
+    const io = req.io;
+    if (io && io.emitOrderUpdate) io.emitOrderUpdate(updated, status);
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update order status.' });
+  }
+});
+
 module.exports = router;

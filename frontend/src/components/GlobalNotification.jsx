@@ -55,7 +55,7 @@ export default function GlobalNotification() {
         }
 
         if (data.eventType === 'ready' || data.order.status === 'ready') {
-          triggerReadyAlert(data.order.orderNumber);
+          triggerReadyAlert(data.order);
         } else if (data.eventType === 'cancelled' || data.order.status === 'cancelled') {
           triggerCancelledAlert(data.order.orderNumber, data.order.cancellationReason);
           // Auto-remove from active orders list in realtime
@@ -135,19 +135,21 @@ export default function GlobalNotification() {
     };
   }, [readyOrderNumbers]);
 
-  const triggerReadyAlert = (orderNum) => {
+  const triggerReadyAlert = (order) => {
+    const orderNum = order.orderNumber;
     const dismissed = sessionStorage.getItem(`ready_dismissed_${orderNum}`);
     if (dismissed) return;
 
     const displayNum = orderNum?.includes('-') ? orderNum.split('-')[1] : orderNum;
-    showSystemNotification('Order is Ready! 🍽️', `Your Order #${displayNum} is ready to be picked up at the counter.`);
+    const isDelivery = order.orderType === 'delivery';
+    const msg = isDelivery ? `Order #${displayNum} is being packed for delivery!` : `Your Order #${displayNum} is ready to be picked up at the counter.`;
+    showSystemNotification('Order is Ready! 🍽️', msg);
 
     setReadyOrderNumbers(prev => {
-      if (prev.includes(orderNum)) return prev;
-      const next = [...prev, orderNum];
+      if (prev.find(o => o.number === orderNum)) return prev;
+      const next = [...prev, { number: orderNum, type: order.orderType }];
       
       // Only start the alert flow if one isn't already active
-      // This prevents socket + polling from double-triggering the chime sequence
       if (!alertActiveRef.current) {
         startAlertFlow(next);
       }
@@ -193,8 +195,10 @@ export default function GlobalNotification() {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const text = orderNums.length > 1 
-          ? `Your orders ${orderNums.join(' and ')} are ready. Please proceed to the counter.`
-          : `Your order ${orderNums[0]} is ready. Please proceed to the counter.`;
+          ? `Your orders are ready. Please check your status screen.`
+          : orderNums[0].type === 'delivery'
+            ? `Your order ${orderNums[0].number.includes('-') ? orderNums[0].number.split('-')[1] : orderNums[0].number} is being prepared for delivery.`
+            : `Your order ${orderNums[0].number.includes('-') ? orderNums[0].number.split('-')[1] : orderNums[0].number} is ready. Please proceed to the counter.`;
         
         console.log(`📢 Speaking: "${text}"`);
         const msg = new SpeechSynthesisUtterance(text);
@@ -226,16 +230,16 @@ export default function GlobalNotification() {
   };
 
   const dismissReadyAlert = () => {
-    readyOrderNumbers.forEach(num => sessionStorage.setItem(`ready_dismissed_${num}`, 'true'));
-    const lastNum = readyOrderNumbers[readyOrderNumbers.length - 1];
+    readyOrderNumbers.forEach(o => sessionStorage.setItem(`ready_dismissed_${o.number}`, 'true'));
+    const lastOrder = readyOrderNumbers[readyOrderNumbers.length - 1];
     setReadyOrderNumbers([]);
     
     clearChimeLoop();
     if (navigator.vibrate) navigator.vibrate(0);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     
-    if (lastNum) {
-      const targetPath = `/order/${lastNum}`;
+    if (lastOrder) {
+      const targetPath = `/order/${lastOrder.number}`;
       navigate(targetPath);
     }
   };
@@ -253,23 +257,29 @@ export default function GlobalNotification() {
       {readyOrderNumbers.length > 0 && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-900/90 backdrop-blur-md p-6" onClick={dismissReadyAlert}>
           <div className="text-center animate-fade-in-up w-full max-w-2xl" onClick={e => e.stopPropagation()}>
-            <div className="mb-4 animate-bounce"><Bell className="w-20 h-20 sm:w-24 sm:h-24 text-emerald-300" /></div>
+            <div className="mb-4 flex justify-center animate-bounce">
+              <Bell className="w-20 h-20 sm:w-24 sm:h-24 text-emerald-300" />
+            </div>
             <h1 className="font-heading text-4xl sm:text-6xl font-black text-white mb-2 leading-tight">
               {readyOrderNumbers.length > 1 ? 'Your Orders are Ready!' : 'Your Order is Ready!'}
             </h1>
             <p className="text-emerald-200 text-lg sm:text-xl font-medium mb-4">Queue Number{readyOrderNumbers.length > 1 ? 's' : ''}</p>
             
             <div className="flex flex-wrap justify-center gap-4 mb-10">
-              {readyOrderNumbers.map(num => (
-                <div key={num} className="bg-white/10 backdrop-blur-md border-2 border-white/20 px-6 py-4 rounded-3xl">
+              {readyOrderNumbers.map(o => (
+                <div key={o.number} className="bg-white/10 backdrop-blur-md border-2 border-white/20 px-6 py-4 rounded-3xl">
                   <p className="font-heading text-4xl sm:text-6xl font-black text-white tracking-tight">
-                    {num?.includes('-') ? num.split('-')[1] : num}
+                    {o.number?.includes('-') ? o.number.split('-')[1] : o.number}
                   </p>
                 </div>
               ))}
             </div>
 
-            <p className="text-emerald-300 text-base sm:text-lg mb-10">Please proceed to the counter to pick up your order{readyOrderNumbers.length > 1 ? 's' : ''}.</p>
+            <p className="text-emerald-300 text-base sm:text-lg mb-10">
+              {readyOrderNumbers.length === 1 && readyOrderNumbers[0].type === 'delivery'
+                ? "Our team is packing your order for delivery right now!"
+                : `Please proceed to the counter to pick up your order${readyOrderNumbers.length > 1 ? 's' : ''}.`}
+            </p>
             <button onClick={dismissReadyAlert} className="bg-white text-emerald-800 font-bold text-lg sm:text-xl px-12 py-5 rounded-2xl shadow-2xl hover:bg-emerald-50 transition-all active:scale-95">
               Got it! ✓
             </button>
