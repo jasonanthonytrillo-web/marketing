@@ -361,14 +361,23 @@ export default function Checkout() {
                         
                         <button
                           type="button"
-                          onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'];
-                            link.download = `HometownBrew-${paymentMethod}-QR.png`;
-                            link.target = "_blank";
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
+                          onClick={async () => {
+                            try {
+                              const imageUrl = branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'];
+                              const response = await fetch(imageUrl);
+                              const blob = await response.blob();
+                              const url = window.URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `HometownBrew-${paymentMethod}-QR.png`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              window.URL.revokeObjectURL(url);
+                            } catch (err) {
+                              console.error('Download failed:', err);
+                              window.open(branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'], '_blank');
+                            }
                           }}
                           className="w-full py-3 bg-white border border-surface-200 rounded-xl shadow-sm hover:bg-surface-50 text-surface-700 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95"
                         >
