@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
-import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift } from 'lucide-react';
+import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Trash2 } from 'lucide-react';
 
 const TRANSLATIONS = {
   en: {
@@ -93,7 +93,7 @@ export default function Menu() {
   const [showRewards, setShowRewards] = useState(false);
   const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
   const [comboStep, setComboStep] = useState(1); // 1 or 2
-  const { addToCart, getItemCount, items, getSubtotal } = useCart();
+  const { addToCart, getItemCount, items, getSubtotal, clearCart } = useCart();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -509,10 +509,10 @@ export default function Menu() {
 
       {/* Floating Cart Button */}
       {itemCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 sm:px-6">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 sm:px-6 flex gap-2 animate-bounce-in">
           <Link
             to="/cart"
-            className="flex items-center justify-between w-full h-16 px-4 sm:px-6 rounded-3xl text-white shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all animate-bounce-in"
+            className="flex-1 flex items-center justify-between h-16 px-4 sm:px-6 rounded-3xl text-white shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
             style={{ backgroundColor: brandingColor }}
           >
             <div className="flex items-center gap-2 sm:gap-4">
@@ -526,6 +526,16 @@ export default function Menu() {
             </div>
             <span className="font-black uppercase tracking-wide text-xs sm:text-sm whitespace-nowrap ml-2">{t('reviewCart')}</span>
           </Link>
+          <button
+            onClick={() => {
+              unlockAudio();
+              clearCart();
+            }}
+            className="w-16 h-16 bg-red-500/90 backdrop-blur-md text-white rounded-3xl shadow-xl border border-red-400/20 flex flex-shrink-0 items-center justify-center hover:bg-red-500 focus:outline-none hover:scale-[1.05] active:scale-[0.95] transition-all"
+            aria-label="Clear Cart"
+          >
+            <Trash2 className="w-6 h-6" />
+          </button>
         </div>
       )}
 
