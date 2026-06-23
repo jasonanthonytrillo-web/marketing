@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MapPin, Search, Navigation } from 'lucide-react';
+import { MapPin, Search, Navigation, CheckCircle } from 'lucide-react';
 
 // Fix for default marker icons in Leaflet + React
 delete L.Icon.Default.prototype._getIconUrl;
