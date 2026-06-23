@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
+import { Gem, Rocket, CheckCircle, AlertTriangle, PartyPopper, ArrowLeft } from 'lucide-react';
 
 export default function MemberPortal() {
   const [mode, setMode] = useState('login'); // login, register, verify
@@ -262,15 +263,15 @@ export default function MemberPortal() {
       <div className="w-full max-w-md relative z-10">
         {/* Back Button */}
         <Link to="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-8 text-sm font-bold uppercase tracking-widest">
-          ← Back to Kiosk
+          <ArrowLeft className="w-4 h-4" /> Back to Kiosk
         </Link>
 
         <div className="bg-[#FAF7F2] border border-[#EFEBE4] rounded-[40px] p-8 md:p-10 shadow-2xl shadow-[#DCD6C8]/40 relative overflow-hidden">
           {/* Success State */}
           {success ? (
             <div className="text-center py-6 animate-fade-in">
-              <div className="w-20 h-20 bg-emerald-500/20 border-2 border-emerald-500/50 rounded-full flex items-center justify-center text-3xl mx-auto mb-8 shadow-2xl shadow-emerald-500/20 animate-bounce-in">
-                ✅
+              <div className="w-20 h-20 bg-emerald-500/20 border-2 border-emerald-500/50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/20 animate-bounce-in">
+                <CheckCircle className="w-10 h-10 text-emerald-500" />
               </div>
               <h2 className="text-3xl font-black text-[#2D241E] mb-4 tracking-tight">Account Created!</h2>
               <p className="text-emerald-700 font-bold mb-10 leading-relaxed">
@@ -290,8 +291,8 @@ export default function MemberPortal() {
                 {tenantData?.logo ? (
                   <img src={tenantData.logo} className="w-20 h-20 rounded-3xl object-cover mx-auto mb-6 shadow-xl shadow-primary-500/20 border-2 border-white/10" alt={tenantData.name} />
                 ) : (
-                  <div className="w-16 h-16 bg-primary-500 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl shadow-primary-500/20">
-                    💎
+                  <div className="w-16 h-16 bg-primary-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary-500/20">
+                    <Gem className="w-8 h-8 text-white" />
                   </div>
                 )}
                 <h1 className="text-3xl font-black text-[#2D241E] mb-2 tracking-tight">
@@ -318,7 +319,7 @@ export default function MemberPortal() {
                       to="/menu"
                       className="w-full inline-block bg-primary-600 text-white font-black py-5 rounded-2xl shadow-xl shadow-primary-600/20 hover:bg-primary-500 active:scale-[0.98] transition-all uppercase tracking-widest"
                     >
-                      🚀 Order Now
+                      <span className="flex items-center gap-2"><Rocket className="w-4 h-4" /> Order Now</span>
                     </Link>
                   </div>
                 </div>
@@ -326,7 +327,7 @@ export default function MemberPortal() {
                 <>
                   {error && (
                     <div className="bg-red-500/10 border border-red-500/20 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold mb-6 text-center animate-shake">
-                      ⚠️ {error}
+                      <span className="flex items-center gap-1.5 justify-center"><AlertTriangle className="w-3.5 h-3.5" /> {error}</span>
                     </div>
                   )}
 
@@ -358,7 +359,7 @@ export default function MemberPortal() {
                       <div className="animate-fade-in">
                         {resendSuccessMessage && (
                           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-emerald-600 text-xs mb-4 text-center font-bold">
-                            🎉 {resendSuccessMessage}
+                            <span className="flex items-center gap-1.5 justify-center"><PartyPopper className="w-3.5 h-3.5" /> {resendSuccessMessage}</span>
                           </div>
                         )}
                         <label className="block text-xs font-bold text-[#8A796E] uppercase tracking-widest mb-2 px-1">6-Digit Code</label>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../../services/api';
+import { AlertTriangle, X } from 'lucide-react';
 
 export default function CategoriesTab() {
   const [categories, setCategories] = useState([]);
@@ -111,9 +112,9 @@ export default function CategoriesTab() {
       {isEditing && (
         <div className="modal-overlay">
           <div className="modal-container max-w-md">
-            <div className="p-6 border-b border-surface-100 flex items-center justify-between">
+              <div className="flex items-center justify-between p-6 border-b border-surface-100">
               <h3 className="font-heading text-xl font-bold text-surface-900">{currentCategory.id ? 'Edit Category' : 'Add Category'}</h3>
-              <button onClick={() => setIsEditing(false)} className="text-surface-400 hover:text-surface-600">✕</button>
+              <button onClick={() => setIsEditing(false)} className="text-surface-400 hover:text-surface-600 flex items-center justify-center"><X className="w-6 h-6" /></button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
@@ -150,7 +151,7 @@ export default function CategoriesTab() {
             <div className="p-8 text-center">
               {/* Pulsing Warning Icon */}
               <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse border-4 border-red-100">
-                <span className="text-4xl">⚠️</span>
+                <AlertTriangle className="w-10 h-10 text-red-500" />
               </div>
               
               <h3 className="text-2xl font-black text-surface-900 mb-3 tracking-tight">Are you sure?</h3>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getFeedbackStats } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
 import { useSocket } from '../../context/SocketContext';
+import { Star, MessageSquare, SmilePlus, Smile, Frown, Inbox } from 'lucide-react';
 
 export default function FeedbackTab() {
   const [data, setData] = useState(null);
@@ -53,9 +54,9 @@ export default function FeedbackTab() {
         <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-surface-200 text-center flex flex-col items-center">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-surface-400 mb-2">Average Rating</p>
           <p className="text-6xl font-black text-surface-900 mb-2">{Number(data?.averageRating || 0).toFixed(1)}</p>
-          <div className="flex gap-1 text-2xl">
+          <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map(s => (
-              <span key={s} className={s <= Math.round(data?.averageRating || 0) ? 'text-amber-400' : 'text-surface-200'}>⭐</span>
+              <span key={s} className={s <= Math.round(data?.averageRating || 0) ? 'text-amber-400' : 'text-surface-200'}><Star className="w-6 h-6 fill-current" /></span>
             ))}
           </div>
         </div>
@@ -66,7 +67,7 @@ export default function FeedbackTab() {
         </div>
 
         <div className="bg-gradient-to-br from-primary-500 to-indigo-600 rounded-[2rem] p-8 shadow-xl text-white flex flex-col items-center justify-center text-center">
-          <div className="text-4xl mb-3">💬</div>
+          <div className="mb-3"><MessageSquare className="w-10 h-10" /></div>
           <h4 className="font-black text-lg mb-1 uppercase tracking-tight">Customer Voice</h4>
           <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Real-time Satisfaction</p>
         </div>
@@ -84,8 +85,8 @@ export default function FeedbackTab() {
               <div key={i} className="px-8 py-6 hover:bg-surface-50 transition-colors group">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div className="flex gap-4">
-                    <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center text-xl shadow-inner flex-shrink-0">
-                      {review.feedbackRating >= 4 ? '😍' : review.feedbackRating >= 3 ? '😊' : '😞'}
+                    <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center shadow-inner flex-shrink-0">
+                      {review.feedbackRating >= 4 ? <SmilePlus className="w-6 h-6 text-emerald-500" /> : review.feedbackRating >= 3 ? <Smile className="w-6 h-6 text-amber-500" /> : <Frown className="w-6 h-6 text-red-500" />}
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -96,7 +97,7 @@ export default function FeedbackTab() {
                       </div>
                       <div className="flex gap-0.5 mb-3">
                         {[1, 2, 3, 4, 5].map(s => (
-                          <span key={s} className={`text-sm ${s <= review.feedbackRating ? 'text-amber-400' : 'text-surface-200'}`}>★</span>
+                          <span key={s} className={s <= review.feedbackRating ? 'text-amber-400' : 'text-surface-200'}><Star className="w-4 h-4 fill-current" /></span>
                         ))}
                       </div>
                       <p className="text-surface-600 text-sm leading-relaxed max-w-2xl italic">
@@ -111,8 +112,8 @@ export default function FeedbackTab() {
               </div>
             ))
           ) : (
-            <div className="py-20 text-center">
-              <div className="text-6xl mb-4 opacity-20">📭</div>
+            <div className="py-20 flex flex-col items-center">
+              <div className="mb-4"><Inbox className="w-16 h-16 text-surface-200" /></div>
               <p className="text-surface-400 font-bold uppercase tracking-widest text-xs">No reviews yet.</p>
             </div>
           )}

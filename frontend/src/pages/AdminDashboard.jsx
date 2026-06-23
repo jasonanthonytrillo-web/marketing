@@ -18,6 +18,7 @@ import FeedbackTab from '../components/admin/FeedbackTab';
 import { formatCurrency } from '../utils/helpers';
 import { applyTheme, clearTheme } from '../utils/theme';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
+import { BarChart2, ShoppingBag, FolderTree, PackageSearch, Users, Truck, Package, RotateCcw, Wallet, LineChart, MessageSquare, ClipboardList, Settings, LogOut, Store, CircleDollarSign, Coins, ShoppingCart } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user, logoutUser } = useAuth();
@@ -68,19 +69,19 @@ export default function AdminDashboard() {
   };
 
   const navItems = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'orders', label: 'Orders', icon: '🛍️' },
-    { id: 'categories', label: 'Categories', icon: '📁' },
-    { id: 'products', label: 'Products', icon: '🍔' },
-    { id: 'staff', label: 'Staff', icon: '👥' },
-    { id: 'suppliers', label: 'Suppliers', icon: '🤝' },
-    { id: 'inventory', label: 'Inventory', icon: '📦' },
-    { id: 'inventory-logs', label: 'Stock History', icon: '📜' },
-    { id: 'expenses', label: 'Expenses', icon: '💸' },
-    { id: 'reports', label: 'Reports', icon: '📈' },
-    { id: 'feedback', label: 'Feedback', icon: '💬' },
-    { id: 'audit', label: 'Audit Logs', icon: '📜' },
-    { id: 'settings', label: 'Settings', icon: '⚙️' },
+    { id: 'overview', label: 'Overview', icon: <BarChart2 className="w-5 h-5" /> },
+    { id: 'orders', label: 'Orders', icon: <ShoppingBag className="w-5 h-5" /> },
+    { id: 'categories', label: 'Categories', icon: <FolderTree className="w-5 h-5" /> },
+    { id: 'products', label: 'Products', icon: <PackageSearch className="w-5 h-5" /> },
+    { id: 'staff', label: 'Staff', icon: <Users className="w-5 h-5" /> },
+    { id: 'suppliers', label: 'Suppliers', icon: <Truck className="w-5 h-5" /> },
+    { id: 'inventory', label: 'Inventory', icon: <Package className="w-5 h-5" /> },
+    { id: 'inventory-logs', label: 'Stock History', icon: <RotateCcw className="w-5 h-5" /> },
+    { id: 'expenses', label: 'Expenses', icon: <Wallet className="w-5 h-5" /> },
+    { id: 'reports', label: 'Reports', icon: <LineChart className="w-5 h-5" /> },
+    { id: 'feedback', label: 'Feedback', icon: <MessageSquare className="w-5 h-5" /> },
+    { id: 'audit', label: 'Audit Logs', icon: <ClipboardList className="w-5 h-5" /> },
+    { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
   ];
 
   if (loading && !summary) return (
@@ -130,8 +131,8 @@ export default function AdminDashboard() {
 
         {/* Desktop Only Logout */}
         <div className="hidden md:block p-4 border-t border-surface-800 mt-auto">
-          <button onClick={logoutUser} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all">
-            <span>🚪</span> Log Out
+          <button onClick={logoutUser} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all">
+            <LogOut className="w-4 h-4" /> Log Out
           </button>
         </div>
       </aside>
@@ -144,8 +145,8 @@ export default function AdminDashboard() {
             {user?.tenantLogo ? (
               <img src={user.tenantLogo} className="w-10 h-10 rounded-xl object-cover shadow-sm" alt={user.tenantName} />
             ) : (
-              <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-xl shadow-inner">
-                🏢
+              <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center text-primary-500 shadow-inner">
+                <Store className="w-5 h-5" />
               </div>
             )}
             <div>
@@ -166,8 +167,8 @@ export default function AdminDashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-primary-500/20">
                 {(user?.name === 'Project Million Admin' ? 'H' : user?.name?.charAt(0))}
               </div>
-              <button onClick={logoutUser} className="md:hidden p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                <span className="text-xl">🚪</span>
+              <button onClick={logoutUser} className="md:hidden p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center">
+                <LogOut className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -185,10 +186,10 @@ export default function AdminDashboard() {
               
               {/* Main KPI Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Today's Revenue" value={formatCurrency(summary.revenue)} icon="💰" color="blue" />
-                <StatCard title="Today's Expenses" value={formatCurrency(summary.totalExpenses || 0)} icon="💸" color="red" />
-                <StatCard title="Net Profit" value={formatCurrency((summary.revenue || 0) - (summary.totalExpenses || 0))} icon="📈" color="emerald" />
-                <StatCard title="Orders Today" value={summary.ordersCount} icon="🛒" color="purple" />
+                <StatCard title="Today's Revenue" value={formatCurrency(summary.revenue)} icon={<CircleDollarSign className="w-6 h-6" />} color="blue" />
+                <StatCard title="Today's Expenses" value={formatCurrency(summary.totalExpenses || 0)} icon={<Coins className="w-6 h-6" />} color="red" />
+                <StatCard title="Net Profit" value={formatCurrency((summary.revenue || 0) - (summary.totalExpenses || 0))} icon={<LineChart className="w-6 h-6" />} color="emerald" />
+                <StatCard title="Orders Today" value={summary.ordersCount} icon={<ShoppingCart className="w-6 h-6" />} color="purple" />
               </div>
 
               {/* Secondary Metrics */}

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { getPublicTenant, getProducts } from '../services/api';
 import { applyTheme } from '../utils/theme';
+import { ShoppingCart, Gem, CheckCircle, Flame } from 'lucide-react';
 
 const TRANSLATIONS = {
   en: {
@@ -143,7 +144,7 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center px-4">
-        <div className="text-6xl mb-4">🛒</div>
+        <div className="mb-4"><ShoppingCart className="w-16 h-16 text-surface-300" /></div>
         <h2 className="font-heading text-2xl font-bold text-surface-900 mb-2">{t('emptyCartTitle')}</h2>
         <p className="text-surface-500 mb-6">{t('emptyCartDesc')}</p>
         <Link to={menuLink} className="btn-primary" style={{ backgroundColor: brandingColor }}>{t('browseMenu')}</Link>
@@ -162,7 +163,7 @@ export default function Cart() {
         {isCustomer && (
           <div className="bg-white border border-surface-200 px-4 py-2 rounded-2xl shadow-sm">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{t('pointsBalance')}</p>
-            <p className="text-sm font-black text-emerald-600 leading-none">💎 {Math.floor(user.points)} <span className="text-[10px]">PTS</span></p>
+            <p className="text-sm font-black text-emerald-600 leading-none flex items-center gap-1"><Gem className="w-3 h-3 text-emerald-500" /> {Math.floor(user.points)} <span className="text-[10px]">PTS</span></p>
           </div>
         )}
       </div>
@@ -185,7 +186,7 @@ export default function Cart() {
                   <div className="w-16 h-16 md:w-24 md:h-24 bg-surface-100 rounded-xl md:rounded-2xl flex items-center justify-center text-3xl md:text-5xl flex-shrink-0 relative overflow-hidden">
                     <img src={item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=200&auto=format&fit=crop'} className="w-full h-full object-cover" />
                     {item.isRedemption && (
-                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-[1px] flex items-center justify-center">✅</div>
+                      <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-[1px] flex items-center justify-center"><CheckCircle className="w-8 h-8 text-emerald-500" /></div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col justify-between">
@@ -197,7 +198,7 @@ export default function Cart() {
                       
                       {item.isRedemption ? (
                         <div className="mt-2 flex items-center gap-2 text-emerald-600 font-bold text-xs uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full self-start inline-flex">
-                          💎 Redeemed for {item.pointsCost * item.quantity} Pts
+                          <Gem className="w-3 h-3" /> Redeemed for {item.pointsCost * item.quantity} Pts
                         </div>
                       ) : (
                         <>
@@ -243,7 +244,7 @@ export default function Cart() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-heading font-black text-slate-800 text-lg md:text-2xl flex items-center gap-2">
                 <span className="w-1.5 h-6 rounded-full" style={{ backgroundColor: brandingColor }}></span>
-                🔥 {t('addedTogether')}
+                <Flame className="w-5 h-5 text-orange-500" /> {t('addedTogether')}
               </h3>
               <button 
                 onClick={() => setShowUpsell(false)} 

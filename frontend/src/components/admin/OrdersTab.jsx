@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAdminOrders } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import { AlertTriangle } from 'lucide-react';
 
 export default function OrdersTab() {
   const [orders, setOrders] = useState([]);
@@ -59,8 +60,8 @@ export default function OrdersTab() {
       {confirmDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-surface-900/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl border border-surface-100 animate-scale-in animate-float">
-            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center text-4xl mb-6 mx-auto shadow-inner">
-              ⚠️
+            <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mb-6 mx-auto shadow-inner">
+              <AlertTriangle className="w-10 h-10 text-red-500" />
             </div>
             <h3 className="font-heading text-2xl font-black text-center text-surface-900 mb-2">
               PERMANENT DELETE

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { submitBetaApplication } from '../services/api';
+import { Zap, Mic, Gem, Building2, Gift, BarChart3, AlertTriangle } from 'lucide-react';
 
 export default function Marketing() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -152,37 +153,37 @@ export default function Marketing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <FeatureCard
               index={0}
-              icon="⚡"
+              icon={<Zap className="w-8 h-8 text-primary-500" />}
               title="Real-Time Sync"
               description="Orders hit the kitchen the millisecond they are placed. No delays, no missed tickets, zero friction."
             />
             <FeatureCard
               index={1}
-              icon="🎙️"
+              icon={<Mic className="w-8 h-8 text-primary-500" />}
               title="AI Voice Alerts"
               description="Our system automatically announces ready orders to your customers with professional AI speech synthesis."
             />
             <FeatureCard
               index={2}
-              icon="💎"
+              icon={<Gem className="w-8 h-8 text-primary-500" />}
               title="Glassmorphism UI"
               description="Cinematic, high-end design that makes your business look premium and state-of-the-art."
             />
             <FeatureCard
               index={3}
-              icon="🏢"
+              icon={<Building2 className="w-8 h-8 text-primary-500" />}
               title="Multi-Tenant"
               description="Secure isolation for your business data. Your menus, customers, and reports are yours alone."
             />
             <FeatureCard
               index={4}
-              icon="🎁"
+              icon={<Gift className="w-8 h-8 text-primary-500" />}
               title="Loyalty Engine"
               description="Keep customers coming back with a built-in point redemption system that tracks every visit."
             />
             <FeatureCard
               index={5}
-              icon="📊"
+              icon={<BarChart3 className="w-8 h-8 text-primary-500" />}
               title="Deep Analytics"
               description="Understand your best sellers and peak hours with clean, actionable data visualization."
             />
@@ -337,7 +338,7 @@ export default function Marketing() {
         <div className="absolute inset-0 bg-primary-600/5 -skew-y-3" />
         <div className="max-w-5xl mx-auto relative z-10 bg-white/5 border border-white/10 rounded-[3rem] p-12 md:p-20 text-center backdrop-blur-xl">
           <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-orange-500/20 border border-orange-500/30 text-orange-400 text-sm font-black uppercase tracking-[0.2em] mb-8">
-            ⚠️ Limited Opportunity
+            <AlertTriangle className="w-4 h-4" /> Limited Opportunity
           </div>
           <h2 className="text-5xl md:text-7xl font-black tracking-tighter uppercase mb-6">
             ONLY <span className="text-primary-500 italic underline">2 SLOTS</span> LEFT

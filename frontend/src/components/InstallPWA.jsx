@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Smartphone } from 'lucide-react';
 
 export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -70,8 +71,8 @@ export default function InstallPWA() {
           ✕
         </button>
 
-        <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-primary-100 flex-shrink-0 z-10">
-          📱
+        <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center shadow-inner border border-primary-100 flex-shrink-0 z-10">
+          <Smartphone className="w-7 h-7 text-primary-500" />
         </div>
         
         <div className="flex-1 z-10">

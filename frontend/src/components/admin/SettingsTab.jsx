@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getSettings, updateSettings, uploadImage } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { Palette, Smartphone, Gem, Upload, Plus, ArrowRight, X, CheckCircle, Loader2 } from 'lucide-react';
 
 export default function SettingsTab() {
   const { user } = useAuth();
@@ -48,7 +49,7 @@ export default function SettingsTab() {
     setMessage('');
     try {
       await updateSettings(settings);
-      setMessage('Settings updated successfully! ✅');
+      setMessage('Settings updated successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       alert('Failed to save settings');
@@ -70,14 +71,14 @@ export default function SettingsTab() {
 
       <form onSubmit={handleSave} className="space-y-8">
         {message && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-6 py-4 rounded-2xl font-bold animate-fade-in">
-            {message}
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-6 py-4 rounded-2xl font-bold animate-fade-in flex items-center gap-2">
+            {message.includes('Uploading') ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />} {message}
           </div>
         )}
 
         <div className="glass-card overflow-hidden">
           <div className="p-6 bg-primary-50 border-b border-primary-100 flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-primary-500/20">🎨</div>
+            <div className="w-12 h-12 bg-primary-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary-500/20"><Palette className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-primary-900">Store Branding</h3>
               <p className="text-primary-700 text-xs font-medium">Customize your logo and tab icon.</p>
@@ -113,9 +114,9 @@ export default function SettingsTab() {
                       <button 
                         type="button"
                         onClick={() => document.getElementById('logoUpload').click()}
-                        className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold whitespace-nowrap"
+                        className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold whitespace-nowrap flex items-center gap-2"
                       >
-                        📁 Upload
+                        <Upload className="w-4 h-4" /> Upload
                       </button>
                       <input 
                         type="file" id="logoUpload" accept="image/*" className="hidden"
@@ -124,11 +125,11 @@ export default function SettingsTab() {
                           if (!file) return;
                           const reader = new FileReader();
                           reader.onloadend = async () => {
-                            setMessage('📤 Uploading Logo...');
+                            setMessage('Uploading Logo...');
                             try {
                               const res = await uploadImage({ image: reader.result, name: 'logo' });
                               setSettings({ ...settings, tenant_logo: res.data.url });
-                              setMessage('Logo updated! ✅');
+                              setMessage('Logo updated!');
                             } catch (error) { alert('Upload failed'); }
                           };
                           reader.readAsDataURL(file);
@@ -151,16 +152,16 @@ export default function SettingsTab() {
                   onChange={e => setSettings({...settings, seasonal_effect: e.target.value})}
                   className="input-field w-full py-4 text-sm bg-white cursor-pointer"
                 >
-                  <option value="auto">🔄 Auto (Follow Calendar Holidays Automatically)</option>
-                  <option value="off">🚫 Off (Disable Floating Particles Completely)</option>
-                  <option value="magic_sparkles">✨ Magic Sparkles ( Twinkling Brand-Colored Stardust )</option>
-                  <option value="valentines">❤️ Valentine's Day ( Rising Pulsing Hearts )</option>
-                  <option value="mothers_day">🌹 Mother's Day ( Falling Rose Petals )</option>
-                  <option value="fathers_day">👑 Father's Day ( Twinkling Golden Stars )</option>
-                  <option value="independence_day">🇵🇭 Independence Day ( Blue/Red/Gold Starbursts )</option>
-                  <option value="christmas">❄️ Winter/Christmas ( Soft Falling Snow )</option>
-                  <option value="spring">🌸 Spring/Sakura ( Pink Cherry Blossoms )</option>
-                  <option value="autumn">🍁 Autumn/Thanksgiving ( Drifting Maple Leaves )</option>
+                  <option value="auto">Auto (Follow Calendar Holidays Automatically)</option>
+                  <option value="off">Off (Disable Floating Particles Completely)</option>
+                  <option value="magic_sparkles">Magic Sparkles (Twinkling Brand-Colored Stardust)</option>
+                  <option value="valentines">Valentine's Day (Rising Pulsing Hearts)</option>
+                  <option value="mothers_day">Mother's Day (Falling Rose Petals)</option>
+                  <option value="fathers_day">Father's Day (Twinkling Golden Stars)</option>
+                  <option value="independence_day">Independence Day (Blue/Red/Gold Starbursts)</option>
+                  <option value="christmas">Winter/Christmas (Soft Falling Snow)</option>
+                  <option value="spring">Spring/Sakura (Pink Cherry Blossoms)</option>
+                  <option value="autumn">Autumn/Thanksgiving (Drifting Maple Leaves)</option>
                 </select>
                 <p className="text-[10px] text-slate-400 mt-2 italic font-medium">Choose a persistent theme effect or set it to Auto to let the kiosk automatically match holiday calendar dates!</p>
               </div>
@@ -205,9 +206,9 @@ export default function SettingsTab() {
                           const newAssets = settings.tenant_assets.filter((_, i) => i !== idx);
                           setSettings({...settings, tenant_assets: newAssets});
                         }}
-                        className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black"
+                        className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black flex items-center justify-center"
                       >
-                        ✕
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
                   ))}
@@ -217,14 +218,14 @@ export default function SettingsTab() {
                       onClick={() => document.getElementById('bgMediaUpload').click()}
                       className="py-4 bg-slate-900 text-white font-black rounded-2xl shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest"
                     >
-                      <span>📁</span> Choose File
+                      <Upload className="w-4 h-4" /> Choose File
                     </button>
                     <button 
                       type="button"
                       onClick={() => setSettings({...settings, tenant_assets: [...(settings.tenant_assets || []), '']})}
                       className="py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-black uppercase tracking-widest text-[10px] hover:border-primary-400 hover:text-primary-500 transition-all flex items-center justify-center gap-2"
                     >
-                      <span>➕</span> Add URL
+                      <Plus className="w-5 h-5" /> Add URL
                     </button>
                     <input 
                       type="file" 
@@ -236,11 +237,11 @@ export default function SettingsTab() {
                         if (!file) return;
                         const reader = new FileReader();
                         reader.onloadend = async () => {
-                          setMessage('📤 Uploading...');
+                          setMessage('Uploading...');
                             try {
                               const res = await uploadImage({ image: reader.result, name: 'landing-bg' });
                               setSettings(prev => ({ ...prev, tenant_assets: [...(prev.tenant_assets || []), res.data.url] }));
-                              setMessage('Media uploaded! ✅');
+                              setMessage('Media uploaded!');
                             } catch (error) { alert('Upload failed'); }
                         };
                         reader.readAsDataURL(file);
@@ -256,7 +257,7 @@ export default function SettingsTab() {
 
         <div className="glass-card overflow-hidden">
           <div className="p-6 bg-blue-50 border-b border-blue-100 flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-blue-500/20">📱</div>
+            <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20"><Smartphone className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-blue-900">Payment Settings</h3>
               <p className="text-blue-700 text-xs font-medium">Manage your cashless payment details.</p>
@@ -277,9 +278,9 @@ export default function SettingsTab() {
                   <button 
                     type="button"
                     onClick={() => document.getElementById('gcashQrUpload').click()}
-                    className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold"
+                    className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold flex items-center gap-2"
                   >
-                    📁 Upload
+                    <Upload className="w-4 h-4" /> Upload
                   </button>
                   <input 
                     type="file" id="gcashQrUpload" accept="image/*" className="hidden"
@@ -288,11 +289,11 @@ export default function SettingsTab() {
                       if (!file) return;
                       const reader = new FileReader();
                       reader.onloadend = async () => {
-                        setMessage('📤 Uploading GCash QR...');
+                        setMessage('Uploading GCash QR...');
                         try {
                           const res = await uploadImage({ image: reader.result, name: 'gcash-qr' });
                           setSettings({ ...settings, gcash_qr: res.data.url });
-                          setMessage('GCash QR updated! ✅');
+                          setMessage('GCash QR updated!');
                         } catch (error) { alert('Upload failed'); }
                       };
                       reader.readAsDataURL(file);
@@ -322,9 +323,9 @@ export default function SettingsTab() {
                   <button 
                     type="button"
                     onClick={() => document.getElementById('mayaQrUpload').click()}
-                    className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold"
+                    className="px-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold flex items-center gap-2"
                   >
-                    📁 Upload
+                    <Upload className="w-4 h-4" /> Upload
                   </button>
                   <input 
                     type="file" id="mayaQrUpload" accept="image/*" className="hidden"
@@ -333,11 +334,11 @@ export default function SettingsTab() {
                       if (!file) return;
                       const reader = new FileReader();
                       reader.onloadend = async () => {
-                        setMessage('📤 Uploading Maya QR...');
+                        setMessage('Uploading Maya QR...');
                         try {
                           const res = await uploadImage({ image: reader.result, name: 'maya-qr' });
                           setSettings({ ...settings, maya_qr: res.data.url });
-                          setMessage('Maya QR updated! ✅');
+                          setMessage('Maya QR updated!');
                         } catch (error) { alert('Upload failed'); }
                       };
                       reader.readAsDataURL(file);
@@ -357,7 +358,7 @@ export default function SettingsTab() {
 
         <div className="glass-card overflow-hidden">
           <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-emerald-500/20">💎</div>
+            <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20"><Gem className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-emerald-900">Loyalty Program</h3>
               <p className="text-emerald-700 text-xs font-medium">Control how customers earn rewards.</p>
@@ -377,7 +378,7 @@ export default function SettingsTab() {
                     placeholder="100"
                   />
                 </div>
-                <div className="text-2xl">➡️</div>
+                <div className="text-slate-400"><ArrowRight className="w-6 h-6" /></div>
                 <div className="bg-slate-50 border border-slate-200 px-6 py-4 rounded-2xl font-black text-xl text-slate-700">
                   1 Point
                 </div>

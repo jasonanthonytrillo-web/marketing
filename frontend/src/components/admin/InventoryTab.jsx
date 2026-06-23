@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getInventory, restockProduct } from '../../services/api';
+import { X } from 'lucide-react';
 
 export default function InventoryTab() {
   const [inventory, setInventory] = useState([]);
@@ -179,7 +180,7 @@ export default function InventoryTab() {
           <div className="bg-white rounded-[2.5rem] shadow-2xl border border-surface-200 w-full max-w-md my-auto overflow-hidden animate-scale-in">
             <div className="p-6 border-b border-surface-100 flex items-center justify-between">
               <h3 className="font-heading text-xl font-bold text-surface-900">Restock Item</h3>
-              <button onClick={() => setRestockItem(null)} className="text-surface-400 hover:text-surface-600 transition-colors">✕</button>
+              <button onClick={() => setRestockItem(null)} className="text-surface-400 hover:text-surface-600 transition-colors"><X className="w-6 h-6" /></button>
             </div>
             <form onSubmit={handleRestockSubmit} className="p-6 space-y-6">
               <div>
@@ -234,7 +235,7 @@ export default function InventoryTab() {
           <div className="bg-white rounded-[2.5rem] shadow-2xl border border-surface-200 w-full max-w-md my-auto overflow-hidden animate-scale-in">
             <div className="p-6 border-b border-surface-100 flex items-center justify-between">
               <h3 className="font-heading text-xl font-bold text-surface-900">Record Spoilage / Waste</h3>
-              <button onClick={() => setWasteItem(null)} className="text-surface-400 hover:text-surface-600 transition-colors">✕</button>
+              <button onClick={() => setWasteItem(null)} className="text-surface-400 hover:text-surface-600 transition-colors"><X className="w-6 h-6" /></button>
             </div>
             <form onSubmit={handleWasteSubmit} className="p-6 space-y-6">
               <div className="p-4 bg-red-50 rounded-2xl border border-red-100">

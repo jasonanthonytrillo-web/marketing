@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import axios from 'axios';
 import { useSocket } from '../context/SocketContext';
+import { Gem, Heart, Gift, Trophy, Settings } from 'lucide-react';
 
 export default function CustomerAccount() {
   const { user, logoutUser, loading: authLoading, refreshUser } = useAuth();
@@ -132,7 +133,7 @@ export default function CustomerAccount() {
           <div className="relative z-10">
             <div className="flex justify-between items-start mb-8">
               <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-2xl backdrop-blur-md border border-white/20 ring-4 ring-white/5">
-                💎
+                <Gem className="w-8 h-8 text-white/90" />
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-black text-primary-400 uppercase tracking-[0.2em] mb-1">Loyalty Level</p>
@@ -165,7 +166,7 @@ export default function CustomerAccount() {
             <div className="flex flex-wrap gap-2">
               {favorites.map(f => (
                 <div key={f.name} className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center gap-2">
-                  <span className="text-sm">❤️</span>
+                  <Heart className="w-4 h-4 text-red-500 fill-current" />
                   <span className="text-xs font-bold text-slate-700">{f.name}</span>
                   <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full font-black text-slate-400">{f.count}x</span>
                 </div>
@@ -206,7 +207,7 @@ export default function CustomerAccount() {
                     </div>
                     {item.hasRedemption ? (
                       <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 shadow-inner">
-                        <span className="text-xs">🎁</span>
+                        <Gift className="w-4 h-4" />
                         <span className="text-[10px] font-black uppercase tracking-widest">Reward Order</span>
                       </div>
                     ) : (
@@ -222,7 +223,7 @@ export default function CustomerAccount() {
 
                 {item.type === 'milestone' && (
                   <div className="p-3 bg-primary-50 rounded-xl border border-primary-100">
-                    <p className="text-[10px] font-bold text-primary-600">You earned a permanent loyalty spot! 🏆</p>
+                    <p className="text-[10px] font-bold text-primary-600 flex items-center gap-1">You earned a permanent loyalty spot! <Trophy className="w-3.5 h-3.5" /></p>
                   </div>
                 )}
               </div>
@@ -243,7 +244,9 @@ export default function CustomerAccount() {
         <div className="max-w-xl mx-auto px-6 mt-10">
           <div className="bg-white border border-slate-200 rounded-[2rem] p-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">⚙️</div>
+              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+                <Settings className="w-5 h-5 text-slate-500" />
+              </div>
               <div>
                 <p className="text-xs font-black text-slate-900">Security Settings</p>
                 <p className="text-[10px] text-slate-400">Update your account password</p>

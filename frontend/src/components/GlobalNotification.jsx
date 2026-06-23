@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { playNotificationSound, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { getOrder } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { Bell, AlertTriangle } from 'lucide-react';
 
 export default function GlobalNotification() {
   const [readyOrderNumbers, setReadyOrderNumbers] = useState([]);
@@ -252,7 +253,7 @@ export default function GlobalNotification() {
       {readyOrderNumbers.length > 0 && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-900/90 backdrop-blur-md p-6" onClick={dismissReadyAlert}>
           <div className="text-center animate-fade-in-up w-full max-w-2xl" onClick={e => e.stopPropagation()}>
-            <div className="text-7xl sm:text-8xl mb-4 animate-bounce">🔔</div>
+            <div className="mb-4 animate-bounce"><Bell className="w-20 h-20 sm:w-24 sm:h-24 text-emerald-300" /></div>
             <h1 className="font-heading text-4xl sm:text-6xl font-black text-white mb-2 leading-tight">
               {readyOrderNumbers.length > 1 ? 'Your Orders are Ready!' : 'Your Order is Ready!'}
             </h1>
@@ -280,7 +281,7 @@ export default function GlobalNotification() {
       {cancelledOrderNumbers.length > 0 && (
         <div className="fixed inset-0 z-[101] flex items-center justify-center bg-red-950/90 backdrop-blur-md p-6" onClick={dismissCancelAlert}>
           <div className="text-center animate-fade-in-up w-full max-w-2xl" onClick={e => e.stopPropagation()}>
-            <div className="text-7xl sm:text-8xl mb-4 animate-shake">⚠️</div>
+            <div className="mb-4 animate-shake"><AlertTriangle className="w-20 h-20 sm:w-24 sm:h-24 text-red-300" /></div>
             <h1 className="font-heading text-4xl sm:text-6xl font-black text-white mb-2 leading-tight">
               Order Cancelled
             </h1>

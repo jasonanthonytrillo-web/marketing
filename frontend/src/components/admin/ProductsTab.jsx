@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAdminProducts, createProduct, updateProduct, deleteProduct, getCategories, uploadImage } from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
+import { ClipboardList, FolderArchive, ImageIcon, Upload, FolderUp, Lightbulb, ArchiveX, AlertTriangle, CheckCircle, Gem } from 'lucide-react';
 
 export default function ProductsTab() {
   const [products, setProducts] = useState([]);
@@ -204,7 +205,7 @@ export default function ProductsTab() {
             onClick={() => setStatusFilter(statusFilter === 'archived' ? 'active' : 'archived')} 
             className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all border-2 ${statusFilter === 'archived' ? 'bg-primary-600 text-white border-primary-600 shadow-lg' : 'bg-white text-surface-600 border-surface-200 hover:border-primary-300'}`}
           >
-            {statusFilter === 'archived' ? '📋 View Active' : '📁 View Archives'}
+            {statusFilter === 'archived' ? <><ClipboardList className="w-4 h-4" /> View Active</> : <><FolderArchive className="w-4 h-4" /> View Archives</>}
           </button>
           <button onClick={handleAdd} className="btn-primary py-2 px-4 shadow-md">
             + Add Product
@@ -269,7 +270,7 @@ export default function ProductsTab() {
                     <input type="number" step="0.01" value={currentProduct.costPrice || ''} onChange={e => setCurrentProduct({...currentProduct, costPrice: e.target.value})} className="input-field w-full border-blue-50 focus:border-blue-500" placeholder="What you pay" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-emerald-600 mb-1">Points Cost 💎</label>
+                    <label className="block text-sm font-bold text-emerald-600 mb-1 flex items-center gap-1">Points Cost <Gem className="w-4 h-4" /></label>
                     <input type="number" value={currentProduct.pointsCost || ''} onChange={e => setCurrentProduct({...currentProduct, pointsCost: e.target.value})} className="input-field w-full border-emerald-100 focus:border-emerald-500" placeholder="e.g. 50" />
                   </div>
                   <div className="md:col-span-2">
@@ -282,7 +283,7 @@ export default function ProductsTab() {
                             className="w-full h-full object-cover" 
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">🖼️</div>
+                          <div className="w-full h-full flex items-center justify-center text-surface-300"><ImageIcon className="w-8 h-8" /></div>
                         )}
                       </div>
                       <div className="flex-1 w-full space-y-3">
@@ -299,7 +300,7 @@ export default function ProductsTab() {
                               htmlFor="imgUpload" 
                               className={`flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-surface-300 hover:border-primary-50 hover:bg-primary-50 text-surface-600 font-bold cursor-pointer transition-all ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
                             >
-                              {uploading ? '📤 Uploading...' : '📁 Choose File'}
+                              {uploading ? <><Upload className="w-4 h-4 animate-bounce" /> Uploading...</> : <><FolderUp className="w-4 h-4" /> Choose File</>}
                             </label>
                           </div>
                           <div className="flex items-center justify-center text-surface-400 font-bold px-2">OR</div>
@@ -345,13 +346,13 @@ export default function ProductsTab() {
                 {/* 7-Badge Selector Grid */}
                 {(() => {
                   const supportedTags = [
-                    { id: 'recommended', label: 'Best Seller ⭐', color: 'text-amber-700 bg-amber-50 border-amber-300' },
-                    { id: 'spicy', label: 'Spicy 🌶️', color: 'text-red-700 bg-red-50 border-red-300' },
-                    { id: 'halal', label: 'Halal Certified 🕌', color: 'text-emerald-700 bg-emerald-50 border-emerald-300' },
-                    { id: 'sugar_free', label: 'Sugar-Free 🍬', color: 'text-cyan-700 bg-cyan-50 border-cyan-300' },
-                    { id: 'gluten_free', label: 'Gluten-Free 🌾', color: 'text-yellow-800 bg-yellow-50 border-yellow-300' },
-                    { id: 'nuts', label: 'Contains Nuts 🥜', color: 'text-amber-900 bg-amber-50 border-amber-300' },
-                    { id: 'vegan', label: 'Vegan 🌿', color: 'text-lime-700 bg-lime-50 border-lime-300' }
+                    { id: 'recommended', label: 'Best Seller', color: 'text-amber-700 bg-amber-50 border-amber-300' },
+                    { id: 'spicy', label: 'Spicy', color: 'text-red-700 bg-red-50 border-red-300' },
+                    { id: 'halal', label: 'Halal Certified', color: 'text-emerald-700 bg-emerald-50 border-emerald-300' },
+                    { id: 'sugar_free', label: 'Sugar-Free', color: 'text-cyan-700 bg-cyan-50 border-cyan-300' },
+                    { id: 'gluten_free', label: 'Gluten-Free', color: 'text-yellow-800 bg-yellow-50 border-yellow-300' },
+                    { id: 'nuts', label: 'Contains Nuts', color: 'text-amber-900 bg-amber-50 border-amber-300' },
+                    { id: 'vegan', label: 'Vegan', color: 'text-lime-700 bg-lime-50 border-lime-300' }
                   ];
                   const activeTags = currentProduct?.tags ? currentProduct.tags.split(',') : [];
                   const handleToggleTag = (tagId) => {
@@ -507,8 +508,8 @@ export default function ProductsTab() {
                       </div>
 
                       <div className="col-span-full mt-4 p-4 bg-white/50 rounded-2xl border border-dashed border-primary-200">
-                        <p className="text-[10px] text-primary-400 font-bold uppercase tracking-widest text-center">
-                          💡 Just tap the product names to include or remove them from the combo.
+                        <p className="text-[10px] flex items-center justify-center gap-1.5 text-primary-400 font-bold uppercase tracking-widest text-center">
+                          <Lightbulb className="w-4 h-4" /> Just tap the product names to include or remove them from the combo.
                         </p>
                       </div>
                     </div>
@@ -648,9 +649,9 @@ export default function ProductsTab() {
               </tr>
             )) : (
               <tr>
-                <td colSpan="5" className="p-12 text-center">
+                <td colSpan="7" className="p-12 text-center">
                   <div className="flex flex-col items-center gap-2">
-                    <span className="text-4xl">🏜️</span>
+                    <div className="mb-2"><ArchiveX className="w-12 h-12 text-surface-300" /></div>
                     <p className="text-surface-500 font-bold">No products found in this view.</p>
                     <p className="text-surface-400 text-xs">Try changing your filters or adding a new product!</p>
                   </div>
@@ -666,8 +667,8 @@ export default function ProductsTab() {
       <div className="modal-overlay">
         <div className="modal-container max-w-sm animate-scale-in">
           <div className="p-8 text-center">
-            <div className="w-20 h-20 bg-red-50 text-red-500 rounded-[32px] flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner ring-4 ring-red-50/50">
-              ⚠️
+            <div className="w-20 h-20 bg-red-50 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-inner ring-4 ring-red-50/50">
+              <AlertTriangle className="w-10 h-10 text-red-500" />
             </div>
             <h3 className="font-heading text-2xl font-black text-surface-900 mb-2">Deactivate Product?</h3>
             <p className="text-surface-500 text-sm mb-8 leading-relaxed">
@@ -696,7 +697,7 @@ export default function ProductsTab() {
     {successMessage && (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
         <div className="bg-primary-600 text-white px-8 py-5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-3 border border-white/20 font-black tracking-tight text-lg animate-scale-in pointer-events-auto">
-          <span className="text-xl">✨</span>
+          <CheckCircle className="w-6 h-6" />
           <span>{successMessage}</span>
         </div>
       </div>

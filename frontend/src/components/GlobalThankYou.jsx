@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { playNotificationSound } from '../utils/helpers';
+import { PartyPopper } from 'lucide-react';
 
 export default function GlobalThankYou() {
   const [showThankYou, setShowThankYou] = useState(false);
@@ -76,7 +77,7 @@ export default function GlobalThankYou() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-6">
       <div className="text-center animate-fade-in-up w-full max-w-2xl">
-        <div className="text-7xl sm:text-8xl mb-6 animate-bounce">🎉</div>
+        <div className="mb-6 animate-bounce"><PartyPopper className="w-20 h-20 sm:w-24 sm:h-24 text-emerald-400" /></div>
         <h1 className="font-heading text-4xl sm:text-6xl font-black text-white mb-4 leading-tight">
           Thank You!
         </h1>

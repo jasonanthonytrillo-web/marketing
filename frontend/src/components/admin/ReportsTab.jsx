@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getDailyReport, getBestsellers, getKitchenTimes, getForecasting } from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
+import { Sparkles, AlertTriangle, LineChart, CalendarDays, Trophy, ChefHat } from 'lucide-react';
 
 export default function ReportsTab() {
   const [dailyData, setDailyData] = useState([]);
@@ -57,7 +58,7 @@ export default function ReportsTab() {
         <div className="space-y-6">
           <div className="bg-gradient-to-br from-indigo-900 to-surface-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
-              <span className="text-9xl">🔮</span>
+              <Sparkles className="w-48 h-48" />
             </div>
             
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -118,7 +119,7 @@ export default function ReportsTab() {
           {forecast.inventoryWarnings && forecast.inventoryWarnings.length > 0 && (
             <div className="bg-rose-50 border border-rose-100 rounded-3xl p-6 animate-pulse">
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl">⚠️</span>
+                <AlertTriangle className="w-6 h-6 text-rose-500" />
                 <h4 className="font-heading font-black text-rose-900 text-lg uppercase tracking-tight">Stockout Warning: Lost Opportunity Alert</h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -150,7 +151,7 @@ export default function ReportsTab() {
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200 lg:col-span-2">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-heading font-bold text-surface-900 flex items-center gap-2">
-              📈 Profit & Loss Analysis (Last 7 Days)
+              <LineChart className="w-5 h-5 text-surface-900" /> Profit & Loss Analysis (Last 7 Days)
             </h3>
             <span className="text-[10px] font-black uppercase tracking-widest text-surface-400 bg-surface-50 px-3 py-1 rounded-full border border-surface-100">Live Financials</span>
           </div>
@@ -193,7 +194,7 @@ export default function ReportsTab() {
         {/* Daily Sales Chart Placeholder */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
           <h3 className="font-heading font-bold text-surface-900 mb-6 flex items-center gap-2">
-            📅 Sales Distribution
+            <CalendarDays className="w-5 h-5 text-surface-900" /> Sales Distribution
           </h3>
           <div className="space-y-4">
             {dailyData.map((day, i) => (
@@ -214,7 +215,7 @@ export default function ReportsTab() {
         {/* Bestsellers */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
           <h3 className="font-heading font-bold text-surface-900 mb-6 flex items-center gap-2">
-            🏆 Top Selling Products
+            <Trophy className="w-5 h-5 text-surface-900" /> Top Selling Products
           </h3>
           <div className="space-y-4">
             {bestsellers.map((item, i) => (
@@ -237,7 +238,7 @@ export default function ReportsTab() {
         {/* Kitchen Efficiency */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200 lg:col-span-2">
           <h3 className="font-heading font-bold text-surface-900 mb-6 flex items-center gap-2">
-            👨‍🍳 Kitchen Performance
+            <ChefHat className="w-5 h-5 text-surface-900" /> Kitchen Performance
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 bg-indigo-50 rounded-3xl text-center">

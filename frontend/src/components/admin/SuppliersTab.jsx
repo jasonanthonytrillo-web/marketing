@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../../services/api';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 
 export default function SuppliersTab() {
   const [suppliers, setSuppliers] = useState([]);
@@ -90,7 +91,7 @@ export default function SuppliersTab() {
             onClick={() => handleOpenModal()}
             className="px-6 py-2.5 bg-primary-500 text-white font-bold rounded-2xl hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20 flex items-center gap-2 text-sm"
           >
-            <span>➕</span> Add New Supplier
+            <Plus className="w-4 h-4" /> Add New Supplier
           </button>
         </div>
       </div>
@@ -121,8 +122,8 @@ export default function SuppliersTab() {
                     <td className="px-6 py-4 text-surface-600 text-sm">{s.email || '-'}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleOpenModal(s)} className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-blue-100">✏️</button>
-                        <button onClick={() => handleDelete(s.id)} className="p-2 hover:bg-white rounded-lg text-red-600 shadow-sm border border-transparent hover:border-red-100">🗑️</button>
+                        <button onClick={() => handleOpenModal(s)} className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-blue-100 flex items-center"><Edit className="w-4 h-4" /></button>
+                        <button onClick={() => handleDelete(s.id)} className="p-2 hover:bg-white rounded-lg text-red-600 shadow-sm border border-transparent hover:border-red-100 flex items-center"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </td>
                   </tr>

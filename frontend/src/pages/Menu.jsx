@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
-
+import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift } from 'lucide-react';
 
 const TRANSLATIONS = {
   en: {
@@ -295,7 +295,7 @@ export default function Menu() {
         <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Link to="/" className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95">
-              <span className="text-lg md:text-xl leading-none">←</span> <span className="hidden sm:inline">{t('backHome')}</span><span className="sm:hidden">{t('back')}</span>
+              <span className="text-lg md:text-xl leading-none"><ArrowLeft className="w-5 h-5 leading-none" /></span> <span className="hidden sm:inline">{t('backHome')}</span><span className="sm:hidden">{t('back')}</span>
             </Link>
           </div>
 
@@ -315,7 +315,7 @@ export default function Menu() {
                   onClick={() => setShowRewards(true)}
                   className="animate-fade-in flex items-center gap-3 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-2xl shadow-sm hover:bg-emerald-100 transition-all active:scale-95 group"
                 >
-                  <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">💎</div>
+                  <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform"><Gem className="w-4 h-4 text-emerald-100" /></div>
                   <div className="text-left hidden sm:block">
                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-0.5">{t('points')}</p>
                     <p className="text-sm font-black text-emerald-900 leading-none">{Math.floor(user.points || 0)}</p>
@@ -346,14 +346,14 @@ export default function Menu() {
                             }}
                             className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
                           >
-                            <span>🔒</span> {t('changePassword')}
+                            <Lock className="w-4 h-4" /> {t('changePassword')}
                           </button>
                         )}
                         <Link
                           to="/account"
                           className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
                         >
-                          <span>📜</span> {t('orderHistory')}
+                          <ScrollText className="w-4 h-4" /> {t('orderHistory')}
                         </Link>
                         <button
                           onClick={() => {
@@ -362,7 +362,7 @@ export default function Menu() {
                           }}
                           className="flex items-center gap-3 w-full p-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
                         >
-                          <span>👋</span> {t('signOut')}
+                          <LogOut className="w-4 h-4" /> {t('signOut')}
                         </button>
                       </div>
                     </div>
@@ -386,7 +386,7 @@ export default function Menu() {
                   </div>
                 ) : (
                   <div className="w-10 h-10 md:w-12 md:h-12 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-lg border-2 border-white flex-shrink-0" style={{ color: brandingColor }}>
-                    💎
+                    <Gem className="w-6 h-6" />
                   </div>
                 )}
                 <h1 className="font-heading text-xl md:text-2xl lg:text-3xl font-bold text-surface-900 uppercase leading-tight" style={{ color: brandingColor }}>{tenantName}</h1>
@@ -400,7 +400,7 @@ export default function Menu() {
                 className={`flex-shrink-0 w-20 md:w-auto flex flex-col items-center justify-center text-center aspect-square rounded-2xl md:rounded-3xl p-2 md:p-3 transition-all ${activeCategory === 'all' ? 'text-white shadow-lg shadow-primary-500/30 scale-[1.05]' : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:bg-surface-50 hover:scale-[1.05]'}`}
                 style={activeCategory === 'all' ? { backgroundColor: brandingColor } : {}}
               >
-                <span className="text-3xl md:text-4xl lg:text-5xl mb-1 md:mb-2 lg:mb-3">🍽️</span>
+                <div className="mb-1 md:mb-2 lg:mb-3"><Utensils className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10" /></div>
                 <span className="text-[10px] md:text-sm lg:text-base font-bold leading-tight">{t('allItems')}</span>
               </button>
               {categories.map(cat => (
@@ -410,7 +410,9 @@ export default function Menu() {
                   className={`flex-shrink-0 w-20 md:w-auto flex flex-col items-center justify-center text-center aspect-square rounded-2xl md:rounded-3xl p-2 md:p-3 transition-all ${activeCategory === String(cat.id) ? 'text-white shadow-lg shadow-primary-500/30 scale-[1.05]' : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:bg-surface-50 hover:scale-[1.05]'}`}
                   style={activeCategory === String(cat.id) ? { backgroundColor: brandingColor } : {}}
                 >
-                  <span className="text-3xl md:text-4xl lg:text-5xl mb-1 md:mb-2 lg:mb-3">{cat.icon || '📦'}</span>
+                  <div className="mb-1 md:mb-2 lg:mb-3">
+                    {cat.icon === '📦' ? <Package className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10" /> : (cat.icon || <Package className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10" />)}
+                  </div>
                   <span className="text-[10px] md:text-sm lg:text-base font-bold leading-tight line-clamp-2">{cat.name}</span>
                 </button>
               ))}
@@ -444,37 +446,37 @@ export default function Menu() {
                           {product.tags.split(',').map(tag => {
                             if (tag === 'recommended') return (
                               <span key={tag} className="bg-amber-500/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-amber-400/20">
-                                ⭐ Best Seller
+                                <Star className="w-2.5 h-2.5 fill-current" /> Best Seller
                               </span>
                             );
                             if (tag === 'spicy') return (
                               <span key={tag} className="bg-red-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-red-500/20">
-                                🌶️ Spicy
+                                <Flame className="w-2.5 h-2.5" /> Spicy
                               </span>
                             );
                             if (tag === 'halal') return (
                               <span key={tag} className="bg-emerald-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-emerald-500/20">
-                                🕌 Halal
+                                <CheckCircle className="w-2.5 h-2.5" /> Halal
                               </span>
                             );
                             if (tag === 'sugar_free') return (
                               <span key={tag} className="bg-cyan-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-cyan-500/20">
-                                🍬 Sugar-Free
+                                <Ban className="w-2.5 h-2.5" /> Sugar-Free
                               </span>
                             );
                             if (tag === 'gluten_free') return (
                               <span key={tag} className="bg-yellow-600/95 text-slate-900 text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-yellow-500/20">
-                                🌾 Gluten-Free
+                                <Wheat className="w-2.5 h-2.5" /> Gluten-Free
                               </span>
                             );
                             if (tag === 'nuts') return (
                               <span key={tag} className="bg-amber-800/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-amber-700/20">
-                                🥜 Has Nuts
+                                <AlertCircle className="w-2.5 h-2.5" /> Has Nuts
                               </span>
                             );
                             if (tag === 'vegan') return (
                               <span key={tag} className="bg-lime-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-lime-500/20">
-                                🌿 Vegan
+                                <Leaf className="w-2.5 h-2.5" /> Vegan
                               </span>
                             );
                             return null;
@@ -565,13 +567,13 @@ export default function Menu() {
                 <div className="flex flex-wrap gap-2 mb-4">
                   {selectedProduct.tags.split(',').map(tag => {
                     const badgeStyles = {
-                      recommended: { text: 'Best Seller', icon: '⭐', style: 'bg-amber-500 text-white' },
-                      spicy: { text: 'Spicy', icon: '🌶️', style: 'bg-red-600 text-white' },
-                      halal: { text: 'Halal Certified', icon: '🕌', style: 'bg-emerald-600 text-white' },
-                      sugar_free: { text: 'Sugar-Free', icon: '🍬', style: 'bg-cyan-600 text-white' },
-                      gluten_free: { text: 'Gluten-Free', icon: '🌾', style: 'bg-yellow-500 text-slate-900' },
-                      nuts: { text: 'Contains Nuts', icon: '🥜', style: 'bg-amber-800 text-white' },
-                      vegan: { text: 'Vegan', icon: '🌿', style: 'bg-lime-600 text-white' }
+                      recommended: { text: 'Best Seller', icon: <Star className="w-2.5 h-2.5 fill-current" />, style: 'bg-amber-500 text-white' },
+                      spicy: { text: 'Spicy', icon: <Flame className="w-2.5 h-2.5" />, style: 'bg-red-600 text-white' },
+                      halal: { text: 'Halal Certified', icon: <CheckCircle className="w-2.5 h-2.5" />, style: 'bg-emerald-600 text-white' },
+                      sugar_free: { text: 'Sugar-Free', icon: <Ban className="w-2.5 h-2.5" />, style: 'bg-cyan-600 text-white' },
+                      gluten_free: { text: 'Gluten-Free', icon: <Wheat className="w-2.5 h-2.5" />, style: 'bg-yellow-500 text-slate-900' },
+                      nuts: { text: 'Contains Nuts', icon: <AlertCircle className="w-2.5 h-2.5" />, style: 'bg-amber-800 text-white' },
+                      vegan: { text: 'Vegan', icon: <Leaf className="w-2.5 h-2.5" />, style: 'bg-lime-600 text-white' }
                     }[tag];
                     if (!badgeStyles) return null;
                     return (
@@ -683,8 +685,8 @@ export default function Menu() {
                   <div className="flex items-center gap-4 mb-8">
                     <p className="font-heading text-3xl font-bold" style={{ color: brandingColor }}>₱{selectedProduct.price.toFixed(2)}</p>
                     {selectedProduct.pointsCost && isCustomer && (
-                      <div className="bg-amber-50 text-amber-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-100">
-                        💎 Redeem for {selectedProduct.pointsCost} Points
+                      <div className="bg-amber-50 text-amber-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-100 flex items-center gap-1.5">
+                        <Gem className="w-3.5 h-3.5" /> Redeem for {selectedProduct.pointsCost} Points
                       </div>
                     )}
                   </div>
@@ -748,7 +750,7 @@ export default function Menu() {
               <div className="relative z-10 flex justify-between items-start">
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-white/20 shadow-sm backdrop-blur-md">
-                    <span>💎</span> VIP Member
+                    <Gem className="w-3 h-3" /> VIP Member
                   </div>
                   <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-2 drop-shadow-sm">Rewards Gallery</h2>
                   <p className="text-white/90 font-bold text-lg flex items-center gap-2">
@@ -763,7 +765,7 @@ export default function Menu() {
             <div className="bg-slate-50 border-b border-slate-100 p-4 px-8 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 shadow-sm z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-lg shadow-inner shrink-0">
-                  ℹ️
+                  <Info className="w-5 h-5" />
                 </div>
                 <div>
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">{t('howToEarn')}</h4>
@@ -803,7 +805,7 @@ export default function Menu() {
                         <div className="flex-1">
                           <h4 className={`font-black text-lg leading-tight mb-1 ${canAfford ? 'text-slate-900' : 'text-slate-500'}`}>{product.name}</h4>
                           <p className="font-black text-sm flex items-center gap-1" style={{ color: brandingColor }}>
-                            💎 {product.pointsCost} <span className="text-[10px] text-slate-400 uppercase tracking-widest ml-1">Pts</span>
+                            <Gem className="w-3 h-3" /> {product.pointsCost} <span className="text-[10px] text-slate-400 uppercase tracking-widest ml-1">Pts</span>
                           </p>
                         </div>
                       </div>
@@ -843,8 +845,8 @@ export default function Menu() {
               </div>
               
               {categories.flatMap(c => c.products).filter(p => p.pointsCost).length === 0 && (
-                <div className="text-center py-20">
-                  <div className="text-6xl mb-4 opacity-50">🎁</div>
+                <div className="text-center py-20 flex flex-col items-center">
+                  <div className="mb-4 opacity-50"><Gift className="w-16 h-16 text-slate-500" /></div>
                   <h3 className="text-xl font-black text-slate-800">No Rewards Available</h3>
                   <p className="text-slate-500 font-medium">Check back later for exciting items you can redeem!</p>
                 </div>

@@ -7,12 +7,13 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, unlockAudio, formatMinutes } from '../utils/helpers';
 
 import { applyTheme, clearTheme } from '../utils/theme';
+import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon } from 'lucide-react';
 
 const STATUS_STEPS = [
-  { key: 'pending', label: 'Order Received', icon: '📋', activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-primary-50' },
-  { key: 'confirmed', label: 'Payment Confirmed', icon: '✅', activeBg: 'bg-emerald-500', activeRing: 'ring-emerald-100', inactiveBg: 'bg-emerald-50' },
-  { key: 'preparing', label: 'Preparing', icon: '👨‍🍳', activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-slate-100' },
-  { key: 'ready', label: 'Ready for Pickup', icon: '🔔', activeBg: 'bg-amber-500', activeRing: 'ring-amber-100', inactiveBg: 'bg-amber-50' },
+  { key: 'pending', label: 'Order Received', icon: <ClipboardList className="w-6 h-6" />, activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-primary-50' },
+  { key: 'confirmed', label: 'Payment Confirmed', icon: <CheckCircle className="w-6 h-6" />, activeBg: 'bg-emerald-500', activeRing: 'ring-emerald-100', inactiveBg: 'bg-emerald-50' },
+  { key: 'preparing', label: 'Preparing', icon: <ChefHat className="w-6 h-6" />, activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-slate-100' },
+  { key: 'ready', label: 'Ready for Pickup', icon: <Bell className="w-6 h-6" />, activeBg: 'bg-amber-500', activeRing: 'ring-amber-100', inactiveBg: 'bg-amber-50' },
 ];
 
 export default function OrderConfirmation() {
@@ -164,7 +165,7 @@ export default function OrderConfirmation() {
     <div className="min-h-screen bg-surface-50 pb-8" style={{ '--primary-custom': brandingColor }}>
       <div className="p-4 md:p-6 pb-0">
         <Link to={homeLink} className="inline-flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all">
-          <span className="text-lg md:text-xl leading-none">←</span> <span>Back Home</span>
+          <ArrowLeft className="w-5 h-5 text-surface-500" /> <span>Back Home</span>
         </Link>
       </div>
 
@@ -172,8 +173,8 @@ export default function OrderConfirmation() {
 
         <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 text-center mb-4 sm:mb-6 shadow-xl relative overflow-hidden animate-fade-in-up border-t-[12px] sm:border-t-[16px]" style={{ animationDelay: '0.1s', borderTopColor: isCancelled ? '#ef4444' : brandingColor }}>
           {isCancelled && (
-            <div className="absolute top-4 right-4 rotate-12 border-4 border-red-500 text-red-500 font-black px-4 py-1 rounded-xl text-xs sm:text-sm uppercase tracking-widest animate-bounce-in shadow-lg bg-white/95 z-20">
-              Cancelled ❌
+            <div className="absolute top-4 right-4 rotate-12 border-4 border-red-500 text-red-500 font-black px-4 py-1.5 rounded-xl text-xs sm:text-sm uppercase tracking-widest animate-bounce-in shadow-lg bg-white/95 z-20 flex items-center gap-1.5">
+              Cancelled <XCircle className="w-4 h-4" />
             </div>
           )}
 
@@ -184,7 +185,7 @@ export default function OrderConfirmation() {
 
           {isCancelled && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-left mb-6 flex gap-3 items-start animate-fade-in">
-              <span className="text-xl">⚠️</span>
+              <AlertTriangle className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
               <div>
                 <h4 className="font-bold text-red-800 text-sm">Order Cancelled</h4>
                 <p className="text-xs text-red-600 font-medium leading-relaxed">
@@ -198,7 +199,7 @@ export default function OrderConfirmation() {
           {order.estimatedPrepTime && !isReady && !isCompleted && !isCancelled && (
             <div className="mb-6 animate-bounce-in">
               <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 px-5 py-3 rounded-2xl shadow-lg" style={{ backgroundColor: `${brandingColor}15` }}>
-                <span className="text-2xl">🕒</span>
+                <Clock className="w-6 h-6" style={{ color: brandingColor }} />
                 <div className="text-left">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70 mb-0.5" style={{ color: brandingColor }}>Estimated Wait</p>
                   <p className="text-xl font-black leading-none" style={{ color: brandingColor }}>{formatMinutes(order.estimatedPrepTime)}</p>
@@ -215,20 +216,20 @@ export default function OrderConfirmation() {
                 : "Please wait for your number to be called or displayed on the queue screen."}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
-            <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-              {order.orderType === 'dine_in' ? '🏠 Dine In' : '🥡 Take Out'}
+            <span className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center gap-1.5 ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+              {order.orderType === 'dine_in' ? <><Home className="w-4 h-4"/> Dine In</> : <><ShoppingBag className="w-4 h-4"/> Take Out</>}
             </span>
             {isCancelled ? (
-              <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-red-100 text-red-700 font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1 border border-red-200">
-                ❌ VOIDED RECEIPT
+              <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-red-100 text-red-700 font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-1.5 border border-red-200">
+                <XCircle className="w-4 h-4" /> VOIDED RECEIPT
               </span>
             ) : order.paymentMethod === 'points' ? (
-              <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-purple-100 text-purple-700 font-bold text-xs sm:text-sm">
-                🎁 Point Redemption
+              <span className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-purple-100 text-purple-700 font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                <Gift className="w-4 h-4" /> Point Redemption
               </span>
             ) : (
-              <span className={`font-bold text-xs sm:text-sm flex items-center gap-2 ${order.paymentStatus === 'paid' ? 'text-emerald-700' : 'text-slate-800'}`}>
-                {order.paymentStatus === 'paid' ? '✅ PAID' : '⏳ PAY AT THE COUNTER'}
+              <span className={`font-bold text-xs sm:text-sm flex items-center gap-1.5 ${order.paymentStatus === 'paid' ? 'text-emerald-700' : 'text-slate-800'}`}>
+                {order.paymentStatus === 'paid' ? <><CheckCircle className="w-4 h-4" /> PAID</> : <><Clock className="w-4 h-4" /> PAY AT THE COUNTER</>}
               </span>
             )}
           </div>
@@ -239,7 +240,7 @@ export default function OrderConfirmation() {
             {!feedbackSubmitted ? (
               <>
                 <div className="relative z-10 text-center">
-                  <h4 className="text-2xl font-black text-slate-900 mb-2">How was your meal? 🍔</h4>
+                  <h4 className="text-2xl font-black text-slate-900 mb-2 flex items-center justify-center gap-2">How was your meal? <Utensils className="w-6 h-6 text-orange-500" /></h4>
                   <p className="text-slate-500 text-xs mb-6">Your feedback helps us make your next visit even better!</p>
 
                   <div className="flex justify-center gap-3 mb-8">
@@ -247,9 +248,10 @@ export default function OrderConfirmation() {
                       <button
                         key={star}
                         onClick={() => setRating(star)}
-                        className={`text-4xl transition-all hover:scale-125 active:scale-95 ${rating >= star ? 'drop-shadow-lg scale-110' : 'opacity-30 grayscale'}`}
+                        className={`transition-all hover:scale-125 active:scale-95 ${rating >= star ? 'drop-shadow-lg scale-110 text-yellow-400' : 'text-slate-200'}`}
+                        type="button"
                       >
-                        {star === 1 ? '😞' : star === 2 ? '😐' : star === 3 ? '😊' : star === 4 ? '😋' : '😍'}
+                        <Star className={`w-10 h-10 ${rating >= star ? 'fill-yellow-400' : ''}`} />
                       </button>
                     ))}
                   </div>
@@ -276,7 +278,7 @@ export default function OrderConfirmation() {
               </>
             ) : (
               <div className="text-center py-4 animate-bounce-in">
-                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">✨</div>
+                <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><Sparkles className="w-8 h-8" /></div>
                 <h4 className="text-xl font-black text-slate-900 mb-1">Thank you!</h4>
                 <p className="text-slate-500 text-xs">We've received your feedback. Enjoy your meal!</p>
               </div>
@@ -288,7 +290,7 @@ export default function OrderConfirmation() {
           <div className="bg-slate-900 rounded-[2rem] p-6 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary-500/30 transition-all duration-500"></div>
             <div className="relative z-10 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl shadow-xl backdrop-blur-md border border-white/20">💎</div>
+              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center shadow-xl backdrop-blur-md border border-white/20"><Gem className="w-6 h-6 text-primary-200" /></div>
               <div className="flex-1">
                 <h4 className="text-lg font-black text-white mb-1 tracking-tight">Save this meal to your story!</h4>
                 <p className="text-slate-400 text-[11px] leading-relaxed mb-4">Sign up now to start your Personal Timeline and earn <span className="text-primary-400 font-bold">{Math.floor(order.total / (branding?.points_rate || 100))} points</span> on this order.</p>
@@ -372,7 +374,7 @@ export default function OrderConfirmation() {
                 <h4 className="text-2xl font-black mb-1">+{Math.floor(order.total / (branding?.points_rate || 100))} Points Earned!</h4>
                 <p className="text-xs font-medium text-emerald-50">Thanks for being a member, {order.customerName.split(' ')[0]}!</p>
               </div>
-              <div className="text-4xl">💎</div>
+              <div className="text-primary-100 opacity-90"><Gem className="w-10 h-10" /></div>
             </div>
           </div>
         )}
@@ -386,8 +388,8 @@ export default function OrderConfirmation() {
               Cancel Order
             </button>
           )}
-          <Link to={queueLink} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3">📋 View Queue</Link>
-          <Link to={menuLink} className="btn-primary flex-1 justify-center text-sm sm:text-base py-3" style={{ backgroundColor: brandingColor }}>🍽️ Order Again</Link>
+          <Link to={queueLink} className="btn-secondary flex-1 justify-center text-sm sm:text-base py-3 flex items-center gap-2"><ListOrdered className="w-5 h-5"/> View Queue</Link>
+          <Link to={menuLink} className="btn-primary flex-1 justify-center text-sm sm:text-base py-3 flex items-center gap-2" style={{ backgroundColor: brandingColor }}><UtensilsCrossed className="w-5 h-5"/> Order Again</Link>
         </div>
       </div>
 
@@ -474,7 +476,7 @@ export default function OrderConfirmation() {
                       }}
                       className={`inline-flex items-center gap-2 px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-sm ${isMaya ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-600 hover:text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white'}`}
                     >
-                      <span>📥</span> Save QR Image
+                      <Download className="w-4 h-4"/> Save QR Image
                     </button>
                   )}
                 </div>
@@ -488,8 +490,8 @@ export default function OrderConfirmation() {
       {showCancelModal && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-6 md:p-8 text-center relative pointer-events-auto">
-            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce-in shadow-inner">
-              ⚠️
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce-in shadow-inner">
+              <AlertOctagon className="w-8 h-8" />
             </div>
             <h3 className="text-xl md:text-2xl font-black text-slate-800 mb-2 tracking-tight">Cancel Order?</h3>
             <p className="text-slate-500 text-sm mb-8 leading-relaxed">

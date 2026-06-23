@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getMe } from '../services/api';
+import { LogOut } from 'lucide-react';
 
 const AuthContext = createContext(null);
 

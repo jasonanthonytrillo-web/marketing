@@ -5,6 +5,7 @@ import { useSocket } from '../context/SocketContext';
 import { playNotificationSound, unlockAudio } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme } from '../utils/theme';
+import { ChefHat, Utensils, ShoppingBag, Bell } from 'lucide-react';
 
 export default function QueueDisplay() {
   const [preparing, setPreparing] = useState([]);
@@ -105,7 +106,7 @@ export default function QueueDisplay() {
           <div className="flex-1 overflow-y-auto pr-2">
             {preparing.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-2">
-                <div className="text-4xl">🍳</div>
+                <ChefHat className="w-12 h-12 text-slate-300" />
                 <p className="font-bold text-sm sm:text-base">No orders being prepared</p>
               </div>
             ) : (
@@ -116,8 +117,8 @@ export default function QueueDisplay() {
                     style={{ animationDelay: `${idx * 0.05}s` }}>
                     <p className="queue-number font-black text-4xl sm:text-5xl md:text-6xl" style={{ color: brandingColor }}>{order.orderNumber.split('-')[1]}</p>
                     <p className="text-slate-800 text-xs sm:text-sm mt-2 font-black truncate">{order.customerName}</p>
-                    <span className="inline-block mt-2 text-[9px] sm:text-[10px] font-bold bg-slate-200/60 text-slate-600 px-3 py-1 rounded-full uppercase tracking-wider">
-                      {order.orderType === 'dine_in' ? '🍽️ Dine In' : '🥡 Take Out'}
+                    <span className="inline-flex items-center gap-1 mt-2 text-[9px] sm:text-[10px] font-bold bg-slate-200/60 text-slate-600 px-3 py-1 rounded-full uppercase tracking-wider">
+                      {order.orderType === 'dine_in' ? <><Utensils className="w-3 h-3" /> Dine In</> : <><ShoppingBag className="w-3 h-3" /> Take Out</>}
                     </span>
                   </div>
                 ))}
@@ -136,7 +137,7 @@ export default function QueueDisplay() {
           <div className="flex-1 overflow-y-auto pr-2">
             {ready.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-2">
-                <div className="text-4xl">🔔</div>
+                <Bell className="w-12 h-12 text-emerald-200" />
                 <p className="font-bold text-sm sm:text-base">No orders ready</p>
               </div>
             ) : (

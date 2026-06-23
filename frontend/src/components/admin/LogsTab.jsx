@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAuditLogs } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
+import { Search, SearchX } from 'lucide-react';
 
 export default function LogsTab() {
   const [logs, setLogs] = useState([]);
@@ -89,7 +90,7 @@ export default function LogsTab() {
         <div className="flex-1">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Search Logs</label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Search className="w-4 h-4" /></span>
             <input 
               type="text" 
               placeholder="Search by staff name, order details, action name..." 
@@ -107,11 +108,11 @@ export default function LogsTab() {
               onChange={(e) => setActionFilter(e.target.value)}
               className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white font-bold text-sm shadow-sm transition-all cursor-pointer"
             >
-              <option value="all">⚡ All Events</option>
-              <option value="orders">🛒 Orders & Cashier</option>
-              <option value="kitchen">🍳 Kitchen Tasks</option>
-              <option value="security">🔑 Logins & Security</option>
-              <option value="catalog">📦 Product Catalog</option>
+              <option value="all">All Events</option>
+              <option value="orders">Orders & Cashier</option>
+              <option value="kitchen">Kitchen Tasks</option>
+              <option value="security">Logins & Security</option>
+              <option value="catalog">Product Catalog</option>
             </select>
           </div>
           <div>
@@ -121,11 +122,11 @@ export default function LogsTab() {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white font-bold text-sm shadow-sm transition-all cursor-pointer"
             >
-              <option value="all">👥 All Roles</option>
-              <option value="admin">👑 Administrator</option>
-              <option value="cashier">💵 Cashier Staff</option>
-              <option value="kitchen">👨‍🍳 Kitchen Staff</option>
-              <option value="customer">👤 Customer</option>
+              <option value="all">All Roles</option>
+              <option value="admin">Administrator</option>
+              <option value="cashier">Cashier Staff</option>
+              <option value="kitchen">Kitchen Staff</option>
+              <option value="customer">Customer</option>
             </select>
           </div>
         </div>
@@ -179,8 +180,8 @@ export default function LogsTab() {
               ))}
               {filteredLogs.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="p-20 text-center">
-                    <div className="text-5xl mb-4">🔍</div>
+                  <td colSpan="4" className="p-20 text-center flex flex-col items-center">
+                    <div className="mb-4"><SearchX className="w-12 h-12 text-slate-300" /></div>
                     <p className="text-slate-400 font-bold text-lg mb-1">No matching activity logs found.</p>
                     <p className="text-slate-400 text-xs">Try relaxing your search query or dropdown filters!</p>
                   </td>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import { Trash2, X } from 'lucide-react';
 
 export default function ExpensesTab() {
   const [expenses, setExpenses] = useState([]);
@@ -95,8 +96,8 @@ export default function ExpensesTab() {
                     </td>
                     <td className="p-4 font-black text-red-600">{formatCurrency(exp.amount)}</td>
                     <td className="p-4 text-right">
-                      <button onClick={() => handleDelete(exp.id)} className="text-red-400 hover:text-red-600 transition-colors">
-                        🗑️
+                      <button onClick={() => handleDelete(exp.id)} className="text-red-400 hover:text-red-600 transition-colors flex items-center justify-center w-full">
+                        <Trash2 className="w-4 h-4 ml-auto" />
                       </button>
                     </td>
                   </tr>
@@ -115,7 +116,7 @@ export default function ExpensesTab() {
           <div className="bg-white rounded-[2.5rem] shadow-2xl border border-surface-200 w-full max-w-md my-auto overflow-hidden animate-scale-in">
             <div className="p-6 border-b border-surface-100 flex items-center justify-between">
               <h3 className="font-heading text-xl font-bold text-surface-900">Add New Expense</h3>
-              <button onClick={() => setShowModal(false)} className="text-surface-400 hover:text-surface-600 transition-colors">✕</button>
+              <button onClick={() => setShowModal(false)} className="text-surface-400 hover:text-surface-600 transition-colors"><X className="w-6 h-6" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>

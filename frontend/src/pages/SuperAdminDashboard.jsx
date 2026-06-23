@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTenants, createTenant, updateTenant } from '../services/api';
 import { formatCurrency, formatDate } from '../utils/helpers';
+import { Building2, LogOut, Zap, Plus, AlertTriangle, CheckCircle, X } from 'lucide-react';
 
 export default function SuperAdminDashboard() {
   const { user, logoutUser } = useAuth();
@@ -106,15 +107,15 @@ export default function SuperAdminDashboard() {
         {/* Navigation Tabs */}
         <nav className="flex md:flex-col overflow-x-auto md:overflow-y-auto px-2 py-3 md:p-4 gap-2 scrollbar-hide justify-center md:justify-start">
           <div className="flex-1 md:w-full flex items-center justify-center md:justify-start gap-1 md:gap-3 px-4 py-3 rounded-xl font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
-            <span className="text-xl md:text-lg leading-none">🏢</span>
+            <Building2 className="w-5 h-5" />
             <span className="text-[10px] md:text-sm">Manage Tenants</span>
           </div>
         </nav>
 
         {/* Desktop Only Logout */}
         <div className="hidden md:block p-4 border-t border-white/5 mt-auto">
-          <button onClick={logoutUser} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all">
-            <span>🚪</span> Log Out
+          <button onClick={logoutUser} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all">
+            <LogOut className="w-4 h-4" /> Log Out
           </button>
         </div>
       </aside>
@@ -124,8 +125,8 @@ export default function SuperAdminDashboard() {
         {/* Header */}
         <header className="bg-slate-900 border-b border-white/5 px-6 py-4 flex items-center justify-between sticky top-0 z-20 shadow-xl flex-shrink-0">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-xl border border-indigo-500/20">
-              ⚡
+            <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
+              <Zap className="w-5 h-5 text-indigo-400" />
             </div>
             <div>
               <h1 className="font-heading text-lg font-bold text-white leading-tight">
@@ -145,8 +146,8 @@ export default function SuperAdminDashboard() {
               <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
                 {user?.name?.charAt(0)}
               </div>
-              <button onClick={logoutUser} className="md:hidden p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                <span className="text-xl">🚪</span>
+              <button onClick={logoutUser} className="md:hidden p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors flex items-center justify-center">
+                <LogOut className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -162,7 +163,7 @@ export default function SuperAdminDashboard() {
             onClick={() => setShowModal(true)}
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-indigo-600/20 transition-all flex items-center gap-2 uppercase tracking-widest text-xs"
           >
-            <span>➕</span> Provision New Tenant
+            <Plus className="w-4 h-4" /> Provision New Tenant
           </button>
         </div>
 
@@ -264,7 +265,7 @@ export default function SuperAdminDashboard() {
             <div className="p-10">
               <div className="flex justify-between items-center mb-10">
                 <h3 className="text-3xl font-black text-white tracking-tight">Provision Tenant</h3>
-                <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-white text-2xl transition-colors">✕</button>
+                <button onClick={() => setShowModal(false)} className="text-slate-500 hover:text-white transition-colors flex items-center justify-center"><X className="w-6 h-6" /></button>
               </div>
               
               <form onSubmit={handleCreate} className="space-y-6">
@@ -361,8 +362,8 @@ export default function SuperAdminDashboard() {
       {tenantToToggle && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl animate-scale-in text-center">
-            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center text-3xl mb-5 border-4 ${tenantToToggle.active ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'}`}>
-              {tenantToToggle.active ? '⚠️' : '✅'}
+            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-5 border-4 ${tenantToToggle.active ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'}`}>
+              {tenantToToggle.active ? <AlertTriangle className="w-8 h-8" /> : <CheckCircle className="w-8 h-8" />}
             </div>
             <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Confirm Action</h3>
             <p className="text-slate-400 mb-8 text-sm leading-relaxed">
@@ -393,7 +394,7 @@ export default function SuperAdminDashboard() {
             <div className="p-10">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-black text-white tracking-tight">Edit Tenant Settings</h3>
-                <button onClick={() => setTenantToEdit(null)} className="text-slate-500 hover:text-white text-2xl transition-colors">✕</button>
+                <button onClick={() => setTenantToEdit(null)} className="text-slate-500 hover:text-white transition-colors flex items-center justify-center"><X className="w-6 h-6" /></button>
               </div>
               
               <form onSubmit={handleUpdateSettings} className="space-y-6">

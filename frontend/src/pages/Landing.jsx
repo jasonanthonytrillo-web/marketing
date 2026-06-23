@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import SeasonalEffects from '../components/SeasonalEffects';
+import { Ban, Gem, Rocket, Coffee, Utensils } from 'lucide-react';
 
 export default function Landing() {
   const [lastOrder, setLastOrder] = useState(null);
@@ -129,8 +130,8 @@ export default function Landing() {
   if (isSuspended) {
     return (
       <div className="min-h-screen bg-surface-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center text-5xl mb-8 animate-pulse">
-          🚫
+        <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-8 animate-pulse text-red-500">
+          <Ban className="w-12 h-12" />
         </div>
         <h1 className="font-heading text-4xl md:text-6xl font-black text-white mb-4 uppercase tracking-tighter">
           Service <span className="text-red-500">Suspended</span>
@@ -233,8 +234,8 @@ export default function Landing() {
             <div className="bg-emerald-500/10 border border-emerald-500/20 px-8 py-3 rounded-[2rem] text-emerald-400 font-bold text-lg backdrop-blur-md shadow-xl shadow-emerald-500/10 flex flex-col items-center">
               <span className="text-white">Welcome back, <span className="text-emerald-400">{user.name}</span>!</span>
             </div>
-            <div className="text-[10px] text-emerald-500/60 font-black uppercase tracking-[0.3em] mt-2">
-              💎 {Math.floor(user.points)} Loyalty Points Available
+            <div className="text-[10px] text-emerald-500/60 font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-1.5">
+              <Gem className="w-3 h-3 text-emerald-500/60" /> {Math.floor(user.points)} Loyalty Points Available
             </div>
           </div>
         )}
@@ -245,8 +246,8 @@ export default function Landing() {
               <img src={tenant.logo} className="w-full h-full object-cover" alt={tenant.name} />
             </div>
           ) : (
-            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/10 backdrop-blur-md rounded-[40px] flex items-center justify-center text-5xl shadow-2xl border border-white/20 animate-scale-in ring-8 ring-white/5">
-              {tenant?.slug === 'burger-palace' ? '🍔' : '☕'}
+            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/10 backdrop-blur-md rounded-[40px] flex items-center justify-center shadow-2xl border border-white/20 animate-scale-in ring-8 ring-white/5">
+              {tenant?.slug === 'burger-palace' ? <Utensils className="w-10 h-10 md:w-16 md:h-16 text-white/90" /> : <Coffee className="w-10 h-10 md:w-16 md:h-16 text-white/90" />}
             </div>
           )}
         </div>
@@ -284,7 +285,7 @@ export default function Landing() {
                 to={`/${user.role === 'admin' ? 'admin' : user.role === 'kitchen' ? 'kitchen' : 'cashier'}`}
                 className="btn-custom w-full text-lg py-5 rounded-2xl font-black tracking-widest uppercase flex items-center justify-center gap-2 mb-2 shadow-xl"
               >
-                Go to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} 🚀
+                Go to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} <Rocket className="w-5 h-5 ml-1" />
               </Link>
               
               <Link to={menuLink} className="w-full py-4 px-6 bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-2xl font-bold transition-all flex items-center justify-center">

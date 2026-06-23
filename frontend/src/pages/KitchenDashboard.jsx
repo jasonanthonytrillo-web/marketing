@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
+import { Bell, BellOff, ChefHat, LogOut, UtensilsCrossed, PackageOpen, Gift, AlertTriangle } from 'lucide-react';
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState([]);
@@ -165,10 +166,10 @@ export default function KitchenDashboard() {
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] animate-bounce cursor-pointer" onClick={stopAlert}>
           <div className="bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-[0_0_40px_rgba(16,185,129,0.5)] border-4 border-white/20 flex flex-col items-center gap-2">
             <div className="flex items-center gap-4">
-              <span className="text-3xl">🔔</span>
+              <Bell className="w-8 h-8" />
               <span className="font-heading font-black text-2xl uppercase tracking-tighter">New Order Received!</span>
             </div>
-            <span className="text-xs font-bold bg-emerald-700/50 px-3 py-1 rounded-full animate-pulse">Tap to Silence Alarm 🔇</span>
+            <span className="text-xs font-bold bg-emerald-700/50 flex items-center gap-1.5 px-3 py-1 rounded-full animate-pulse">Tap to Silence Alarm <BellOff className="w-3 h-3" /></span>
           </div>
         </div>
       )}
@@ -179,7 +180,7 @@ export default function KitchenDashboard() {
           {user?.tenantLogo ? (
             <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover shadow-sm" alt={user.tenantName} />
           ) : (
-            <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center text-sm shadow-inner">👨‍🍳</div>
+            <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-500 shadow-inner"><ChefHat className="w-4 h-4" /></div>
           )}
           <div className="flex flex-col">
             <h2 className="font-heading font-black text-emerald-500 text-lg sm:text-xl tracking-tight uppercase truncate leading-tight">{user?.tenantName || 'Kitchen'} Dashboard</h2>
@@ -193,8 +194,8 @@ export default function KitchenDashboard() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <span className="text-xs sm:text-sm font-medium text-surface-400 hidden sm:inline">👨‍🍳 {user?.name}</span>
-          <button onClick={logoutUser} className="text-surface-500 hover:text-red-400 text-xs sm:text-sm font-medium transition-colors">Log Out</button>
+          <span className="text-xs sm:text-sm font-medium text-surface-400 hidden sm:flex sm:items-center sm:gap-1.5"><ChefHat className="w-4 h-4" /> {user?.name}</span>
+          <button onClick={logoutUser} className="text-surface-500 hover:text-red-400 text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5"><LogOut className="w-4 h-4" /> Log Out</button>
         </div>
       </header>
 
@@ -280,7 +281,7 @@ export default function KitchenDashboard() {
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="bg-surface-900 border border-surface-800 rounded-[40px] p-8 md:p-12 max-w-lg w-full shadow-2xl animate-scale-in">
             <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-orange-500/20 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 border border-orange-500/30">🍳</div>
+              <div className="w-20 h-20 bg-orange-500/20 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-orange-500/30"><UtensilsCrossed className="w-10 h-10 text-orange-500" /></div>
               <h2 className="text-3xl font-black text-white mb-2">Estimate Prep Time</h2>
               <p className="text-surface-400 font-medium text-lg">How long will this order take?</p>
             </div>
@@ -317,7 +318,7 @@ export default function KitchenDashboard() {
                 }}
                 className="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white font-black text-xl rounded-2xl shadow-xl shadow-orange-900/20 transition-all flex items-center justify-center gap-2"
               >
-                Start Cooking Now 🍳
+                Start Cooking Now <UtensilsCrossed className="w-6 h-6" />
               </button>
               <button
                 onClick={() => setShowPrepModal(false)}
@@ -349,10 +350,10 @@ function OrderCard({ order, now, onAction, processing }) {
       <div className={`p-3 flex justify-between items-center border-b ${isUrgent ? 'border-red-500/20 bg-red-500/5' : isWarning ? 'border-amber-500/20 bg-amber-500/5' : 'border-surface-700 bg-surface-800/80'}`}>
         <div>
           <span className={`font-heading font-black text-xl ${isUrgent ? 'text-red-400' : 'text-white'}`}>{order.orderNumber}</span>
-          <span className="ml-2 text-xs text-surface-400">
-            {order.orderType === 'dine_in' ? '🍽️ Dine In' : '🥡 Take Out'}
+          <span className="ml-2 text-xs inline-flex items-center gap-1.5 text-surface-400">
+            {order.orderType === 'dine_in' ? <><UtensilsCrossed className="w-3 h-3" /> Dine In</> : <><PackageOpen className="w-3 h-3" /> Take Out</>}
             {order.paymentMethod === 'points' && (
-              <span className="ml-2 text-purple-400 font-bold">🎁 REWARD</span>
+              <span className="ml-2 text-purple-400 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> REWARD</span>
             )}
           </span>
         </div>
@@ -385,8 +386,8 @@ function OrderCard({ order, now, onAction, processing }) {
                 </div>
               )}
               {item.notes && (
-                <div className="ml-6 text-xs text-amber-400 mt-1 bg-amber-400/10 px-2 py-1 rounded inline-block border border-amber-400/20">
-                  ⚠️ {item.notes}
+                <div className="ml-6 text-xs flex items-center gap-1.5 text-amber-400 mt-1 bg-amber-400/10 px-2 py-1 rounded inline-flex border border-amber-400/20">
+                  <AlertTriangle className="w-3 h-3" /> {item.notes}
                 </div>
               )}
             </li>

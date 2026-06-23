@@ -5,6 +5,7 @@ import { createOrder, getPublicTenant } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { applyTheme } from '../utils/theme';
+import { Utensils, ShoppingBag, Banknote, Smartphone, CreditCard, ShoppingCart, Gem } from 'lucide-react';
 
 const TRANSLATIONS = {
   en: {
@@ -75,14 +76,14 @@ export default function Checkout() {
   const t = (key) => TRANSLATIONS[lang][key] || key;
 
   const ORDER_TYPES = [
-    { id: 'dine_in', label: t('dineIn'), icon: '🍽️' },
-    { id: 'take_out', label: t('takeOut'), icon: '🥡' }
+    { id: 'dine_in', label: t('dineIn'), icon: <Utensils className="w-6 h-6" /> },
+    { id: 'take_out', label: t('takeOut'), icon: <ShoppingBag className="w-6 h-6" /> }
   ];
 
   const PAYMENT_METHODS = [
-    { id: 'cash', label: t('cash'), icon: '💵' },
-    { id: 'gcash', label: t('gcash'), icon: '📱' },
-    { id: 'maya', label: t('maya'), icon: '💳' }
+    { id: 'cash', label: t('cash'), icon: <Banknote className="w-6 h-6" /> },
+    { id: 'gcash', label: t('gcash'), icon: <Smartphone className="w-6 h-6" /> },
+    { id: 'maya', label: t('maya'), icon: <CreditCard className="w-6 h-6" /> }
   ];
 
   const [customerName, setCustomerName] = useState(user?.name || '');
@@ -121,7 +122,7 @@ export default function Checkout() {
   if (items.length === 0 && !submitting) {
     return (
       <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center p-4 text-center">
-        <div className="text-6xl mb-4">🛒</div>
+        <div className="mb-4"><ShoppingCart className="w-16 h-16 text-surface-300" /></div>
         <h2 className="text-xl font-bold text-surface-900 mb-2">{t('emptyCartTitle')}</h2>
         <p className="text-surface-500 mb-6">{t('emptyCartDesc')}</p>
         <Link to={menuLink} className="btn-primary px-8" style={{ backgroundColor: brandingColor }}>{t('browseMenu')}</Link>
@@ -215,7 +216,7 @@ export default function Checkout() {
               <button key={t.id} type="button" onClick={() => setOrderType(t.id)}
                 className={`p-4 rounded-xl border-2 text-center font-semibold transition-all ${orderType === t.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}
                 style={orderType === t.id ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}>
-                <div className="text-2xl mb-1">{t.icon}</div>{t.label}
+                <div className="mb-1 flex justify-center">{t.icon}</div>{t.label}
               </button>
             ))}
           </div>
@@ -225,7 +226,7 @@ export default function Checkout() {
         {isFullRedemption ? (
           <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-xl">💎</div>
+              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-xl"><Gem className="w-5 h-5 text-emerald-500" /></div>
               <div>
                 <p className="font-semibold text-emerald-700">{t('pointsRedemption')}</p>
                 <p className="text-xs text-surface-500">{t('noPaymentNeeded')}</p>
@@ -258,7 +259,7 @@ export default function Checkout() {
                     ) : isMaya ? (
                       <img src="/logos/maya-logo.jpg" alt="Maya" className="h-8 max-w-full object-contain rounded-lg" />
                     ) : (
-                      <span className="text-3xl leading-none">💵</span>
+                      <Banknote className="w-8 h-8 text-emerald-600" />
                     )}
                   </button>
                 );

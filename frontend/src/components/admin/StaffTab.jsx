@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getStaff, updateStaff, deleteStaff, createStaff } from '../../services/api';
+import { Plus, User, Wrench, Gem, Users, X } from 'lucide-react';
 
 export default function StaffTab() {
   const [users, setUsers] = useState([]);
@@ -78,7 +79,7 @@ export default function StaffTab() {
           onClick={() => setShowModal(true)}
           className="bg-primary-600 hover:bg-primary-500 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2"
         >
-          <span>➕</span> Add New User
+          <Plus className="w-4 h-4" /> Add New User
         </button>
       </div>
 
@@ -114,8 +115,8 @@ export default function StaffTab() {
                 <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="p-6">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-lg">
-                        {user.role === 'customer' ? '👤' : '🛠️'}
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                        {user.role === 'customer' ? <User className="w-5 h-5" /> : <Wrench className="w-5 h-5" />}
                       </div>
                       <div>
                         <p className="font-bold text-slate-900">{user.name}</p>
@@ -140,8 +141,8 @@ export default function StaffTab() {
                   </td>
                   {filter === 'customer' && (
                     <td className="p-6">
-                      <div className="flex items-center gap-2">
-                        <span className="text-emerald-500 font-black">💎 {Math.floor(user.points || 0)}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-emerald-500 font-black inline-flex items-center gap-1"><Gem className="w-3 h-3" /> {Math.floor(user.points || 0)}</span>
                       </div>
                     </td>
                   )}
@@ -164,8 +165,8 @@ export default function StaffTab() {
               ))}
               {filteredUsers.length === 0 && (
                 <tr>
-                  <td colSpan={filter === 'customer' ? 5 : 4} className="p-20 text-center">
-                    <div className="text-4xl mb-4">👥</div>
+                  <td colSpan={filter === 'customer' ? 5 : 4} className="p-20 text-center flex flex-col items-center">
+                    <div className="mb-4"><Users className="w-12 h-12 text-slate-300" /></div>
                     <p className="text-slate-400 font-medium">No {filter}s found in the directory.</p>
                   </td>
                 </tr>
@@ -182,7 +183,7 @@ export default function StaffTab() {
             <div className="p-8">
               <div className="flex justify-between items-center mb-8">
                 <h3 className="text-2xl font-black text-slate-900">Add New User</h3>
-                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 flex items-center justify-center"><X className="w-6 h-6" /></button>
               </div>
               
               <form onSubmit={handleCreate} className="space-y-5">

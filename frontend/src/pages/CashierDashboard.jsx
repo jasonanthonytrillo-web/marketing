@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
+import { Clock, AlertTriangle, Store, User, CreditCard, Gift, Banknote, Smartphone, CheckCircle } from 'lucide-react';
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);
@@ -272,7 +273,7 @@ export default function CashierDashboard() {
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in border border-slate-100">
             <div className="bg-amber-50 p-6 sm:p-8 border-b border-amber-100 flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg shadow-amber-500/20">🕒</div>
+              <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-500/20"><Clock className="w-6 h-6" /></div>
               <div>
                 <h3 className="font-heading font-black text-xl text-slate-900">Set Prep Time Estimate</h3>
                 <p className="text-amber-700 text-xs font-semibold">How long will this order take?</p>
@@ -340,7 +341,7 @@ export default function CashierDashboard() {
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-surface-900/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
             <div className="bg-red-50 p-6 border-b border-red-100 flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-2xl">⚠️</div>
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"><AlertTriangle className="w-6 h-6 text-red-600" /></div>
               <div>
                 <h3 className="font-heading font-bold text-xl text-red-900">Cancel Order</h3>
                 <p className="text-red-600 text-sm">This action cannot be undone.</p>
@@ -394,7 +395,7 @@ export default function CashierDashboard() {
           {user?.tenantLogo ? (
             <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover shadow-sm" alt={user.tenantName} />
           ) : (
-            <div className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center text-sm shadow-inner">🏢</div>
+            <div className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center text-primary-500 shadow-inner"><Store className="w-4 h-4" /></div>
           )}
           <div className="flex flex-col">
             <h2 className="font-heading font-black text-lg sm:text-xl text-primary-600 tracking-tight uppercase truncate leading-tight">{user?.tenantName || 'Cashier'} Dashboard</h2>
@@ -408,7 +409,7 @@ export default function CashierDashboard() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <span className="text-xs sm:text-sm font-medium text-surface-600 hidden sm:inline">👤 {user?.name}</span>
+          <span className="text-xs sm:text-sm font-medium text-surface-600 hidden sm:flex sm:items-center sm:gap-1.5"><User className="w-4 h-4" /> {user?.name}</span>
           <button onClick={logoutUser} className="text-surface-400 hover:text-red-500 text-xs sm:text-sm font-medium transition-colors">Log Out</button>
         </div>
       </header>
@@ -446,15 +447,15 @@ export default function CashierDashboard() {
                         {order.orderType === 'dine_in' ? 'Dine In' : 'Take Out'}
                       </span>
                       {order.paymentMethod === 'points' && (
-                        <span className="badge text-[10px] sm:text-xs bg-purple-100 text-purple-700 ml-1">🎁 Reward</span>
+                        <span className="badge text-[10px] sm:text-xs bg-purple-100 text-purple-700 ml-1 inline-flex items-center gap-1"><Gift className="w-3 h-3" /> Reward</span>
                       )}
                       <p className="text-[10px] sm:text-xs text-surface-400">{getElapsedMinutes(order.createdAt)} min ago</p>
                     </div>
                   </div>
                   <div className="flex justify-between items-center mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-surface-100">
                     <span className="text-xs sm:text-sm font-medium text-surface-600">{order.items?.length || 0} items</span>
-                    <span className="font-heading font-bold text-primary-600 text-sm sm:text-base">
-                      {order.paymentMethod === 'points' ? '🎁 FREE' : formatCurrency(order.total)}
+                    <span className="font-heading font-bold text-primary-600 text-sm sm:text-base inline-flex items-center gap-1.5">
+                      {order.paymentMethod === 'points' ? <><Gift className="w-4 h-4" /> FREE</> : formatCurrency(order.total)}
                     </span>
                   </div>
                 </button>
@@ -473,7 +474,7 @@ export default function CashierDashboard() {
           )}
           {!selectedOrder ? (
             <div className="h-full flex flex-col items-center justify-center text-surface-400">
-              <div className="text-6xl mb-4">💳</div>
+              <div className="mb-4"><CreditCard className="w-16 h-16 text-surface-300" /></div>
               <p className="font-medium">Select an order to view details</p>
             </div>
           ) : (
@@ -492,7 +493,7 @@ export default function CashierDashboard() {
                 {/* Points Redemption Banner */}
                 {selectedOrder.paymentMethod === 'points' && (
                   <div className="mx-6 mt-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center gap-3 flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-xl flex-shrink-0">🎁</div>
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0"><Gift className="w-5 h-5 text-purple-600" /></div>
                     <div>
                       <p className="font-bold text-purple-700 text-sm">Points Redemption Order</p>
                       <p className="text-xs text-purple-500">This order was claimed using loyalty points — no cash payment needed.</p>
@@ -616,9 +617,9 @@ export default function CashierDashboard() {
                               setTimeout(() => handleConfirmPayment(), 100);
                             }}
                             disabled={processing}
-                            className="flex-[2] py-4 shadow-xl font-bold transition-all btn-primary bg-purple-600 hover:bg-purple-700"
+                            className="flex-[2] py-4 shadow-xl font-bold transition-all btn-primary bg-purple-600 hover:bg-purple-700 inline-flex items-center justify-center gap-2"
                           >
-                            {processing ? 'Processing...' : '🎁 Confirm Reward Claim'}
+                            {processing ? 'Processing...' : <><Gift className="w-5 h-5" /> Confirm Reward Claim</>}
                           </button>
                         </div>
                       ) : (
@@ -631,7 +632,7 @@ export default function CashierDashboard() {
                                 onClick={() => setPaymentData(p => ({ ...p, method: 'cash' }))}
                                 className={`py-3 px-4 rounded-2xl border-2 font-black transition-all flex flex-col items-center justify-center gap-1.5 shadow-sm active:scale-95 ${paymentData.method === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
                               >
-                                <span className="text-2xl">💵</span>
+                                <Banknote className="w-8 h-8 mb-1" />
                                 <span className="text-xs uppercase tracking-wider font-bold">Cash</span>
                               </button>
                               <button
@@ -655,8 +656,8 @@ export default function CashierDashboard() {
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Discount Type</label>
                                 <select value={paymentData.discountType} onChange={e => setPaymentData(p => ({ ...p, discountType: e.target.value }))} className="input-field py-3.5 bg-white w-full text-sm font-semibold cursor-pointer">
                                   <option value="">No Discount</option>
-                                  <option value="senior">👴 Senior Citizen (20%)</option>
-                                  <option value="pwd">♿ PWD (20%)</option>
+                                  <option value="senior">Senior Citizen (20%)</option>
+                                  <option value="pwd">PWD (20%)</option>
                                 </select>
                               </div>
                             </div>
@@ -752,14 +753,14 @@ export default function CashierDashboard() {
                                     </>
                                   ) : qrStatus === 'sent' ? (
                                     <>
-                                      <span className="text-emerald-500 text-lg drop-shadow-sm">✅</span> {paymentData.method.toUpperCase()} QR Sent to Kiosk!
+                                      <span className="text-emerald-500 text-lg drop-shadow-sm flex items-center"><CheckCircle className="w-5 h-5 mr-1" /></span> {paymentData.method.toUpperCase()} QR Sent to Kiosk!
                                     </>
                                   ) : qrStatus === 'error' ? (
                                     <>
-                                      <span className="text-red-500 text-lg">⚠️</span> Failed to Send
+                                      <span className="text-red-500 text-lg flex items-center"><AlertTriangle className="w-5 h-5 mr-1" /></span> Failed to Send
                                     </>
                                   ) : (
-                                    <>📱 Send {paymentData.method.toUpperCase()} QR to Kiosk</>
+                                    <><Smartphone className="w-5 h-5 mr-1" /> Send {paymentData.method.toUpperCase()} QR to Kiosk</>
                                   )}
                                 </button>
                                 {qrStatus === 'sent' && (
@@ -822,7 +823,7 @@ export default function CashierDashboard() {
                             >
                               {processing ? 'Processing...' : (
                                 <>
-                                  <span className="text-xl">🍳</span>
+                                  <ChefHat className="w-5 h-5" />
                                   <span>START PREPARING</span>
                                 </>
                               )}
@@ -836,7 +837,7 @@ export default function CashierDashboard() {
                             >
                               {processing ? 'Processing...' : (
                                 <>
-                                  <span className="text-xl">✅</span>
+                                  <CheckCircle className="w-5 h-5" />
                                   <span>MARK AS READY</span>
                                 </>
                               )}
@@ -850,7 +851,7 @@ export default function CashierDashboard() {
                             >
                               {processing ? 'Processing...' : (
                                 <>
-                                  <span className="text-xl">🥡</span>
+                                  <ShoppingBag className="w-5 h-5" />
                                   <span>MARK AS SERVED</span>
                                 </>
                               )}
@@ -859,7 +860,7 @@ export default function CashierDashboard() {
                           <button onClick={handleCancel} disabled={processing} className="btn-danger w-full py-3">Cancel Order</button>
                         </div>
                       )}
-                      <button onClick={() => window.print()} className="btn-secondary w-full py-3">🖨️ Print Receipt</button>
+                      <button onClick={() => window.print()} className="btn-secondary w-full py-3 flex items-center justify-center gap-2"><Printer className="w-4 h-4" /> Print Receipt</button>
                     </div>
                   )}
                 </div>
