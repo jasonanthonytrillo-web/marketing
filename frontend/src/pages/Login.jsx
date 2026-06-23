@@ -58,6 +58,7 @@ export default function Login() {
       else if (user.role === 'admin') navigate('/admin');
       else if (user.role === 'cashier') navigate('/cashier');
       else if (user.role === 'kitchen') navigate('/kitchen');
+      else if (user.role === 'rider') navigate('/rider');
       else navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed.');

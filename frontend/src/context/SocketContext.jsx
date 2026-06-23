@@ -6,6 +6,7 @@ const SocketContext = createContext(null);
 export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false);
   const socketRef = useRef(null);
+  const joinedRoomsRef = useRef(new Set());
 
   const [token, setToken] = useState(localStorage.getItem('pos_token'));
 
@@ -59,9 +60,18 @@ export function SocketProvider({ children }) {
     
     socketRef.current = newSocket;
 
+    // Heartbeat to keep Render.com connection alive
+    const heartbeatInterval = setInterval(() => {
+      if (newSocket.connected) {
+        newSocket.emit('ping_heartbeat');
+      }
+    }, 25000);
+
     newSocket.on('connect', () => {
       console.log('✅ WebSocket Connected (Secure)');
       setConnected(true);
+      // Rejoin rooms on reconnect
+      joinedRoomsRef.current.clear();
     });
 
     newSocket.on('disconnect', () => {
@@ -70,10 +80,12 @@ export function SocketProvider({ children }) {
     });
 
     return () => { 
+      clearInterval(heartbeatInterval);
       if (newSocket) {
         console.log('🔌 Disconnecting WebSocket...');
         newSocket.disconnect();
         socketRef.current = null;
+        joinedRoomsRef.current.clear();
       }
     };
   }, [token]);
@@ -82,8 +94,11 @@ export function SocketProvider({ children }) {
   const joinRoom = (room, tenantId) => { 
     if (socketRef.current && connected) {
       const roomName = tenantId ? `tenant-${tenantId}-${room}` : room;
-      socketRef.current.emit('join', roomName);
-      console.log(`📡 Joining room: ${roomName}`);
+      if (!joinedRoomsRef.current.has(roomName)) {
+        socketRef.current.emit('join', roomName);
+        joinedRoomsRef.current.add(roomName);
+        console.log(`📡 Joining room: ${roomName}`);
+      }
     }
   };
 
@@ -91,6 +106,7 @@ export function SocketProvider({ children }) {
     if (socketRef.current && connected) {
       const roomName = tenantId ? `tenant-${tenantId}-${room}` : room;
       socketRef.current.emit('leave', roomName);
+      joinedRoomsRef.current.delete(roomName);
       console.log(`🔌 Leaving room: ${roomName}`);
     }
   };
