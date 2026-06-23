@@ -339,19 +339,48 @@ export default function Checkout() {
             </div>
 
             {paymentMethod !== 'cash' && (
-              <div className="mt-5 pt-5 border-t border-surface-100 animate-fade-in">
-                <label className="flex items-center gap-2 text-sm font-bold text-surface-900 mb-2">
-                  <Hash className="w-4 h-4 text-primary-500" />
-                  {t('paymentRef')}
-                </label>
-                <input 
-                  type="text" 
-                  value={paymentReference}
-                  onChange={e => setPaymentReference(e.target.value)}
-                  placeholder={t('refPlaceholder')}
-                  className="input-field text-sm"
-                  required={orderType === 'delivery'}
-                />
+              <div className="mt-5 pt-5 border-t border-surface-100 animate-fade-in space-y-4">
+                {/* Auto-display QR Code */}
+                {(paymentMethod === 'gcash' || paymentMethod === 'maya') && (
+                  <div className="bg-surface-50 rounded-2xl p-4 border-2 border-dashed border-surface-200 flex flex-col items-center gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">Scan to Pay</p>
+                    {branding?.[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'] ? (
+                      <div className="relative group cursor-zoom-in">
+                        <img 
+                          src={branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr']} 
+                          alt={`${paymentMethod} QR`}
+                          className="w-48 h-48 object-cover rounded-xl shadow-lg border-4 border-white transition-transform group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/10 transition-colors rounded-xl flex items-center justify-center">
+                          <Download className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-48 h-48 bg-surface-100 rounded-xl flex flex-col items-center justify-center text-center p-4 border border-surface-200">
+                        <Smartphone className="w-8 h-8 text-surface-300 mb-2" />
+                        <p className="text-[10px] font-bold text-surface-400 uppercase tracking-tight">QR Code Not Uploaded Yet</p>
+                      </div>
+                    )}
+                    <p className="text-[10px] font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full uppercase tracking-tighter">
+                      Save QR & Pay in {paymentMethod === 'gcash' ? 'GCash' : 'Maya'} App
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-bold text-surface-900 mb-2">
+                    <Hash className="w-4 h-4 text-primary-500" />
+                    {t('paymentRef')}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={paymentReference}
+                    onChange={e => setPaymentReference(e.target.value)}
+                    placeholder={t('refPlaceholder')}
+                    className="input-field text-sm"
+                    required={orderType === 'delivery'}
+                  />
+                </div>
               </div>
             )}
           </div>
