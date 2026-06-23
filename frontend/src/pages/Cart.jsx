@@ -253,19 +253,19 @@ export default function Cart() {
                 ✕
               </button>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="flex sm:grid sm:grid-cols-4 gap-4 overflow-x-auto pb-4 sm:pb-0 scrollbar-hide snap-x">
               {recommendations.map(rec => (
-                <div key={rec.id} className="bg-white border border-surface-200 rounded-[2rem] p-3 sm:p-4 flex flex-col justify-between hover:shadow-lg transition-all group relative overflow-hidden">
-                  <div className="aspect-[4/3] rounded-[1.5rem] overflow-hidden bg-surface-50 mb-3 relative">
+                <div key={rec.id} className="min-w-[140px] sm:min-w-0 bg-white border border-surface-200 rounded-[1.5rem] sm:rounded-[2rem] p-2.5 sm:p-4 flex flex-col justify-between hover:shadow-lg transition-all group relative overflow-hidden snap-start">
+                  <div className="aspect-square rounded-[1rem] sm:rounded-[1.5rem] overflow-hidden bg-surface-50 mb-2 relative">
                     <img src={rec.image || 'https://via.placeholder.com/150'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 mb-1">{rec.name}</h4>
-                    <p className="font-black text-xs sm:text-sm mb-3" style={{ color: brandingColor }}>{formatCurrency(rec.price)}</p>
+                    <h4 className="font-bold text-slate-900 text-[10px] sm:text-xs line-clamp-1 mb-0.5">{rec.name}</h4>
+                    <p className="font-black text-[10px] sm:text-sm mb-2" style={{ color: brandingColor }}>{formatCurrency(rec.price)}</p>
                   </div>
                   <button
                     onClick={() => addToCart(rec)}
-                    className="w-full py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95 border border-slate-200 text-slate-700 hover:text-white"
+                    className="w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95 border border-slate-200 text-slate-700 hover:text-white"
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = brandingColor; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = '#fff'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = ''; }}
                   >
