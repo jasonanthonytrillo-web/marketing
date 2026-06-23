@@ -342,18 +342,35 @@ export default function Checkout() {
               <div className="mt-5 pt-5 border-t border-surface-100 animate-fade-in space-y-4">
                 {/* Auto-display QR Code */}
                 {(paymentMethod === 'gcash' || paymentMethod === 'maya') && (
-                  <div className="bg-surface-50 rounded-2xl p-4 border-2 border-dashed border-surface-200 flex flex-col items-center gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">Scan to Pay</p>
+                  <div className="bg-surface-50 rounded-2xl p-4 border-2 border-dashed border-surface-200 flex flex-col items-center gap-4 animate-fade-in shadow-inner">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">Scan or Save to Pay</p>
                     {branding?.[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'] ? (
-                      <div className="relative group cursor-zoom-in">
-                        <img 
-                          src={branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr']} 
-                          alt={`${paymentMethod} QR`}
-                          className="w-48 h-48 object-cover rounded-xl shadow-lg border-4 border-white transition-transform group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/10 transition-colors rounded-xl flex items-center justify-center">
-                          <Download className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                      <div className="flex flex-col items-center gap-4 w-full">
+                        <div className="relative group">
+                          <img 
+                            src={branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr']} 
+                            alt={`${paymentMethod} QR`}
+                            className="w-48 h-48 object-cover rounded-xl shadow-lg border-4 border-white transition-all group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/10 transition-colors rounded-xl pointer-events-none" />
                         </div>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'];
+                            link.download = `HometownBrew-${paymentMethod}-QR.png`;
+                            link.target = "_blank";
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="w-full py-3 bg-white border border-surface-200 rounded-xl shadow-sm hover:bg-surface-50 text-surface-700 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95"
+                        >
+                          <Download className="w-4 h-4 text-primary-500" />
+                          Save QR Code
+                        </button>
                       </div>
                     ) : (
                       <div className="w-48 h-48 bg-surface-100 rounded-xl flex flex-col items-center justify-center text-center p-4 border border-surface-200">
@@ -361,9 +378,10 @@ export default function Checkout() {
                         <p className="text-[10px] font-bold text-surface-400 uppercase tracking-tight">QR Code Not Uploaded Yet</p>
                       </div>
                     )}
-                    <p className="text-[10px] font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full uppercase tracking-tighter">
-                      Save QR & Pay in {paymentMethod === 'gcash' ? 'GCash' : 'Maya'} App
-                    </p>
+                    <div className="text-[10px] font-bold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-full uppercase tracking-tighter flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse"></span>
+                      Pay via {paymentMethod === 'gcash' ? 'GCash' : 'Maya'} App
+                    </div>
                   </div>
                 )}
 

@@ -124,15 +124,31 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
   const useMyLocation = () => {
     if (!navigator.geolocation) return alert('Geolocation is not supported by your browser');
     setLoading(true);
-    navigator.geolocation.getCurrentPosition((pos) => {
-      const newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      setPosition(newPos);
-      reverseGeocode(newPos.lat, newPos.lng, setAddress);
-      setLoading(false);
-    }, () => {
-      alert('Unable to retrieve your location');
-      setLoading(false);
-    });
+    
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setPosition(newPos);
+        reverseGeocode(newPos.lat, newPos.lng, setAddress);
+        setLoading(false);
+      }, 
+      (err) => {
+        let msg = 'Unable to retrieve your location';
+        if (err.code === 1) msg = 'Please enable Location permissions in your browser.';
+        else if (err.code === 2) msg = 'Location unavailable. Try searching for your address instead.';
+        else if (err.code === 3) msg = 'Location request timed out. Please try again.';
+        
+        alert(msg);
+        setLoading(false);
+      },
+      options
+    );
   };
 
   return (
@@ -150,7 +166,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
                 setShowSuggestions(true);
               }}
               placeholder="Search for your street or area..."
-              className="input-field pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary-500 transition-all"
+              className="input-field pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary-500 transition-all shadow-sm"
             />
           </div>
 
@@ -171,23 +187,21 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
             </div>
           )}
         </div>
-      </div>
 
-      <button
-        type="button"
-        onClick={useMyLocation}
-        disabled={loading}
-        className="w-full py-3 bg-white border-2 border-primary-100 rounded-2xl shadow-sm hover:border-primary-500 hover:bg-primary-50 text-primary-600 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 group"
-      >
-        {loading ? (
-          <span className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></span>
-        ) : (
-          <>
-            <Navigation className="w-4 h-4 group-hover:animate-pulse" />
-            Pin My Current Location
-          </>
-        )}
-      </button>
+        <button
+          type="button"
+          onClick={useMyLocation}
+          disabled={loading}
+          className="p-3 bg-white border-2 border-surface-200 rounded-2xl shadow-sm hover:border-primary-500 hover:bg-primary-50 text-primary-600 transition-all active:scale-95 group flex-shrink-0"
+          title="Pin My Current Location"
+        >
+          {loading ? (
+            <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <Navigation className="w-6 h-6 group-hover:animate-pulse" />
+          )}
+        </button>
+      </div>
 
       <div className="h-64 rounded-3xl overflow-hidden border-2 border-surface-100 shadow-inner relative z-10">
         <MapContainer
