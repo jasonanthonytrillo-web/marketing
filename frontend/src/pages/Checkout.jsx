@@ -234,9 +234,10 @@ export default function Checkout() {
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const distance = R * c; // Distance in km
+    const feePerKm = branding?.deliveryFeePerKm || 20;
     
-    // ₱20 per 3km
-    return Math.max(1, Math.ceil(distance / 3)) * 20;
+    // Calculate fee based on distance and dynamic rate
+    return Math.ceil(distance * feePerKm);
   };
 
   return (

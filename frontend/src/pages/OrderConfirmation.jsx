@@ -55,6 +55,7 @@ export default function OrderConfirmation() {
   const [comment, setComment] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [showReceiveModal, setShowReceiveModal] = useState(false);
 
   useEffect(() => {
     clearCart();
@@ -378,16 +379,7 @@ export default function OrderConfirmation() {
             </div>
 
             <button
-              onClick={async () => {
-                if (window.confirm("Confirm that you've received your order?")) {
-                  try {
-                    await confirmDeliveryReceived(orderNumber);
-                    loadOrder();
-                  } catch (e) {
-                    alert('Failed to confirm receipt. Please try again.');
-                  }
-                }
-              }}
+              onClick={() => setShowReceiveModal(true)}
               className="mt-4 w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 animate-bounce-in"
             >
               <CheckCircle className="w-5 h-5" />
@@ -585,6 +577,43 @@ export default function OrderConfirmation() {
           </div>
         );
       })()}
+
+      {/* Modern Receive Order Confirmation Modal */}
+      {showReceiveModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-6 md:p-8 text-center relative pointer-events-auto">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce-in shadow-inner">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl md:text-2xl font-black text-slate-800 mb-2 tracking-tight">Order Received?</h3>
+            <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+              Confirm that you have received your order. This will mark the order as completed.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowReceiveModal(false)}
+                className="flex-1 py-3.5 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all active:scale-95"
+              >
+                Not Yet
+              </button>
+              <button
+                onClick={async () => {
+                  setShowReceiveModal(false);
+                  try {
+                    await confirmDeliveryReceived(orderNumber);
+                    loadOrder();
+                  } catch (e) {
+                    alert('Failed to confirm receipt.');
+                  }
+                }}
+                className="flex-1 py-3.5 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 shadow-lg shadow-emerald-500/30 transition-all active:scale-95"
+              >
+                Yes, Received
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modern Cancel Order Confirmation Modal */}
       {showCancelModal && (

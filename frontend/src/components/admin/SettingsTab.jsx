@@ -283,9 +283,26 @@ export default function SettingsTab() {
                   initialAddress=""
                 />
               </div>
-              <p className="mt-3 text-[11px] text-surface-500 font-medium italic">
-                * Tap the map or search to pin your shop's exact location. This will be used to calculate delivery fees (₱20 per 3km) from your store to the customer.
-              </p>
+              
+              <div className="mt-8 pt-6 border-t border-surface-100">
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Delivery Fee Pricing</label>
+                <div className="flex items-center gap-4">
+                  <div className="relative flex-1">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₱</span>
+                    <input 
+                      type="number" 
+                      value={settings.deliveryFeePerKm || '20'} 
+                      onChange={e => setSettings({...settings, deliveryFeePerKm: e.target.value})}
+                      className="input-field w-full pl-8 py-4 text-xl font-black font-heading" 
+                      placeholder="20"
+                    />
+                  </div>
+                  <div className="text-slate-400 font-bold text-sm tracking-tight whitespace-nowrap">per Kilometer</div>
+                </div>
+                <p className="mt-3 text-[11px] text-surface-500 font-medium italic">
+                  * This rate is used to calculate delivery fees based on the direct distance between your shop and the customer's pin.
+                </p>
+              </div>
             </div>
           </div>
         </div>

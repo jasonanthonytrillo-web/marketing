@@ -22,6 +22,7 @@ model Tenant {
   mayaQr         String?
   storeLat       Float?   @default(14.5995)
   storeLng       Float?   @default(120.9842)
+  deliveryFeePerKm Float?   @default(20)
   bannerAssets   Json?    // Array of URLs for slideshow/video
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())

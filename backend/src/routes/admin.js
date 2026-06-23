@@ -437,6 +437,7 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
       settingsMap.maya_qr = tenant.mayaQr;
       settingsMap.storeLat = tenant.storeLat;
       settingsMap.storeLng = tenant.storeLng;
+      settingsMap.deliveryFeePerKm = tenant.deliveryFeePerKm;
     }
 
     res.json({ success: true, data: settingsMap });
@@ -462,7 +463,8 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
       gcash_qr: 'gcashQr',
       maya_qr: 'mayaQr',
       storeLat: 'storeLat',
-      storeLng: 'storeLng'
+      storeLng: 'storeLng',
+      deliveryFeePerKm: 'deliveryFeePerKm'
     };
 
     const brandingUpdate = {};
