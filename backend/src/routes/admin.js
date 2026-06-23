@@ -434,6 +434,9 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
       settingsMap.primary_color = tenant.primaryColor;
       settingsMap.secondary_color = tenant.secondaryColor;
       settingsMap.gcash_qr = tenant.gcashQr;
+      settingsMap.maya_qr = tenant.mayaQr;
+      settingsMap.storeLat = tenant.storeLat;
+      settingsMap.storeLng = tenant.storeLng;
     }
 
     res.json({ success: true, data: settingsMap });
@@ -456,7 +459,10 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
       tenant_assets: 'bannerAssets',
       primary_color: 'primaryColor',
       secondary_color: 'secondaryColor',
-      gcash_qr: 'gcashQr'
+      gcash_qr: 'gcashQr',
+      maya_qr: 'mayaQr',
+      storeLat: 'storeLat',
+      storeLng: 'storeLng'
     };
 
     const brandingUpdate = {};

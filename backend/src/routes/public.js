@@ -22,6 +22,9 @@ router.get('/tenant/:slug', async (req, res) => {
         bannerImage: true,
         bannerAssets: true,
         gcashQr: true,
+        mayaQr: true,
+        storeLat: true,
+        storeLng: true,
         active: true
       }
     });
