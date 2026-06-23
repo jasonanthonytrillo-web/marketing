@@ -21,7 +21,8 @@ import {
   RefreshCw,
   Phone,
   MessageSquare,
-  Bell
+  Bell,
+  Bike
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/helpers';
 
@@ -120,8 +121,15 @@ export default function RiderDashboard() {
     }
   };
 
-  const openInMaps = (lat, lng, address) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  const openInMaps = (lat, lng) => {
+    const storeLat = branding?.storeLat;
+    const storeLng = branding?.storeLng;
+    let url;
+    if (storeLat && storeLng) {
+      url = `https://www.google.com/maps/dir/?api=1&origin=${storeLat},${storeLng}&destination=${lat},${lng}&travelmode=driving`;
+    } else {
+      url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+    }
     window.open(url, '_blank');
   };
 
@@ -309,9 +317,8 @@ export default function RiderDashboard() {
         </div>
         <div className="w-px h-8 bg-slate-200"></div>
         <div className="flex flex-col items-center">
-           <button className="p-2 bg-slate-100 rounded-xl text-slate-500 relative">
-             <Clock className="w-5 h-5" />
-           </button>
+           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Deliveries</span>
+           <span className="text-xs font-bold text-slate-800">{orders.filter(o => o.status === 'on_the_way').length} Active</span>
         </div>
       </div>
       {/* Delivery Confirmation Modal */}

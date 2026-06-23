@@ -453,8 +453,8 @@ export default function OrderConfirmation() {
                 zoom={14}
                 style={{ height: '100%', width: '100%' }}
                 zoomControl={true}
-                dragging={false}
-                scrollWheelZoom={false}
+                dragging={true}
+                inertia={false}
                 boxZoom={false}
                 keyboard={false}
               >
