@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
-import { Clock, AlertTriangle, Store, User, CreditCard, Gift, Banknote, Smartphone, CheckCircle, Navigation, Printer, ChefHat, ShoppingBag, Truck } from 'lucide-react';
+import { Clock, AlertTriangle, Store, User, CreditCard, Gift, Banknote, Smartphone, CheckCircle, Navigation, Printer, ChefHat, ShoppingBag, Truck, MapPin } from 'lucide-react';
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);

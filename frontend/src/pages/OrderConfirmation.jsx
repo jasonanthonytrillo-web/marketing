@@ -329,8 +329,8 @@ export default function OrderConfirmation() {
               <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center shadow-xl backdrop-blur-md border border-white/20"><Gem className="w-6 h-6 text-primary-200" /></div>
               <div className="flex-1">
                 <h4 className="text-lg font-black text-white mb-1 tracking-tight">Save this meal to your story!</h4>
-                <p className="text-slate-400 text-[11px] leading-relaxed mb-4">Sign up now to start your Personal Timeline and earn <span className="text-primary-400 font-bold">{Math.floor(order.total / (branding?.points_rate || 100))} points</span> on this order.</p>
-                <Link to={tenantSlug ? `/member-portal?tenant=${tenantSlug}&action=register` : '/member-portal?action=register'} className="inline-block px-6 py-2.5 bg-primary-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/40 active:scale-95">
+                <p className="text-slate-300 text-[11px] leading-relaxed mb-4">Sign up now to start your Personal Timeline and earn <span className="text-amber-400 font-black">{Math.floor(order.total / (branding?.points_rate || 100))} points</span> on this order.</p>
+                <Link to={tenantSlug ? `/member-portal?tenant=${tenantSlug}&action=register` : '/member-portal?action=register'} className="inline-block px-8 py-3 bg-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-50 transition-all shadow-xl active:scale-95">
                   Create My VIP Account
                 </Link>
               </div>
