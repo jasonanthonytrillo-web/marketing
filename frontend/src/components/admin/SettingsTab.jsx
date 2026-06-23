@@ -277,8 +277,8 @@ export default function SettingsTab() {
               
               <div className="h-[300px] rounded-xl overflow-hidden border-2 border-surface-100 relative z-0">
                 <LocationPicker 
-                  onLocationSelect={(lat, lng, addr) => {
-                    setSettings(prev => ({ ...prev, storeLat: lat, storeLng: lng }));
+                  onLocationSelect={(loc) => {
+                    setSettings(prev => ({ ...prev, storeLat: loc.lat, storeLng: loc.lng }));
                   }}
                   initialAddress=""
                 />
