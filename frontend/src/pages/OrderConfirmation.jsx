@@ -222,7 +222,7 @@ export default function OrderConfirmation() {
             </div>
           )}
 
-          {order.estimatedPrepTime && (!isReady || (order.orderType === 'delivery' && !isOnTheWay)) && !isCompleted && !isCancelled && (
+          {order.estimatedPrepTime && !isCompleted && !isCancelled && (order.orderType === 'delivery' ? !isOnTheWay : !isReady) && (
             <div className="mb-6 animate-bounce-in">
               <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 px-5 py-3 rounded-2xl shadow-lg" style={{ backgroundColor: `${brandingColor}15` }}>
                 <Clock className="w-6 h-6" style={{ color: brandingColor }} />
