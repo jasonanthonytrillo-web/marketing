@@ -670,19 +670,7 @@ export default function OrderConfirmation() {
       {showArrivalOverlay && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-fade-in">
           <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-10 sm:p-12 text-center relative">
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl border border-slate-50">
-              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 animate-bounce">
-                <Truck className="w-8 h-8" />
-              </div>
-            </div>
-
-            <div className="mt-10">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="relative flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                </span>
-              </div>
+            <div className="text-center">
               <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Rider Arrived!</h3>
               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 px-2">
                 Your rider is now at your location. Please prepare to receive your order <span className="font-black text-slate-900">#{orderNumber.includes('-') ? orderNumber.split('-')[1] : orderNumber}</span>.
