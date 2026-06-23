@@ -156,6 +156,8 @@ model Order {
   deliveryFee        Float     @default(0)
   riderId            Int?
   rider              User?     @relation("RiderOrders", fields: [riderId], references: [id])
+  lastRiderLat       Float?
+  lastRiderLng       Float?
   paymentReference   String?
   notes              String?
   cancellationReason String?

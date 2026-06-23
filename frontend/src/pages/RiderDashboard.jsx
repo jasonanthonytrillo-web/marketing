@@ -22,9 +22,112 @@ import {
   Phone,
   MessageSquare,
   Bell,
-  Bike
+  Bike,
+  AlertTriangle,
+  Locate,
+  X
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { formatCurrency, formatDate } from '../utils/helpers';
+
+// Fix Leaflet marker icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom marker icons
+const storeIcon = new L.DivIcon({
+  className: '',
+  html: `<div style="width:36px;height:36px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  </div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+  popupAnchor: [0, -20],
+});
+
+const customerIcon = new L.DivIcon({
+  className: '',
+  html: `<div style="width:36px;height:36px;border-radius:50%;background:#ef4444;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+  </div>`,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+  popupAnchor: [0, -20],
+});
+
+const riderIcon = new L.DivIcon({
+  className: '',
+  html: `<div style="width:40px;height:40px;border-radius:50%;background:#fbbf24;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+  </div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -20],
+});
+
+// Decode OSRM polyline geometry
+function decodePolyline(encoded) {
+  const coords = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+    shift = 0; result = 0;
+    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    coords.push([lat / 1e5, lng / 1e5]);
+  }
+  return coords;
+}
+
+// Navigation View component
+function RiderNavMap({ riderPos, customerPos, storePos, followMode, setFollowMode }) {
+  const map = useMap();
+  const [routeCoords, setRouteCoords] = useState(null);
+
+  // Auto-center logic
+  useEffect(() => {
+    if (followMode && riderPos) {
+      map.setView(riderPos, map.getZoom(), { animate: true });
+    }
+  }, [riderPos, followMode, map]);
+
+  // Routing logic
+  useEffect(() => {
+    if (!riderPos || !customerPos) return;
+    const controller = new AbortController();
+    fetch(`https://router.project-osrm.org/route/v1/driving/${riderPos[1]},${riderPos[0]};${customerPos[1]},${customerPos[0]}?overview=full&geometries=polyline`, { signal: controller.signal })
+      .then(r => r.json())
+      .then(data => {
+        if (data.routes?.[0]?.geometry) {
+          const decoded = decodePolyline(data.routes[0].geometry);
+          setRouteCoords(decoded);
+          if (!followMode) {
+            map.fitBounds(L.latLngBounds(decoded), { padding: [40, 40] });
+          }
+        }
+      })
+      .catch(console.error);
+    return () => controller.abort();
+  }, [riderPos, customerPos]);
+
+  return (
+    <>
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      {storePos && <Marker position={storePos} icon={storeIcon}><Popup>Store</Popup></Marker>}
+      {customerPos && <Marker position={customerPos} icon={customerIcon}><Popup>Customer's House</Popup></Marker>}
+      {riderPos && <Marker position={riderPos} icon={riderIcon}><Popup>You are here</Popup></Marker>}
+      {routeCoords && <Polyline positions={routeCoords} color="#3b82f6" weight={6} opacity={0.8} />}
+    </>
+  );
+}
 
 export default function RiderDashboard() {
   const { user, logoutUser } = useAuth();
@@ -39,6 +142,10 @@ export default function RiderDashboard() {
   const [notifyingArrival, setNotifyingArrival] = useState({});
   const [lastNotified, setLastNotified] = useState({}); // orderId -> timestamp
   const [now, setNow] = useState(Date.now());
+  const [showNavMap, setShowNavMap] = useState(false);
+  const [activeNavOrder, setActiveNavOrder] = useState(null);
+  const [followMode, setFollowMode] = useState(true);
+  const [currentRiderPos, setCurrentRiderPos] = useState(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -112,6 +219,7 @@ export default function RiderDashboard() {
         setTrackingActive(true);
         const { latitude, longitude } = position.coords;
         const now = Date.now();
+        setCurrentRiderPos([latitude, longitude]);
         
         if (now - lastEmitRef.current < 5000) return;
         lastEmitRef.current = now;
@@ -176,13 +284,15 @@ export default function RiderDashboard() {
     }
   };
 
-  const openInMaps = (lat, lng) => {
+  const openInMaps = (lat, lng, address) => {
     const storeLat = branding?.storeLat;
     const storeLng = branding?.storeLng;
-    let url;
-    if (storeLat && storeLng) {
-      url = `https://www.google.com/maps/dir/?api=1&origin=${storeLat},${storeLng}&destination=${lat},${lng}&travelmode=driving`;
-    } else {
+    
+    // Alert the user about background tracking
+    alert("📍 Navigating to " + (address || "Customer") + ". \n\nIMPORTANT: Browsers stop tracking in the background. Please return to this dashboard occasionally to keep the customer updated!");
+    
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${storeLat},${storeLng}&destination=${lat},${lng}&travelmode=driving`;
+    if (!storeLat || !storeLng) {
       url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
     }
     window.open(url, '_blank');
@@ -233,6 +343,21 @@ export default function RiderDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Background Tracking Warning */}
+      {trackingActive && (
+        <div className="mx-6 mt-4 bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start gap-3 animate-pulse">
+          <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <AlertTriangle className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-amber-900 uppercase tracking-tight">Active Tracking Alert</p>
+            <p className="text-[10px] font-medium text-amber-700 leading-tight mt-0.5">
+              Keep this screen ON or return to it every few minutes. Tracking pauses if you stay too long in Google Maps.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Order List */}
       <div className="p-4 sm:p-6 space-y-4">
@@ -340,11 +465,22 @@ export default function RiderDashboard() {
                     })()}
                     
                     <button
-                      onClick={() => openInMaps(order.deliveryLat, order.deliveryLng, order.deliveryAddress)}
-                      className="w-full py-5 bg-blue-600 text-white font-black rounded-3xl shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
+                      onClick={() => {
+                        setActiveNavOrder(order);
+                        setShowNavMap(true);
+                        setFollowMode(true);
+                      }}
+                      className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
                     >
-                      <Navigation className="w-5 h-5 transition-transform group-hover:scale-110" />
-                      Navigate to Maps
+                      <Navigation className="w-5 h-5 text-blue-400" />
+                      In-App Navigation
+                    </button>
+
+                    <button
+                      onClick={() => openInMaps(order.deliveryLat, order.deliveryLng, order.deliveryAddress)}
+                      className="w-full py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 text-xs"
+                    >
+                      Google Maps (External)
                     </button>
                     <button
                       onClick={() => {
@@ -415,6 +551,80 @@ export default function RiderDashboard() {
                 >
                   Cancel
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Screen Navigation Map Modal */}
+      {showNavMap && activeNavOrder && (
+        <div className="fixed inset-0 z-[200] bg-white flex flex-col animate-fade-in">
+          {/* Nav Header */}
+          <div className="bg-slate-900 text-white p-4 flex justify-between items-center shadow-lg">
+             <div className="flex items-center gap-3">
+               <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                 <Navigation className="w-5 h-5" />
+               </div>
+               <div>
+                  <h3 className="font-black text-sm uppercase tracking-tight">Navigating to #{activeNavOrder.orderNumber}</h3>
+                  <p className="text-[10px] text-slate-400 font-bold truncate max-w-[200px]">{activeNavOrder.deliveryAddress}</p>
+               </div>
+             </div>
+             <button 
+              onClick={() => setShowNavMap(false)}
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+             >
+               <X className="w-6 h-6" />
+             </button>
+          </div>
+
+          {/* Large Map Area */}
+          <div className="flex-1 relative">
+            <MapContainer
+              center={currentRiderPos || [activeNavOrder.deliveryLat, activeNavOrder.deliveryLng]}
+              zoom={16}
+              style={{ height: '100%', width: '100%' }}
+              zoomControl={false}
+            >
+              <RiderNavMap 
+                riderPos={currentRiderPos} 
+                customerPos={[activeNavOrder.deliveryLat, activeNavOrder.deliveryLng]}
+                storePos={branding?.storeLat ? [branding.storeLat, branding.storeLng] : null}
+                followMode={followMode}
+                setFollowMode={setFollowMode}
+              />
+            </MapContainer>
+
+            {/* Map Overlays */}
+            <div className="absolute bottom-10 left-6 right-6 flex flex-col gap-4 pointer-events-none">
+              <div className="flex justify-between items-end">
+                <button 
+                  onClick={() => setFollowMode(!followMode)}
+                  className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 ${followMode ? 'bg-blue-600 text-white' : 'bg-white text-slate-900'}`}
+                >
+                  <Locate className={`w-6 h-6 ${followMode ? 'animate-pulse' : ''}`} />
+                </button>
+
+                <div className="bg-white/95 backdrop-blur shadow-2xl rounded-3xl p-6 pointer-events-auto w-64 md:w-80">
+                   <div className="flex justify-between items-start mb-4">
+                     <div>
+                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Destination</span>
+                       <p className="font-bold text-slate-800 text-sm leading-tight">{activeNavOrder.customerName}</p>
+                     </div>
+                     <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">Active</div>
+                   </div>
+                   <button 
+                    onClick={() => {
+                      setOrderToDeliver(activeNavOrder);
+                      setShowDeliverModal(true);
+                      setShowNavMap(false);
+                    }}
+                    className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all text-xs uppercase tracking-widest"
+                   >
+                     Finish & Mark Delivered
+                   </button>
+                </div>
               </div>
             </div>
           </div>

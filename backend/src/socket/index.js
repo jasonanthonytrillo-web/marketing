@@ -49,7 +49,7 @@ module.exports = (io, prisma) => {
       socket.leave(room);
     });
 
-    socket.on('rider_location_update', (data) => {
+    socket.on('rider_location_update', async (data) => {
       const { orderNumber, tenantId, lat, lng } = data;
       if (!orderNumber || !tenantId) return;
       
@@ -59,6 +59,16 @@ module.exports = (io, prisma) => {
         lng,
         timestamp: new Date().toISOString()
       };
+      
+      // Persist to DB for initial load or background recovery
+      try {
+        await prisma.order.update({
+          where: { orderNumber: orderNumber.toString() },
+          data: { lastRiderLat: lat, lastRiderLng: lng }
+        });
+      } catch (err) {
+        console.error('Failed to persist rider location:', err);
+      }
       
       // Emit to the specific order room so the customer can see it
       io.to(`tenant-${tenantId}-order-${orderNumber}`).emit('rider_location_update', payload);

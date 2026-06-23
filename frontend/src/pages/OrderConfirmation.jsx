@@ -242,6 +242,9 @@ export default function OrderConfirmation() {
           lastAnnouncedStatusRef.current = 'ready';
         }
         setOrder(data.order);
+        if (data.order && data.order.lastRiderLat && data.order.lastRiderLng) {
+          setRiderLocation([data.order.lastRiderLat, data.order.lastRiderLng]);
+        }
         if (data.order.status !== 'pending') {
           setPaymentRequest(null);
         }
@@ -279,8 +282,12 @@ export default function OrderConfirmation() {
   const loadOrder = async () => {
     try {
       const res = await getOrder(orderNumber);
-      setOrder(res.data.data);
-      if (res.data.data.feedbackRating) setFeedbackSubmitted(true);
+      const oData = res.data.data;
+      setOrder(oData);
+      if (oData && oData.lastRiderLat && oData.lastRiderLng) {
+        setRiderLocation([oData.lastRiderLat, oData.lastRiderLng]);
+      }
+      if (oData.feedbackRating) setFeedbackSubmitted(true);
     }
     catch (e) { console.error(e); }
     finally { setLoading(false); }
