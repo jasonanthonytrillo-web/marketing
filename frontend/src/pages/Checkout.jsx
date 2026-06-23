@@ -446,9 +446,13 @@ export default function Checkout() {
             <button 
               type="submit" 
               disabled={isDisabled} 
-              className={`w-full py-5 text-sm transition-all rounded-2xl font-black uppercase tracking-[2px] shadow-xl ${isDisabled ? 'bg-surface-200 text-surface-400 cursor-not-allowed' : 'text-white hover:opacity-90 active:scale-[0.98]'}`} 
+              className="w-full py-5 text-sm transition-all rounded-2xl font-black uppercase tracking-[2px] shadow-xl active:scale-[0.98]"
               id="place-order-btn"
-              style={!isDisabled ? { backgroundColor: brandingColor } : {}}
+              style={{ 
+                backgroundColor: isDisabled ? '#e2e8f0' : brandingColor,
+                color: isDisabled ? '#94a3b8' : '#ffffff',
+                cursor: isDisabled ? 'not-allowed' : 'pointer'
+              }}
             >
               {submitting ? 'Placing Order...' : 
                hasInsufficientPoints && totalPointsCost > 0 ? `Insufficient Points (${totalPointsCost})` :
