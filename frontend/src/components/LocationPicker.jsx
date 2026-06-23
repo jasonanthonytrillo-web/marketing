@@ -44,14 +44,19 @@ async function reverseGeocode(lat, lng, setAddress) {
     if (data && data.address) {
       const a = data.address;
       // Build a smart, short address: (Building or Road) + (City or Town)
-      const primary = a.building || a.amenity || a.road || a.suburb || '';
+      const primary = a.building || a.amenity || a.house_name || a.road || a.suburb || '';
       const secondary = a.city || a.town || a.village || a.city_district || 'Butuan City';
       
-      const shortAddress = primary ? `${primary}, ${secondary}` : secondary;
+      const shortAddress = primary && primary !== secondary ? `${primary}, ${secondary}` : secondary;
       setAddress(shortAddress);
     } else if (data && data.display_name) {
-      const shortAddress = data.display_name.split(',').slice(0, 2).join(',').trim();
-      setAddress(shortAddress);
+      // Fallback: Just take the first and last (city) part
+      const parts = data.display_name.split(',');
+      if (parts.length > 2) {
+        setAddress(`${parts[0].trim()}, ${parts[parts.length - 3].trim()}`);
+      } else {
+        setAddress(data.display_name.split(',')[0].trim());
+      }
     }
   } catch (error) {
     console.error('Geocoding error:', error);
@@ -243,9 +248,9 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
           <div className="mt-0.5 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white flex-shrink-0">
             <CheckCircle className="w-4 h-4" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 overflow-hidden">
             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-0.5">Location Pinned</p>
-            <p className="text-[13px] text-emerald-900 font-bold leading-tight">{address}</p>
+            <p className="text-[14px] text-emerald-950 font-black leading-tight break-words">{address}</p>
           </div>
         </div>
       )}

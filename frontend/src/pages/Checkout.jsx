@@ -443,15 +443,15 @@ export default function Checkout() {
         <button 
           type="submit" 
           disabled={submitting || (totalPointsCost > 0 && hasInsufficientPoints) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference))} 
-          className={`w-full py-4 text-lg transition-all rounded-xl font-bold ${(hasInsufficientPoints && totalPointsCost > 0) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference)) ? 'bg-surface-100 text-surface-400 cursor-not-allowed' : 'btn-primary'}`} 
+          className={`w-full py-5 text-sm transition-all rounded-2xl font-black uppercase tracking-[2px] shadow-xl ${(hasInsufficientPoints && totalPointsCost > 0) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference)) ? 'bg-surface-100 text-surface-400 cursor-not-allowed' : 'text-white'}`} 
           id="place-order-btn"
-          style={!(hasInsufficientPoints && totalPointsCost > 0) ? { backgroundColor: brandingColor } : {}}
+          style={!((hasInsufficientPoints && totalPointsCost > 0) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference))) ? { backgroundColor: brandingColor } : {}}
         >
-          {submitting ? t('placingOrder') : 
-           hasInsufficientPoints && totalPointsCost > 0 ? t('insufficientPoints').replace('{pts}', totalPointsCost) :
-           isFullRedemption ? t('claimPoints').replace('{pts}', totalPointsCost) : 
-           totalPointsCost > 0 ? t('orderWithPoints').replace('{price}', formatCurrency(total)).replace('{pts}', totalPointsCost) :
-           t('placeOrderTotal').replace('{price}', formatCurrency(total))}
+          {submitting ? 'Placing Order...' : 
+           hasInsufficientPoints && totalPointsCost > 0 ? `Insufficient Points (${totalPointsCost})` :
+           isFullRedemption ? `Claim for ${totalPointsCost} pts` : 
+           totalPointsCost > 0 ? `Order with ${formatCurrency(total)} + ${totalPointsCost} pts` :
+           `Place Order • ${formatCurrency(total)}`}
         </button>
       </form>
     </div>
