@@ -40,6 +40,16 @@ const customerIcon = new L.DivIcon({
   popupAnchor: [0, -20],
 });
 
+const riderIcon = new L.DivIcon({
+  className: '',
+  html: `<div style="width:40px;height:40px;border-radius:50%;background:#fbbf24;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+  </div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -20],
+});
+
 // Decode OSRM polyline geometry
 function decodePolyline(encoded) {
   const coords = [];
@@ -57,35 +67,47 @@ function decodePolyline(encoded) {
 }
 
 // RouteLine component — fetches real road directions from OSRM
-function RouteLine({ from, to, storeName }) {
+function RouteLine({ from, to, storeName, riderLocation }) {
   const map = useMap();
   const [routeCoords, setRouteCoords] = useState(null);
 
   useEffect(() => {
-    if (!from || !to) return;
+    // Priority: Route from rider to destination, fallback from store to destination
+    const origin = riderLocation || from;
+    if (!origin || !to) return;
+    
     const controller = new AbortController();
-    fetch(`https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=polyline`, { signal: controller.signal })
+    fetch(`https://router.project-osrm.org/route/v1/driving/${origin[1]},${origin[0]};${to[1]},${to[0]}?overview=full&geometries=polyline`, { signal: controller.signal })
       .then(r => r.json())
       .then(data => {
         if (data.routes?.[0]?.geometry) {
           const decoded = decodePolyline(data.routes[0].geometry);
           setRouteCoords(decoded);
-          // Fit map to show entire route
-          const bounds = L.latLngBounds(decoded);
-          map.fitBounds(bounds, { padding: [30, 30] });
+          
+          // Only auto-fit bounds on the first load or if the rider moves significantly
+          // to avoid jumping while the user is zoomed in
+          if (!riderLocation) {
+             const bounds = L.latLngBounds(decoded);
+             map.fitBounds(bounds, { padding: [30, 30] });
+          }
         } else {
-          setRouteCoords([from, to]); // fallback
+          setRouteCoords([origin, to]); // fallback
         }
       })
-      .catch(() => setRouteCoords([from, to])); // fallback
+      .catch(() => setRouteCoords([origin, to])); // fallback
     return () => controller.abort();
-  }, [from, to, map]);
+  }, [from, to, map, riderLocation]);
 
   return (
     <>
       <Marker position={from} icon={storeIcon}>
         <Popup>{storeName} (Store)</Popup>
       </Marker>
+      {riderLocation && (
+        <Marker position={riderLocation} icon={riderIcon}>
+          <Popup>Rider's Current Position</Popup>
+        </Marker>
+      )}
       <Marker position={to} icon={customerIcon}>
         <Popup>Your Location</Popup>
       </Marker>
@@ -134,6 +156,7 @@ export default function OrderConfirmation() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [showArrivalOverlay, setShowArrivalOverlay] = useState(false);
+  const [riderLocation, setRiderLocation] = useState(null);
 
   useEffect(() => {
     clearCart();
@@ -170,6 +193,16 @@ export default function OrderConfirmation() {
   const homeLink = '/';
   const menuLink = '/menu';
   const queueLink = '/queue';
+
+  useEffect(() => {
+    if (!onEvent || !orderNumber) return;
+    const unsub = onEvent('rider_location_update', (data) => {
+      if (data.orderNumber === orderNumber) {
+        setRiderLocation([data.lat, data.lng]);
+      }
+    });
+    return () => unsub();
+  }, [onEvent, orderNumber]);
 
   useEffect(() => {
     if (order && (order.status === 'completed' || order.status === 'cancelled')) {
@@ -459,7 +492,12 @@ export default function OrderConfirmation() {
                 keyboard={false}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <RouteLine from={storeLocation} to={deliveryLocation} storeName={branding?.name || 'Hometown Brew'} />
+                <RouteLine 
+                  from={storeLocation} 
+                  to={deliveryLocation} 
+                  storeName={branding?.name || 'Hometown Brew'} 
+                  riderLocation={riderLocation}
+                />
               </MapContainer>
             </div>
 

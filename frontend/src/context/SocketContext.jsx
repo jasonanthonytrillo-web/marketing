@@ -121,8 +121,14 @@ export function SocketProvider({ children }) {
     return () => {};
   };
 
+  const emit = (event, data) => {
+    if (socketRef.current && connected) {
+      socketRef.current.emit(event, data);
+    }
+  };
+
   return (
-    <SocketContext.Provider value={{ connected, joinRoom, leaveRoom, onEvent }}>
+    <SocketContext.Provider value={{ connected, joinRoom, leaveRoom, onEvent, emit }}>
       {children}
     </SocketContext.Provider>
   );

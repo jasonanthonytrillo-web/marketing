@@ -49,6 +49,23 @@ module.exports = (io, prisma) => {
       socket.leave(room);
     });
 
+    socket.on('rider_location_update', (data) => {
+      const { orderNumber, tenantId, lat, lng } = data;
+      if (!orderNumber || !tenantId) return;
+      
+      const payload = {
+        orderNumber,
+        lat,
+        lng,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Emit to the specific order room so the customer can see it
+      io.to(`tenant-${tenantId}-order-${orderNumber}`).emit('rider_location_update', payload);
+      // Also emit to kiosk room for dashboard monitoring
+      io.to(`tenant-${tenantId}-kiosk`).emit('rider_location_update', payload);
+    });
+
     socket.on('disconnect', () => {
       console.log(`📴 Client disconnected: ${socket.id}`);
     });

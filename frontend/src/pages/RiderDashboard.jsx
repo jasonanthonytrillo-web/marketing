@@ -85,6 +85,51 @@ export default function RiderDashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  const { emit } = useSocket();
+  const lastEmitRef = useRef(0);
+
+  useEffect(() => {
+    if (activeTab !== 'active' || orders.length === 0) return;
+
+    if (!navigator.geolocation) {
+      console.error('Geolocation is not supported by this browser');
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const now = Date.now();
+        
+        // Throttle updates: once every 5 seconds
+        if (now - lastEmitRef.current < 5000) return;
+        
+        lastEmitRef.current = now;
+        
+        orders.forEach(order => {
+          if (order.status === 'on_the_way') {
+            emit('rider_location_update', {
+              orderNumber: order.orderNumber,
+              tenantId: order.tenantId,
+              lat: latitude,
+              lng: longitude
+            });
+          }
+        });
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 30000,
+        timeout: 27000
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [activeTab, orders, emit]);
+
   const handlePickup = async (orderId) => {
     try {
       await pickupOrder(orderId);
