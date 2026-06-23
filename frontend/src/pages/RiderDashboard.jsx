@@ -36,7 +36,8 @@ export default function RiderDashboard() {
   const [orderToDeliver, setOrderToDeliver] = useState(null);
   const [delivering, setDelivering] = useState(false);
   const [notifyingArrival, setNotifyingArrival] = useState({});
-  const [arrivedOrders, setArrivedOrders] = useState(new Set());
+  const [lastNotified, setLastNotified] = useState({}); // orderId -> timestamp
+  const [now, setNow] = useState(Date.now());
 
   const loadData = async () => {
     setLoading(true);
@@ -78,6 +79,11 @@ export default function RiderDashboard() {
     return () => unsub();
   }, [onEvent, activeTab]);
 
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const handlePickup = async (orderId) => {
     try {
       await pickupOrder(orderId);
@@ -106,11 +112,7 @@ export default function RiderDashboard() {
     setNotifyingArrival(prev => ({ ...prev, [orderId]: true }));
     try {
       await notifyArrival(orderId);
-      setArrivedOrders(prev => {
-        const next = new Set(prev);
-        next.add(orderId);
-        return next;
-      });
+      setLastNotified(prev => ({ ...prev, [orderId]: Date.now() }));
     } catch (error) {
       alert('Failed to notify customer.');
     } finally {
@@ -238,18 +240,33 @@ export default function RiderDashboard() {
                   </button>
                 ) : (
                   <>
-                    <button
-                      onClick={() => handleNotifyArrival(order.id)}
-                      disabled={notifyingArrival[order.id] || arrivedOrders.has(order.id)}
-                      className={`w-full py-5 font-black rounded-3xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm ${
-                        arrivedOrders.has(order.id)
-                          ? 'bg-amber-100 text-amber-700 shadow-amber-200/50'
-                          : 'bg-amber-500 text-white shadow-amber-500/20 active:scale-95'
-                      }`}
-                    >
-                      <Bell className="w-5 h-5 transition-transform group-hover:scale-110" />
-                      {arrivedOrders.has(order.id) ? 'Customer Notified' : notifyingArrival[order.id] ? 'Notifying...' : "I've Arrived"}
-                    </button>
+                    {(() => {
+                      const notifiedAt = lastNotified[order.id];
+                      const diff = notifiedAt ? now - notifiedAt : Infinity;
+                      const isCooldown = diff < 60000;
+                      const secondsLeft = Math.ceil((60000 - diff) / 1000);
+
+                      return (
+                        <button
+                          onClick={() => handleNotifyArrival(order.id)}
+                          disabled={notifyingArrival[order.id] || isCooldown}
+                          className={`w-full py-5 font-black rounded-3xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm ${
+                            isCooldown
+                              ? 'bg-amber-100 text-amber-700 shadow-amber-200/50'
+                              : 'bg-amber-500 text-white shadow-amber-500/20 active:scale-95'
+                          }`}
+                        >
+                          <Bell className={`w-5 h-5 ${isCooldown ? '' : 'animate-pulse'}`} />
+                          {notifyingArrival[order.id] 
+                            ? 'Notifying...' 
+                            : isCooldown 
+                              ? `Nudge in ${secondsLeft}s` 
+                              : notifiedAt 
+                                ? 'Nudge Customer' 
+                                : "I've Arrived"}
+                        </button>
+                      );
+                    })()}
                     
                     <button
                       onClick={() => openInMaps(order.deliveryLat, order.deliveryLng, order.deliveryAddress)}

@@ -144,9 +144,13 @@ module.exports = (io, prisma) => {
   // Helper: broadcast rider arrival
   io.emitRiderArrival = (order) => {
     const tId = order.tenantId;
-    io.to(`tenant-${tId}-order-${order.orderNumber}`).emit('rider_arrived', {
+    const payload = {
       orderNumber: order.orderNumber,
       timestamp: new Date().toISOString()
-    });
+    };
+    // Emit to specific order room
+    io.to(`tenant-${tId}-order-${order.orderNumber}`).emit('rider_arrived', payload);
+    // Also emit to kiosk room as fallback
+    io.to(`tenant-${tId}-kiosk`).emit('rider_arrived', payload);
   };
 };

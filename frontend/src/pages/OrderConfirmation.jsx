@@ -118,10 +118,11 @@ export default function OrderConfirmation() {
   }, [orderNumber]);
 
   useEffect(() => {
-    if (order?.tenantId) {
+    if (order?.tenantId && orderNumber) {
       joinRoom('kiosk', order.tenantId);
+      joinRoom(`order-${orderNumber}`, order.tenantId);
     }
-  }, [order?.tenantId, connected]);
+  }, [order?.tenantId, orderNumber, connected]);
 
   useEffect(() => {
     if (!onEvent) return;
