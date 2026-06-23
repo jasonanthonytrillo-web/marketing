@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
-import { Bell, BellOff, ChefHat, LogOut, UtensilsCrossed, PackageOpen, Gift, AlertTriangle } from 'lucide-react';
+import { Bell, BellOff, ChefHat, LogOut, UtensilsCrossed, PackageOpen, Gift, AlertTriangle, MapPin } from 'lucide-react';
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState([]);
@@ -351,11 +351,16 @@ function OrderCard({ order, now, onAction, processing }) {
         <div>
           <span className={`font-heading font-black text-xl ${isUrgent ? 'text-red-400' : 'text-white'}`}>{order.orderNumber}</span>
           <span className="ml-2 text-xs inline-flex items-center gap-1.5 text-surface-400">
-            {order.orderType === 'dine_in' ? <><UtensilsCrossed className="w-3 h-3" /> Dine In</> : <><PackageOpen className="w-3 h-3" /> Take Out</>}
+            {order.orderType === 'dine_in' ? <><UtensilsCrossed className="w-3 h-3" /> Dine In</> : order.orderType === 'delivery' ? <><MapPin className="w-3 h-3 text-red-400" /> Delivery</> : <><PackageOpen className="w-3 h-3" /> Take Out</>}
             {order.paymentMethod === 'points' && (
               <span className="ml-2 text-purple-400 font-bold flex items-center gap-1"><Gift className="w-3 h-3" /> REWARD</span>
             )}
           </span>
+          {order.orderType === 'delivery' && (
+            <div className="mt-1 text-[10px] font-bold text-red-400/80 uppercase tracking-wider flex items-center gap-1">
+              <MapPin className="w-2.5 h-2.5" /> {order.deliveryAddress || 'No Address'}
+            </div>
+          )}
         </div>
         <div className={`px-2 py-1 rounded text-sm font-bold font-heading tabular-nums ${timerColor}`}>
            {formatElapsed(elapsed)}

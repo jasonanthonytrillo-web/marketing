@@ -28,7 +28,12 @@ router.get('/history', authenticate, async (req, res) => {
 // POST /api/orders — Kiosk: Place new order
 router.post('/', async (req, res) => {
   try {
-    const { customerId, customerName, orderType, paymentMethod, items, notes } = req.body;
+    const { customerId, customerName, orderType, paymentMethod, items, notes, deliveryAddress, deliveryLat, deliveryLng, deliveryFee, paymentReference } = req.body;
+    
+    // RESTRICTION: Delivery orders must be paid first (no cash)
+    if (orderType === 'delivery' && paymentMethod === 'cash') {
+      return res.status(400).json({ success: false, message: 'Cash on Delivery is not allowed. Please choose an online payment method.' });
+    }
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Order must have at least one item.' });
@@ -182,6 +187,11 @@ router.post('/', async (req, res) => {
         subtotal,
         taxAmount,
         total,
+        deliveryAddress: deliveryAddress || null,
+        deliveryLat: deliveryLat ? parseFloat(deliveryLat) : null,
+        deliveryLng: deliveryLng ? parseFloat(deliveryLng) : null,
+        deliveryFee: deliveryFee ? parseFloat(deliveryFee) : 0,
+        paymentReference: paymentReference || null,
         notes: notes || null,
         items: { create: orderItems }
       },

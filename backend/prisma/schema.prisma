@@ -145,6 +145,11 @@ model Order {
   discountAmount     Float     @default(0)
   taxAmount          Float     @default(0)
   total              Float     @default(0)
+  deliveryAddress    String?
+  deliveryLat        Float?
+  deliveryLng        Float?
+  deliveryFee        Float     @default(0)
+  paymentReference   String?
   notes              String?
   cancellationReason String?
   cashierId          Int?

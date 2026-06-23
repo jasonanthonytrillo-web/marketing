@@ -5,7 +5,8 @@ import { createOrder, getPublicTenant } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { applyTheme } from '../utils/theme';
-import { Utensils, ShoppingBag, Banknote, Smartphone, CreditCard, ShoppingCart, Gem } from 'lucide-react';
+import { Utensils, ShoppingBag, Banknote, Smartphone, CreditCard, ShoppingCart, Gem, MapPin, Hash } from 'lucide-react';
+import LocationPicker from '../components/LocationPicker';
 
 const TRANSLATIONS = {
   en: {
@@ -33,7 +34,13 @@ const TRANSLATIONS = {
     insufficientPoints: "Insufficient Points ({pts} Needed)",
     claimPoints: "Claim for {pts} Points",
     orderWithPoints: "Order — {price} + {pts} pts",
-    placeOrderTotal: "Place Order — {price}"
+    placeOrderTotal: "Place Order — {price}",
+    delivery: "Delivery",
+    deliveryFee: "Delivery Fee",
+    paymentRef: "Payment Reference Number",
+    refPlaceholder: "Enter last 4-8 digits of GCash/Maya ID",
+    pickLocation: "Pick Delivery Location",
+    deliveryContact: "Delivery Contact Info"
   },
   tl: {
     checkout: "Magbayad na",
@@ -60,7 +67,13 @@ const TRANSLATIONS = {
     insufficientPoints: "Kulang ang Puntos ({pts} Kailangan)",
     claimPoints: "Kunin gamit ang {pts} Puntos",
     orderWithPoints: "Order — {price} + {pts} pts",
-    placeOrderTotal: "Ipadala ang Order — {price}"
+    placeOrderTotal: "Ipadala ang Order — {price}",
+    delivery: "Delivery",
+    deliveryFee: "Bayad sa Delivery",
+    paymentRef: "Reference Number ng Bayad",
+    refPlaceholder: "Ilagay ang huling 4-8 digits ng GCash/Maya ID",
+    pickLocation: "Pumili ng Lokasyon",
+    deliveryContact: "Impormasyon sa Delivery"
   }
 };
 
@@ -77,7 +90,8 @@ export default function Checkout() {
 
   const ORDER_TYPES = [
     { id: 'dine_in', label: t('dineIn'), icon: <Utensils className="w-6 h-6" /> },
-    { id: 'take_out', label: t('takeOut'), icon: <ShoppingBag className="w-6 h-6" /> }
+    { id: 'take_out', label: t('takeOut'), icon: <ShoppingBag className="w-6 h-6" /> },
+    { id: 'delivery', label: t('delivery'), icon: <MapPin className="w-6 h-6" /> }
   ];
 
   const PAYMENT_METHODS = [
@@ -89,6 +103,8 @@ export default function Checkout() {
   const [customerName, setCustomerName] = useState(user?.name || '');
   const [orderType, setOrderType] = useState('dine_in');
   const [notes, setNotes] = useState('');
+  const [deliveryInfo, setDeliveryInfo] = useState({ address: '', lat: null, lng: null, fee: 0 });
+  const [paymentReference, setPaymentReference] = useState('');
 
   useEffect(() => {
     const slug = tenantSlug || user?.tenantSlug;
@@ -111,12 +127,20 @@ export default function Checkout() {
   const hasInsufficientPoints = totalPointsCost > (user?.points || 0);
 
   const [paymentMethod, setPaymentMethod] = useState(isFullRedemption ? 'points' : 'cash');
+
+  useEffect(() => {
+    if (orderType === 'delivery' && paymentMethod === 'cash') {
+      setPaymentMethod('gcash');
+    }
+  }, [orderType]);
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const subtotal = getSubtotal();
+  const deliveryFee = orderType === 'delivery' ? deliveryInfo.fee : 0;
   const tax = 0;
-  const total = subtotal;
+  const total = subtotal + deliveryFee;
 
 
   if (items.length === 0 && !submitting) {
@@ -166,7 +190,12 @@ export default function Checkout() {
         orderType, 
         paymentMethod, 
         items: orderItems, 
-        notes 
+        notes,
+        deliveryAddress: orderType === 'delivery' ? deliveryInfo.address : undefined,
+        deliveryLat: orderType === 'delivery' ? deliveryInfo.lat : undefined,
+        deliveryLng: orderType === 'delivery' ? deliveryInfo.lng : undefined,
+        deliveryFee: orderType === 'delivery' ? deliveryInfo.fee : undefined,
+        paymentReference: paymentMethod !== 'cash' ? paymentReference : undefined
       });
       const order = res.data.data;
       
@@ -211,15 +240,26 @@ export default function Checkout() {
         {/* Order Type */}
         <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <label className="block text-sm font-semibold text-surface-700 mb-3">{t('orderType')}</label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {ORDER_TYPES.map(t => (
               <button key={t.id} type="button" onClick={() => setOrderType(t.id)}
-                className={`p-4 rounded-xl border-2 text-center font-semibold transition-all ${orderType === t.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}
+                className={`p-3 sm:p-4 rounded-xl border-2 text-center font-semibold transition-all ${orderType === t.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}
                 style={orderType === t.id ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}>
-                <div className="mb-1 flex justify-center">{t.icon}</div>{t.label}
+                <div className="mb-1 flex justify-center">{t.icon}</div>
+                <span className="text-xs sm:text-sm">{t.label}</span>
               </button>
             ))}
           </div>
+
+          {orderType === 'delivery' && (
+            <div className="mt-6 pt-6 border-t border-surface-100 space-y-4 animate-fade-in">
+              <label className="block text-sm font-bold text-surface-900 mb-1">{t('pickLocation')}</label>
+              <LocationPicker 
+                onLocationSelect={(loc) => setDeliveryInfo({ ...deliveryInfo, ...loc })}
+                initialAddress={deliveryInfo.address}
+              />
+            </div>
+          )}
         </div>
 
         {/* Payment Method — hidden for points-only redemptions */}
@@ -241,6 +281,9 @@ export default function Checkout() {
                 const isSelected = paymentMethod === m.id;
                 const isGCash = m.id === 'gcash';
                 const isMaya = m.id === 'maya';
+                const isCash = m.id === 'cash';
+
+                if (orderType === 'delivery' && isCash) return null;
                 
                 return (
                   <button
@@ -265,6 +308,23 @@ export default function Checkout() {
                 );
               })}
             </div>
+
+            {paymentMethod !== 'cash' && (
+              <div className="mt-5 pt-5 border-t border-surface-100 animate-fade-in">
+                <label className="flex items-center gap-2 text-sm font-bold text-surface-900 mb-2">
+                  <Hash className="w-4 h-4 text-primary-500" />
+                  {t('paymentRef')}
+                </label>
+                <input 
+                  type="text" 
+                  value={paymentReference}
+                  onChange={e => setPaymentReference(e.target.value)}
+                  placeholder={t('refPlaceholder')}
+                  className="input-field text-sm"
+                  required={orderType === 'delivery'}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -287,7 +347,13 @@ export default function Checkout() {
               </div>
             );
           })}
-          <div className="border-t border-surface-200 mt-3 pt-3">
+          <div className="border-t border-surface-200 mt-3 pt-3 space-y-2">
+            {orderType === 'delivery' && (
+              <div className="flex justify-between text-sm">
+                <span className="text-surface-500">{t('deliveryFee')}</span>
+                <span className="text-surface-900 font-medium">{formatCurrency(deliveryFee)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-lg font-bold font-heading">
               <span>{t('total')}</span><span className="text-primary-600">{formatCurrency(total)}</span>
             </div>
@@ -296,8 +362,8 @@ export default function Checkout() {
 
         <button 
           type="submit" 
-          disabled={submitting || (totalPointsCost > 0 && hasInsufficientPoints)} 
-          className={`w-full py-4 text-lg transition-all rounded-xl font-bold ${hasInsufficientPoints && totalPointsCost > 0 ? 'bg-red-100 text-red-400 cursor-not-allowed' : 'btn-primary'}`} 
+          disabled={submitting || (totalPointsCost > 0 && hasInsufficientPoints) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference))} 
+          className={`w-full py-4 text-lg transition-all rounded-xl font-bold ${(hasInsufficientPoints && totalPointsCost > 0) || (orderType === 'delivery' && (!deliveryInfo.address || !paymentReference)) ? 'bg-surface-100 text-surface-400 cursor-not-allowed' : 'btn-primary'}`} 
           id="place-order-btn"
           style={!(hasInsufficientPoints && totalPointsCost > 0) ? { backgroundColor: brandingColor } : {}}
         >

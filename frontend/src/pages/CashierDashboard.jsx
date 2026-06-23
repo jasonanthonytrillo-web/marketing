@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
-import { Clock, AlertTriangle, Store, User, CreditCard, Gift, Banknote, Smartphone, CheckCircle } from 'lucide-react';
+import { Clock, AlertTriangle, Store, User, CreditCard, Gift, Banknote, Smartphone, CheckCircle, Navigation, Printer, ChefHat, ShoppingBag, Truck } from 'lucide-react';
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);
@@ -220,6 +220,20 @@ export default function CashierDashboard() {
       loadOrders();
     } catch (e) {
       alert('Failed to mark order as ready');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDispatchOrder = async () => {
+    if (!selectedOrder) return;
+    setProcessing(true);
+    try {
+      await (await import('../services/api')).updateOrderStatus(selectedOrder.id, 'on_the_way');
+      setSelectedOrder(null);
+      loadOrders();
+    } catch (e) {
+      alert('Failed to dispatch order');
     } finally {
       setProcessing(false);
     }
@@ -443,8 +457,8 @@ export default function CashierDashboard() {
                       <p className="text-xs sm:text-sm text-surface-500">{order.customerName}</p>
                     </div>
                     <div className="text-right">
-                      <span className={`badge text-[10px] sm:text-xs mb-1 ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {order.orderType === 'dine_in' ? 'Dine In' : 'Take Out'}
+                      <span className={`badge text-[10px] sm:text-xs mb-1 ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : order.orderType === 'delivery' ? (order.status === 'on_the_way' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700') : 'bg-amber-100 text-amber-700'}`}>
+                        {order.orderType === 'dine_in' ? 'Dine In' : order.orderType === 'delivery' ? (order.status === 'on_the_way' ? 'Out for Delivery' : 'Delivery') : 'Take Out'}
                       </span>
                       {order.paymentMethod === 'points' && (
                         <span className="badge text-[10px] sm:text-xs bg-purple-100 text-purple-700 ml-1 inline-flex items-center gap-1"><Gift className="w-3 h-3" /> Reward</span>
@@ -490,6 +504,35 @@ export default function CashierDashboard() {
 
               {/* Scrollable Body */}
               <div className="flex-1 overflow-y-auto flex flex-col">
+                {/* Delivery Info Banner */}
+                {selectedOrder.orderType === 'delivery' && (
+                  <div className="mx-6 mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl flex flex-col gap-3 flex-shrink-0 animate-fade-in">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0"><MapPin className="w-5 h-5 text-red-600" /></div>
+                      <div>
+                        <p className="font-bold text-red-700 text-sm">Delivery Order</p>
+                        <p className="text-xs text-red-500 font-medium">{selectedOrder.deliveryAddress || 'No address provided'}</p>
+                      </div>
+                    </div>
+                    {selectedOrder.deliveryLat && selectedOrder.deliveryLng && (
+                      <a 
+                        href={`https://www.google.com/maps?q=${selectedOrder.deliveryLat},${selectedOrder.deliveryLng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 py-2 bg-white border border-red-200 rounded-xl text-xs font-bold text-red-600 hover:bg-red-100 transition-all shadow-sm"
+                      >
+                        <Navigation className="w-3.5 h-3.5" /> View on Google Maps
+                      </a>
+                    )}
+                    {selectedOrder.paymentReference && (
+                      <div className="pt-2 mt-2 border-t border-red-100 flex justify-between items-center">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-red-400">Customer Payment Ref</span>
+                        <span className="text-sm font-mono font-black text-red-700 bg-white px-2 py-1 rounded-lg border border-red-100">{selectedOrder.paymentReference}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Points Redemption Banner */}
                 {selectedOrder.paymentMethod === 'points' && (
                   <div className="mx-6 mt-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center gap-3 flex-shrink-0">
@@ -844,6 +887,37 @@ export default function CashierDashboard() {
                             </button>
                           )}
                           {selectedOrder.status === 'ready' && (
+                            <>
+                              {selectedOrder.orderType === 'delivery' ? (
+                                <button 
+                                  onClick={handleDispatchOrder} 
+                                  disabled={processing} 
+                                  className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 animate-bounce-in"
+                                >
+                                  {processing ? 'Processing...' : (
+                                    <>
+                                      <Truck className="w-5 h-5" />
+                                      <span>OUT FOR DELIVERY</span>
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={handleServeOrder} 
+                                  disabled={processing} 
+                                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 transition-all active:scale-95 flex items-center justify-center gap-2 animate-bounce-in"
+                                >
+                                  {processing ? 'Processing...' : (
+                                    <>
+                                      <ShoppingBag className="w-5 h-5" />
+                                      <span>MARK AS SERVED</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </>
+                          )}
+                          {selectedOrder.status === 'on_the_way' && (
                             <button 
                               onClick={handleServeOrder} 
                               disabled={processing} 
@@ -851,8 +925,8 @@ export default function CashierDashboard() {
                             >
                               {processing ? 'Processing...' : (
                                 <>
-                                  <ShoppingBag className="w-5 h-5" />
-                                  <span>MARK AS SERVED</span>
+                                  <CheckCircle className="w-5 h-5" />
+                                  <span>MARK AS DELIVERED</span>
                                 </>
                               )}
                             </button>

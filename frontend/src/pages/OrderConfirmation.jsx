@@ -7,14 +7,34 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, unlockAudio, formatMinutes } from '../utils/helpers';
 
 import { applyTheme, clearTheme } from '../utils/theme';
-import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon } from 'lucide-react';
+import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon, Truck, MapPin, Navigation } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import L from 'leaflet';
 
-const STATUS_STEPS = [
-  { key: 'pending', label: 'Order Received', icon: <ClipboardList className="w-6 h-6" />, activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-primary-50' },
-  { key: 'confirmed', label: 'Payment Confirmed', icon: <CheckCircle className="w-6 h-6" />, activeBg: 'bg-emerald-500', activeRing: 'ring-emerald-100', inactiveBg: 'bg-emerald-50' },
-  { key: 'preparing', label: 'Preparing', icon: <ChefHat className="w-6 h-6" />, activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-slate-100' },
-  { key: 'ready', label: 'Ready for Pickup', icon: <Bell className="w-6 h-6" />, activeBg: 'bg-amber-500', activeRing: 'ring-amber-100', inactiveBg: 'bg-amber-50' },
-];
+// Fix Leaflet marker icons
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+const GET_STATUS_STEPS = (orderType) => {
+  const steps = [
+    { key: 'pending', label: 'Order Received', icon: <ClipboardList className="w-6 h-6" />, activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-primary-50' },
+    { key: 'confirmed', label: 'Payment Confirmed', icon: <CheckCircle className="w-6 h-6" />, activeBg: 'bg-emerald-500', activeRing: 'ring-emerald-100', inactiveBg: 'bg-emerald-50' },
+    { key: 'preparing', label: 'Preparing', icon: <ChefHat className="w-6 h-6" />, activeBg: 'bg-primary-500', activeRing: 'ring-primary-100', inactiveBg: 'bg-slate-100' },
+  ];
+
+  if (orderType === 'delivery') {
+    steps.push({ key: 'ready', label: 'Packing Order', icon: <ShoppingBag className="w-6 h-6" />, activeBg: 'bg-amber-500', activeRing: 'ring-amber-100', inactiveBg: 'bg-amber-50' });
+    steps.push({ key: 'on_the_way', label: 'On the Way', icon: <Truck className="w-6 h-6" />, activeBg: 'bg-blue-500', activeRing: 'ring-blue-100', inactiveBg: 'bg-blue-50' });
+  } else {
+    steps.push({ key: 'ready', label: 'Ready for Pickup', icon: <Bell className="w-6 h-6" />, activeBg: 'bg-amber-500', activeRing: 'ring-amber-100', inactiveBg: 'bg-amber-50' });
+  }
+
+  return steps;
+};
 
 export default function OrderConfirmation() {
   const { user } = useAuth();
@@ -156,10 +176,16 @@ export default function OrderConfirmation() {
   if (loading) return null;
   if (!order) return <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center"><h2 className="text-xl font-bold mb-4">Order not found</h2><Link to={menuLink} className="btn-primary" style={{ backgroundColor: brandingColor }}>Back to Menu</Link></div>;
 
-  const currentStep = STATUS_STEPS.findIndex(s => s.key === order.status);
+  const statusSteps = GET_STATUS_STEPS(order.orderType);
+  const currentStep = statusSteps.findIndex(s => s.key === order.status);
   const isCancelled = order.status === 'cancelled';
   const isCompleted = order.status === 'completed';
   const isReady = order.status === 'ready';
+  const isOnTheWay = order.status === 'on_the_way';
+
+  // Store coordinates (assuming a fixed shop location for now, or we can add it to branding)
+  const storeLocation = [14.5995, 120.9842]; // Example coordinates for Manila
+  const deliveryLocation = order.deliveryLat && order.deliveryLng ? [order.deliveryLat, order.deliveryLng] : null;
 
   return (
     <div className="min-h-screen bg-surface-50 pb-8" style={{ '--primary-custom': brandingColor }}>
@@ -302,11 +328,50 @@ export default function OrderConfirmation() {
           </div>
         )}
 
+        {/* Delivery Track Map */}
+        {order.orderType === 'delivery' && isOnTheWay && deliveryLocation && (
+          <div className="bg-white rounded-3xl p-4 mb-6 shadow-xl animate-fade-in-up border border-blue-100 overflow-hidden" style={{ animationDelay: '0.15s' }}>
+            <div className="flex items-center gap-3 mb-4 px-2">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 animate-pulse">
+                <Truck className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-black text-slate-800 text-sm uppercase tracking-tight">Your Order is on the way!</h4>
+                <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Estimated Arrival: 15-20 mins</p>
+              </div>
+              <Navigation className="w-5 h-5 text-slate-300" />
+            </div>
+            
+            <div className="h-[250px] rounded-2xl overflow-hidden border border-slate-100 relative z-0">
+              <MapContainer 
+                center={[(storeLocation[0] + deliveryLocation[0]) / 2, (storeLocation[1] + deliveryLocation[1]) / 2]} 
+                zoom={14} 
+                style={{ height: '100%', width: '100%' }}
+                zoomControl={false}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <Marker position={storeLocation}>
+                  <Popup>Hometown Brew (Store)</Popup>
+                </Marker>
+                <Marker position={deliveryLocation}>
+                  <Popup>Your Location</Popup>
+                </Marker>
+                <Polyline positions={[storeLocation, deliveryLocation]} color="#3b82f6" dashArray="10, 10" weight={3} opacity={0.6} />
+              </MapContainer>
+            </div>
+            
+            <div className="mt-4 p-3 bg-slate-50 rounded-xl flex items-center gap-3">
+              <MapPin className="w-5 h-5 text-red-500" />
+              <p className="text-xs font-medium text-slate-600 line-clamp-1">{order.deliveryAddress}</p>
+            </div>
+          </div>
+        )}
+
         {!isCancelled && !isCompleted && (
           <div className="bg-white rounded-3xl p-6 md:p-8 mb-6 animate-fade-in-up shadow-sm" style={{ animationDelay: '0.2s' }}>
             <div className="space-y-6">
-              {STATUS_STEPS.map((step, idx) => {
-                const isActive = idx <= currentStep;
+              {statusSteps.map((step, idx) => {
+                const isActive = idx <= currentStep || (order.status === 'completed' && idx < statusSteps.length);
                 const isCurrent = idx === currentStep;
                 return (
                   <div key={step.key} className="flex items-center gap-4">
