@@ -284,11 +284,11 @@ export default function Checkout() {
                 initialAddress={deliveryInfo.address}
               />
               {deliveryInfo.fee > 0 && (
-                <div className="p-3 bg-primary-50 border border-primary-100 rounded-xl flex items-center justify-between animate-bounce-in">
-                  <span className="text-xs font-bold text-primary-700 uppercase tracking-wider flex items-center gap-2">
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between animate-bounce-in">
+                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-2">
                     <Truck className="w-4 h-4" /> Distance-Based Fee
                   </span>
-                  <span className="font-bold text-primary-700">{formatCurrency(deliveryInfo.fee)}</span>
+                  <span className="font-bold text-amber-700">{formatCurrency(deliveryInfo.fee)}</span>
                 </div>
               )}
             </div>
@@ -382,8 +382,8 @@ export default function Checkout() {
                         <p className="text-[10px] font-bold text-surface-400 uppercase tracking-tight">QR Code Not Uploaded Yet</p>
                       </div>
                     )}
-                    <div className="text-[10px] font-bold text-primary-600 bg-primary-50 px-3 py-1.5 rounded-full uppercase tracking-tighter flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary-500 animate-pulse"></span>
+                    <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full uppercase tracking-tighter flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
                       Pay via {paymentMethod === 'gcash' ? 'GCash' : 'Maya'} App
                     </div>
                   </div>
