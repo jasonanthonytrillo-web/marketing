@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { 
@@ -85,28 +85,38 @@ export default function RiderDashboard() {
     return () => clearInterval(timer);
   }, []);
 
+  const [trackingActive, setTrackingActive] = useState(false);
   const { emit } = useSocket();
   const lastEmitRef = useRef(0);
+  const ordersRef = useRef(orders);
 
   useEffect(() => {
-    if (activeTab !== 'active' || orders.length === 0) return;
+    ordersRef.current = orders;
+  }, [orders]);
 
-    if (!navigator.geolocation) {
-      console.error('Geolocation is not supported by this browser');
+  useEffect(() => {
+    const hasActiveOrders = orders.some(o => o.status === 'on_the_way');
+    if (activeTab !== 'active' || !hasActiveOrders) {
+      setTrackingActive(false);
       return;
     }
 
+    if (!navigator.geolocation) {
+      console.error('Geolocation is not supported');
+      return;
+    }
+
+    console.log('📡 Starting GPS tracking...');
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
+        setTrackingActive(true);
         const { latitude, longitude } = position.coords;
         const now = Date.now();
         
-        // Throttle updates: once every 5 seconds
         if (now - lastEmitRef.current < 5000) return;
-        
         lastEmitRef.current = now;
         
-        orders.forEach(order => {
+        ordersRef.current.forEach(order => {
           if (order.status === 'on_the_way') {
             emit('rider_location_update', {
               orderNumber: order.orderNumber,
@@ -118,17 +128,17 @@ export default function RiderDashboard() {
         });
       },
       (error) => {
-        console.error('Geolocation error:', error);
+        console.error('GPS Error:', error);
+        setTrackingActive(false);
       },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 30000,
-        timeout: 27000
-      }
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
     );
 
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [activeTab, orders, emit]);
+    return () => {
+      console.log('🔌 Stopping GPS tracking...');
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [activeTab, orders.length > 0, emit]); // stable dependencies
 
   const handlePickup = async (orderId) => {
     try {
@@ -187,7 +197,15 @@ export default function RiderDashboard() {
         <div className="flex justify-between items-start mb-6">
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Rider Dashboard</h1>
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{user?.name} • Delivery Team</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{user?.name} • Delivery Team</p>
+              {trackingActive && (
+                <div className="flex items-center gap-1.5 bg-blue-50 px-2 py-0.5 rounded-full animate-pulse border border-blue-100">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-tight">GPS Live</span>
+                </div>
+              )}
+            </div>
           </div>
           <button 
             onClick={logoutUser}
