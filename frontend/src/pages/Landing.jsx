@@ -8,7 +8,7 @@ import SeasonalEffects from '../components/SeasonalEffects';
 import { Ban, Gem, Rocket, Coffee, Utensils } from 'lucide-react';
 
 export default function Landing() {
-  const [lastOrder, setLastOrder] = useState(null);
+  const [activeOrders, setActiveOrders] = useState([]);
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const { user, logoutUser } = useAuth();
@@ -54,24 +54,34 @@ export default function Landing() {
         console.error('Failed to load tenant info:', e);
       }
 
-      // Check for last order
+      // Check for ALL active orders
+      const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
       const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
-      const saved = localStorage.getItem(lastOrderKey);
-      if (saved) {
+      const savedOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
+      const lastOrderNum = localStorage.getItem(lastOrderKey);
+      const allOrderNums = Array.from(new Set([...savedOrders, lastOrderNum].filter(Boolean)));
+
+      const validOrders = [];
+      for (const orderNum of allOrderNums) {
         try {
-          const res = await getOrder(saved);
+          const res = await getOrder(orderNum);
           const order = res.data.data;
-          if (order && (order.status === 'completed' || order.status === 'cancelled')) {
-            localStorage.removeItem('last_order_number');
-            setLastOrder(null);
-          } else {
-            setLastOrder(saved);
+          if (order && order.status !== 'completed' && order.status !== 'cancelled') {
+            validOrders.push(orderNum);
           }
         } catch (error) {
-          localStorage.removeItem('last_order_number');
-          setLastOrder(null);
+          // Order not found, skip
         }
       }
+
+      // Sync localStorage with validated orders
+      if (validOrders.length > 0) {
+        localStorage.setItem(activeOrdersKey, JSON.stringify(validOrders));
+      } else {
+        localStorage.removeItem(activeOrdersKey);
+        localStorage.removeItem(lastOrderKey);
+      }
+      setActiveOrders(validOrders);
       setLoading(false);
     };
     init();
@@ -296,13 +306,18 @@ export default function Landing() {
                 </Link>
               </div>
 
-              {lastOrder && (
-                <Link
-                  to={`/order/${lastOrder}`}
-                  className="w-full mt-2 py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse"
-                >
-                  <span></span> View Order
-                </Link>
+              {activeOrders.length > 0 && (
+                <div className="w-full mt-2 space-y-2">
+                  {activeOrders.map((orderNum) => (
+                    <Link
+                      key={orderNum}
+                      to={`/order/${orderNum}`}
+                      className="w-full py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse"
+                    >
+                      <span></span> View Order #{orderNum.includes('-') ? orderNum.split('-')[1] : orderNum}
+                    </Link>
+                  ))}
+                </div>
               )}
             </>
           )}
