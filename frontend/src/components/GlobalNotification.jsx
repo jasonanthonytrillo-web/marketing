@@ -118,6 +118,8 @@ export default function GlobalNotification() {
     };
 
     checkOrders();
+    const int = setInterval(checkOrders, 30000);
+    return () => clearInterval(int);
   }, [tenantSlug]);
 
   // Cleanup on unmount
