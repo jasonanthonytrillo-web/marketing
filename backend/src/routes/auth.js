@@ -8,12 +8,16 @@ const { OAuth2Client } = require('google-auth-library');
 const GOOGLE_CLIENT_ID = '542194625185-rd9qq05qqgej9n6qkhlgcdgfagid601l.apps.googleusercontent.com';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const { sendOTPEmail } = require('../lib/mailer');
+const rateLimit = require('../middleware/rateLimiter');
+
+const otpLimiter = rateLimit(60 * 1000, 5, 'Too many OTP requests. Please wait 1 minute before requesting again.');
+const loginLimiter = rateLimit(60 * 1000, 10, 'Too many attempts. Please try again in 1 minute.');
 
 
 
 
 // POST /api/auth/request-otp — Send a code to email
-router.post('/request-otp', async (req, res) => {
+router.post('/request-otp', otpLimiter, async (req, res) => {
   const { email, tenantSlug } = req.body;
   if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
 
@@ -61,7 +65,7 @@ router.post('/request-otp', async (req, res) => {
 });
 
 // POST /api/auth/verify-otp — Login using code
-router.post('/verify-otp', async (req, res) => {
+router.post('/verify-otp', loginLimiter, async (req, res) => {
   const { email, otp, tenantSlug } = req.body;
   if (!email || !otp) return res.status(400).json({ success: false, message: 'Email and OTP are required' });
 
@@ -209,7 +213,7 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   console.log('Login attempt received for:', req.body.email);
   try {
     const { email, password } = req.body;
@@ -423,7 +427,7 @@ router.post('/google', async (req, res) => {
 });
 
 // POST /api/auth/register-customer (Public)
-router.post('/register-customer', async (req, res) => {
+router.post('/register-customer', loginLimiter, async (req, res) => {
   try {
     const { email, password, name, tenantSlug } = req.body;
 
@@ -504,7 +508,7 @@ router.post('/register-customer', async (req, res) => {
 });
 
 // POST /api/auth/resend-registration-otp — Resend registration verification code
-router.post('/resend-registration-otp', async (req, res) => {
+router.post('/resend-registration-otp', otpLimiter, async (req, res) => {
   const { email, tenantSlug } = req.body;
   if (!email) return res.status(400).json({ success: false, message: 'Email is required.' });
 
@@ -686,10 +690,12 @@ router.get('/me', authenticate, async (req, res) => {
       include: { tenant: true }
     });
 
+    const { password, pin, otpCode, otpExpires, ...sanitizedUser } = fullUser;
+
     res.json({ 
       success: true, 
       data: {
-        ...fullUser,
+        ...sanitizedUser,
         isGoogle: fullUser.isGoogle,
         tenantName: fullUser.tenant?.name,
         tenantColor: fullUser.tenant?.primaryColor,

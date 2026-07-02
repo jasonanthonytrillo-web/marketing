@@ -231,8 +231,6 @@ export default function OrderConfirmation() {
 
   useEffect(() => {
     loadOrder();
-    const interval = setInterval(loadOrder, 5000);
-    return () => clearInterval(interval);
   }, [orderNumber]);
 
   useEffect(() => {

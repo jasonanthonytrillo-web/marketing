@@ -93,7 +93,7 @@ export default function GlobalNotification() {
           const res = await getOrder(orderNum);
           const status = res.data.data.status;
           if (status === 'ready') {
-            triggerReadyAlert(orderNum);
+            triggerReadyAlert(res.data.data);
           } else if (status === 'cancelled' || status === 'completed') {
             if (status === 'cancelled') {
               triggerCancelledAlert(orderNum, res.data.data.cancellationReason);
@@ -118,8 +118,6 @@ export default function GlobalNotification() {
     };
 
     checkOrders();
-    const int = setInterval(checkOrders, 5000);
-    return () => clearInterval(int);
   }, [tenantSlug]);
 
   // Cleanup on unmount
