@@ -9,7 +9,6 @@ import { unlockAudio } from './utils/helpers';
 import GlobalNotification from './components/GlobalNotification';
 import SocketListener from './components/SocketListener';
 import GlobalThankYou from './components/GlobalThankYou';
-import SplashScreen from './components/SplashScreen';
 
 // Pages
 import Landing from './pages/Landing';
@@ -58,7 +57,6 @@ function App() {
 
   return (
     <AuthProvider>
-      <SplashScreen>
       <SocketProvider>
         <CartProvider>
           <Router>
@@ -108,7 +106,6 @@ function App() {
           </Router>
         </CartProvider>
       </SocketProvider>
-      </SplashScreen>
     </AuthProvider>
   );
 }
