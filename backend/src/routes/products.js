@@ -19,7 +19,8 @@ router.get('/tenant/:slug', async (req, res) => {
         primaryColor: tenant.primaryColor,
         secondaryColor: tenant.secondaryColor,
         bannerImage: tenant.bannerImage,
-        storeClosed: tenant.storeClosed
+        storeClosed: tenant.storeClosed,
+        deliveryDisabled: tenant.deliveryDisabled
       } 
     });
   } catch (error) {
@@ -97,6 +98,7 @@ router.get('/', async (req, res) => {
         secondaryColor: tenant?.secondaryColor,
         bannerImage: tenant?.bannerImage,
         storeClosed: tenant?.storeClosed || false,
+        deliveryDisabled: tenant?.deliveryDisabled || false,
         seasonal_effect: seasonalEffect,
         points_rate: pointsRate
       }

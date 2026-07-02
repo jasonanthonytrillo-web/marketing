@@ -52,7 +52,7 @@ export function CartProvider({ children }) {
       payload: {
         id: product.id,
         name: product.name,
-        price: product.price,
+        price: opts.sizePrice != null ? opts.sizePrice : product.price,
         image: product.image,
         stock: product.stock,
         pointsCost: product.pointsCost,

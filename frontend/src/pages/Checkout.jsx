@@ -111,12 +111,16 @@ export default function Checkout() {
     if (slug) {
       getPublicTenant(slug).then(res => {
         if (res.data.success) {
-          setBranding(res.data.data);
-          applyTheme(res.data.data.primaryColor);
+          const tenantData = res.data.data;
+          setBranding(tenantData);
+          applyTheme(tenantData.primaryColor);
+          if (tenantData.deliveryDisabled && orderType === 'delivery') {
+            setOrderType('dine_in');
+          }
         }
       });
     }
-  }, [tenantSlug, user?.tenantSlug]);
+  }, [tenantSlug, user?.tenantSlug, orderType]);
 
 
   const brandingColor = branding?.primaryColor || '#0a3d01';
@@ -263,15 +267,17 @@ export default function Checkout() {
         {/* Order Type */}
         <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <label className="block text-sm font-semibold text-surface-700 mb-3">{t('orderType')}</label>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {ORDER_TYPES.map(t => (
-              <button key={t.id} type="button" onClick={() => setOrderType(t.id)}
-                className={`p-3 sm:p-4 rounded-xl border-2 text-center font-semibold transition-all ${orderType === t.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}
-                style={orderType === t.id ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}>
-                <div className="mb-1 flex justify-center">{t.icon}</div>
-                <span className="text-xs sm:text-sm">{t.label}</span>
-              </button>
-            ))}
+          <div className={`grid ${branding?.deliveryDisabled ? 'grid-cols-2' : 'grid-cols-3'} gap-2 sm:gap-3`}>
+            {ORDER_TYPES
+              .filter(o => !(o.id === 'delivery' && branding?.deliveryDisabled))
+              .map(t => (
+                <button key={t.id} type="button" onClick={() => setOrderType(t.id)}
+                  className={`p-3 sm:p-4 rounded-xl border-2 text-center font-semibold transition-all ${orderType === t.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}
+                  style={orderType === t.id ? { backgroundColor: brandingColor, borderColor: brandingColor, color: '#ffffff' } : {}}>
+                  <div className="mb-1 flex justify-center">{t.icon}</div>
+                  <span className="text-xs sm:text-sm">{t.label}</span>
+                </button>
+              ))}
           </div>
 
           {orderType === 'delivery' && (

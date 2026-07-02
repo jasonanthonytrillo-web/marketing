@@ -101,7 +101,7 @@ router.get('/products', authenticate, authorize('admin'), async (req, res) => {
 
 router.post('/products', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { name, description, price, costPrice, image, categoryId, stock, available, pointsCost, addons, isCombo, comboGroup1Name, comboGroup2Name, tags } = req.body;
+    const { name, description, price, costPrice, image, categoryId, stock, available, pointsCost, addons, isCombo, comboGroup1Name, comboGroup2Name, tags, sizes } = req.body;
     if (!name || !price || !categoryId) {
       return res.status(400).json({ success: false, message: 'Name, price, and category are required.' });
     }
@@ -117,6 +117,7 @@ router.post('/products', authenticate, authorize('admin'), async (req, res) => {
         comboGroup1Name: comboGroup1Name || null,
         comboGroup2Name: comboGroup2Name || null,
         tags: tags || null,
+        sizes: sizes && sizes.length > 0 ? sizes : null,
         addons: addons ? { create: addons.map(a => ({ tenantId: req.tenantId, name: a.name, price: parseFloat(a.price) })) } : undefined
       },
       include: { category: true, addons: true }
@@ -133,7 +134,7 @@ router.post('/products', authenticate, authorize('admin'), async (req, res) => {
 
 router.put('/products/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { name, description, price, costPrice, image, categoryId, stock, available, pointsCost, addons, isCombo, comboGroup1Name, comboGroup2Name, tags } = req.body;
+    const { name, description, price, costPrice, image, categoryId, stock, available, pointsCost, addons, isCombo, comboGroup1Name, comboGroup2Name, tags, sizes } = req.body;
 
     // Handle addons: Delete old ones and create new ones (sync)
     if (addons) {
@@ -158,6 +159,7 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
         comboGroup1Name: comboGroup1Name !== undefined ? comboGroup1Name : undefined,
         comboGroup2Name: comboGroup2Name !== undefined ? comboGroup2Name : undefined,
         tags: tags !== undefined ? tags : undefined,
+        sizes: sizes !== undefined ? (sizes && sizes.length > 0 ? sizes : null) : undefined,
         addons: addons ? { 
           create: addons.map(a => ({ 
             tenantId: req.tenantId, 
@@ -439,6 +441,7 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
       settingsMap.storeLng = tenant.storeLng;
       settingsMap.deliveryFeePerKm = tenant.deliveryFeePerKm;
       settingsMap.storeClosed = tenant.storeClosed;
+      settingsMap.deliveryDisabled = tenant.deliveryDisabled;
     }
 
     res.json({ success: true, data: settingsMap });
@@ -466,7 +469,8 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
       storeLat: 'storeLat',
       storeLng: 'storeLng',
       deliveryFeePerKm: 'deliveryFeePerKm',
-      storeClosed: 'storeClosed'
+      storeClosed: 'storeClosed',
+      deliveryDisabled: 'deliveryDisabled'
     };
 
     const brandingUpdate = {};

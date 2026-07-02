@@ -81,7 +81,19 @@ router.post('/', async (req, res) => {
         });
       }
 
-      let itemSubtotal = product.price * item.quantity;
+      // Resolve size-specific pricing
+      let resolvedPrice = product.price;
+      if (item.size && product.sizes && Array.isArray(product.sizes)) {
+        const sizeEntry = product.sizes.find(s => s.name === item.size);
+        if (sizeEntry) {
+          if (sizeEntry.available === false) {
+            return res.status(400).json({ success: false, message: `Size "${item.size}" for ${product.name} is currently unavailable.` });
+          }
+          resolvedPrice = parseFloat(sizeEntry.price);
+        }
+      }
+
+      let itemSubtotal = resolvedPrice * item.quantity;
       
       // Zero out cash cost if it's a redemption
       if (item.isRedemption && product.pointsCost) {
@@ -108,7 +120,7 @@ router.post('/', async (req, res) => {
       orderItems.push({
         productId: product.id,
         productName: product.name,
-        productPrice: product.price,
+        productPrice: resolvedPrice,
         quantity: item.quantity,
         subtotal: itemSubtotal,
         size: item.size || null,

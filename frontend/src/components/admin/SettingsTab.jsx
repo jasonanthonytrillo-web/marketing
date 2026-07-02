@@ -72,8 +72,29 @@ export default function SettingsTab() {
 
       <form onSubmit={handleSave} className="space-y-8">
         {message && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-6 py-4 rounded-2xl font-bold animate-fade-in flex items-center gap-2">
-            {message.includes('Uploading') ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />} {message}
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full border border-slate-100 flex flex-col items-center text-center animate-scale-up">
+              <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-555 mb-4 shadow-sm" style={{ color: '#10b981', backgroundColor: '#ecfdf5' }}>
+                {message.includes('Uploading') || message.includes('Saving') ? (
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-8 h-8" />
+                )}
+              </div>
+              <h4 className="font-heading font-black text-xl text-slate-950 mb-2">
+                {message.includes('Uploading') ? 'Uploading Assets' : message.includes('Saving') ? 'Saving Settings' : 'Settings Saved'}
+              </h4>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">{message}</p>
+              {!message.includes('Uploading') && !message.includes('Saving') && (
+                <button
+                  type="button"
+                  onClick={() => setMessage('')}
+                  className="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all text-sm uppercase tracking-wider"
+                >
+                  Okay
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -95,7 +116,7 @@ export default function SettingsTab() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className={`text-xs font-black uppercase tracking-wider ${!settings.storeClosed ? 'text-emerald-605' : 'text-red-505'}`} style={!settings.storeClosed ? { color: '#059669' } : { color: '#dc2626' }}>
+                  <span className={`text-xs font-black uppercase tracking-wider ${!settings.storeClosed ? 'text-emerald-605' : 'text-red-550'}`} style={!settings.storeClosed ? { color: '#059669' } : { color: '#dc2626' }}>
                     {!settings.storeClosed ? 'Store Open' : 'Store Closed'}
                   </span>
                   <button
@@ -106,6 +127,30 @@ export default function SettingsTab() {
                     <span
                       className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-md ring-0 transition duration-300 ease-in-out ${!settings.storeClosed ? 'translate-x-6 bg-emerald-500' : 'translate-x-0 bg-red-505'}`}
                       style={settings.storeClosed ? { backgroundColor: '#dc2626' } : {}}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="pb-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Delivery Service Status</label>
+                  <p className="text-xs text-slate-500 font-medium">
+                    When disabled, customers will not be able to choose "Delivery" as their order type during checkout.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`text-xs font-black uppercase tracking-wider ${!settings.deliveryDisabled ? 'text-emerald-600' : 'text-red-600'}`} style={!settings.deliveryDisabled ? { color: '#059669' } : { color: '#dc2626' }}>
+                    {!settings.deliveryDisabled ? 'Delivery Enabled' : 'Delivery Disabled'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSettings(prev => ({ ...prev, deliveryDisabled: !prev.deliveryDisabled }))}
+                    className={`relative inline-flex h-[30px] w-[56px] shrink-0 cursor-pointer rounded-full border-[3px] border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${!settings.deliveryDisabled ? 'bg-emerald-100 border-emerald-500' : 'bg-red-100 border-red-500'}`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-md ring-0 transition duration-300 ease-in-out ${!settings.deliveryDisabled ? 'translate-x-6 bg-emerald-500' : 'translate-x-0 bg-red-505'}`}
+                      style={settings.deliveryDisabled ? { backgroundColor: '#dc2626' } : {}}
                     />
                   </button>
                 </div>

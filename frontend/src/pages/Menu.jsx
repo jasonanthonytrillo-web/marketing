@@ -187,7 +187,13 @@ export default function Menu() {
       setComboStep(1);
       setAddOpts({ size: '', flavor: '', addons: [], notes: '', comboChoices: { group1: null, group2: null } });
     } else {
-      setAddOpts({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
+      // Auto-select first available size if sizes exist
+      let defaultSize = '';
+      if (product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0) {
+        const firstAvailable = product.sizes.find(s => s.available !== false);
+        if (firstAvailable) defaultSize = firstAvailable.name;
+      }
+      setAddOpts({ size: defaultSize, flavor: '', addons: [], notes: '', comboChoices: null });
     }
     setSelectedProduct(product);
   };
@@ -215,7 +221,13 @@ export default function Menu() {
   }, [branding?.id, connected]);
 
   const handleAddToCart = (product) => {
-    addToCart(product, { ...addOpts, isRedemption: product.isRedemption });
+    // Resolve size-specific price for cart
+    let sizePrice = null;
+    if (addOpts.size && product.sizes && Array.isArray(product.sizes)) {
+      const match = product.sizes.find(s => s.name === addOpts.size);
+      if (match) sizePrice = parseFloat(match.price);
+    }
+    addToCart(product, { ...addOpts, sizePrice, isRedemption: product.isRedemption });
     setSelectedProduct(null);
     setAddOpts({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
     setComboStep(1);
@@ -503,7 +515,12 @@ export default function Menu() {
                       <h3 className="font-heading font-bold text-surface-900 text-[15px] md:text-xl mb-0.5 md:mb-1 line-clamp-2 md:line-clamp-1 leading-tight">{product.name}</h3>
                       <p className="text-[11px] md:text-sm text-surface-500 line-clamp-2 md:line-clamp-2 mb-2 md:mb-4 flex-1 leading-snug">{product.description}</p>
                       <div className="flex items-center justify-between mt-auto">
-                        <span className="font-heading font-black text-base md:text-2xl" style={{ color: brandingColor }}>₱{product.price.toFixed(2)}</span>
+                        <span className="font-heading font-black text-base md:text-2xl" style={{ color: brandingColor }}>
+                          {product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0
+                            ? `From ₱${Math.min(...product.sizes.filter(s => s.available !== false).map(s => parseFloat(s.price))).toFixed(2)}`
+                            : `₱${product.price.toFixed(2)}`
+                          }
+                        </span>
                         {!branding?.storeClosed ? (
                           <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>
                             +
@@ -700,13 +717,53 @@ export default function Menu() {
                 <>
                   <p className="text-surface-500 text-sm mb-6">{selectedProduct.description}</p>
                   <div className="flex items-center gap-4 mb-8">
-                    <p className="font-heading text-3xl font-bold" style={{ color: brandingColor }}>₱{selectedProduct.price.toFixed(2)}</p>
+                    <p className="font-heading text-3xl font-bold" style={{ color: brandingColor }}>
+                      ₱{(() => {
+                        if (addOpts.size && selectedProduct.sizes && Array.isArray(selectedProduct.sizes)) {
+                          const match = selectedProduct.sizes.find(s => s.name === addOpts.size);
+                          if (match) return parseFloat(match.price).toFixed(2);
+                        }
+                        return selectedProduct.price.toFixed(2);
+                      })()}
+                    </p>
                     {selectedProduct.pointsCost && isCustomer && (
                       <div className="bg-amber-50 text-amber-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-100 flex items-center gap-1.5">
                         <Gem className="w-3.5 h-3.5" /> Redeem for {selectedProduct.pointsCost} Points
                       </div>
                     )}
                   </div>
+
+                  {/* Size Selector */}
+                  {selectedProduct.sizes && Array.isArray(selectedProduct.sizes) && selectedProduct.sizes.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Choose Size</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.sizes.map(sizeItem => {
+                          const isDisabled = sizeItem.available === false;
+                          const isActive = addOpts.size === sizeItem.name;
+                          return (
+                            <button
+                              key={sizeItem.name}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => setAddOpts(prev => ({ ...prev, size: sizeItem.name }))}
+                              className={`px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
+                                isDisabled
+                                  ? 'bg-surface-100 border-surface-200 text-surface-300 cursor-not-allowed line-through opacity-60'
+                                  : isActive
+                                    ? 'border-transparent text-white shadow-md'
+                                    : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-surface-400'
+                              }`}
+                              style={isActive && !isDisabled ? { backgroundColor: brandingColor } : {}}
+                            >
+                              {sizeItem.name}
+                              <span className="ml-1.5 opacity-80">₱{parseFloat(sizeItem.price).toFixed(0)}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Add-ons */}
                   {selectedProduct.addons && selectedProduct.addons.length > 0 && (

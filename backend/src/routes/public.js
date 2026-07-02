@@ -26,7 +26,8 @@ router.get('/tenant/:slug', async (req, res) => {
         storeLat: true,
         storeLng: true,
         active: true,
-        storeClosed: true
+        storeClosed: true,
+        deliveryDisabled: true
       }
     });
 

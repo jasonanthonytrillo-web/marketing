@@ -115,7 +115,7 @@ export default function ProductsTab() {
   };
 
   const handleAdd = () => {
-    setCurrentProduct({ name: '', description: '', price: '', costPrice: '', image: '', categoryId: '', stock: 100, available: true, isCombo: false, tags: '' });
+    setCurrentProduct({ name: '', description: '', price: '', costPrice: '', image: '', categoryId: '', stock: 100, available: true, isCombo: false, tags: '', sizes: [] });
     setComboOptions([]);
     setIsEditing(true);
   };
@@ -392,6 +392,91 @@ export default function ProductsTab() {
                     </div>
                   );
                 })()}
+
+                {/* Size Variants Builder */}
+                {!currentProduct.isCombo && (
+                  <div className="p-5 bg-violet-50/50 rounded-2xl border border-violet-100 mt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-[10px] font-black text-violet-500 uppercase tracking-widest ml-1">Size Variants</label>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const sizes = currentProduct.sizes || [];
+                          setCurrentProduct({
+                            ...currentProduct,
+                            sizes: [...sizes, { name: '', price: 0, available: true }]
+                          });
+                        }}
+                        className="text-xs bg-violet-100 text-violet-600 px-3 py-1.5 rounded-lg font-bold border border-violet-200 hover:bg-violet-200 transition-all"
+                      >
+                        + Add Size
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {(currentProduct.sizes || []).map((sizeItem, index) => (
+                        <div key={index} className="flex gap-3 items-center animate-fade-in">
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 8oz, Regular, Large" 
+                            value={sizeItem.name} 
+                            onChange={e => {
+                              const newSizes = [...currentProduct.sizes];
+                              newSizes[index] = { ...newSizes[index], name: e.target.value };
+                              setCurrentProduct({...currentProduct, sizes: newSizes});
+                            }}
+                            className="input-field flex-1 py-2 text-xs"
+                          />
+                          <div className="relative w-28">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 text-xs">₱</span>
+                            <input 
+                              type="number" 
+                              step="0.01"
+                              placeholder="Price" 
+                              value={sizeItem.price} 
+                              onChange={e => {
+                                const newSizes = [...currentProduct.sizes];
+                                newSizes[index] = { ...newSizes[index], price: parseFloat(e.target.value) || 0 };
+                                setCurrentProduct({...currentProduct, sizes: newSizes});
+                              }}
+                              className="input-field w-full pl-6 py-2 text-xs"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newSizes = [...currentProduct.sizes];
+                              newSizes[index] = { ...newSizes[index], available: !newSizes[index].available };
+                              setCurrentProduct({...currentProduct, sizes: newSizes});
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all whitespace-nowrap ${
+                              sizeItem.available !== false
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                : 'bg-red-50 text-red-500 border-red-200'
+                            }`}
+                          >
+                            {sizeItem.available !== false ? '✓ On' : '✕ Off'}
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              const newSizes = currentProduct.sizes.filter((_, i) => i !== index);
+                              setCurrentProduct({...currentProduct, sizes: newSizes});
+                            }}
+                            className="text-red-400 hover:text-red-600 p-2"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                      {(!currentProduct.sizes || currentProduct.sizes.length === 0) && (
+                        <div className="text-center py-4 bg-white/50 rounded-2xl border border-dashed border-violet-200">
+                          <p className="text-xs text-violet-400 font-medium">No size variants. Product uses its base price only.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {currentProduct.isCombo && (
                   <div className="p-6 bg-primary-50/30 rounded-3xl border border-primary-100 animate-fade-in space-y-6">

@@ -26,6 +26,7 @@ model Tenant {
   bannerAssets   Json?    // Array of URLs for slideshow/video
   active      Boolean  @default(true)
   storeClosed Boolean  @default(false)
+  deliveryDisabled Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -109,6 +110,7 @@ model Product {
   
   costPrice     Float          @default(0) // Internal cost of product
   tags          String?        // Comma-separated dietary/allergen badges (e.g. spicy,halal,recommended)
+  sizes         Json?          // Array of {name, price, available} for size variants
 }
 
 model ProductAddon {
