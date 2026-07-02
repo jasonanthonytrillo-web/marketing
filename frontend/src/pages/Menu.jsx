@@ -43,7 +43,9 @@ const TRANSLATIONS = {
     step2: "Step 2: Choose Side/Drink",
     updateSecurity: "Update Security",
     cancel: "Cancel",
-    savePassword: "Save Password"
+    savePassword: "Save Password",
+    storeClosedBanner: "We're currently closed. Adding items to cart is temporarily disabled.",
+    storeClosedBtn: "Store Closed"
   },
   tl: {
     backHome: "Bumalik sa Home",
@@ -77,7 +79,9 @@ const TRANSLATIONS = {
     step2: "Hakbang 2: Pumili ng Side o Inumin",
     updateSecurity: "I-update ang Seguridad",
     cancel: "I-cancel",
-    savePassword: "I-save ang Password"
+    savePassword: "I-save ang Password",
+    storeClosedBanner: "Sarado po kami ngayon. Pansamantalang hindi pwede magdagdag sa cart.",
+    storeClosedBtn: "Sarado ang Store"
   }
 };
 
@@ -290,6 +294,12 @@ export default function Menu() {
   return (
     <div className="min-h-screen bg-surface-50 pb-24 relative overflow-hidden" style={{ '--primary-custom': brandingColor }}>
       <SeasonalEffects brandingColor={brandingColor} forcedEffect={branding?.seasonal_effect} />
+      {branding?.storeClosed && (
+        <div className="bg-red-50 border-b border-red-200 text-red-750 py-3.5 px-4 text-center font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 z-50 sticky top-0 animate-fade-in" style={{ color: '#b91c1c', borderColor: '#fee2e2' }}>
+          <AlertCircle className="w-4 h-4 text-red-650 shrink-0" style={{ color: '#ef4444' }} />
+          <span>{t('storeClosedBanner')}</span>
+        </div>
+      )}
       {/* Sticky Top Header Row */}
       <div className="sticky top-0 z-40 bg-surface-50/90 backdrop-blur-xl border-b border-surface-200/50 shadow-sm transition-all">
         <div className="max-w-7xl mx-auto p-4 md:p-6 lg:px-8 flex justify-between items-center">
@@ -494,9 +504,15 @@ export default function Menu() {
                       <p className="text-[11px] md:text-sm text-surface-500 line-clamp-2 md:line-clamp-2 mb-2 md:mb-4 flex-1 leading-snug">{product.description}</p>
                       <div className="flex items-center justify-between mt-auto">
                         <span className="font-heading font-black text-base md:text-2xl" style={{ color: brandingColor }}>₱{product.price.toFixed(2)}</span>
-                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>
-                          +
-                        </div>
+                        {!branding?.storeClosed ? (
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>
+                            +
+                          </div>
+                        ) : (
+                          <div className="text-[10px] font-black text-surface-450 uppercase tracking-widest bg-surface-100 px-2.5 py-1.5 rounded-lg border border-surface-200/50" style={{ color: '#6b7280' }}>
+                            {lang === 'tl' ? 'Tingnan' : 'View'}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -668,10 +684,11 @@ export default function Menu() {
                       </div>
                       <button
                         onClick={() => handleAddToCart(selectedProduct)}
-                        className="w-full py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        className="w-full py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: brandingColor }}
+                        disabled={branding?.storeClosed}
                       >
-                        {t('addCombo')} ₱{selectedProduct.price.toFixed(2)}
+                        {branding?.storeClosed ? t('storeClosedBtn') : `${t('addCombo')} ₱${selectedProduct.price.toFixed(2)}`}
                       </button>
                       <button onClick={() => setComboStep(1)} className="w-full py-3 text-surface-400 text-[10px] font-black uppercase tracking-widest hover:text-surface-600 transition-colors">
                         ← {t('changeSelections')}
@@ -721,11 +738,11 @@ export default function Menu() {
                   <div className="flex gap-4">
                     <button
                       onClick={() => handleAddToCart(selectedProduct)}
-                      className="flex-1 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                      className="flex-1 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: brandingColor }}
-                      disabled={!selectedProduct.available}
+                      disabled={!selectedProduct.available || branding?.storeClosed}
                     >
-                      {t('addToCart')}
+                      {branding?.storeClosed ? t('storeClosedBtn') : t('addToCart')}
                     </button>
                   </div>
                 </>
@@ -824,18 +841,20 @@ export default function Menu() {
                         )}
 
                         <button
-                          disabled={!canAfford || !product.available}
+                          disabled={!canAfford || !product.available || branding?.storeClosed}
                           onClick={() => {
                             addToCart(product, { isRedemption: true });
                             setShowRewards(false);
                           }}
-                          className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] ${canAfford
-                              ? 'text-white shadow-lg ring-2 ring-transparent ring-offset-2'
+                          className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] ${canAfford && !branding?.storeClosed
+                              ? 'text-white shadow-lg'
                               : 'bg-slate-100 text-slate-400 border border-slate-200'
                             }`}
-                          style={canAfford ? { backgroundColor: brandingColor, '--tw-ring-color': brandingColor } : {}}
+                          style={canAfford && !branding?.storeClosed ? { backgroundColor: brandingColor } : {}}
                         >
-                          {canAfford ? 'Redeem Reward' : `Need ${product.pointsCost - Math.floor(user?.points || 0)} More Points`}
+                          {branding?.storeClosed
+                            ? t('storeClosedBtn')
+                            : (canAfford ? 'Redeem Reward' : `Need ${product.pointsCost - Math.floor(user?.points || 0)} More Points`)}
                         </button>
                       </div>
                     </div>

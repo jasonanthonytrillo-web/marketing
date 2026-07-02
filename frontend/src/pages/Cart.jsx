@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { getPublicTenant, getProducts } from '../services/api';
 import { applyTheme } from '../utils/theme';
-import { ShoppingCart, Gem, CheckCircle, Flame } from 'lucide-react';
+import { ShoppingCart, Gem, CheckCircle, Flame, AlertCircle } from 'lucide-react';
 
 const TRANSLATIONS = {
   en: {
@@ -154,6 +154,12 @@ export default function Cart() {
 
   return (
     <div className="min-h-screen bg-surface-50 pb-40">
+      {branding?.storeClosed && (
+        <div className="bg-red-50 border-b border-red-200 text-red-750 py-3.5 px-4 text-center font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 animate-fade-in" style={{ color: '#b91c1c', borderColor: '#fee2e2' }}>
+          <AlertCircle className="w-4 h-4 text-red-650 shrink-0" style={{ color: '#ef4444' }} />
+          <span>{lang === 'tl' ? 'Pansamantalang sarado ang store. Hindi maaaring mag-checkout.' : 'The store is currently closed. Checkout is temporarily disabled.'}</span>
+        </div>
+      )}
       {/* Top Left Back Button */}
       <div className="p-3 sm:p-4 md:p-6 lg:px-8 pb-0 flex justify-between items-center">
         <Link to={menuLink} className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-3 bg-white rounded-full text-xs sm:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all">
@@ -264,12 +270,13 @@ export default function Cart() {
                     <p className="font-black text-[10px] sm:text-sm mb-2" style={{ color: brandingColor }}>{formatCurrency(rec.price)}</p>
                   </div>
                   <button
+                    disabled={branding?.storeClosed}
                     onClick={() => addToCart(rec)}
-                    className="w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95 border border-slate-200 text-slate-700 hover:text-white"
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = brandingColor; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = ''; }}
+                    className="w-full py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95 border border-slate-200 text-slate-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    onMouseEnter={(e) => { if (!branding?.storeClosed) { e.currentTarget.style.backgroundColor = brandingColor; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = '#fff'; } }}
+                    onMouseLeave={(e) => { if (!branding?.storeClosed) { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = ''; } }}
                   >
-                    <span>+ Add</span>
+                    <span>{branding?.storeClosed ? 'Closed' : '+ Add'}</span>
                   </button>
                 </div>
               ))}
@@ -285,9 +292,15 @@ export default function Cart() {
             <p className="text-xs md:text-sm font-semibold text-surface-500 uppercase tracking-wider mb-0.5 md:mb-1">{t('subtotal')}</p>
             <p className="font-heading text-2xl md:text-4xl font-black text-surface-900">{formatCurrency(subtotal)}</p>
           </div>
-          <Link to={checkoutLink} className="py-3 md:py-5 px-6 md:px-10 text-base md:text-xl rounded-xl md:rounded-2xl shadow-xl shadow-primary-500/30 whitespace-nowrap text-center flex-1 max-w-[200px] md:max-w-none text-white font-black" style={{ backgroundColor: brandingColor }} id="checkout-btn">
-            {t('checkout')} <span className="hidden sm:inline">→</span>
-          </Link>
+          {!branding?.storeClosed ? (
+            <Link to={checkoutLink} className="py-3 md:py-5 px-6 md:px-10 text-base md:text-xl rounded-xl md:rounded-2xl shadow-xl shadow-primary-500/30 whitespace-nowrap text-center flex-1 max-w-[200px] md:max-w-none text-white font-black" style={{ backgroundColor: brandingColor }} id="checkout-btn">
+              {t('checkout')} <span className="hidden sm:inline">→</span>
+            </Link>
+          ) : (
+            <button disabled className="py-3 md:py-5 px-6 md:px-10 text-base md:text-xl rounded-xl md:rounded-2xl bg-slate-200 border border-slate-300 text-slate-405 font-black cursor-not-allowed whitespace-nowrap text-center flex-1 max-w-[200px] md:max-w-none shadow-none" style={{ color: '#9ca3af' }} id="checkout-btn">
+              {lang === 'tl' ? 'Sarado' : 'Store Closed'}
+            </button>
+          )}
         </div>
       </div>
     </div>

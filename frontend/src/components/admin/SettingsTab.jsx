@@ -87,6 +87,30 @@ export default function SettingsTab() {
           </div>
           <div className="p-8 space-y-8">
             <div className="grid grid-cols-1 gap-8">
+              <div className="pb-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Store Operation Status</label>
+                  <p className="text-xs text-slate-500 font-medium">
+                    When closed, customers can browse products but cannot add them to the cart or checkout.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className={`text-xs font-black uppercase tracking-wider ${!settings.storeClosed ? 'text-emerald-605' : 'text-red-505'}`} style={!settings.storeClosed ? { color: '#059669' } : { color: '#dc2626' }}>
+                    {!settings.storeClosed ? 'Store Open' : 'Store Closed'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSettings(prev => ({ ...prev, storeClosed: !prev.storeClosed }))}
+                    className={`relative inline-flex h-[30px] w-[56px] shrink-0 cursor-pointer rounded-full border-[3px] border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${!settings.storeClosed ? 'bg-emerald-100 border-emerald-500' : 'bg-red-100 border-red-500'}`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-md ring-0 transition duration-300 ease-in-out ${!settings.storeClosed ? 'translate-x-6 bg-emerald-500' : 'translate-x-0 bg-red-505'}`}
+                      style={settings.storeClosed ? { backgroundColor: '#dc2626' } : {}}
+                    />
+                  </button>
+                </div>
+              </div>
+
               {isSuper && (
                   <div>
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Display Store Name</label>

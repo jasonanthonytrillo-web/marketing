@@ -25,7 +25,8 @@ router.get('/tenant/:slug', async (req, res) => {
         mayaQr: true,
         storeLat: true,
         storeLng: true,
-        active: true
+        active: true,
+        storeClosed: true
       }
     });
 

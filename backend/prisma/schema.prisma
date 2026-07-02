@@ -25,6 +25,7 @@ model Tenant {
   deliveryFeePerKm Float?   @default(20)
   bannerAssets   Json?    // Array of URLs for slideshow/video
   active      Boolean  @default(true)
+  storeClosed Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
