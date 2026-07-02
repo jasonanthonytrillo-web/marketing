@@ -9,6 +9,7 @@ import { Ban, Gem, Rocket, Coffee, Utensils } from 'lucide-react';
 
 export default function Landing() {
   const [activeOrders, setActiveOrders] = useState([]);
+  const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
   const { user, logoutUser } = useAuth();
@@ -307,16 +308,45 @@ export default function Landing() {
               </div>
 
               {activeOrders.length > 0 && (
-                <div className="w-full mt-2 space-y-2">
-                  {activeOrders.map((orderNum) => (
-                    <Link
-                      key={orderNum}
-                      to={`/order/${orderNum}`}
-                      className="w-full py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse"
+                <button
+                  onClick={() => setShowOrdersModal(true)}
+                  className="w-full mt-2 py-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl font-bold flex items-center justify-center gap-2 animate-pulse"
+                >
+                  <span></span> View Orders ({activeOrders.length})
+                </button>
+              )}
+
+              {showOrdersModal && (
+                <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setShowOrdersModal(false)}>
+                  <div className="bg-white rounded-[2rem] w-full max-w-sm p-6 shadow-2xl animate-scale-in" onClick={(e) => e.stopPropagation()}>
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4 text-center">Your Active Orders</h3>
+                    <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                      {activeOrders.map((orderNum) => (
+                        <Link
+                          key={orderNum}
+                          to={`/order/${orderNum}`}
+                          className="block w-full p-4 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-2xl transition-all active:scale-[0.98]"
+                          onClick={() => setShowOrdersModal(false)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-black text-slate-900">Order #{orderNum.includes('-') ? orderNum.split('-')[1] : orderNum}</p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Tap to track</p>
+                            </div>
+                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                              <span className="text-emerald-600 text-sm">→</span>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setShowOrdersModal(false)}
+                      className="w-full mt-4 py-3 bg-slate-100 text-slate-500 font-bold text-xs uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all"
                     >
-                      <span></span> View Order #{orderNum.includes('-') ? orderNum.split('-')[1] : orderNum}
-                    </Link>
-                  ))}
+                      Close
+                    </button>
+                  </div>
                 </div>
               )}
             </>
