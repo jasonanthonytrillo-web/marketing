@@ -29,7 +29,7 @@ router.get('/activity', authenticate, async (req, res) => {
         id: o.id,
         orderNumber: o.orderNumber,
         date: o.createdAt,
-        title: `🍔 Order #${o.orderNumber}`,
+        title: `Order #${o.orderNumber}`,
         description: o.items.map(i => i.productName).join(', '),
         total: o.total,
         status: o.status,
