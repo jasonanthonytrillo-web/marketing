@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
+const { sendPushToOrder } = require('./push');
 
 // GET /api/rider/available — Get orders ready for dispatch
 router.get('/available', authenticate, authorize('rider', 'admin'), async (req, res) => {
@@ -147,6 +148,13 @@ router.post('/orders/:id/notify-arrival', authenticate, authorize('rider', 'admi
     if (io && io.emitRiderArrival) {
       io.emitRiderArrival(order);
     }
+
+    // Send native push notification
+    await sendPushToOrder(orderId, {
+      title: 'Rider Arrived!',
+      body: `Your delivery rider has arrived with order #${order.orderNumber}!`,
+      url: `/track/${order.orderNumber}`
+    });
 
     // Log the arrival notification
     await prisma.auditLog.create({

@@ -141,6 +141,10 @@ export const hardDeleteOrder = (id) => api.delete(`/admin/orders/${id}`);
 // Public Beta
 export const submitBetaApplication = (data) => api.post('/public/beta/apply', data);
 
+// Push Notifications
+export const subscribeToPush = (data) => api.post('/push/subscribe', data);
+export const getVapidKey = () => api.get('/push/vapid-key');
+
 // Rider
 export const getAvailableRiderOrders = () => api.get('/rider/available');
 export const getActiveRiderOrders = () => api.get('/rider/active');

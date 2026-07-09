@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
+const { sendPushToOrder } = require('./push');
 
 // GET /api/kitchen/orders
 router.get('/orders', authenticate, authorize('kitchen', 'admin', 'cashier'), async (req, res) => {
@@ -90,6 +91,14 @@ router.post('/orders/:id/complete', authenticate, authorize('kitchen', 'admin', 
     const io = req.io;
     if (io && io.emitOrderUpdate) io.emitOrderUpdate(updated, 'ready');
     if (io && io.emitQueueUpdate) io.emitQueueUpdate({ order: updated, type: 'ready' });
+
+    // Send native push notification
+    await sendPushToOrder(orderId, {
+      title: 'Order Ready!',
+      body: `Your order #${updated.orderNumber} is ready for pickup! Enjoy!`,
+      url: `/track/${updated.orderNumber}`
+    });
+
     res.json({ success: true, data: updated });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to complete order.' });

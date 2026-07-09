@@ -60,3 +60,28 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// Push Notification Event
+self.addEventListener('push', function(event) {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'New Update';
+  const options = {
+    body: data.body || 'Your order has been updated.',
+    icon: '/ELEVATEPOS_App_Icon.png',
+    badge: '/ELEVATEPOS_App_Icon.png',
+    data: data.url // Useful for redirects on click
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Notification Click Event
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  if (event.notification.data) {
+    event.waitUntil(
+      clients.openWindow(event.notification.data)
+    );
+  }
+});
+

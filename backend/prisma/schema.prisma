@@ -178,6 +178,7 @@ model Order {
   items         OrderItem[]
   payments      Payment[]
   notifications Notification[]
+  pushSubscriptions PushSubscription[]
 }
 
 model OrderItem {
@@ -270,6 +271,17 @@ model Notification {
   createdAt DateTime @default(now())
 
   order Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  orderId   Int?
+  createdAt DateTime @default(now())
+
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model SystemSetting {

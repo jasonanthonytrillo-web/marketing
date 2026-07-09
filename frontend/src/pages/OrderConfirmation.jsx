@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getOrder, cancelOrder, getPublicTenant, submitFeedback, confirmDeliveryReceived } from '../services/api';
+import { getOrder, cancelOrder, getPublicTenant, submitFeedback, confirmDeliveryReceived, subscribeToPush, getVapidKey } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, unlockAudio, formatMinutes } from '../utils/helpers';
 
 import { applyTheme, clearTheme } from '../utils/theme';
-import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon, Truck, MapPin, Navigation } from 'lucide-react';
+import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon, Truck, MapPin, Navigation, BellRing } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -167,6 +167,62 @@ export default function OrderConfirmation() {
   const [riderLocation, setRiderLocation] = useState(null);
   const [showInviteBanner, setShowInviteBanner] = useState(true);
   const [showQrSuccess, setShowQrSuccess] = useState(false);
+  const [pushStatus, setPushStatus] = useState('idle'); // idle | subscribed | denied | unsupported
+
+  // Check if already subscribed on mount
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setPushStatus('unsupported');
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      setPushStatus('denied');
+    } else if (Notification.permission === 'granted') {
+      // Check if there's an active push subscription
+      navigator.serviceWorker.ready.then(reg => {
+        reg.pushManager.getSubscription().then(sub => {
+          if (sub) setPushStatus('subscribed');
+        });
+      });
+    }
+  }, []);
+
+  const handleEnablePush = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setPushStatus('denied');
+        return;
+      }
+      // Get VAPID public key from server
+      const vapidRes = await getVapidKey();
+      const vapidPublicKey = vapidRes.data.publicKey;
+
+      // Convert VAPID key to Uint8Array
+      const padding = '='.repeat((4 - (vapidPublicKey.length % 4)) % 4);
+      const base64 = (vapidPublicKey + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: outputArray
+      });
+
+      // Send subscription to backend, linked to this order
+      await subscribeToPush({
+        subscription: subscription.toJSON(),
+        orderId: order?.id
+      });
+
+      setPushStatus('subscribed');
+    } catch (err) {
+      console.error('Push subscription failed:', err);
+      setPushStatus('denied');
+    }
+  };
 
   useEffect(() => {
     clearCart();
@@ -488,6 +544,35 @@ export default function OrderConfirmation() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Push Notification Opt-in Banner */}
+        {!isCancelled && !isCompleted && pushStatus === 'idle' && (
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 mb-6 text-white shadow-xl animate-fade-in-up relative overflow-hidden" style={{ animationDelay: '0.12s' }}>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-2xl"></div>
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/20 shrink-0">
+                <BellRing className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-black mb-0.5">Get notified when your order is ready!</h4>
+                <p className="text-[10px] text-blue-100 leading-relaxed">Receive a notification even when your phone is locked.</p>
+              </div>
+            </div>
+            <button
+              onClick={handleEnablePush}
+              className="mt-4 w-full py-3 bg-white text-blue-700 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-blue-50 transition-all active:scale-95 shadow-lg"
+            >
+              Enable Notifications
+            </button>
+          </div>
+        )}
+
+        {!isCancelled && !isCompleted && pushStatus === 'subscribed' && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-6 flex items-center gap-3 animate-fade-in">
+            <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
+            <p className="text-xs font-bold text-emerald-700">Notifications enabled! We'll alert you when your order is ready.</p>
           </div>
         )}
 
