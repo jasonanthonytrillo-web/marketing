@@ -856,10 +856,10 @@ export default function CashierDashboard() {
                                 !paymentData.received || 
                                 !calcResult ||
                                 calcResult?.isInsufficient || 
-                                ((paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4)
+                                ((paymentData.method === 'gcash' || paymentData.method === 'maya') && selectedOrder.orderType !== 'delivery' && paymentData.referenceNumber.length < 4)
                               }
                               className={`flex-[2] py-4 shadow-xl font-bold transition-all ${
-                                (processing || !paymentData.received || !calcResult || calcResult?.isInsufficient || ((paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4)) 
+                                (processing || !paymentData.received || !calcResult || calcResult?.isInsufficient || ((paymentData.method === 'gcash' || paymentData.method === 'maya') && selectedOrder.orderType !== 'delivery' && paymentData.referenceNumber.length < 4)) 
                                 ? 'bg-surface-300 text-surface-500 cursor-not-allowed opacity-50' 
                                 : 'btn-primary'
                               }`}
