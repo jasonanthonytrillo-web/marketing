@@ -1,21 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
-import { 
-  getAvailableRiderOrders, 
-  getActiveRiderOrders, 
-  pickupOrder, 
+import {
+  getAvailableRiderOrders,
+  getActiveRiderOrders,
+  pickupOrder,
   deliverOrder,
   notifyArrival,
   getPublicTenant
 } from '../services/api';
-import { 
-  Truck, 
-  MapPin, 
-  Navigation, 
-  CheckCircle, 
-  Clock, 
-  Package, 
+import {
+  Truck,
+  MapPin,
+  Navigation,
+  CheckCircle,
+  Clock,
+  Package,
   LogOut,
   ChevronRight,
   RefreshCw,
@@ -164,12 +164,12 @@ export default function RiderDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = activeTab === 'available' 
-        ? await getAvailableRiderOrders() 
+      const res = activeTab === 'available'
+        ? await getAvailableRiderOrders()
         : await getActiveRiderOrders();
       const data = res.data.data;
       setOrders(data);
-      
+
       // Auto-expand if only one active order
       if (activeTab === 'active' && data.length === 1) {
         setExpandedOrderId(data[0].id);
@@ -240,10 +240,10 @@ export default function RiderDashboard() {
         const { latitude, longitude } = position.coords;
         const now = Date.now();
         setCurrentRiderPos([latitude, longitude]);
-        
+
         if (now - lastEmitRef.current < 5000) return;
         lastEmitRef.current = now;
-        
+
         ordersRef.current.forEach(order => {
           if (order.status === 'on_the_way') {
             emit('rider_location_update', {
@@ -307,10 +307,10 @@ export default function RiderDashboard() {
   const openInMaps = (lat, lng, address) => {
     const storeLat = branding?.storeLat;
     const storeLng = branding?.storeLng;
-    
+
     // Alert the user about background tracking
     alert("📍 Navigating to " + (address || "Customer") + ". \n\nIMPORTANT: Browsers stop tracking in the background. Please return to this dashboard occasionally to keep the customer updated!");
-    
+
     let url = `https://www.google.com/maps/dir/?api=1&origin=${storeLat},${storeLng}&destination=${lat},${lng}&travelmode=driving`;
     if (!storeLat || !storeLng) {
       url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
@@ -337,7 +337,7 @@ export default function RiderDashboard() {
               )}
             </div>
           </div>
-          <button 
+          <button
             onClick={logoutUser}
             className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition-colors"
           >
@@ -399,13 +399,13 @@ export default function RiderDashboard() {
         ) : (
           orders.map((order) => {
             const isExpanded = expandedOrderId === order.id;
-            
+
             return (
-              <div 
-                key={order.id} 
+              <div
+                key={order.id}
                 className={`bg-white rounded-[2.5rem] p-6 shadow-sm border transition-all duration-300 flex flex-col gap-6 animate-fade-in-up ${isExpanded ? 'border-blue-200 ring-4 ring-blue-50' : 'border-slate-100'}`}
               >
-                <div 
+                <div
                   className="cursor-pointer"
                   onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
                 >
@@ -422,16 +422,16 @@ export default function RiderDashboard() {
                     <div className="text-right flex flex-col items-end">
                       <p className="text-xl font-black text-slate-900">{formatCurrency(order.total)}</p>
                       <div className="flex items-center gap-2 mt-1">
-                         <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg">₱{order.deliveryFee} Fee</p>
-                         <ChevronRight className={`w-5 h-5 text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-500' : ''}`} />
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg">₱{order.deliveryFee} Fee</p>
+                        <ChevronRight className={`w-5 h-5 text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-500' : ''}`} />
                       </div>
                     </div>
                   </div>
 
                   {!isExpanded && (
                     <div className="mt-4 flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                       Tap to view actions
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                      Tap to view actions
                     </div>
                   )}
                 </div>
@@ -439,7 +439,7 @@ export default function RiderDashboard() {
                 {isExpanded && (
                   <div className="space-y-6 animate-fade-in">
                     {/* Address / Maps */}
-                    <div 
+                    <div
                       onClick={() => openInMaps(order.deliveryLat, order.deliveryLng, order.deliveryAddress)}
                       className="bg-slate-50 rounded-3xl p-5 border border-slate-100 active:scale-[0.98] transition-all cursor-pointer group"
                     >
@@ -489,24 +489,23 @@ export default function RiderDashboard() {
                               <button
                                 onClick={() => handleNotifyArrival(order.id)}
                                 disabled={notifyingArrival[order.id] || isCooldown}
-                                className={`w-full py-5 font-black rounded-3xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm ${
-                                  isCooldown
+                                className={`w-full py-5 font-black rounded-3xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm ${isCooldown
                                     ? 'bg-amber-100 text-amber-700 shadow-amber-200/50'
                                     : 'bg-amber-500 text-white shadow-amber-500/20 active:scale-95'
-                                }`}
+                                  }`}
                               >
                                 <Bell className={`w-5 h-5 ${isCooldown ? '' : 'animate-pulse'}`} />
-                                {notifyingArrival[order.id] 
-                                  ? 'Notifying...' 
-                                  : isCooldown 
-                                    ? `Nudge in ${secondsLeft}s` 
-                                    : notifiedAt 
-                                      ? 'Nudge Customer' 
+                                {notifyingArrival[order.id]
+                                  ? 'Notifying...'
+                                  : isCooldown
+                                    ? `Nudge in ${secondsLeft}s`
+                                    : notifiedAt
+                                      ? 'Nudge Customer'
                                       : "I've Arrived"}
                               </button>
                             );
                           })()}
-                          
+
                           <button
                             onClick={() => {
                               setActiveNavOrder(order);
@@ -516,7 +515,7 @@ export default function RiderDashboard() {
                             className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm"
                           >
                             <Navigation className="w-5 h-5 text-blue-400" />
-                            In-App Navigation
+                            Show Route
                           </button>
 
                           <button
@@ -549,21 +548,21 @@ export default function RiderDashboard() {
       {/* Quick Access Floating Footer */}
       <div className="fixed bottom-6 left-6 right-6 z-40 bg-white/80 backdrop-blur-xl border border-white/20 p-4 rounded-[2.5rem] shadow-2xl flex justify-around items-center">
         <div className="flex flex-col items-center">
-           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</span>
-           <div className="flex items-center gap-2">
-             <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
-             <span className="text-xs font-bold text-slate-800">Online</span>
-           </div>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</span>
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
+            <span className="text-xs font-bold text-slate-800">Online</span>
+          </div>
         </div>
         <div className="w-px h-8 bg-slate-200"></div>
         <div className="flex flex-col items-center">
-           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rider ID</span>
-           <span className="text-xs font-bold text-slate-800">#{user?.id}</span>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rider ID</span>
+          <span className="text-xs font-bold text-slate-800">#{user?.id}</span>
         </div>
         <div className="w-px h-8 bg-slate-200"></div>
         <div className="flex flex-col items-center">
-           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Deliveries</span>
-           <span className="text-xs font-bold text-slate-800">{orders.filter(o => o.status === 'on_the_way').length} Active</span>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Deliveries</span>
+          <span className="text-xs font-bold text-slate-800">{orders.filter(o => o.status === 'on_the_way').length} Active</span>
         </div>
       </div>
       {/* Delivery Confirmation Modal */}
@@ -578,7 +577,7 @@ export default function RiderDashboard() {
               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
                 Are you sure you want to mark order <span className="font-black text-slate-900">#{orderToDeliver?.orderNumber}</span> as delivered?
               </p>
-              
+
               <div className="space-y-3">
                 <button
                   onClick={handleDeliver}
@@ -608,21 +607,21 @@ export default function RiderDashboard() {
         <div className="fixed inset-0 z-[200] bg-white flex flex-col animate-fade-in">
           {/* Nav Header */}
           <div className="bg-slate-900 text-white p-4 flex justify-between items-center shadow-lg">
-             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                 <Navigation className="w-5 h-5" />
-               </div>
-               <div>
-                  <h3 className="font-black text-sm uppercase tracking-tight">Navigating to #{activeNavOrder.orderNumber}</h3>
-                  <p className="text-[10px] text-slate-400 font-bold truncate max-w-[200px]">{activeNavOrder.deliveryAddress}</p>
-               </div>
-             </div>
-             <button 
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                <Navigation className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-sm uppercase tracking-tight">Navigating to #{activeNavOrder.orderNumber}</h3>
+                <p className="text-[10px] text-slate-400 font-bold truncate max-w-[200px]">{activeNavOrder.deliveryAddress}</p>
+              </div>
+            </div>
+            <button
               onClick={() => setShowNavMap(false)}
               className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
-             >
-               <X className="w-6 h-6" />
-             </button>
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
           {/* Large Map Area */}
@@ -633,8 +632,8 @@ export default function RiderDashboard() {
               style={{ height: '100%', width: '100%' }}
               zoomControl={false}
             >
-              <RiderNavMap 
-                riderPos={currentRiderPos} 
+              <RiderNavMap
+                riderPos={currentRiderPos}
                 customerPos={[activeNavOrder.deliveryLat, activeNavOrder.deliveryLng]}
                 storePos={branding?.storeLat ? [branding.storeLat, branding.storeLng] : null}
                 followMode={followMode}
@@ -645,7 +644,7 @@ export default function RiderDashboard() {
             {/* Map Overlays */}
             <div className="absolute bottom-10 left-6 right-6 flex flex-col gap-4 pointer-events-none">
               <div className="flex justify-between items-end">
-                <button 
+                <button
                   onClick={() => setFollowMode(!followMode)}
                   className={`pointer-events-auto w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-95 ${followMode ? 'bg-blue-600 text-white' : 'bg-white text-slate-900'}`}
                 >
@@ -653,23 +652,23 @@ export default function RiderDashboard() {
                 </button>
 
                 <div className="bg-white/95 backdrop-blur shadow-2xl rounded-3xl p-6 pointer-events-auto w-64 md:w-80">
-                   <div className="flex justify-between items-start mb-4">
-                     <div>
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Destination</span>
-                       <p className="font-bold text-slate-800 text-sm leading-tight">{activeNavOrder.customerName}</p>
-                     </div>
-                     <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">Active</div>
-                   </div>
-                   <button 
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Destination</span>
+                      <p className="font-bold text-slate-800 text-sm leading-tight">{activeNavOrder.customerName}</p>
+                    </div>
+                    <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">Active</div>
+                  </div>
+                  <button
                     onClick={() => {
                       setOrderToDeliver(activeNavOrder);
                       setShowDeliverModal(true);
                       setShowNavMap(false);
                     }}
                     className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all text-xs uppercase tracking-widest"
-                   >
-                     Finish & Mark Delivered
-                   </button>
+                  >
+                    Finish & Mark Delivered
+                  </button>
                 </div>
               </div>
             </div>
