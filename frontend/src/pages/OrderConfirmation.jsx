@@ -328,7 +328,7 @@ export default function OrderConfirmation() {
         setShowArrivalOverlay(true);
         // Display native OS notification banner (if permitted)
         import('../utils/helpers').then(({ showSystemNotification, playNotificationSound }) => {
-          showSystemNotification('Hometown Brew', `Your order #${orderNumber} has arrived!`, branding?.logoUrl || '/ELEVATEPOS_App_Icon.png');
+          showSystemNotification('Hometown Brew', `Your order #${orderNumber} has arrived!`, branding?.logoUrl || '/hb_logo.jpg');
           
           // Clear any existing alert loop
           if (window._arrivalLoopInterval) clearInterval(window._arrivalLoopInterval);

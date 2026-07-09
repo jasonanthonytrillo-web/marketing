@@ -67,8 +67,8 @@ self.addEventListener('push', function (event) {
   const title = data.title || 'New Update';
   const options = {
     body: data.body || 'Your order has been updated.',
-    icon: '/ELEVATEPOS_App_Icon.png',
-    badge: '/ELEVATEPOS_App_Icon.png',
+    icon: '/hb_logo.jpg',
+    badge: '/hb_logo.jpg',
     data: data.url // Useful for redirects on click
   };
 
