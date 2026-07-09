@@ -166,6 +166,7 @@ export default function OrderConfirmation() {
   const [showArrivalOverlay, setShowArrivalOverlay] = useState(false);
   const [riderLocation, setRiderLocation] = useState(null);
   const [showInviteBanner, setShowInviteBanner] = useState(true);
+  const [showQrSuccess, setShowQrSuccess] = useState(false);
 
   useEffect(() => {
     clearCart();
@@ -712,6 +713,14 @@ export default function OrderConfirmation() {
                           link.click();
                           document.body.removeChild(link);
                           window.URL.revokeObjectURL(blobUrl);
+                          try {
+                            await navigator.clipboard.writeText(paymentRequest.amount.toString());
+                            setShowQrSuccess(true);
+                            setTimeout(() => setShowQrSuccess(false), 3500);
+                          } catch(e) {
+                            setShowQrSuccess(true);
+                            setTimeout(() => setShowQrSuccess(false), 3500);
+                          }
                         } catch (error) {
                           console.error('Download failed:', error);
                           // Fallback: open in new tab if blob fails
@@ -726,6 +735,27 @@ export default function OrderConfirmation() {
                 </div>
               </div>
             </div>
+
+            {/* QR Success Overlay in Payment Demand Modal */}
+            {showQrSuccess && (
+              <div className="absolute inset-0 z-[300] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-fade-in rounded-[2.5rem] sm:rounded-[3rem]">
+                <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-5 shadow-sm ring-8 ring-emerald-50/50 animate-bounce-in">
+                  <CheckCircle className="w-10 h-10" />
+                </div>
+                <h4 className="font-heading font-black text-2xl text-slate-900 mb-2">Saved & Copied!</h4>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6 max-w-[250px]">
+                  The QR code has been saved to your photo library.<br/>
+                  The amount to pay (<strong className="text-slate-900">₱{paymentRequest.amount}</strong>) is copied to your clipboard!
+                </p>
+                <button
+                  onClick={() => setShowQrSuccess(false)}
+                  className="w-full max-w-[200px] py-3.5 text-xs font-black uppercase tracking-widest text-white rounded-2xl shadow-xl transition-all active:scale-[0.98]"
+                  style={{ backgroundColor: brandingColor }}
+                >
+                  Okay, got it
+                </button>
+              </div>
+            )}
           </div>
         );
       })()}

@@ -38,7 +38,7 @@ const TRANSLATIONS = {
     delivery: "Delivery",
     deliveryFee: "Delivery Fee",
     paymentRef: "Payment Reference Number",
-    refPlaceholder: "Enter last 4-8 digits of GCash/Maya ID",
+    refPlaceholder: "Enter last 4 digits of GCash/Maya Ref No.",
     pickLocation: "Pick Delivery Location",
     deliveryContact: "Delivery Contact Info"
   },
@@ -71,7 +71,7 @@ const TRANSLATIONS = {
     delivery: "Delivery",
     deliveryFee: "Bayad sa Delivery",
     paymentRef: "Reference Number ng Bayad",
-    refPlaceholder: "Ilagay ang huling 4-8 digits ng GCash/Maya ID",
+    refPlaceholder: "Ilagay ang huling 4 digits ng GCash/Maya Ref No.",
     pickLocation: "Pumili ng Lokasyon",
     deliveryContact: "Impormasyon sa Delivery"
   }
@@ -140,6 +140,7 @@ export default function Checkout() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showQrSuccess, setShowQrSuccess] = useState(false);
 
   const subtotal = getSubtotal();
   const deliveryFee = orderType === 'delivery' ? deliveryInfo.fee : 0;
@@ -387,8 +388,12 @@ export default function Checkout() {
                               window.URL.revokeObjectURL(url);
                               try {
                                 await navigator.clipboard.writeText(total.toString());
-                                alert(`QR Code Saved! The amount to pay (₱${total}) has been copied to your clipboard.`);
-                              } catch(e) {}
+                                setShowQrSuccess(true);
+                                setTimeout(() => setShowQrSuccess(false), 3500);
+                              } catch(e) {
+                                setShowQrSuccess(true);
+                                setTimeout(() => setShowQrSuccess(false), 3500);
+                              }
                             } catch (err) {
                               console.error('Download failed:', err);
                               window.open(branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'], '_blank');
@@ -421,9 +426,13 @@ export default function Checkout() {
                   <input 
                     type="text" 
                     value={paymentReference}
-                    onChange={e => setPaymentReference(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      setPaymentReference(val);
+                    }}
                     placeholder={t('refPlaceholder')}
                     className="input-field text-sm"
+                    maxLength={4}
                     required={orderType === 'delivery'}
                   />
                 </div>
@@ -487,6 +496,29 @@ export default function Checkout() {
           );
         })()}
       </form>
+
+      {/* QR Success Modal */}
+      {showQrSuccess && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[2rem] shadow-2xl p-8 max-w-sm w-full border border-slate-100 flex flex-col items-center text-center animate-scale-up">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-5 shadow-sm ring-8 ring-emerald-50/50">
+              <CheckCircle className="w-10 h-10" />
+            </div>
+            <h4 className="font-heading font-black text-2xl text-slate-900 mb-2">Saved & Copied!</h4>
+            <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6">
+              The QR code has been saved to your photo library.<br/>
+              The amount to pay (<strong className="text-slate-900">₱{total}</strong>) is copied to your clipboard!
+            </p>
+            <button
+              onClick={() => setShowQrSuccess(false)}
+              className="w-full py-4 text-sm font-black uppercase tracking-widest text-white rounded-2xl shadow-xl transition-all active:scale-[0.98]"
+              style={{ backgroundColor: brandingColor }}
+            >
+              Okay, got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
