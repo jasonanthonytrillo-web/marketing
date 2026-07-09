@@ -568,10 +568,10 @@ export default function Menu() {
           <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
 
             {/* Modal Header Image */}
-            <div className="h-40 md:h-56 bg-surface-100 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
+            <div className="w-full h-64 sm:h-72 md:h-80 bg-surface-100 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
               <img
                 src={(selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
-                className="w-full h-full object-cover transition-all duration-700"
+                className="w-full h-full object-contain p-2 transition-all duration-700"
               />
               {/* Back Button for Combo Step 2 */}
               {selectedProduct.isCombo && comboStep > 1 && (

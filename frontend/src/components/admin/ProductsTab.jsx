@@ -274,6 +274,15 @@ export default function ProductsTab() {
                     <input type="number" value={currentProduct.pointsCost || ''} onChange={e => setCurrentProduct({...currentProduct, pointsCost: e.target.value})} className="input-field w-full border-emerald-100 focus:border-emerald-500" placeholder="e.g. 50" />
                   </div>
                   <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
+                    <textarea 
+                      placeholder="Enter product description..."
+                      value={currentProduct.description || ''} 
+                      onChange={e => setCurrentProduct({...currentProduct, description: e.target.value})} 
+                      className="input-field w-full h-20 resize-none"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-bold text-surface-700 mb-2">Product Image</label>
                     <div className="flex flex-col sm:flex-row gap-4 items-start">
                       <div className="w-24 h-24 rounded-2xl bg-surface-100 border border-surface-200 overflow-hidden flex-shrink-0">
