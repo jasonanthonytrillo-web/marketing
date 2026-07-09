@@ -248,107 +248,121 @@ export default function ProductsTab() {
             </div>
             
             <div className="p-6">
-              <form id="productForm" onSubmit={handleSave} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
-                    <input required type="text" value={currentProduct.name} onChange={e => setCurrentProduct({...currentProduct, name: e.target.value})} className="input-field w-full" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1">Category</label>
-                    <select required value={currentProduct.categoryId} onChange={e => setCurrentProduct({...currentProduct, categoryId: e.target.value})} className="input-field w-full">
-                      <option value="">Select Category</option>
-                      {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1">Price (₱)</label>
-                    <input required type="number" step="0.01" value={currentProduct.price} onChange={e => setCurrentProduct({...currentProduct, price: e.target.value})} className="input-field w-full" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-surface-700 mb-1">Cost Price (₱)</label>
-                    <input type="number" step="0.01" value={currentProduct.costPrice || ''} onChange={e => setCurrentProduct({...currentProduct, costPrice: e.target.value})} className="input-field w-full border-blue-50 focus:border-blue-500" placeholder="What you pay" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-emerald-600 mb-1 flex items-center gap-1">Points Cost <Gem className="w-4 h-4" /></label>
-                    <input type="number" value={currentProduct.pointsCost || ''} onChange={e => setCurrentProduct({...currentProduct, pointsCost: e.target.value})} className="input-field w-full border-emerald-100 focus:border-emerald-500" placeholder="e.g. 50" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
-                    <textarea 
-                      placeholder="Enter product description..."
-                      value={currentProduct.description || ''} 
-                      onChange={e => setCurrentProduct({...currentProduct, description: e.target.value})} 
-                      className="input-field w-full h-20 resize-none"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-bold text-surface-700 mb-2">Product Image</label>
-                    <div className="flex flex-col sm:flex-row gap-4 items-start">
-                      <div className="w-24 h-24 rounded-2xl bg-surface-100 border border-surface-200 overflow-hidden flex-shrink-0">
-                        {currentProduct.image ? (
-                          <img 
-                            src={currentProduct.image.startsWith('http') ? currentProduct.image : `${API_BASE}${currentProduct.image}`} 
-                            className="w-full h-full object-cover" 
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-surface-300"><ImageIcon className="w-8 h-8" /></div>
-                        )}
-                      </div>
-                      <div className="flex-1 w-full space-y-3">
-                        <div className="flex flex-col sm:flex-row gap-2">
-                          <div className="flex-1 relative">
-                            <input 
-                              type="file" 
-                              id="imgUpload" 
-                              accept="image/*"
-                              onChange={handleFileChange}
-                              className="hidden"
-                            />
-                            <label 
-                              htmlFor="imgUpload" 
-                              className={`flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl border-2 border-dashed border-surface-300 hover:border-primary-50 hover:bg-primary-50 text-surface-600 font-bold cursor-pointer transition-all ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
-                            >
-                              {uploading ? <><Upload className="w-4 h-4 animate-bounce" /> Uploading...</> : <><FolderUp className="w-4 h-4" /> Choose File</>}
-                            </label>
-                          </div>
-                          <div className="flex items-center justify-center text-surface-400 font-bold px-2">OR</div>
-                          <div className="flex-[1.5]">
-                            <input 
-                              type="text" 
-                              value={currentProduct.image} 
-                              onChange={e => setCurrentProduct({...currentProduct, image: e.target.value})} 
-                              className="input-field w-full" 
-                              placeholder="Paste Image URL here..." 
-                            />
-                          </div>
-                        </div>
-                        <p className="text-[10px] text-surface-400 italic">Recommended: Square image, max 2MB</p>
-                      </div>
+              <form id="productForm" onSubmit={handleSave} className="space-y-6">
+                {/* Group 1: Basic Information */}
+                <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 mb-4 ml-1">Basic Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 mb-1">Name</label>
+                      <input required type="text" value={currentProduct.name} onChange={e => setCurrentProduct({...currentProduct, name: e.target.value})} className="input-field w-full bg-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 mb-1">Category</label>
+                      <select required value={currentProduct.categoryId} onChange={e => setCurrentProduct({...currentProduct, categoryId: e.target.value})} className="input-field w-full bg-white">
+                        <option value="">Select Category</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-surface-700 mb-1">Description</label>
+                      <textarea 
+                        placeholder="Enter product description..."
+                        value={currentProduct.description || ''} 
+                        onChange={e => setCurrentProduct({...currentProduct, description: e.target.value})} 
+                        className="input-field w-full h-20 resize-none bg-white"
+                      />
                     </div>
                   </div>
                 </div>
-                {/* Status & Mix/Match */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                  <div className="flex items-center gap-2 p-4 bg-surface-50 rounded-2xl border border-surface-100">
-                    <input 
-                      type="checkbox" 
-                      id="available"
-                      checked={currentProduct.available}
-                      onChange={(e) => setCurrentProduct({ ...currentProduct, available: e.target.checked })}
-                      className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label htmlFor="available" className="text-sm font-bold text-surface-700">Available for Sale</label>
+
+                {/* Group 2: Pricing */}
+                <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 mb-4 ml-1">Pricing & Loyalty</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 mb-1">Selling Price (₱)</label>
+                      <input required type="number" step="0.01" value={currentProduct.price} onChange={e => setCurrentProduct({...currentProduct, price: e.target.value})} className="input-field w-full font-bold text-primary-600 bg-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-surface-700 mb-1">Cost Price (₱)</label>
+                      <input type="number" step="0.01" value={currentProduct.costPrice || ''} onChange={e => setCurrentProduct({...currentProduct, costPrice: e.target.value})} className="input-field w-full bg-white border-blue-50 focus:border-blue-500" placeholder="What you pay" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-emerald-600 mb-1 flex items-center gap-1">Points Cost <Gem className="w-3.5 h-3.5" /></label>
+                      <input type="number" value={currentProduct.pointsCost || ''} onChange={e => setCurrentProduct({...currentProduct, pointsCost: e.target.value})} className="input-field w-full bg-white border-emerald-50 focus:border-emerald-500" placeholder="e.g. 50" />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 p-4 bg-primary-50/50 rounded-2xl border border-primary-100">
-                    <input 
-                      type="checkbox" 
-                      id="isCombo"
-                      checked={currentProduct.isCombo || false}
-                      onChange={(e) => setCurrentProduct({ ...currentProduct, isCombo: e.target.checked })}
-                      className="w-5 h-5 rounded border-primary-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label htmlFor="isCombo" className="text-sm font-bold text-primary-700">Is Mix & Match Combo?</label>
+                </div>
+
+                {/* Group 3: Media */}
+                <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 mb-4 ml-1">Media</h4>
+                  <div className="flex flex-col sm:flex-row gap-5 items-start">
+                    <div className="w-24 h-24 rounded-2xl bg-white border border-surface-200 overflow-hidden flex-shrink-0 shadow-sm relative">
+                      {currentProduct.image ? (
+                        <img 
+                          src={currentProduct.image.startsWith('http') ? currentProduct.image : `${API_BASE}${currentProduct.image}`} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-surface-300"><ImageIcon className="w-8 h-8" /></div>
+                      )}
+                    </div>
+                    <div className="flex-1 w-full space-y-3">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1 relative">
+                          <input 
+                            type="file" 
+                            id="imgUpload" 
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                          <label 
+                            htmlFor="imgUpload" 
+                            className={`flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl border-2 border-dashed border-surface-300 hover:border-primary-500 hover:bg-primary-50 text-surface-600 hover:text-primary-600 font-bold cursor-pointer transition-all bg-white ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+                          >
+                            {uploading ? <><Upload className="w-4 h-4 animate-bounce" /> Uploading...</> : <><FolderUp className="w-4 h-4" /> Upload File</>}
+                          </label>
+                        </div>
+                        <div className="flex items-center justify-center text-surface-400 font-bold px-1 text-sm">OR</div>
+                        <div className="flex-[1.5]">
+                          <input 
+                            type="text" 
+                            value={currentProduct.image} 
+                            onChange={e => setCurrentProduct({...currentProduct, image: e.target.value})} 
+                            className="input-field w-full py-3 bg-white" 
+                            placeholder="Paste Image URL here..." 
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[10px] font-semibold tracking-wide text-surface-400 italic">Recommended: Square image format, maximum 2MB</p>
+                    </div>
+                  </div>
+                </div>
+                {/* Group 4: Status Settings */}
+                <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 mb-4 ml-1">Configuration</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="flex items-center gap-3 p-4 bg-white rounded-xl border border-surface-200 shadow-sm cursor-pointer hover:border-primary-300 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={currentProduct.available}
+                        onChange={(e) => setCurrentProduct({ ...currentProduct, available: e.target.checked })}
+                        className="w-5 h-5 rounded border-surface-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                      />
+                      <span className="text-sm font-bold text-surface-700">Available for Sale</span>
+                    </label>
+                    <label className="flex items-center gap-3 p-4 bg-primary-50/30 rounded-xl border border-primary-200 shadow-sm cursor-pointer hover:border-primary-400 transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={currentProduct.isCombo || false}
+                        onChange={(e) => setCurrentProduct({ ...currentProduct, isCombo: e.target.checked })}
+                        className="w-5 h-5 rounded border-primary-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                      />
+                      <span className="text-sm font-bold text-primary-800">Is Mix & Match Combo?</span>
+                    </label>
                   </div>
                 </div>
 
@@ -610,10 +624,10 @@ export default function ProductsTab() {
                   </div>
                 )}
 
-                {/* Add-ons Section */}
-                <div className="pt-6 border-t border-surface-100">
+                {/* Group 5: Add-ons Section */}
+                <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-heading font-bold text-surface-900">Customization Add-ons</h4>
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 ml-1">Customization Add-ons</h4>
                     <button 
                       type="button" 
                       onClick={() => {

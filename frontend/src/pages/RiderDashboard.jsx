@@ -490,8 +490,8 @@ export default function RiderDashboard() {
                                 onClick={() => handleNotifyArrival(order.id)}
                                 disabled={notifyingArrival[order.id] || isCooldown}
                                 className={`w-full py-5 font-black rounded-3xl shadow-lg transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm ${isCooldown
-                                    ? 'bg-amber-100 text-amber-700 shadow-amber-200/50'
-                                    : 'bg-amber-500 text-white shadow-amber-500/20 active:scale-95'
+                                  ? 'bg-amber-100 text-amber-700 shadow-amber-200/50'
+                                  : 'bg-amber-500 text-white shadow-amber-500/20 active:scale-95'
                                   }`}
                               >
                                 <Bell className={`w-5 h-5 ${isCooldown ? '' : 'animate-pulse'}`} />
@@ -500,7 +500,7 @@ export default function RiderDashboard() {
                                   : isCooldown
                                     ? `Nudge in ${secondsLeft}s`
                                     : notifiedAt
-                                      ? 'Nudge Customer'
+                                      ? 'Notify Customer'
                                       : "I've Arrived"}
                               </button>
                             );

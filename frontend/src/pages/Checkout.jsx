@@ -385,6 +385,10 @@ export default function Checkout() {
                               link.click();
                               document.body.removeChild(link);
                               window.URL.revokeObjectURL(url);
+                              try {
+                                await navigator.clipboard.writeText(total.toString());
+                                alert(`QR Code Saved! The amount to pay (₱${total}) has been copied to your clipboard.`);
+                              } catch(e) {}
                             } catch (err) {
                               console.error('Download failed:', err);
                               window.open(branding[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'], '_blank');

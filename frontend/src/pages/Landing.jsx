@@ -12,6 +12,8 @@ export default function Landing() {
   const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [tenant, setTenant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
   const { user, logoutUser } = useAuth();
   const [searchParams] = useSearchParams();
   const isCustomer = user && user.role === 'customer';
@@ -41,6 +43,15 @@ export default function Landing() {
       return () => leaveRoom('kiosk', tenant.id);
     }
   }, [tenant?.id, connected]);
+
+  // Splash screen auto-dismiss
+  useEffect(() => {
+    if (!loading && tenant) {
+      const fadeTimer = setTimeout(() => setSplashFading(true), 2000);
+      const hideTimer = setTimeout(() => setShowSplash(false), 2800);
+      return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
+    }
+  }, [loading, tenant]);
 
   useEffect(() => {
     const init = async () => {
@@ -152,6 +163,51 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden" style={{ '--primary-custom': primaryColor }}>
+
+      {/* Splash Screen Intro */}
+      {showSplash && (
+        <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black transition-opacity duration-700 ${splashFading ? 'opacity-0' : 'opacity-100'}`}>
+          <style>{`
+            @keyframes splashLogoIn {
+              0% { opacity: 0; transform: scale(0.5); filter: blur(10px); }
+              60% { opacity: 1; transform: scale(1.08); filter: blur(0); }
+              100% { opacity: 1; transform: scale(1); filter: blur(0); }
+            }
+            @keyframes splashGlow {
+              0%, 100% { box-shadow: 0 0 30px rgba(255,255,255,0.1), 0 0 60px rgba(255,255,255,0.05); }
+              50% { box-shadow: 0 0 60px rgba(255,255,255,0.2), 0 0 120px rgba(255,255,255,0.1); }
+            }
+            @keyframes splashTextIn {
+              0% { opacity: 0; transform: translateY(20px); letter-spacing: 0.4em; }
+              100% { opacity: 1; transform: translateY(0); letter-spacing: 0.2em; }
+            }
+            .splash-logo { animation: splashLogoIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards, splashGlow 2s ease-in-out infinite 0.8s; }
+            .splash-text { animation: splashTextIn 0.8s ease-out 0.6s forwards; opacity: 0; }
+            .splash-tagline { animation: splashTextIn 0.8s ease-out 1s forwards; opacity: 0; }
+          `}</style>
+
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full blur-[120px] animate-pulse opacity-20" style={{ backgroundColor: primaryColor }} />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-[120px] animate-pulse opacity-15" style={{ backgroundColor: primaryColor }} />
+
+          <div className="splash-logo w-28 h-28 md:w-40 md:h-40 rounded-[48px] overflow-hidden ring-8 ring-white/10">
+            {tenant?.logo ? (
+              <img src={tenant.logo} className="w-full h-full object-cover" alt={tenant.name} />
+            ) : (
+              <div className="w-full h-full bg-white/10 backdrop-blur-md flex items-center justify-center">
+                {tenant?.slug === 'burger-palace' ? <Utensils className="w-14 h-14 md:w-20 md:h-20 text-white/90" /> : <Coffee className="w-14 h-14 md:w-20 md:h-20 text-white/90" />}
+              </div>
+            )}
+          </div>
+
+          <h2 className="splash-text font-heading text-2xl md:text-4xl font-black text-white uppercase tracking-[0.2em] mt-8">
+            {tenantName}
+          </h2>
+
+          <p className="splash-tagline text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] mt-3" style={{ color: primaryColor }}>
+            Self-Service Kiosk
+          </p>
+        </div>
+      )}
       {/* Background Layer */}
       <div className="fixed inset-0 z-0 bg-black">
         <style>

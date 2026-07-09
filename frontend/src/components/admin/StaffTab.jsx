@@ -189,7 +189,7 @@ export default function StaffTab() {
                     </span>
                   </td>
                   <td className="p-6 text-right">
-                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                    <div className="flex justify-end gap-3 transition-all">
                       {user.active ? (
                         <>
                           {user.role !== 'customer' && (

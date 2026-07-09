@@ -157,8 +157,8 @@ export default function CashierDashboard() {
     if (!paymentData.received) return alert('Please enter the amount received.');
     if (calcResult.isInsufficient) return alert('Insufficient payment amount. The total due is ' + formatCurrency(calcResult.total));
 
-    // Enforce reference number for online payments
-    if ((paymentData.method === 'gcash' || paymentData.method === 'maya') && !paymentData.referenceNumber) {
+    // Enforce reference number for online payments (except for delivery orders where customer provides it)
+    if ((paymentData.method === 'gcash' || paymentData.method === 'maya') && selectedOrder.orderType !== 'delivery' && !paymentData.referenceNumber) {
       return alert(`Please enter the Reference Number (Last 4 Digits) for ${paymentData.method.toUpperCase()} payment.`);
     }
 
@@ -730,7 +730,7 @@ export default function CashierDashboard() {
                             </div>
                           </div>
 
-                          {(paymentData.method === 'gcash' || paymentData.method === 'maya') && (
+                          {(paymentData.method === 'gcash' || paymentData.method === 'maya') && selectedOrder.orderType !== 'delivery' && (
                             <div className="animate-fade-in space-y-4 mt-2">
                               <div className="bg-white p-4 rounded-xl border border-surface-200 shadow-sm">
                                 <label className="block text-xs font-bold text-surface-500 uppercase tracking-wider mb-3 text-center">
