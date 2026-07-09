@@ -83,7 +83,7 @@ function RouteLine({ from, to, storeName, riderLocation }) {
     // Priority: Route from rider to destination, fallback from store to destination
     const origin = riderLocation || from;
     if (!origin || !to) return;
-    
+
     const controller = new AbortController();
     fetch(`https://router.project-osrm.org/route/v1/driving/${origin[1]},${origin[0]};${to[1]},${to[0]}?overview=full&geometries=polyline`, { signal: controller.signal })
       .then(r => r.json())
@@ -91,12 +91,12 @@ function RouteLine({ from, to, storeName, riderLocation }) {
         if (data.routes?.[0]?.geometry) {
           const decoded = decodePolyline(data.routes[0].geometry);
           setRouteCoords(decoded);
-          
+
           // Only auto-fit bounds on the first load or if the rider moves significantly
           // to avoid jumping while the user is zoomed in
           if (!riderLocation) {
-             const bounds = L.latLngBounds(decoded);
-             map.fitBounds(bounds, { padding: [30, 30] });
+            const bounds = L.latLngBounds(decoded);
+            map.fitBounds(bounds, { padding: [30, 30] });
           }
         } else {
           setRouteCoords([origin, to]); // fallback
@@ -329,20 +329,20 @@ export default function OrderConfirmation() {
         // Display native OS notification banner (if permitted)
         import('../utils/helpers').then(({ showSystemNotification, playNotificationSound }) => {
           showSystemNotification('Hometown Brew', `Your order #${orderNumber} has arrived!`, branding?.logoUrl || '/hb_logo.jpg');
-          
+
           // Clear any existing alert loop
           if (window._arrivalLoopInterval) clearInterval(window._arrivalLoopInterval);
-          
+
           // Play initial beep and vibrate
           playNotificationSound('newOrder');
           if ('vibrate' in navigator) navigator.vibrate([500, 200, 500]);
-          
+
           // Start the repeating alert loop (beeps and vibrates every 2 seconds until dismissed)
           window._arrivalLoopInterval = setInterval(() => {
             playNotificationSound('newOrder');
             if ('vibrate' in navigator) navigator.vibrate([500, 200, 500]);
           }, 2000);
-        }).catch(() => {});
+        }).catch(() => { });
       }
     });
 
@@ -545,7 +545,7 @@ export default function OrderConfirmation() {
                   <Link to={tenantSlug ? `/member-portal?tenant=${tenantSlug}&action=register` : '/member-portal?action=register'} className="inline-block px-8 py-3 bg-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-50 transition-all shadow-xl active:scale-95">
                     Create My VIP Account
                   </Link>
-                  <button 
+                  <button
                     onClick={() => setShowInviteBanner(false)}
                     className="inline-block px-8 py-3 bg-slate-800 text-slate-350 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-700 hover:text-white transition-all active:scale-95"
                   >
@@ -612,10 +612,10 @@ export default function OrderConfirmation() {
                 keyboard={false}
               >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                <RouteLine 
-                  from={storeLocation} 
-                  to={deliveryLocation} 
-                  storeName={branding?.name || 'Hometown Brew'} 
+                <RouteLine
+                  from={storeLocation}
+                  to={deliveryLocation}
+                  storeName={branding?.name || 'Hometown Brew'}
                   riderLocation={riderLocation}
                 />
               </MapContainer>
@@ -812,7 +812,7 @@ export default function OrderConfirmation() {
                             await navigator.clipboard.writeText(paymentRequest.amount.toString());
                             setShowQrSuccess(true);
                             setTimeout(() => setShowQrSuccess(false), 3500);
-                          } catch(e) {
+                          } catch (e) {
                             setShowQrSuccess(true);
                             setTimeout(() => setShowQrSuccess(false), 3500);
                           }
@@ -839,7 +839,7 @@ export default function OrderConfirmation() {
                 </div>
                 <h4 className="font-heading font-black text-2xl text-slate-900 mb-2">Saved & Copied!</h4>
                 <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6 max-w-[250px]">
-                  The QR code has been saved to your photo library.<br/>
+                  The QR code has been saved to your photo library.<br />
                   The amount to pay (<strong className="text-slate-900">₱{paymentRequest.amount}</strong>) is copied to your clipboard!
                 </p>
                 <button
@@ -932,9 +932,6 @@ export default function OrderConfirmation() {
       {showArrivalOverlay && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-md animate-fade-in">
           <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-10 sm:p-12 text-center relative pointer-events-auto">
-            <div className="absolute top-0 left-0 w-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2">
-              Hometown Brew • App Notification
-            </div>
             <div className="text-center mt-6">
               <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Your order has arrived</h3>
               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 px-2">
