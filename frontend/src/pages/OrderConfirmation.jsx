@@ -336,6 +336,13 @@ export default function OrderConfirmation() {
         } catch (err) {
           console.warn('Audio play failed:', err);
         }
+        
+        // Auto-close the overlay so the customer doesn't have to press it manually,
+        // which prevents it from getting stuck for the next notification.
+        if (window._arrivalTimeout) clearTimeout(window._arrivalTimeout);
+        window._arrivalTimeout = setTimeout(() => {
+          setShowArrivalOverlay(false);
+        }, 10000);
       }
     });
 

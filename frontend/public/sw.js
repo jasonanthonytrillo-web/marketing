@@ -50,7 +50,7 @@ self.addEventListener('fetch', (event) => {
       .catch(async () => {
         const cachedResponse = await caches.match(event.request);
         if (cachedResponse) return cachedResponse;
-        
+
         // If not in cache and network failed, we must return a valid Response (e.g. 404)
         return new Response('Network error occurred', {
           status: 408,
@@ -62,7 +62,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Push Notification Event
-self.addEventListener('push', function(event) {
+self.addEventListener('push', function (event) {
   const data = event.data ? event.data.json() : {};
   const title = data.title || 'New Update';
   const options = {
@@ -76,7 +76,7 @@ self.addEventListener('push', function(event) {
 });
 
 // Notification Click Event
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', function (event) {
   event.notification.close();
   if (event.notification.data) {
     event.waitUntil(
