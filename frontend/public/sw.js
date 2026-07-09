@@ -76,12 +76,24 @@ self.addEventListener('push', function (event) {
 });
 
 // Notification Click Event
-self.addEventListener('notificationclick', function (event) {
+self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  if (event.notification.data) {
-    event.waitUntil(
-      clients.openWindow(event.notification.data)
-    );
-  }
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
+      // Focus the exact same app session if it is running in background
+      if (windowClients.length > 0) {
+        let client = windowClients[0];
+        // If there's a specific window that was focused recently, focus that
+        for (let i = 0; i < windowClients.length; i++) {
+          if (windowClients[i].focused) {
+            client = windowClients[i];
+            break;
+          }
+        }
+        return client.focus();
+      }
+      // Otherwise open the app from scratch
+      return clients.openWindow('/');
+    })
+  );
 });
-
