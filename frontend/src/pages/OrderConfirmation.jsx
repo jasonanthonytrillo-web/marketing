@@ -165,6 +165,7 @@ export default function OrderConfirmation() {
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [showArrivalOverlay, setShowArrivalOverlay] = useState(false);
   const [riderLocation, setRiderLocation] = useState(null);
+  const [showInviteBanner, setShowInviteBanner] = useState(true);
 
   useEffect(() => {
     clearCart();
@@ -465,7 +466,7 @@ export default function OrderConfirmation() {
           </div>
         )}
 
-        {!order.customerId && !isCancelled && !isCompleted && !isReady && (
+        {!order.customerId && !isCancelled && !isCompleted && !isReady && showInviteBanner && (
           <div className="bg-slate-900 rounded-[2rem] p-6 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary-500/30 transition-all duration-500"></div>
             <div className="relative z-10 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
@@ -473,9 +474,17 @@ export default function OrderConfirmation() {
               <div className="flex-1">
                 <h4 className="text-lg font-black text-white mb-1 tracking-tight">Save this meal to your story!</h4>
                 <p className="text-slate-300 text-[11px] leading-relaxed mb-4">Sign up now to start your Personal Timeline and earn <span className="text-amber-400 font-black">{Math.floor(order.total / (branding?.points_rate || 100))} points</span> on this order.</p>
-                <Link to={tenantSlug ? `/member-portal?tenant=${tenantSlug}&action=register` : '/member-portal?action=register'} className="inline-block px-8 py-3 bg-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-50 transition-all shadow-xl active:scale-95">
-                  Create My VIP Account
-                </Link>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                  <Link to={tenantSlug ? `/member-portal?tenant=${tenantSlug}&action=register` : '/member-portal?action=register'} className="inline-block px-8 py-3 bg-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-primary-50 transition-all shadow-xl active:scale-95">
+                    Create My VIP Account
+                  </Link>
+                  <button 
+                    onClick={() => setShowInviteBanner(false)}
+                    className="inline-block px-8 py-3 bg-slate-800 text-slate-350 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-700 hover:text-white transition-all active:scale-95"
+                  >
+                    Maybe Later
+                  </button>
+                </div>
               </div>
             </div>
           </div>
