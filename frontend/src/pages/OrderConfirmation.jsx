@@ -326,15 +326,18 @@ export default function OrderConfirmation() {
     const unsub3 = onEvent('rider_arrived', (data) => {
       if (data.orderNumber === orderNumber) {
         setShowArrivalOverlay(true);
-        // Play notification sound
+        // Announce arrival via text-to-speech voice
         try {
-          if (!window._arrivalAudio) {
-            window._arrivalAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          if ('speechSynthesis' in window) {
+            // Cancel any ongoing speech so it doesn't queue up behind old ones if spammed
+            window.speechSynthesis.cancel();
+            const announcement = new SpeechSynthesisUtterance('Your order has arrived');
+            announcement.rate = 1.0;
+            announcement.pitch = 1.1;
+            window.speechSynthesis.speak(announcement);
           }
-          window._arrivalAudio.currentTime = 0;
-          window._arrivalAudio.play().catch(e => console.warn('Audio play failed:', e));
         } catch (err) {
-          console.warn('Audio play failed:', err);
+          console.warn('Voice announcement failed:', err);
         }
       }
     });
