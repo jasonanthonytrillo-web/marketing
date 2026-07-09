@@ -327,29 +327,22 @@ export default function OrderConfirmation() {
       if (data.orderNumber === orderNumber) {
         setShowArrivalOverlay(true);
         // Display native OS notification banner (if permitted)
-        import('../utils/helpers').then(({ showSystemNotification }) => {
-          showSystemNotification('Hometown Brew', `Your order #${orderNumber} has arrived!`);
-        }).catch(() => {});
-        
-        // Play notification sound and vibrate
-        try {
-          if (!window._arrivalAudio) {
-            window._arrivalAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-          }
-          window._arrivalAudio.loop = true; // Loop indefinitely until dismissed
-          window._arrivalAudio.currentTime = 0;
-          window._arrivalAudio.play().catch(e => console.warn('Audio play failed:', e));
+        import('../utils/helpers').then(({ showSystemNotification, playNotificationSound }) => {
+          showSystemNotification('Hometown Brew', `Your order #${orderNumber} has arrived!`, branding?.logoUrl || '/ELEVATEPOS_App_Icon.png');
           
-          if ('vibrate' in navigator) { // Start a repeating foreground vibration
-            if (window._vibrateInterval) clearInterval(window._vibrateInterval);
-            navigator.vibrate([500, 200, 500]); // initial burst
-            window._vibrateInterval = setInterval(() => {
-              navigator.vibrate([500, 200, 500]);
-            }, 1000);
-          }
-        } catch (err) {
-          console.warn('Audio play failed:', err);
-        }
+          // Clear any existing alert loop
+          if (window._arrivalLoopInterval) clearInterval(window._arrivalLoopInterval);
+          
+          // Play initial beep and vibrate
+          playNotificationSound('newOrder');
+          if ('vibrate' in navigator) navigator.vibrate([500, 200, 500]);
+          
+          // Start the repeating alert loop (beeps and vibrates every 2 seconds until dismissed)
+          window._arrivalLoopInterval = setInterval(() => {
+            playNotificationSound('newOrder');
+            if ('vibrate' in navigator) navigator.vibrate([500, 200, 500]);
+          }, 2000);
+        }).catch(() => {});
       }
     });
 
@@ -951,12 +944,8 @@ export default function OrderConfirmation() {
               <button
                 onClick={() => {
                   setShowArrivalOverlay(false);
-                  if (window._arrivalAudio) {
-                    window._arrivalAudio.pause();
-                    window._arrivalAudio.currentTime = 0;
-                  }
-                  if (window._vibrateInterval) {
-                    clearInterval(window._vibrateInterval);
+                  if (window._arrivalLoopInterval) {
+                    clearInterval(window._arrivalLoopInterval);
                   }
                   if ('vibrate' in navigator) {
                     navigator.vibrate(0);
