@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
-import { Bell, BellOff, ChefHat, LogOut, UtensilsCrossed, PackageOpen, Gift, AlertTriangle, MapPin } from 'lucide-react';
+import { Bell, BellOff, ChefHat, LogOut, UtensilsCrossed, PackageOpen, Gift, AlertTriangle, MapPin, CheckCircle } from 'lucide-react';
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState([]);
