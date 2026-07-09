@@ -326,7 +326,12 @@ export default function OrderConfirmation() {
     const unsub3 = onEvent('rider_arrived', (data) => {
       if (data.orderNumber === orderNumber) {
         setShowArrivalOverlay(true);
-        // Play notification sound
+        // Display native OS notification banner (if permitted)
+        import('../utils/helpers').then(({ showSystemNotification }) => {
+          showSystemNotification('Hometown Brew', `Your order #${orderNumber} has arrived!`);
+        }).catch(() => {});
+        
+        // Play notification sound and vibrate
         try {
           if (!window._arrivalAudio) {
             window._arrivalAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
@@ -334,6 +339,14 @@ export default function OrderConfirmation() {
           window._arrivalAudio.loop = true; // Loop indefinitely until dismissed
           window._arrivalAudio.currentTime = 0;
           window._arrivalAudio.play().catch(e => console.warn('Audio play failed:', e));
+          
+          if ('vibrate' in navigator) { // Start a repeating foreground vibration
+            if (window._vibrateInterval) clearInterval(window._vibrateInterval);
+            navigator.vibrate([500, 200, 500]); // initial burst
+            window._vibrateInterval = setInterval(() => {
+              navigator.vibrate([500, 200, 500]);
+            }, 1000);
+          }
         } catch (err) {
           console.warn('Audio play failed:', err);
         }
@@ -924,9 +937,12 @@ export default function OrderConfirmation() {
       )}
       {/* Rider Arrival Overlay */}
       {showArrivalOverlay && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-fade-in">
-          <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-10 sm:p-12 text-center relative">
-            <div className="text-center">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-10 sm:p-12 text-center relative pointer-events-auto">
+            <div className="absolute top-0 left-0 w-full bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2">
+              Hometown Brew • App Notification
+            </div>
+            <div className="text-center mt-6">
               <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Your order has arrived</h3>
               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 px-2">
                 Your rider is now at your location. Please prepare to receive your order <span className="font-black text-slate-900">#{orderNumber.includes('-') ? orderNumber.split('-')[1] : orderNumber}</span>.
@@ -938,6 +954,12 @@ export default function OrderConfirmation() {
                   if (window._arrivalAudio) {
                     window._arrivalAudio.pause();
                     window._arrivalAudio.currentTime = 0;
+                  }
+                  if (window._vibrateInterval) {
+                    clearInterval(window._vibrateInterval);
+                  }
+                  if ('vibrate' in navigator) {
+                    navigator.vibrate(0);
                   }
                 }}
                 className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 active:scale-95 transition-all uppercase tracking-widest text-xs"
