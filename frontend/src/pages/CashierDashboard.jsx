@@ -864,13 +864,13 @@ export default function CashierDashboard() {
                                 : 'btn-primary'
                               }`}
                             >
-                              {processing 
+                            {processing 
                                 ? 'Processing...' 
                                 : !paymentData.received 
                                   ? 'Enter Amount' 
                                   : calcResult?.isInsufficient 
                                     ? 'Insufficient' 
-                                    : (paymentData.method === 'gcash' || paymentData.method === 'maya') && paymentData.referenceNumber.length < 4
+                                    : (paymentData.method === 'gcash' || paymentData.method === 'maya') && selectedOrder.orderType !== 'delivery' && paymentData.referenceNumber.length < 4
                                       ? 'Enter Ref ID'
                                       : 'Confirm Payment'}
                             </button>
