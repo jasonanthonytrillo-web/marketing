@@ -41,6 +41,25 @@ router.get('/active', authenticate, authorize('rider', 'admin'), async (req, res
   }
 });
 
+// GET /api/rider/history — Get orders completed by this rider
+router.get('/history', authenticate, authorize('rider', 'admin'), async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        tenantId: req.tenantId,
+        orderType: 'delivery',
+        status: 'completed',
+        riderId: req.user.id
+      },
+      include: { items: true },
+      orderBy: { updatedAt: 'desc' } // show recently completed first
+    });
+    res.json({ success: true, data: orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load delivery history.' });
+  }
+});
+
 // POST /api/rider/orders/:id/pickup — Assign and dispatch
 router.post('/orders/:id/pickup', authenticate, authorize('rider', 'admin'), async (req, res) => {
   try {

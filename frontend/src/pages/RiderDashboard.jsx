@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import {
   getAvailableRiderOrders,
   getActiveRiderOrders,
+  getHistoryRiderOrders,
   pickupOrder,
   deliverOrder,
   notifyArrival,
@@ -145,7 +146,7 @@ function RiderNavMap({ riderPos, customerPos, storePos, followMode }) {
 export default function RiderDashboard() {
   const { user, logoutUser } = useAuth();
   const { onEvent } = useSocket();
-  const [activeTab, setActiveTab] = useState('available'); // available | active
+  const [activeTab, setActiveTab] = useState('available'); // available | active | history
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [branding, setBranding] = useState(null);
@@ -164,9 +165,14 @@ export default function RiderDashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = activeTab === 'available'
-        ? await getAvailableRiderOrders()
-        : await getActiveRiderOrders();
+      let res;
+      if (activeTab === 'available') {
+        res = await getAvailableRiderOrders();
+      } else if (activeTab === 'active') {
+        res = await getActiveRiderOrders();
+      } else {
+        res = await getHistoryRiderOrders();
+      }
       const data = res.data.data;
       setOrders(data);
 
@@ -361,6 +367,13 @@ export default function RiderDashboard() {
             <Truck className="w-4 h-4" />
             My Tasks
           </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeTab === 'history' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            <Clock className="w-4 h-4" />
+            History
+          </button>
         </div>
       </div>
 
@@ -389,11 +402,11 @@ export default function RiderDashboard() {
         ) : orders.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              {activeTab === 'available' ? <Package className="w-8 h-8 text-slate-400" /> : <CheckCircle className="w-8 h-8 text-slate-400" />}
+              {activeTab === 'available' ? <Package className="w-8 h-8 text-slate-400" /> : activeTab === 'history' ? <Clock className="w-8 h-8 text-slate-400" /> : <CheckCircle className="w-8 h-8 text-slate-400" />}
             </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-1">{activeTab === 'available' ? 'No orders ready' : 'No active deliveries'}</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-1">{activeTab === 'available' ? 'No orders ready' : activeTab === 'history' ? 'No history yet' : 'No active deliveries'}</h3>
             <p className="text-slate-500 text-xs px-10">
-              {activeTab === 'available' ? "Sit tight! New delivery orders will appear here once the kitchen marks them as ready." : "You don't have any orders in progress. Go to the available tab to pick up a delivery."}
+              {activeTab === 'available' ? "Sit tight! New delivery orders will appear here once the kitchen marks them as ready." : activeTab === 'history' ? "Deliveries you complete will appear here." : "You don't have any orders in progress. Go to the available tab to pick up a delivery."}
             </p>
           </div>
         ) : (
@@ -468,7 +481,8 @@ export default function RiderDashboard() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col gap-3">
+                    {activeTab !== 'history' && (
+                      <div className="flex flex-col gap-3 mt-4">
                       {activeTab === 'available' ? (
                         <button
                           onClick={() => handlePickup(order.id)}
@@ -483,7 +497,7 @@ export default function RiderDashboard() {
                             const notifiedAt = lastNotified[order.id];
                             const diff = notifiedAt ? now - notifiedAt : Infinity;
                             const isCooldown = diff < 60000;
-                            const secondsLeft = Math.ceil((60000 - diff) / 1000);
+                            const secondsLeft = Math.ceil((20000 - diff) / 1000);
 
                             return (
                               <button
@@ -498,7 +512,7 @@ export default function RiderDashboard() {
                                 {notifyingArrival[order.id]
                                   ? 'Notifying...'
                                   : isCooldown
-                                    ? `Nudge in ${secondsLeft}s`
+                                    ? `Notify in ${secondsLeft}s`
                                     : notifiedAt
                                       ? 'Notify Customer'
                                       : "I've Arrived"}
@@ -536,7 +550,8 @@ export default function RiderDashboard() {
                           </button>
                         </>
                       )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
