@@ -496,8 +496,8 @@ export default function RiderDashboard() {
                           {(() => {
                             const notifiedAt = lastNotified[order.id];
                             const diff = notifiedAt ? now - notifiedAt : Infinity;
-                            const isCooldown = diff < 60000;
-                            const secondsLeft = Math.ceil((20000 - diff) / 1000);
+                            const isCooldown = diff < 15000;
+                            const secondsLeft = Math.ceil((15000 - diff) / 1000);
 
                             return (
                               <button

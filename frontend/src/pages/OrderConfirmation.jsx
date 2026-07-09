@@ -328,8 +328,11 @@ export default function OrderConfirmation() {
         setShowArrivalOverlay(true);
         // Play notification sound
         try {
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-          audio.play();
+          if (!window._arrivalAudio) {
+            window._arrivalAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+          }
+          window._arrivalAudio.currentTime = 0;
+          window._arrivalAudio.play().catch(e => console.warn('Audio play failed:', e));
         } catch (err) {
           console.warn('Audio play failed:', err);
         }
@@ -923,7 +926,7 @@ export default function OrderConfirmation() {
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-fade-in">
           <div className="bg-white w-full max-w-lg rounded-[3rem] shadow-2xl overflow-hidden animate-scale-in border border-white/20 p-10 sm:p-12 text-center relative">
             <div className="text-center">
-              <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Rider Arrived!</h3>
+              <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Your order has arrived</h3>
               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 px-2">
                 Your rider is now at your location. Please prepare to receive your order <span className="font-black text-slate-900">#{orderNumber.includes('-') ? orderNumber.split('-')[1] : orderNumber}</span>.
               </p>

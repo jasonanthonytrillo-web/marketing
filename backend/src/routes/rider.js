@@ -151,7 +151,7 @@ router.post('/orders/:id/notify-arrival', authenticate, authorize('rider', 'admi
 
     // Send native push notification
     await sendPushToOrder(orderId, {
-      title: 'Rider Arrived!',
+      title: 'Your order has arrived',
       body: `Your delivery rider has arrived with order #${order.orderNumber}!`,
       url: `/track/${order.orderNumber}`
     });
