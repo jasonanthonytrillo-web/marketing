@@ -90,9 +90,17 @@ export default function CashierDashboard() {
   const loadOrders = async () => {
     try {
       const res = await getCashierOrders();
-      setOrders(res.data.data);
+      
+      // Clear completed/cancelled orders from previous days (midnight reset)
+      const today = new Date().setHours(0,0,0,0);
+      const filteredOrders = res.data.data.filter(o => {
+        if (o.status !== 'completed' && o.status !== 'cancelled') return true;
+        return new Date(o.createdAt).setHours(0,0,0,0) === today || new Date(o.updatedAt).setHours(0,0,0,0) === today;
+      });
+
+      setOrders(filteredOrders);
       if (selectedOrder) {
-        const updated = res.data.data.find(o => o.id === selectedOrder.id);
+        const updated = filteredOrders.find(o => o.id === selectedOrder.id);
         if (updated) setSelectedOrder(updated);
         else setSelectedOrder(null);
       }
