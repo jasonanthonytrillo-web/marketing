@@ -349,12 +349,16 @@ export default function Checkout() {
               })}
             </div>
 
-            {paymentMethod !== 'cash' && (
+            {paymentMethod !== 'cash' && orderType === 'delivery' && (
               <div className="mt-5 pt-5 border-t border-surface-100 animate-fade-in space-y-4">
                 {/* Auto-display QR Code */}
                 {(paymentMethod === 'gcash' || paymentMethod === 'maya') && (
                   <div className="bg-surface-50 rounded-2xl p-4 border-2 border-dashed border-surface-200 flex flex-col items-center gap-4 animate-fade-in shadow-inner">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">Scan or Save to Pay</p>
+                    <div className="text-center">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-surface-500 mb-1">Total Amount Payable</p>
+                      <p className="font-heading text-2xl font-black bg-white px-4 py-1.5 rounded-xl border border-surface-200 shadow-sm" style={{ color: brandingColor }}>{formatCurrency(total)}</p>
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 mt-2">Scan or Save to Pay</p>
                     {branding?.[paymentMethod === 'gcash' ? 'gcashQr' : 'mayaQr'] ? (
                       <div className="flex flex-col items-center gap-4 w-full">
                         <div className="relative group">

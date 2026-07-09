@@ -41,7 +41,7 @@ async function main() {
       },
       create: {
         email: adminEmail,
-        name: 'Project Million Admin',
+        name: 'Hometown Brew Admin',
         password: hashedPassword,
         role: 'admin',
         tenantId: tenant.id,

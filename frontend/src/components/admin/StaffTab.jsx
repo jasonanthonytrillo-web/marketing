@@ -111,7 +111,7 @@ export default function StaffTab() {
           <h2 className="font-heading text-3xl font-black text-slate-900 tracking-tight">User Management</h2>
           <p className="text-slate-500 font-medium">Manage your team and loyalty members.</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowModal(true)}
           className="bg-primary-600 hover:bg-primary-500 text-white font-bold px-6 py-3 rounded-2xl shadow-lg shadow-primary-500/20 transition-all flex items-center gap-2"
         >
@@ -120,13 +120,13 @@ export default function StaffTab() {
       </div>
 
       <div className="flex gap-2 mb-6 bg-slate-100 p-1 rounded-2xl w-fit">
-        <button 
+        <button
           onClick={() => setFilter('staff')}
           className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${filter === 'staff' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
         >
           Staff Members
         </button>
-        <button 
+        <button
           onClick={() => setFilter('customer')}
           className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${filter === 'customer' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
         >
@@ -164,8 +164,8 @@ export default function StaffTab() {
                     {user.role === 'customer' ? (
                       <span className="badge bg-emerald-50 text-emerald-600 border border-emerald-100">Customer</span>
                     ) : (
-                      <select 
-                        value={user.role} 
+                      <select
+                        value={user.role}
                         onChange={e => handleRoleChange(user, e.target.value)}
                         className="bg-transparent border-none font-bold text-slate-600 focus:ring-0 cursor-pointer hover:text-primary-600 transition-colors"
                       >
@@ -193,7 +193,7 @@ export default function StaffTab() {
                       {user.active ? (
                         <>
                           {user.role !== 'customer' && (
-                            <button 
+                            <button
                               onClick={() => handleEditClick(user)}
                               className="text-primary-500 hover:text-primary-700 font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider"
                             >
@@ -201,17 +201,17 @@ export default function StaffTab() {
                             </button>
                           )}
                           {user.role !== 'admin' && (
-                            <button 
-                              onClick={() => handleDeactivate(user)} 
+                            <button
+                              onClick={() => handleDeactivate(user)}
                               className="text-red-400 hover:text-red-600 font-bold text-[11px] uppercase tracking-wider"
                             >
-                              {user.role === 'customer' ? 'Ban' : 'Deactivate'}
+                              {user.role === 'customer' ? 'Restrict' : 'Deactivate'}
                             </button>
                           )}
                         </>
                       ) : (
-                        <button 
-                          onClick={() => handleRestore(user)} 
+                        <button
+                          onClick={() => handleRestore(user)}
                           className="text-emerald-500 hover:text-emerald-700 font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider"
                         >
                           <RotateCcw className="w-3 h-3" /> Restore
@@ -243,41 +243,41 @@ export default function StaffTab() {
                 <h3 className="text-2xl font-black text-slate-900">Add New User</h3>
                 <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 flex items-center justify-center"><X className="w-6 h-6" /></button>
               </div>
-              
+
               <form onSubmit={handleCreate} className="space-y-5">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
-                  <input 
+                  <input
                     type="text" required
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
                     value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Email Address</label>
-                  <input 
+                  <input
                     type="email" required
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
                     value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Temporary Password</label>
-                  <input 
+                  <input
                     type="password" required
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
                     value={formData.password}
-                    onChange={e => setFormData({...formData, password: e.target.value})}
+                    onChange={e => setFormData({ ...formData, password: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">System Role</label>
-                  <select 
+                  <select
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all appearance-none"
                     value={formData.role}
-                    onChange={e => setFormData({...formData, role: e.target.value})}
+                    onChange={e => setFormData({ ...formData, role: e.target.value })}
                   >
                     <option value="cashier">Cashier</option>
                     <option value="kitchen">Kitchen Staff</option>
@@ -287,8 +287,8 @@ export default function StaffTab() {
                   </select>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={saving}
                   className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-slate-800 transition-all uppercase tracking-widest mt-4 disabled:opacity-50"
                 >
@@ -309,43 +309,43 @@ export default function StaffTab() {
                 <h3 className="text-2xl font-black text-slate-900">Edit Staff Member</h3>
                 <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600 flex items-center justify-center"><X className="w-6 h-6" /></button>
               </div>
-              
+
               <form onSubmit={handleUpdateUser} className="space-y-5">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
-                  <input 
+                  <input
                     type="text" required
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
                     value={editFormData.name}
-                    onChange={e => setEditFormData({...editFormData, name: e.target.value})}
+                    onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Email Address</label>
-                  <input 
+                  <input
                     type="email" required
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
                     value={editFormData.email}
-                    onChange={e => setEditFormData({...editFormData, email: e.target.value})}
+                    onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">New Password (Optional)</label>
-                  <input 
+                  <input
                     type="password"
                     placeholder="Leave blank to keep current password"
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
                     value={editFormData.password}
-                    onChange={e => setEditFormData({...editFormData, password: e.target.value})}
+                    onChange={e => setEditFormData({ ...editFormData, password: e.target.value })}
                   />
                   <p className="px-1 mt-1 text-[10px] text-slate-400 font-medium">Only fill this if you want to change their password.</p>
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">System Role</label>
-                  <select 
+                  <select
                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all appearance-none"
                     value={editFormData.role}
-                    onChange={e => setEditFormData({...editFormData, role: e.target.value})}
+                    onChange={e => setEditFormData({ ...editFormData, role: e.target.value })}
                   >
                     <option value="admin">System Admin</option>
                     <option value="cashier">Cashier</option>
@@ -354,8 +354,8 @@ export default function StaffTab() {
                   </select>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={updating}
                   className="w-full bg-primary-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-500 transition-all uppercase tracking-widest mt-4 disabled:opacity-50"
                 >

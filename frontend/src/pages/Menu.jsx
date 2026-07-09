@@ -569,18 +569,10 @@ export default function Menu() {
 
             {/* Modal Header Image */}
             <div className="w-full h-64 sm:h-72 md:h-80 bg-surface-50 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
-              {/* Premium Blurred Background */}
-              <div className="absolute inset-0 overflow-hidden">
-                <img
-                  src={(selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
-                  className="w-full h-full object-cover blur-2xl scale-110 opacity-30 select-none pointer-events-none"
-                  alt=""
-                />
-              </div>
-
               <img
                 src={(selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
-                className="w-full h-full object-contain p-4 relative z-10 transition-all duration-700"
+                className="w-full h-full object-cover relative z-10 transition-all duration-700"
+                alt={selectedProduct.name}
               />
               {/* Back Button for Combo Step 2 */}
               {selectedProduct.isCombo && comboStep > 1 && (

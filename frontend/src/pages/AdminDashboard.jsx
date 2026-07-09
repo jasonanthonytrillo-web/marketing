@@ -160,12 +160,12 @@ export default function AdminDashboard() {
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-surface-900">{user?.name === 'Project Million Admin' ? 'Hometown Brew Admin' : user?.name}</p>
+              <p className="text-sm font-bold text-surface-900">{user?.name}</p>
               <p className="text-[10px] font-bold text-surface-400 uppercase">{user?.role}</p>
             </div>
             <div className="flex items-center gap-2 border-l border-surface-200 pl-2 sm:pl-4">
               <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-primary-500/20">
-                {(user?.name === 'Project Million Admin' ? 'H' : user?.name?.charAt(0))}
+                {user?.name?.charAt(0) || 'H'}
               </div>
               <button onClick={logoutUser} className="md:hidden p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center">
                 <LogOut className="w-5 h-5" />
