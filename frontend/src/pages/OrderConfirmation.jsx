@@ -331,18 +331,12 @@ export default function OrderConfirmation() {
           if (!window._arrivalAudio) {
             window._arrivalAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
           }
+          window._arrivalAudio.loop = true; // Loop indefinitely until dismissed
           window._arrivalAudio.currentTime = 0;
           window._arrivalAudio.play().catch(e => console.warn('Audio play failed:', e));
         } catch (err) {
           console.warn('Audio play failed:', err);
         }
-        
-        // Auto-close the overlay so the customer doesn't have to press it manually,
-        // which prevents it from getting stuck for the next notification.
-        if (window._arrivalTimeout) clearTimeout(window._arrivalTimeout);
-        window._arrivalTimeout = setTimeout(() => {
-          setShowArrivalOverlay(false);
-        }, 10000);
       }
     });
 
@@ -939,7 +933,13 @@ export default function OrderConfirmation() {
               </p>
 
               <button
-                onClick={() => setShowArrivalOverlay(false)}
+                onClick={() => {
+                  setShowArrivalOverlay(false);
+                  if (window._arrivalAudio) {
+                    window._arrivalAudio.pause();
+                    window._arrivalAudio.currentTime = 0;
+                  }
+                }}
                 className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl shadow-slate-900/20 active:scale-95 transition-all uppercase tracking-widest text-xs"
               >
                 Okay, I'm going!
