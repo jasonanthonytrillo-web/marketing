@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getStaff, updateStaff, deleteStaff, createStaff } from '../../services/api';
-import { Plus, User, Wrench, Gem, Users, X } from 'lucide-react';
+import { Plus, User, Wrench, Gem, Users, X, Edit2, RotateCcw } from 'lucide-react';
 
 export default function StaffTab() {
   const [users, setUsers] = useState([]);
@@ -9,6 +9,9 @@ export default function StaffTab() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'cashier' });
   const [saving, setSaving] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({ name: '', email: '', password: '', role: '' });
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -58,6 +61,39 @@ export default function StaffTab() {
       loadData();
     } catch (error) {
       alert('Failed to deactivate');
+    }
+  };
+
+  const handleEditClick = (user) => {
+    setEditingUser(user);
+    setEditFormData({ name: user.name, email: user.email, password: '', role: user.role });
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setUpdating(true);
+    try {
+      const payload = { name: editFormData.name, email: editFormData.email, role: editFormData.role };
+      if (editFormData.password) {
+        payload.password = editFormData.password;
+      }
+      await updateStaff(editingUser.id, payload);
+      setEditingUser(null);
+      loadData();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update user');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRestore = async (user) => {
+    if (!confirm(`Restore access for ${user.name}?`)) return;
+    try {
+      await updateStaff(user.id, { active: true });
+      loadData();
+    } catch (error) {
+      alert('Failed to restore');
     }
   };
 
@@ -153,14 +189,35 @@ export default function StaffTab() {
                     </span>
                   </td>
                   <td className="p-6 text-right">
-                    {user.active && user.role !== 'admin' && (
-                      <button 
-                        onClick={() => handleDeactivate(user)} 
-                        className="text-red-400 hover:text-red-600 font-bold text-xs opacity-0 group-hover:opacity-100 transition-all"
-                      >
-                        Deactivate
-                      </button>
-                    )}
+                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                      {user.active ? (
+                        <>
+                          {user.role !== 'customer' && (
+                            <button 
+                              onClick={() => handleEditClick(user)}
+                              className="text-primary-500 hover:text-primary-700 font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider"
+                            >
+                              <Edit2 className="w-3 h-3" /> Edit
+                            </button>
+                          )}
+                          {user.role !== 'admin' && (
+                            <button 
+                              onClick={() => handleDeactivate(user)} 
+                              className="text-red-400 hover:text-red-600 font-bold text-[11px] uppercase tracking-wider"
+                            >
+                              {user.role === 'customer' ? 'Ban' : 'Deactivate'}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <button 
+                          onClick={() => handleRestore(user)} 
+                          className="text-emerald-500 hover:text-emerald-700 font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Restore
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -236,6 +293,73 @@ export default function StaffTab() {
                   className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-slate-800 transition-all uppercase tracking-widest mt-4 disabled:opacity-50"
                 >
                   {saving ? 'Creating...' : 'Create Account'}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-bounce-in" onClick={e => e.stopPropagation()}>
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-black text-slate-900">Edit Staff Member</h3>
+                <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-slate-600 flex items-center justify-center"><X className="w-6 h-6" /></button>
+              </div>
+              
+              <form onSubmit={handleUpdateUser} className="space-y-5">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
+                  <input 
+                    type="text" required
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
+                    value={editFormData.name}
+                    onChange={e => setEditFormData({...editFormData, name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Email Address</label>
+                  <input 
+                    type="email" required
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
+                    value={editFormData.email}
+                    onChange={e => setEditFormData({...editFormData, email: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">New Password (Optional)</label>
+                  <input 
+                    type="password"
+                    placeholder="Leave blank to keep current password"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all"
+                    value={editFormData.password}
+                    onChange={e => setEditFormData({...editFormData, password: e.target.value})}
+                  />
+                  <p className="px-1 mt-1 text-[10px] text-slate-400 font-medium">Only fill this if you want to change their password.</p>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">System Role</label>
+                  <select 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm focus:border-primary-500 outline-none transition-all appearance-none"
+                    value={editFormData.role}
+                    onChange={e => setEditFormData({...editFormData, role: e.target.value})}
+                  >
+                    <option value="admin">System Admin</option>
+                    <option value="cashier">Cashier</option>
+                    <option value="kitchen">Kitchen Staff</option>
+                    <option value="rider">Delivery Rider</option>
+                  </select>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={updating}
+                  className="w-full bg-primary-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-500 transition-all uppercase tracking-widest mt-4 disabled:opacity-50"
+                >
+                  {updating ? 'Saving Changes...' : 'Save Changes'}
                 </button>
               </form>
             </div>

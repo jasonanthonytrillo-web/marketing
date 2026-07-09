@@ -272,6 +272,9 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
 
     if (!user.active) {
+      if (user.role === 'customer') {
+        return res.status(401).json({ success: false, message: 'Your account was banned. Please talk to the staff to restore it.' });
+      }
       return res.status(401).json({ success: false, message: 'Account is deactivated.' });
     }
 
@@ -388,6 +391,9 @@ router.post('/google', async (req, res) => {
     }
 
     if (!user.active) {
+      if (user.role === 'customer') {
+        return res.status(401).json({ success: false, message: 'Your account was banned. Please talk to the staff to restore it.' });
+      }
       return res.status(401).json({ success: false, message: 'Account is deactivated.' });
     }
 
