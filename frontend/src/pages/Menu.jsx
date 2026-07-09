@@ -568,19 +568,10 @@ export default function Menu() {
           <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
 
             {/* Modal Header Image */}
-            <div className="w-full h-64 sm:h-72 md:h-80 bg-surface-50 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
-              {/* Premium Blurred Background */}
-              <div className="absolute inset-0 overflow-hidden">
-                <img
-                  src={(selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
-                  className="w-full h-full object-cover blur-2xl scale-110 opacity-30 select-none pointer-events-none"
-                  alt=""
-                />
-              </div>
-
+            <div className="h-40 md:h-56 bg-surface-100 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
               <img
                 src={(selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
-                className="w-full h-full object-contain p-4 relative z-10 transition-all duration-700"
+                className="w-full h-full object-cover transition-all duration-700"
               />
               {/* Back Button for Combo Step 2 */}
               {selectedProduct.isCombo && comboStep > 1 && (
@@ -598,13 +589,12 @@ export default function Menu() {
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
+                <h2 className="font-heading text-xl md:text-2xl font-bold text-white">{selectedProduct.name}</h2>
+              </div>
             </div>
 
             <div className="p-6 overflow-y-auto flex-1 scrollbar-hide">
-              {/* Product Title */}
-              <h2 className="font-heading text-2xl md:text-3xl font-black text-surface-900 mb-2 leading-tight" style={{ color: brandingColor }}>
-                {selectedProduct.name}
-              </h2>
               {/* Full-Sized Badges in Details Panel */}
               {selectedProduct.tags && (
                 <div className="flex flex-wrap gap-2 mb-4">
@@ -757,13 +747,12 @@ export default function Menu() {
                               type="button"
                               disabled={isDisabled}
                               onClick={() => setAddOpts(prev => ({ ...prev, size: sizeItem.name }))}
-                              className={`px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
-                                isDisabled
+                              className={`px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${isDisabled
                                   ? 'bg-surface-100 border-surface-200 text-surface-300 cursor-not-allowed line-through opacity-60'
                                   : isActive
                                     ? 'border-transparent text-white shadow-md'
                                     : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-surface-400'
-                              }`}
+                                }`}
                               style={isActive && !isDisabled ? { backgroundColor: brandingColor } : {}}
                             >
                               {sizeItem.name}
@@ -914,8 +903,8 @@ export default function Menu() {
                             setShowRewards(false);
                           }}
                           className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all hover:scale-[1.02] active:scale-[0.98] ${canAfford && !branding?.storeClosed
-                              ? 'text-white shadow-lg'
-                              : 'bg-slate-100 text-slate-400 border border-slate-200'
+                            ? 'text-white shadow-lg'
+                            : 'bg-slate-100 text-slate-400 border border-slate-200'
                             }`}
                           style={canAfford && !branding?.storeClosed ? { backgroundColor: brandingColor } : {}}
                         >
