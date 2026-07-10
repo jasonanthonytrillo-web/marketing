@@ -143,19 +143,27 @@ export default function SettingsTab() {
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <span className={`text-xs font-black uppercase tracking-wider ${!settings.deliveryDisabled ? 'text-emerald-600' : 'text-red-600'}`} style={!settings.deliveryDisabled ? { color: '#059669' } : { color: '#dc2626' }}>
-                  {!settings.deliveryDisabled ? 'Delivery Enabled' : 'Delivery Disabled'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSettings(prev => ({ ...prev, deliveryDisabled: !prev.deliveryDisabled }))}
-                  className={`relative inline-flex h-[30px] w-[56px] shrink-0 cursor-pointer rounded-full border-[3px] border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${!settings.deliveryDisabled ? 'bg-emerald-100 border-emerald-500' : 'bg-red-100 border-red-500'}`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-md ring-0 transition duration-300 ease-in-out ${!settings.deliveryDisabled ? 'translate-x-6 bg-emerald-500' : 'translate-x-0 bg-red-500'}`}
-                    style={settings.deliveryDisabled ? { backgroundColor: '#dc2626' } : {}}
-                  />
-                </button>
+                {settings.saDeliveryDisabled ? (
+                  <span className="text-xs font-black uppercase tracking-wider text-red-500 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 flex items-center gap-2">
+                    <Monitor className="w-3.5 h-3.5" /> Blocked by Superadmin
+                  </span>
+                ) : (
+                  <>
+                    <span className={`text-xs font-black uppercase tracking-wider ${!settings.deliveryDisabled ? 'text-emerald-600' : 'text-red-600'}`} style={!settings.deliveryDisabled ? { color: '#059669' } : { color: '#dc2626' }}>
+                      {!settings.deliveryDisabled ? 'Delivery Enabled' : 'Delivery Disabled'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSettings(prev => ({ ...prev, deliveryDisabled: !prev.deliveryDisabled }))}
+                      className={`relative inline-flex h-[30px] w-[56px] shrink-0 cursor-pointer rounded-full border-[3px] border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${!settings.deliveryDisabled ? 'bg-emerald-100 border-emerald-500' : 'bg-red-100 border-red-500'}`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full shadow-md ring-0 transition duration-300 ease-in-out ${!settings.deliveryDisabled ? 'translate-x-6 bg-emerald-500' : 'translate-x-0 bg-red-500'}`}
+                        style={settings.deliveryDisabled ? { backgroundColor: '#dc2626' } : {}}
+                      />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -510,7 +518,14 @@ export default function SettingsTab() {
           </div>
           <div className="p-8 space-y-6">
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Points Accumulation Rate</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                Points Accumulation Rate
+                {settings.saRewardsDisabled && (
+                  <span className="text-[10px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 flex items-center gap-1.5 ml-3 cursor-not-allowed">
+                    <Monitor className="w-3 h-3" /> Blocked by Superadmin
+                  </span>
+                )}
+              </label>
               <div className="flex items-center gap-4">
                 <div className="relative flex-1">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₱</span>
@@ -518,7 +533,8 @@ export default function SettingsTab() {
                     type="number" 
                     value={settings.points_rate} 
                     onChange={e => setSettings({...settings, points_rate: e.target.value})}
-                    className="input-field w-full pl-8 py-4 text-xl font-black font-heading" 
+                    disabled={settings.saRewardsDisabled}
+                    className={`input-field w-full pl-8 py-4 text-xl font-black font-heading ${settings.saRewardsDisabled ? 'opacity-50 cursor-not-allowed bg-slate-100' : ''}`} 
                     placeholder="100"
                   />
                 </div>

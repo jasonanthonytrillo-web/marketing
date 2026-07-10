@@ -442,6 +442,8 @@ router.get('/settings', authenticate, authorize('admin'), async (req, res) => {
       settingsMap.deliveryFeePerKm = tenant.deliveryFeePerKm;
       settingsMap.storeClosed = tenant.storeClosed;
       settingsMap.deliveryDisabled = tenant.deliveryDisabled;
+      settingsMap.saDeliveryDisabled = tenant.saDeliveryDisabled;
+      settingsMap.saRewardsDisabled = tenant.saRewardsDisabled;
     }
 
     res.json({ success: true, data: settingsMap });
