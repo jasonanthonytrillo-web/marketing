@@ -114,7 +114,7 @@ export default function Checkout() {
           const tenantData = res.data.data;
           setBranding(tenantData);
           applyTheme(tenantData.primaryColor);
-          if (tenantData.deliveryDisabled && orderType === 'delivery') {
+          if ((tenantData.deliveryDisabled || tenantData.saDeliveryDisabled) && orderType === 'delivery') {
             setOrderType('dine_in');
           }
         }
@@ -268,9 +268,9 @@ export default function Checkout() {
         {/* Order Type */}
         <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <label className="block text-sm font-semibold text-surface-700 mb-3">{t('orderType')}</label>
-          <div className={`grid ${branding?.deliveryDisabled ? 'grid-cols-2' : 'grid-cols-3'} gap-2 sm:gap-3`}>
+          <div className={`grid ${branding?.deliveryDisabled || branding?.saDeliveryDisabled ? 'grid-cols-2' : 'grid-cols-3'} gap-2 sm:gap-3`}>
             {ORDER_TYPES
-              .filter(o => !(o.id === 'delivery' && branding?.deliveryDisabled))
+              .filter(o => !(o.id === 'delivery' && (branding?.deliveryDisabled || branding?.saDeliveryDisabled)))
               .map(t => (
                 <button key={t.id} type="button" onClick={() => setOrderType(t.id)}
                   className={`p-3 sm:p-4 rounded-xl border-2 text-center font-semibold transition-all ${orderType === t.id ? 'border-transparent text-white' : 'border-surface-200 hover:border-primary-300 text-surface-600'}`}

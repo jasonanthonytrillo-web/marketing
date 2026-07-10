@@ -27,6 +27,8 @@ model Tenant {
   active      Boolean  @default(true)
   storeClosed Boolean  @default(false)
   deliveryDisabled Boolean @default(false)
+  saDeliveryDisabled Boolean @default(false)
+  saRewardsDisabled  Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -331,7 +331,7 @@ export default function Menu() {
               <span className={lang === 'tl' ? 'text-primary-500' : 'text-surface-400'} style={lang === 'tl' ? { color: brandingColor } : {}}>PH</span>
             </button>
 
-            {isCustomer && user && (
+            {isCustomer && user && !branding?.saRewardsDisabled && (
               <>
                 <button
                   onClick={() => setShowRewards(true)}
@@ -728,7 +728,7 @@ export default function Menu() {
                         return selectedProduct.price.toFixed(2);
                       })()}
                     </p>
-                    {selectedProduct.pointsCost && isCustomer && (
+                    {selectedProduct.pointsCost && isCustomer && !branding?.saRewardsDisabled && (
                       <div className="bg-amber-50 text-amber-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-100 flex items-center gap-1.5">
                         <Gem className="w-3.5 h-3.5" /> Redeem for {selectedProduct.pointsCost} Points
                       </div>
@@ -811,7 +811,7 @@ export default function Menu() {
       )}
 
       {/* Premium Rewards Gallery Modal */}
-      {showRewards && (
+      {showRewards && !branding?.saRewardsDisabled && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-fade-in">
           {/* Dark blurred backdrop */}
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setShowRewards(false)}></div>

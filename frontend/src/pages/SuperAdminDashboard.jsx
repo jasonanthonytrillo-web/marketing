@@ -15,6 +15,8 @@ export default function SuperAdminDashboard() {
   const [tenantToEdit, setTenantToEdit] = useState(null);
   const [editName, setEditName] = useState('');
   const [editColor, setEditColor] = useState('#f97316');
+  const [editSaDelivery, setEditSaDelivery] = useState(false);
+  const [editSaRewards, setEditSaRewards] = useState(false);
   const [updatingName, setUpdatingName] = useState(false);
   const [formData, setFormData] = useState({ name: '', slug: '', primaryColor: '#f97316', adminName: '', adminEmail: '', adminPassword: '' });
   const [saving, setSaving] = useState(false);
@@ -79,11 +81,15 @@ export default function SuperAdminDashboard() {
     try {
       await updateTenant(tenantToEdit.id, { 
         name: editName.trim(),
-        primaryColor: editColor 
+        primaryColor: editColor,
+        saDeliveryDisabled: editSaDelivery,
+        saRewardsDisabled: editSaRewards
       });
       setTenantToEdit(null);
       setEditName('');
       setEditColor('#f97316');
+      setEditSaDelivery(false);
+      setEditSaRewards(false);
       loadTenants();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update store settings');
@@ -235,6 +241,8 @@ export default function SuperAdminDashboard() {
                         onClick={() => {
                           setEditName(tenant.name);
                           setEditColor(tenant.primaryColor || '#f97316');
+                          setEditSaDelivery(tenant.saDeliveryDisabled || false);
+                          setEditSaRewards(tenant.saRewardsDisabled || false);
                           setTenantToEdit(tenant);
                         }}
                         className="font-black text-[10px] uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-all mr-3"
@@ -426,6 +434,39 @@ export default function SuperAdminDashboard() {
                         onChange={e => setEditColor(e.target.value)}
                         placeholder="#f97316"
                       />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex-1 bg-slate-800 p-4 rounded-2xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Master Delivery Block</p>
+                        <p className="text-xs text-white font-medium leading-tight">{editSaDelivery ? 'Disabled' : 'Active'}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditSaDelivery(!editSaDelivery)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out ${editSaDelivery ? 'bg-red-500' : 'bg-emerald-500'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${editSaDelivery ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 bg-slate-800 p-4 rounded-2xl border border-white/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Master Rewards Block</p>
+                        <p className="text-xs text-white font-medium leading-tight">{editSaRewards ? 'Disabled' : 'Active'}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditSaRewards(!editSaRewards)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out ${editSaRewards ? 'bg-red-500' : 'bg-emerald-500'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${editSaRewards ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -565,7 +565,7 @@ export default function OrderConfirmation() {
           </div>
         )}
 
-        {!order.customerId && !isCancelled && !isCompleted && !isReady && showInviteBanner && (
+        {!order.customerId && !isCancelled && !isCompleted && !isReady && showInviteBanner && !branding?.saRewardsDisabled && (
           <div className="bg-slate-900 rounded-[2rem] p-6 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary-500/30 transition-all duration-500"></div>
             <div className="relative z-10 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">

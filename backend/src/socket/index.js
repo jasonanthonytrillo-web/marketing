@@ -49,6 +49,34 @@ module.exports = (io, prisma) => {
       socket.leave(room);
     });
 
+    socket.on('join_visitor', (tenantId) => {
+      const room = `tenant-${tenantId}-visitors`;
+      socket.join(room);
+      const count = io.sockets.adapter.rooms.get(room)?.size || 0;
+      io.to(`tenant-${tenantId}-admin`).emit('live_visitors_update', { count });
+    });
+
+    socket.on('leave_visitor', (tenantId) => {
+      const room = `tenant-${tenantId}-visitors`;
+      socket.leave(room);
+      const count = io.sockets.adapter.rooms.get(room)?.size || 0;
+      io.to(`tenant-${tenantId}-admin`).emit('live_visitors_update', { count });
+    });
+
+    socket.on('disconnecting', () => {
+      for (const room of socket.rooms) {
+        if (room.endsWith('-visitors')) {
+          const parts = room.split('-');
+          if (parts.length >= 3) {
+            const tenantId = parts[1];
+            // Subtract 1 because socket is leaving right after this event
+            const count = Math.max(0, (io.sockets.adapter.rooms.get(room)?.size || 1) - 1);
+            io.to(`tenant-${tenantId}-admin`).emit('live_visitors_update', { count });
+          }
+        }
+      }
+    });
+
     socket.on('rider_location_update', async (data) => {
       const { orderNumber, tenantId, lat, lng } = data;
       if (!orderNumber || !tenantId) return;

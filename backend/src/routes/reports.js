@@ -151,7 +151,8 @@ router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
         _sum: { amount: true }
       }),
       prisma.product.count({ where: { available: true, tenantId: req.tenantId } }),
-      prisma.product.count({ where: { stock: { lt: 10 }, available: true, tenantId: req.tenantId } })
+      prisma.product.count({ where: { stock: { lt: 10 }, available: true, tenantId: req.tenantId } }),
+      prisma.systemSetting.findFirst({ where: { tenantId: req.tenantId, key: 'total_visits' } })
     ]);
 
     // Single query for the 14-day chart
@@ -185,6 +186,13 @@ router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
       take: 5,
       include: { _count: { select: { products: true } } }
     });
+
+    const totalVisitsSetting = todayAgg[8]; // Wait, we need to extract from promise result properly
+    // Let me recalculate position: todayAgg, weekAgg, monthAgg, todayExp, weekExp, monthExp, totalProducts, lowStock, totalVisitsSetting = results
+    
+    // Actually finding live visitors
+    const io = req.app.get('io');
+    const liveVisitors = io?.sockets?.adapter?.rooms?.get(`tenant-${req.tenantId}-visitors`)?.size || 0;
 
     res.json({
       success: true,

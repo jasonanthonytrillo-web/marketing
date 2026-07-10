@@ -27,7 +27,9 @@ router.get('/tenant/:slug', async (req, res) => {
         storeLng: true,
         active: true,
         storeClosed: true,
-        deliveryDisabled: true
+        deliveryDisabled: true,
+        saDeliveryDisabled: true,
+        saRewardsDisabled: true
       }
     });
 
@@ -206,6 +208,36 @@ router.post('/beta/apply', async (req, res) => {
   } catch (error) {
     console.error('Beta Application Error:', error);
     res.status(500).json({ success: false, message: 'Failed to submit application' });
+  }
+});
+
+// Visit tracking endpoint
+router.post('/tenant/:slug/visit', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const tenant = await prisma.tenant.findUnique({ where: { slug }, select: { id: true } });
+    if (!tenant) return res.status(404).json({ success: false });
+
+    // Use Prisma to track count
+    const setting = await prisma.systemSetting.findFirst({
+      where: { tenantId: tenant.id, key: 'total_visits' }
+    });
+
+    if (setting) {
+      await prisma.systemSetting.update({
+        where: { id: setting.id },
+        data: { value: (parseInt(setting.value) + 1).toString() }
+      });
+    } else {
+      await prisma.systemSetting.create({
+        data: { tenantId: tenant.id, key: 'total_visits', value: '1' }
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    // Fail silently for analytics endpoint
+    res.json({ success: false });
   }
 });
 
