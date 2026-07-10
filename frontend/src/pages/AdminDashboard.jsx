@@ -50,9 +50,15 @@ export default function AdminDashboard() {
     if (initialColor) applyTheme(initialColor);
 
     loadSummary();
+    const pollInterval = setInterval(() => {
+      loadSummary(false);
+    }, 30000);
 
     // CLEANUP: Wipe the theme when leaving the dashboard
-    return () => clearTheme();
+    return () => {
+      clearInterval(pollInterval);
+      clearTheme();
+    };
   }, [user, navigate]);
 
   // Listen for live visitor updates via Socket.IO
@@ -69,8 +75,8 @@ export default function AdminDashboard() {
     }
   }, [user?.tenantId, connected]);
 
-  const loadSummary = async () => {
-    setLoading(true);
+  const loadSummary = async (showLoader = true) => {
+    if (showLoader) setLoading(true);
     try {
       const res = await getAdminSummary();
       const data = res.data.data;
@@ -82,7 +88,7 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 

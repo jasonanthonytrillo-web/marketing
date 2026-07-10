@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { login, googleLogin, registerCustomer, getPublicTenant, requestOTP, verifyOTP, checkOTP, verifyRegistration, resendRegistrationOTP, resetPassword } from '../services/api';
+import { login, googleLogin, registerCustomer, getPublicTenant, requestOTP, verifyOTP, checkOTP, verifyRegistration, resendRegistrationOTP, resetPassword, trackVisit } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
 import { GoogleLogin } from '@react-oauth/google';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
@@ -39,6 +40,27 @@ export default function MemberPortal() {
 
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const actionParam = searchParams.get('action');
+
+  const { joinRoom, leaveRoom, connected, emit } = useSocket();
+  const [hasVisited, setHasVisited] = useState(false);
+
+  useEffect(() => {
+    if (tenantData?.id && connected) {
+      joinRoom('kiosk', tenantData.id);
+      emit('join_visitor', tenantData.id);
+      
+      if (!hasVisited && !sessionStorage.getItem(`visited_${tenantData.id}`)) {
+        trackVisit(tenantData.slug).catch(() => {});
+        sessionStorage.setItem(`visited_${tenantData.id}`, 'true');
+        setHasVisited(true);
+      }
+      
+      return () => {
+        leaveRoom('kiosk', tenantData.id);
+        emit('leave_visitor', tenantData.id);
+      };
+    }
+  }, [tenantData?.id, connected, hasVisited]);
 
   // Handle ?action=register
   useEffect(() => {

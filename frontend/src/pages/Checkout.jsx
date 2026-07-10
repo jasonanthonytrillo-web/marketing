@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { createOrder, getPublicTenant } from '../services/api';
+import { createOrder, getPublicTenant, trackVisit } from '../services/api';
 import { formatCurrency } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { applyTheme } from '../utils/theme';
 import { Utensils, ShoppingBag, Banknote, Smartphone, CreditCard, ShoppingCart, Gem, MapPin, Hash, Truck, Download, CheckCircle } from 'lucide-react';
 import LocationPicker from '../components/LocationPicker';
+import { useSocket } from '../context/SocketContext';
 
 const TRANSLATIONS = {
   en: {
@@ -84,6 +85,27 @@ export default function Checkout() {
   const [searchParams] = useSearchParams();
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const [branding, setBranding] = useState(null);
+  
+  const { joinRoom, leaveRoom, connected, emit } = useSocket();
+  const [hasVisited, setHasVisited] = useState(false);
+
+  useEffect(() => {
+    if (branding?.id && connected) {
+      joinRoom('kiosk', branding.id);
+      emit('join_visitor', branding.id);
+      
+      if (!hasVisited && !sessionStorage.getItem(`visited_${branding.id}`)) {
+        trackVisit(branding.slug).catch(() => {});
+        sessionStorage.setItem(`visited_${branding.id}`, 'true');
+        setHasVisited(true);
+      }
+      
+      return () => {
+        leaveRoom('kiosk', branding.id);
+        emit('leave_visitor', branding.id);
+      };
+    }
+  }, [branding?.id, connected, hasVisited]);
 
   const lang = localStorage.getItem('pos_lang') || 'en';
   const t = (key) => TRANSLATIONS[lang][key] || key;
