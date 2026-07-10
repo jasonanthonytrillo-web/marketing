@@ -57,6 +57,7 @@ export const resendRegistrationOTP = (data) => api.post('/auth/resend-registrati
 export const getProducts = () => api.get('/products');
 export const getProduct = (id) => api.get(`/products/${id}`);
 export const getPublicTenant = (slug) => api.get(`/public/tenant/${slug}`);
+export const trackVisit = (slug) => api.post(`/public/tenant/${slug}/visit`);
 
 // Categories
 export const getCategories = () => api.get('/categories');

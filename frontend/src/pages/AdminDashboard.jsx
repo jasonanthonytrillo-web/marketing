@@ -18,7 +18,8 @@ import FeedbackTab from '../components/admin/FeedbackTab';
 import { formatCurrency } from '../utils/helpers';
 import { applyTheme, clearTheme } from '../utils/theme';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
-import { BarChart2, ShoppingBag, FolderTree, PackageSearch, Users, Truck, Package, RotateCcw, Wallet, LineChart, MessageSquare, ClipboardList, Settings, LogOut, Store, CircleDollarSign, Coins, ShoppingCart } from 'lucide-react';
+import { BarChart2, ShoppingBag, FolderTree, PackageSearch, Users, Truck, Package, RotateCcw, Wallet, LineChart, MessageSquare, ClipboardList, Settings, LogOut, Store, CircleDollarSign, Coins, ShoppingCart, Eye, Globe } from 'lucide-react';
+import { useSocket } from '../context/SocketContext';
 
 export default function AdminDashboard() {
   const { user, logoutUser } = useAuth();
@@ -32,6 +33,8 @@ export default function AdminDashboard() {
 
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [liveVisitors, setLiveVisitors] = useState(0);
+  const { joinRoom, leaveRoom, connected, onEvent } = useSocket();
 
   // Dynamic favicon & title
   useDynamicBranding(`${user?.tenantName || 'Admin'} Dashboard`, user?.tenantFavicon);
@@ -52,12 +55,27 @@ export default function AdminDashboard() {
     return () => clearTheme();
   }, [user, navigate]);
 
+  // Listen for live visitor updates via Socket.IO
+  useEffect(() => {
+    if (user?.tenantId && connected) {
+      joinRoom('admin', user.tenantId);
+      const unsub = onEvent('live_visitors_update', (data) => {
+        setLiveVisitors(data.count || 0);
+      });
+      return () => {
+        unsub();
+        leaveRoom('admin', user.tenantId);
+      };
+    }
+  }, [user?.tenantId, connected]);
+
   const loadSummary = async () => {
     setLoading(true);
     try {
       const res = await getAdminSummary();
       const data = res.data.data;
       setSummary(data);
+      setLiveVisitors(data.liveVisitors || 0);
 
       const tenantColor = data.branding?.primaryColor || user?.tenant?.primaryColor || user?.tenantColor;
       if (tenantColor) applyTheme(tenantColor);
@@ -190,6 +208,34 @@ export default function AdminDashboard() {
                 <StatCard title="Today's Expenses" value={formatCurrency(summary.totalExpenses || 0)} icon={<Coins className="w-6 h-6" />} color="red" />
                 <StatCard title="Net Profit" value={formatCurrency((summary.revenue || 0) - (summary.totalExpenses || 0))} icon={<LineChart className="w-6 h-6" />} color="emerald" />
                 <StatCard title="Orders Today" value={summary.ordersCount} icon={<ShoppingCart className="w-6 h-6" />} color="purple" />
+              </div>
+
+              {/* Visitor Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-surface-200 hover:shadow-xl hover:shadow-primary-500/5 transition-all group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-indigo-50 text-indigo-600 group-hover:scale-110 transition-transform">
+                      <Globe className="w-6 h-6" />
+                    </div>
+                  </div>
+                  <p className="text-surface-500 font-bold text-sm mb-1">Total Site Visits</p>
+                  <p className="text-3xl font-black text-surface-900 tracking-tight">{(summary.totalVisits || 0).toLocaleString()}</p>
+                </div>
+                <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-surface-200 hover:shadow-xl hover:shadow-primary-500/5 transition-all group relative overflow-hidden">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform ${liveVisitors > 0 ? 'bg-green-50 text-green-600' : 'bg-surface-100 text-surface-400'}`}>
+                      <Eye className="w-6 h-6" />
+                    </div>
+                    {liveVisitors > 0 && (
+                      <span className="flex items-center gap-1.5 text-[10px] font-black text-green-600 uppercase tracking-widest bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        Live
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-surface-500 font-bold text-sm mb-1">Online Right Now</p>
+                  <p className="text-3xl font-black text-surface-900 tracking-tight">{liveVisitors}</p>
+                </div>
               </div>
 
               {/* Secondary Metrics */}

@@ -125,7 +125,7 @@ router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
       select: { primaryColor: true, secondaryColor: true }
     });
 
-    const [todayAgg, weekAgg, monthAgg, todayExp, weekExp, monthExp, totalProducts, lowStock] = await Promise.all([
+    const [todayAgg, weekAgg, monthAgg, todayExp, weekExp, monthExp, totalProducts, lowStock, totalVisitsSetting] = await Promise.all([
       prisma.order.aggregate({
         where: { tenantId: req.tenantId, status: 'completed', createdAt: { gte: today } },
         _sum: { total: true }, _count: { id: true }
@@ -187,10 +187,9 @@ router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
       include: { _count: { select: { products: true } } }
     });
 
-    const totalVisitsSetting = todayAgg[8]; // Wait, we need to extract from promise result properly
-    // Let me recalculate position: todayAgg, weekAgg, monthAgg, todayExp, weekExp, monthExp, totalProducts, lowStock, totalVisitsSetting = results
-    
-    // Actually finding live visitors
+    const totalVisits = parseInt(totalVisitsSetting?.value || '0');
+
+    // Live visitors from Socket.IO
     const io = req.app.get('io');
     const liveVisitors = io?.sockets?.adapter?.rooms?.get(`tenant-${req.tenantId}-visitors`)?.size || 0;
 
@@ -224,6 +223,8 @@ router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
         productsCount: totalProducts,
         avgTicket: todayAgg._count.id > 0 ? (todayAgg._sum.total || 0) / todayAgg._count.id : 0,
         topCategories,
+        totalVisits,
+        liveVisitors,
         branding: {
           primaryColor: tenant?.primaryColor,
           secondaryColor: tenant?.secondaryColor

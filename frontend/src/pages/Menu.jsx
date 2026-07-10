@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getProducts, changePassword, getOrder } from '../services/api';
+import { getProducts, changePassword, getOrder, trackVisit } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
 import { formatCurrency, unlockAudio } from '../utils/helpers';
@@ -201,7 +201,7 @@ export default function Menu() {
   const brandingColor = branding?.primaryColor || '#0a3d01';
   const itemCount = getItemCount();
 
-  const { joinRoom, leaveRoom, connected } = useSocket();
+  const { joinRoom, leaveRoom, connected, emit } = useSocket();
 
   useEffect(() => {
     const unlock = () => unlockAudio();
@@ -216,9 +216,23 @@ export default function Menu() {
   useEffect(() => {
     if (branding?.id) {
       joinRoom('kiosk', branding.id);
-      return () => leaveRoom('kiosk', branding.id);
+      emit('join_visitor', branding.id);
+      return () => {
+        leaveRoom('kiosk', branding.id);
+        emit('leave_visitor', branding.id);
+      };
     }
   }, [branding?.id, connected]);
+
+  // Track unique visit per session
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get('tenant') || 'project-million';
+    const key = `visited_${slug}`;
+    if (!sessionStorage.getItem(key)) {
+      trackVisit(slug).catch(() => {});
+      sessionStorage.setItem(key, '1');
+    }
+  }, []);
 
   const handleAddToCart = (product) => {
     // Resolve size-specific price for cart

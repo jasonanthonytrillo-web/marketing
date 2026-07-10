@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getOrder, getPublicTenant } from '../services/api';
+import { getOrder, getPublicTenant, trackVisit } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
@@ -17,7 +17,7 @@ export default function Landing() {
   const { user, logoutUser } = useAuth();
   const [searchParams] = useSearchParams();
   const isCustomer = user && user.role === 'customer';
-  const { joinRoom, leaveRoom, connected } = useSocket();
+  const { joinRoom, leaveRoom, connected, emit } = useSocket();
 
   // Dynamic favicon, title & OG meta
   const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || (import.meta.env.PROD ? '' : 'http://localhost:5000');
@@ -40,9 +40,25 @@ export default function Landing() {
   useEffect(() => {
     if (tenant?.id) {
       joinRoom('kiosk', tenant.id);
-      return () => leaveRoom('kiosk', tenant.id);
+      // Track live visitor via socket
+      emit('join_visitor', tenant.id);
+      return () => {
+        leaveRoom('kiosk', tenant.id);
+        emit('leave_visitor', tenant.id);
+      };
     }
   }, [tenant?.id, connected]);
+
+  // Track unique visit per session
+  useEffect(() => {
+    if (tenant?.slug) {
+      const key = `visited_${tenant.slug}`;
+      if (!sessionStorage.getItem(key)) {
+        trackVisit(tenant.slug).catch(() => {});
+        sessionStorage.setItem(key, '1');
+      }
+    }
+  }, [tenant?.slug]);
 
   // Splash screen auto-dismiss
   useEffect(() => {
