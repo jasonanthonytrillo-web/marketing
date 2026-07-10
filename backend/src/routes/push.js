@@ -65,7 +65,10 @@ const sendPushToOrder = async (orderId, payload) => {
           auth: sub.auth
         }
       };
-      return webpush.sendNotification(pushSub, payloadString).catch(err => {
+      return webpush.sendNotification(pushSub, payloadString, {
+        TTL: 3600, // 1 hour time-to-live
+        urgency: 'high'
+      }).catch(err => {
         if (err.statusCode === 404 || err.statusCode === 410) {
           // Subscription has expired or is no longer valid, delete it
           return prisma.pushSubscription.delete({ where: { id: sub.id } });

@@ -69,7 +69,9 @@ self.addEventListener('push', function (event) {
     body: data.body || 'Your order has been updated.',
     icon: '/hb_logo.jpg',
     badge: '/hb_logo.jpg',
-    data: data.url // Useful for redirects on click
+    data: data.url, // Useful for redirects on click
+    requireInteraction: true,
+    vibrate: [500, 200, 500]
   };
 
   event.waitUntil(self.registration.showNotification(title, options));

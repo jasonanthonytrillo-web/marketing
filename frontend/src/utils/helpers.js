@@ -196,7 +196,7 @@ export function requestNotificationPermission() {
  * @param {string} body - The body copy text
  * @param {string} icon - Absolute or relative path to icon image
  */
-export function showSystemNotification(title, body, icon = 'https://cdn-icons-png.flaticon.com/512/5787/5787016.png') {
+export function showSystemNotification(title, body, icon = '/hb_logo.jpg') {
   try {
     if (!('Notification' in window)) return;
     if (Notification.permission === 'granted') {

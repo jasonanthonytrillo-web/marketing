@@ -37,13 +37,13 @@ export default function GlobalNotification() {
     const unsub = onEvent('order_update', (data) => {
       const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
       const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
-      
+
       const activeOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
       const lastOrderNumber = localStorage.getItem(lastOrderKey);
-      
-      const isMyOrder = activeOrders.includes(data.order?.orderNumber) || 
-                       data.order?.orderNumber === lastOrderNumber ||
-                       (user && data.order?.customerId === user.id);
+
+      const isMyOrder = activeOrders.includes(data.order?.orderNumber) ||
+        data.order?.orderNumber === lastOrderNumber ||
+        (user && data.order?.customerId === user.id);
 
       if (isMyOrder) {
         requestNotificationPermission();
@@ -148,7 +148,7 @@ export default function GlobalNotification() {
     setReadyOrderNumbers(prev => {
       if (prev.find(o => o.number === orderNum)) return prev;
       const next = [...prev, { number: orderNum, type: order.orderType }];
-      
+
       // Only start the alert flow if one isn't already active
       if (!alertActiveRef.current) {
         startAlertFlow(next);
@@ -167,11 +167,11 @@ export default function GlobalNotification() {
     setCancelledOrderNumbers(prev => {
       if (prev.find(o => o.number === orderNum)) return prev;
       const next = [...prev, { number: orderNum, reason: reason || 'Cancelled by staff' }];
-      
+
       // Stop any ready chimes and play a single warning chime
       clearChimeLoop();
       playNotificationSound('default');
-      
+
       return next;
     });
   };
@@ -194,21 +194,21 @@ export default function GlobalNotification() {
     setTimeout(() => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        const text = orderNums.length > 1 
+        const text = orderNums.length > 1
           ? `Your orders are ready. Please check your status screen.`
           : orderNums[0].type === 'delivery'
             ? `Your order ${orderNums[0].number.includes('-') ? orderNums[0].number.split('-')[1] : orderNums[0].number} is being prepared for delivery.`
             : `Your order ${orderNums[0].number.includes('-') ? orderNums[0].number.split('-')[1] : orderNums[0].number} is ready. Please proceed to the counter.`;
-        
+
         console.log(`📢 Speaking: "${text}"`);
         const msg = new SpeechSynthesisUtterance(text);
         msg.rate = 0.9; msg.pitch = 1.1; msg.volume = 1;
-        
+
         const voices = window.speechSynthesis.getVoices();
         const preferred = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female'))
           || voices.find(v => v.lang.startsWith('en')) || voices[0];
         if (preferred) msg.voice = preferred;
-        
+
         msg.onerror = (e) => console.error('Speech error:', e);
         msg.onend = () => console.log('🏁 Speech finished.');
         window.speechSynthesis.speak(msg);
@@ -233,11 +233,11 @@ export default function GlobalNotification() {
     readyOrderNumbers.forEach(o => sessionStorage.setItem(`ready_dismissed_${o.number}`, 'true'));
     const lastOrder = readyOrderNumbers[readyOrderNumbers.length - 1];
     setReadyOrderNumbers([]);
-    
+
     clearChimeLoop();
     if (navigator.vibrate) navigator.vibrate(0);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    
+
     if (lastOrder) {
       const targetPath = `/order/${lastOrder.number}`;
       navigate(targetPath);
@@ -264,7 +264,7 @@ export default function GlobalNotification() {
               {readyOrderNumbers.length > 1 ? 'Your Orders are Ready!' : 'Your Order is Ready!'}
             </h1>
             <p className="text-emerald-200 text-lg sm:text-xl font-medium mb-4">Queue Number{readyOrderNumbers.length > 1 ? 's' : ''}</p>
-            
+
             <div className="flex flex-wrap justify-center gap-4 mb-10">
               {readyOrderNumbers.map(o => (
                 <div key={o.number} className="bg-white/10 backdrop-blur-md border-2 border-white/20 px-6 py-4 rounded-3xl">
@@ -281,7 +281,7 @@ export default function GlobalNotification() {
                 : `Please proceed to the counter to pick up your order${readyOrderNumbers.length > 1 ? 's' : ''}.`}
             </p>
             <button onClick={dismissReadyAlert} className="bg-white text-emerald-800 font-bold text-lg sm:text-xl px-12 py-5 rounded-2xl shadow-2xl hover:bg-emerald-50 transition-all active:scale-95">
-              Got it! ✓
+              Okay
             </button>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function GlobalNotification() {
             <h1 className="font-heading text-4xl sm:text-6xl font-black text-white mb-2 leading-tight">
               Order Cancelled
             </h1>
-            
+
             <div className="space-y-4 mb-10">
               {cancelledOrderNumbers.map(o => (
                 <div key={o.number} className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl">
@@ -305,9 +305,9 @@ export default function GlobalNotification() {
                 </div>
               ))}
             </div>
-            
+
             <p className="text-red-300 text-base sm:text-lg mb-10">Please proceed to the counter if you have questions or for refund assistance.</p>
-            
+
             <button onClick={dismissCancelAlert} className="bg-white text-red-800 font-bold text-lg sm:text-xl px-12 py-5 rounded-2xl shadow-2xl hover:bg-red-50 transition-all active:scale-95">
               I Understand
             </button>

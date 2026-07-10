@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, unlockAudio, formatMinutes } from '../utils/helpers';
 
 import { applyTheme, clearTheme } from '../utils/theme';
-import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon, Truck, MapPin, Navigation, BellRing } from 'lucide-react';
+import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon, Truck, MapPin, Navigation, BellRing, Smartphone } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -168,6 +168,38 @@ export default function OrderConfirmation() {
   const [showInviteBanner, setShowInviteBanner] = useState(true);
   const [showQrSuccess, setShowQrSuccess] = useState(false);
   const [pushStatus, setPushStatus] = useState('idle'); // idle | subscribed | denied | unsupported
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  // Check PWA Install
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if (window.deferredPrompt && !isStandalone) {
+      setShowInstallBanner(true);
+    }
+    const handlePrompt = (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
+        setShowInstallBanner(true);
+      }
+    };
+    window.addEventListener('beforeinstallprompt', handlePrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handlePrompt);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!window.deferredPrompt) {
+      setShowInstallBanner(false);
+      return;
+    }
+    window.deferredPrompt.prompt();
+    const { outcome } = await window.deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    }
+    window.deferredPrompt = null;
+    setShowInstallBanner(false);
+  };
 
   // Check if already subscribed on mount
   useEffect(() => {
@@ -550,6 +582,36 @@ export default function OrderConfirmation() {
                     className="inline-block px-8 py-3 bg-slate-800 text-slate-350 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-700 hover:text-white transition-all active:scale-95"
                   >
                     Maybe Later
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PWA Install App Banner */}
+        {!isCancelled && !isCompleted && showInstallBanner && (
+          <div className="bg-slate-900 rounded-[2rem] p-6 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 animate-fade-in-up" style={{ animationDelay: '0.13s' }}>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-500/30 transition-all duration-500"></div>
+            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center shadow-xl backdrop-blur-md border border-white/20 shrink-0">
+                <Smartphone className="w-7 h-7 text-indigo-300" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-lg font-black text-white mb-1 tracking-tight">Install the App</h4>
+                <p className="text-slate-300 text-[11px] leading-relaxed mb-4">Install our app to your home screen for quick access and instant order tracking!</p>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                  <button
+                    onClick={handleInstallApp}
+                    className="inline-block px-8 py-3 bg-white text-slate-900 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-50 transition-all shadow-xl active:scale-95"
+                  >
+                    Install Now
+                  </button>
+                  <button
+                    onClick={() => setShowInstallBanner(false)}
+                    className="inline-block px-8 py-3 bg-slate-800 text-slate-350 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-700 hover:text-white transition-all active:scale-95"
+                  >
+                    Not Now
                   </button>
                 </div>
               </div>
