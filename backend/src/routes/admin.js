@@ -511,6 +511,7 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
 
     await prisma.auditLog.create({
       data: { 
+        tenantId: req.tenantId,
         userId: req.user.id, 
         action: 'update_settings', 
         entityType: 'system', 

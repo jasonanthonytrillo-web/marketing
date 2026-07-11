@@ -261,7 +261,7 @@ export default function Checkout() {
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const distance = R * c; // Distance in km
-    const feePerKm = branding?.deliveryFeePerKm || 20;
+    const feePerKm = branding?.deliveryFeePerKm ?? 20;
     
     // Calculate fee based on distance and dynamic rate
     return Math.ceil(distance * feePerKm);

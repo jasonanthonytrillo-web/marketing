@@ -391,7 +391,7 @@ export default function SettingsTab() {
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₱</span>
                     <input 
                       type="number" 
-                      value={settings.deliveryFeePerKm || '20'} 
+                      value={settings.deliveryFeePerKm ?? ''} 
                       onChange={e => setSettings({...settings, deliveryFeePerKm: e.target.value})}
                       className="input-field w-full pl-8 py-4 text-xl font-black font-heading" 
                       placeholder="20"
