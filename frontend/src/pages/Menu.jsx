@@ -196,7 +196,25 @@ export default function Menu() {
       setAddOpts({ size: defaultSize, flavor: '', addons: [], notes: '', comboChoices: null });
     }
     setSelectedProduct(product);
+    window.history.pushState({ modalOpen: 'product' }, '');
   };
+
+  const closeProductModal = () => {
+    setSelectedProduct(null);
+    if (window.history.state && window.history.state.modalOpen === 'product') {
+      window.history.back();
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (selectedProduct) {
+        setSelectedProduct(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [selectedProduct]);
 
   const brandingColor = branding?.primaryColor || '#0a3d01';
   const itemCount = getItemCount();
@@ -242,7 +260,7 @@ export default function Menu() {
       if (match) sizePrice = parseFloat(match.price);
     }
     addToCart(product, { ...addOpts, sizePrice, isRedemption: product.isRedemption });
-    setSelectedProduct(null);
+    closeProductModal();
     setAddOpts({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
     setComboStep(1);
   };
@@ -578,7 +596,7 @@ export default function Menu() {
 
       {/* Product Detail Modal / Combo Modal */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setSelectedProduct(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={closeProductModal}>
           <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
 
             {/* Modal Header Image */}
@@ -599,7 +617,7 @@ export default function Menu() {
               )}
 
               <button
-                onClick={() => setSelectedProduct(null)}
+                onClick={closeProductModal}
                 className="absolute top-4 right-4 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all z-20 group"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
