@@ -486,7 +486,14 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
         if (['name'].includes(field) && req.user.role !== 'superadmin') {
           continue;
         }
-        brandingUpdate[field] = value;
+        // Coerce types to match Prisma schema (Float/Boolean fields)
+        if (['storeLat', 'storeLng', 'deliveryFeePerKm'].includes(field)) {
+          brandingUpdate[field] = value !== '' && value !== null ? parseFloat(value) : null;
+        } else if (['storeClosed', 'deliveryDisabled'].includes(field)) {
+          brandingUpdate[field] = value === true || value === 'true';
+        } else {
+          brandingUpdate[field] = value;
+        }
       } else {
         regularSettings[key] = value;
       }
