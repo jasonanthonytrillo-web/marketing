@@ -551,8 +551,8 @@ export default function SettingsTab() {
 
               <div className="space-y-3">
                 {(settings.custom_badges || []).map((badge, idx) => (
-                  <div key={badge.id} className="flex gap-4 items-center bg-surface-50 p-4 rounded-2xl border border-surface-200 animate-fade-in">
-                    <div className="flex-1">
+                  <div key={badge.id} className="flex flex-col sm:flex-row gap-4 sm:items-center bg-surface-50 p-4 rounded-2xl border border-surface-200 animate-fade-in">
+                    <div className="flex-1 w-full">
                       <input 
                         type="text" 
                         placeholder="Badge Label (e.g. Dairy-Free)" 
@@ -565,7 +565,7 @@ export default function SettingsTab() {
                         className="input-field w-full text-sm bg-white"
                       />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 w-full">
                       <select 
                         value={badge.color}
                         onChange={(e) => {
@@ -588,25 +588,27 @@ export default function SettingsTab() {
                       </select>
                     </div>
                     
-                    {/* Badge Preview */}
-                    <div className="w-32 flex-shrink-0 flex justify-center">
-                      {badge.label && (
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm border ${badge.color}`}>
-                          {badge.label}
-                        </span>
-                      )}
-                    </div>
+                    <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                      {/* Badge Preview */}
+                      <div className="flex-1 sm:w-32 flex justify-start sm:justify-center">
+                        {badge.label && (
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm border ${badge.color}`}>
+                            {badge.label}
+                          </span>
+                        )}
+                      </div>
 
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        const newBadges = settings.custom_badges.filter((_, i) => i !== idx);
-                        setSettings({ ...settings, custom_badges: newBadges });
-                      }}
-                      className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black flex items-center justify-center flex-shrink-0"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const newBadges = settings.custom_badges.filter((_, i) => i !== idx);
+                          setSettings({ ...settings, custom_badges: newBadges });
+                        }}
+                        className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black flex items-center justify-center flex-shrink-0"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
 

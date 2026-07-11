@@ -448,20 +448,20 @@ export default function ProductsTab() {
                     
                     <div className="space-y-3">
                       {(currentProduct.sizes || []).map((sizeItem, index) => (
-                        <div key={index} className="flex gap-3 items-center animate-fade-in">
+                        <div key={index} className="flex gap-2 sm:gap-3 items-center animate-fade-in">
                           <input 
                             type="text" 
-                            placeholder="e.g. 8oz, Regular, Large" 
+                            placeholder="e.g. Large" 
                             value={sizeItem.name} 
                             onChange={e => {
                               const newSizes = [...currentProduct.sizes];
                               newSizes[index] = { ...newSizes[index], name: e.target.value };
                               setCurrentProduct({...currentProduct, sizes: newSizes});
                             }}
-                            className="input-field flex-1 py-2 text-xs"
+                            className="input-field flex-1 py-1.5 text-xs min-w-0"
                           />
-                          <div className="relative w-28">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 text-xs">₱</span>
+                          <div className="relative w-24 sm:w-28 flex-shrink-0">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-400 text-xs font-bold">₱</span>
                             <input 
                               type="number" 
                               step="0.01"
@@ -472,7 +472,7 @@ export default function ProductsTab() {
                                 newSizes[index] = { ...newSizes[index], price: parseFloat(e.target.value) || 0 };
                                 setCurrentProduct({...currentProduct, sizes: newSizes});
                               }}
-                              className="input-field w-full pl-6 py-2 text-xs"
+                              className="input-field w-full pl-6 py-1.5 text-xs"
                             />
                           </div>
                           <button
@@ -482,13 +482,15 @@ export default function ProductsTab() {
                               newSizes[index] = { ...newSizes[index], available: !newSizes[index].available };
                               setCurrentProduct({...currentProduct, sizes: newSizes});
                             }}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all whitespace-nowrap ${
-                              sizeItem.available !== false
-                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                : 'bg-red-50 text-red-500 border-red-200'
+                            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              sizeItem.available !== false ? 'bg-emerald-500' : 'bg-slate-300'
                             }`}
+                            title={sizeItem.available !== false ? 'Variant is Enabled' : 'Variant is Disabled'}
                           >
-                            {sizeItem.available !== false ? '✓ On' : '✕ Off'}
+                            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                sizeItem.available !== false ? 'translate-x-4' : 'translate-x-0'
+                              }`} 
+                            />
                           </button>
                           <button 
                             type="button" 
@@ -496,7 +498,7 @@ export default function ProductsTab() {
                               const newSizes = currentProduct.sizes.filter((_, i) => i !== index);
                               setCurrentProduct({...currentProduct, sizes: newSizes});
                             }}
-                            className="text-red-400 hover:text-red-600 p-2"
+                            className="text-red-400 hover:text-red-500 p-1 flex-shrink-0"
                           >
                             ✕
                           </button>
