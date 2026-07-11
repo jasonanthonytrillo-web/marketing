@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { getAdminProducts, createProduct, updateProduct, deleteProduct, getCategories, uploadImage } from '../../services/api';
+import { getAdminProducts, createProduct, updateProduct, deleteProduct, getCategories, uploadImage, getSettings } from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
 import { ClipboardList, FolderArchive, ImageIcon, Upload, FolderUp, Lightbulb, ArchiveX, AlertTriangle, CheckCircle, Gem } from 'lucide-react';
 
 export default function ProductsTab() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [customBadges, setCustomBadges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -60,9 +61,17 @@ export default function ProductsTab() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [prodRes, catRes] = await Promise.all([getAdminProducts(), getCategories()]);
+      const [prodRes, catRes, settingsRes] = await Promise.all([getAdminProducts(), getCategories(), getSettings()]);
       setProducts(prodRes.data.data);
       setCategories(catRes.data.data);
+      
+      if (settingsRes.data?.data?.custom_badges) {
+        let parsed = settingsRes.data.data.custom_badges;
+        if (typeof parsed === 'string') {
+          try { parsed = JSON.parse(parsed); } catch(e) {}
+        }
+        setCustomBadges(Array.isArray(parsed) ? parsed : []);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -375,7 +384,8 @@ export default function ProductsTab() {
                     { id: 'sugar_free', label: 'Sugar-Free', color: 'text-cyan-700 bg-cyan-50 border-cyan-300' },
                     { id: 'gluten_free', label: 'Gluten-Free', color: 'text-yellow-800 bg-yellow-50 border-yellow-300' },
                     { id: 'nuts', label: 'Contains Nuts', color: 'text-amber-900 bg-amber-50 border-amber-300' },
-                    { id: 'vegan', label: 'Vegan', color: 'text-lime-700 bg-lime-50 border-lime-300' }
+                    { id: 'vegan', label: 'Vegan', color: 'text-lime-700 bg-lime-50 border-lime-300' },
+                    ...customBadges
                   ];
                   const activeTags = currentProduct?.tags ? currentProduct.tags.split(',') : [];
                   const handleToggleTag = (tagId) => {

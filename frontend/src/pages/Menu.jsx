@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
-import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift } from 'lucide-react';
+import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag } from 'lucide-react';
 
 const TRANSLATIONS = {
   en: {
@@ -498,42 +498,30 @@ export default function Menu() {
                       {product.tags && (
                         <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 items-end">
                           {product.tags.split(',').map(tag => {
-                            if (tag === 'recommended') return (
-                              <span key={tag} className="bg-amber-500/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-amber-400/20">
-                                <Star className="w-2.5 h-2.5 fill-current" /> Best Seller
+                            const defaultBadges = {
+                              recommended: { text: 'Best Seller', icon: <Star className="w-2.5 h-2.5 fill-current" />, style: 'bg-amber-500/95 text-white border-amber-400/20' },
+                              spicy: { text: 'Spicy', icon: <Flame className="w-2.5 h-2.5" />, style: 'bg-red-600/95 text-white border-red-500/20' },
+                              halal: { text: 'Halal Certified', icon: <CheckCircle className="w-2.5 h-2.5" />, style: 'bg-emerald-600/95 text-white border-emerald-500/20' },
+                              sugar_free: { text: 'Sugar-Free', icon: <Ban className="w-2.5 h-2.5" />, style: 'bg-cyan-600/95 text-white border-cyan-500/20' },
+                              gluten_free: { text: 'Gluten-Free', icon: <Wheat className="w-2.5 h-2.5" />, style: 'bg-yellow-500/95 text-slate-900 border-yellow-400/20' },
+                              nuts: { text: 'Contains Nuts', icon: <AlertCircle className="w-2.5 h-2.5" />, style: 'bg-amber-800/95 text-white border-amber-700/20' },
+                              vegan: { text: 'Vegan', icon: <Leaf className="w-2.5 h-2.5" />, style: 'bg-lime-600/95 text-white border-lime-500/20' }
+                            };
+                            
+                            let badgeStyles = defaultBadges[tag];
+                            if (!badgeStyles && branding?.custom_badges && Array.isArray(branding.custom_badges)) {
+                              const custom = branding.custom_badges.find(b => b.id === tag);
+                              if (custom) {
+                                // use color classes direct from custom, plus backdrop blur
+                                badgeStyles = { text: custom.label, icon: <Tag className="w-2.5 h-2.5" />, style: custom.color + ' backdrop-blur-sm border/50' };
+                              }
+                            }
+                            if (!badgeStyles) return null;
+                            return (
+                              <span key={tag} className={`text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 border ${badgeStyles.style}`}>
+                                {badgeStyles.icon} {badgeStyles.text}
                               </span>
                             );
-                            if (tag === 'spicy') return (
-                              <span key={tag} className="bg-red-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-red-500/20">
-                                <Flame className="w-2.5 h-2.5" /> Spicy
-                              </span>
-                            );
-                            if (tag === 'halal') return (
-                              <span key={tag} className="bg-emerald-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-emerald-500/20">
-                                <CheckCircle className="w-2.5 h-2.5" /> Halal
-                              </span>
-                            );
-                            if (tag === 'sugar_free') return (
-                              <span key={tag} className="bg-cyan-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-cyan-500/20">
-                                <Ban className="w-2.5 h-2.5" /> Sugar-Free
-                              </span>
-                            );
-                            if (tag === 'gluten_free') return (
-                              <span key={tag} className="bg-yellow-600/95 text-slate-900 text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-yellow-500/20">
-                                <Wheat className="w-2.5 h-2.5" /> Gluten-Free
-                              </span>
-                            );
-                            if (tag === 'nuts') return (
-                              <span key={tag} className="bg-amber-800/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-amber-700/20">
-                                <AlertCircle className="w-2.5 h-2.5" /> Has Nuts
-                              </span>
-                            );
-                            if (tag === 'vegan') return (
-                              <span key={tag} className="bg-lime-600/95 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 backdrop-blur-sm border border-lime-500/20">
-                                <Leaf className="w-2.5 h-2.5" /> Vegan
-                              </span>
-                            );
-                            return null;
                           })}
                         </div>
                       )}
@@ -633,7 +621,7 @@ export default function Menu() {
               {selectedProduct.tags && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {selectedProduct.tags.split(',').map(tag => {
-                    const badgeStyles = {
+                    const defaultBadges = {
                       recommended: { text: 'Best Seller', icon: <Star className="w-2.5 h-2.5 fill-current" />, style: 'bg-amber-500 text-white' },
                       spicy: { text: 'Spicy', icon: <Flame className="w-2.5 h-2.5" />, style: 'bg-red-600 text-white' },
                       halal: { text: 'Halal Certified', icon: <CheckCircle className="w-2.5 h-2.5" />, style: 'bg-emerald-600 text-white' },
@@ -641,10 +629,18 @@ export default function Menu() {
                       gluten_free: { text: 'Gluten-Free', icon: <Wheat className="w-2.5 h-2.5" />, style: 'bg-yellow-500 text-slate-900' },
                       nuts: { text: 'Contains Nuts', icon: <AlertCircle className="w-2.5 h-2.5" />, style: 'bg-amber-800 text-white' },
                       vegan: { text: 'Vegan', icon: <Leaf className="w-2.5 h-2.5" />, style: 'bg-lime-600 text-white' }
-                    }[tag];
+                    };
+                    
+                    let badgeStyles = defaultBadges[tag];
+                    if (!badgeStyles && branding?.custom_badges && Array.isArray(branding.custom_badges)) {
+                      const custom = branding.custom_badges.find(b => b.id === tag);
+                      if (custom) {
+                        badgeStyles = { text: custom.label, icon: <Tag className="w-2.5 h-2.5" />, style: custom.color };
+                      }
+                    }
                     if (!badgeStyles) return null;
                     return (
-                      <span key={tag} className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 ${badgeStyles.style}`}>
+                      <span key={tag} className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm flex items-center gap-1 ${badgeStyles.style}`}>
                         {badgeStyles.icon} {badgeStyles.text}
                       </span>
                     );

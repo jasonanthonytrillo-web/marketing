@@ -69,17 +69,27 @@ router.get('/', async (req, res) => {
     
     let seasonalEffect = 'auto';
     let pointsRate = '100';
+    let customBadges = [];
     try {
       const settings = await prisma.systemSetting.findMany({
         where: { 
           tenantId: tenantId,
-          key: { in: ['seasonal_effect', 'points_rate'] }
+          key: { in: ['seasonal_effect', 'points_rate', 'custom_badges'] }
         }
       });
       const sEffect = settings.find(s => s.key === 'seasonal_effect');
       const pRate = settings.find(s => s.key === 'points_rate');
+      const cBadges = settings.find(s => s.key === 'custom_badges');
+      
       if (sEffect) seasonalEffect = sEffect.value;
       if (pRate) pointsRate = pRate.value;
+      if (cBadges && cBadges.value) {
+        try {
+          customBadges = JSON.parse(cBadges.value);
+        } catch (e) {
+          console.error("Failed to parse custom_badges:", e);
+        }
+      }
     } catch (settingError) {
       seasonalEffect = 'auto';
       pointsRate = '100';
@@ -100,7 +110,8 @@ router.get('/', async (req, res) => {
         storeClosed: tenant?.storeClosed || false,
         deliveryDisabled: tenant?.deliveryDisabled || false,
         seasonal_effect: seasonalEffect,
-        points_rate: pointsRate
+        points_rate: pointsRate,
+        custom_badges: customBadges
       }
     });
   } catch (error) {

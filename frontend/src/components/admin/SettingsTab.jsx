@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { getSettings, updateSettings, uploadImage } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { Palette, Smartphone, Gem, Upload, Plus, ArrowRight, X, CheckCircle, Loader2, MapPin, Store, Monitor } from 'lucide-react';
+import { Palette, Smartphone, Gem, Upload, Plus, ArrowRight, X, CheckCircle, Loader2, MapPin, Store, Monitor, Tag, Trash2 } from 'lucide-react';
 import LocationPicker from '../LocationPicker';
 
 export default function SettingsTab() {
@@ -36,6 +36,18 @@ export default function SettingsTab() {
         if (!Array.isArray(data.tenant_assets)) {
           data.tenant_assets = [];
         }
+
+        if (data.custom_badges && typeof data.custom_badges === 'string') {
+          try {
+            data.custom_badges = JSON.parse(data.custom_badges);
+          } catch(e) {
+            data.custom_badges = [];
+          }
+        }
+        if (!Array.isArray(data.custom_badges)) {
+          data.custom_badges = [];
+        }
+
         setSettings(prev => ({ ...prev, ...data }));
       }
     } catch (error) {
@@ -50,7 +62,11 @@ export default function SettingsTab() {
     setSaving(true);
     setMessage('');
     try {
-      await updateSettings(settings);
+      const payload = { ...settings };
+      if (payload.custom_badges && Array.isArray(payload.custom_badges)) {
+        payload.custom_badges = JSON.stringify(payload.custom_badges);
+      }
+      await updateSettings(payload);
       setMessage('Settings updated successfully!');
 
       setTimeout(() => setMessage(''), 3000);
@@ -504,6 +520,102 @@ export default function SettingsTab() {
                 )}
               </div>
               <p className="text-[10px] text-slate-400 mt-2 italic font-medium">This QR code will be displayed to customers when you trigger a Maya payment request from the cashier dashboard.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card overflow-hidden">
+          <div className="p-6 bg-rose-50 border-b border-rose-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-500/20"><Tag className="w-6 h-6" /></div>
+            <div>
+              <h3 className="font-heading font-bold text-rose-900">Custom Badges</h3>
+              <p className="text-rose-700 text-xs font-medium">Create custom dietary and allergen product badges.</p>
+            </div>
+          </div>
+          <div className="p-8 space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Custom Dietary Badges</label>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const newBadges = [...(settings.custom_badges || [])];
+                    newBadges.push({ id: 'custom_' + Date.now(), label: '', color: 'text-rose-700 bg-rose-50 border-rose-300' });
+                    setSettings({ ...settings, custom_badges: newBadges });
+                  }}
+                  className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all text-xs font-bold flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Badge
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {(settings.custom_badges || []).map((badge, idx) => (
+                  <div key={badge.id} className="flex gap-4 items-center bg-surface-50 p-4 rounded-2xl border border-surface-200 animate-fade-in">
+                    <div className="flex-1">
+                      <input 
+                        type="text" 
+                        placeholder="Badge Label (e.g. Dairy-Free)" 
+                        value={badge.label} 
+                        onChange={(e) => {
+                          const newBadges = [...settings.custom_badges];
+                          newBadges[idx].label = e.target.value;
+                          setSettings({ ...settings, custom_badges: newBadges });
+                        }}
+                        className="input-field w-full text-sm bg-white"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <select 
+                        value={badge.color}
+                        onChange={(e) => {
+                          const newBadges = [...settings.custom_badges];
+                          newBadges[idx].color = e.target.value;
+                          setSettings({ ...settings, custom_badges: newBadges });
+                        }}
+                        className="input-field w-full text-sm bg-white"
+                      >
+                        <option value="text-rose-700 bg-rose-50 border-rose-300">Rose</option>
+                        <option value="text-blue-700 bg-blue-50 border-blue-300">Blue</option>
+                        <option value="text-emerald-700 bg-emerald-50 border-emerald-300">Emerald</option>
+                        <option value="text-amber-700 bg-amber-50 border-amber-300">Amber</option>
+                        <option value="text-purple-700 bg-purple-50 border-purple-300">Purple</option>
+                        <option value="text-cyan-700 bg-cyan-50 border-cyan-300">Cyan</option>
+                        <option value="text-slate-700 bg-slate-50 border-slate-300">Slate</option>
+                        <option value="text-red-700 bg-red-50 border-red-300">Red</option>
+                        <option value="text-lime-700 bg-lime-50 border-lime-300">Lime</option>
+                        <option value="text-yellow-800 bg-yellow-50 border-yellow-300">Yellow</option>
+                      </select>
+                    </div>
+                    
+                    {/* Badge Preview */}
+                    <div className="w-32 flex-shrink-0 flex justify-center">
+                      {badge.label && (
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm border ${badge.color}`}>
+                          {badge.label}
+                        </span>
+                      )}
+                    </div>
+
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const newBadges = settings.custom_badges.filter((_, i) => i !== idx);
+                        setSettings({ ...settings, custom_badges: newBadges });
+                      }}
+                      className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all font-black flex items-center justify-center flex-shrink-0"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+
+                {(!settings.custom_badges || settings.custom_badges.length === 0) && (
+                  <div className="text-center py-8 bg-surface-50 rounded-2xl border border-dashed border-surface-200">
+                    <p className="text-xs text-surface-400 font-medium">No custom badges defined yet.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
