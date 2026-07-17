@@ -53,7 +53,9 @@ router.get('/', async (req, res) => {
           where: { available: true, tenantId: tenantId },
           include: { 
             category: true, 
-            addons: true,
+            addons: {
+              include: { rawIngredient: true }
+            },
             comboOptions: {
               include: {
                 product: true
@@ -66,6 +68,21 @@ router.get('/', async (req, res) => {
     });
 
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+
+    // Post-process out-of-stock addons based on linked ingredients
+    categories.forEach(category => {
+      category.products?.forEach(product => {
+        if (product.addons) {
+          product.addons.forEach(addon => {
+            if (addon.rawIngredientId && addon.quantityUsed && addon.rawIngredient) {
+              if (addon.rawIngredient.stock < addon.quantityUsed) {
+                addon.available = false;
+              }
+            }
+          });
+        }
+      });
+    });
     
     let seasonalEffect = 'auto';
     let pointsRate = '100';
@@ -127,7 +144,10 @@ router.get('/:id', async (req, res) => {
       where: { id: parseInt(req.params.id) },
       include: {
         category: true,
-        addons: { where: { available: true } },
+        addons: { 
+          where: { available: true },
+          include: { rawIngredient: true }
+        },
         comboOptions: {
           include: { product: true }
         }
@@ -136,6 +156,16 @@ router.get('/:id', async (req, res) => {
 
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found.' });
+    }
+
+    if (product.addons) {
+      product.addons.forEach(addon => {
+        if (addon.rawIngredientId && addon.quantityUsed && addon.rawIngredient) {
+           if (addon.rawIngredient.stock < addon.quantityUsed) {
+             addon.available = false;
+           }
+        }
+      });
     }
 
     res.json({ success: true, data: product });

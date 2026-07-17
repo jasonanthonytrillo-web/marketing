@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAdminProducts, createProduct, updateProduct, deleteProduct, getCategories, uploadImage, getSettings } from '../../services/api';
+import { getAdminProducts, createProduct, updateProduct, deleteProduct, hardDeleteProduct, getCategories, uploadImage, getSettings, getRawIngredients, getRecipes, addRecipeItem, removeRecipeItem } from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
 import { ClipboardList, FolderArchive, ImageIcon, Upload, FolderUp, Lightbulb, ArchiveX, AlertTriangle, CheckCircle, Gem } from 'lucide-react';
 
@@ -19,7 +19,12 @@ export default function ProductsTab() {
   const [statusFilter, setStatusFilter] = useState('active'); // active, archived, all
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [showHardDeleteConfirm, setShowHardDeleteConfirm] = useState(false);
+  const [productToHardDelete, setProductToHardDelete] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
+  const [rawIngredients, setRawIngredients] = useState([]);
+  const [productRecipes, setProductRecipes] = useState([]);
+  const [recipeLoading, setRecipeLoading] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
@@ -61,9 +66,10 @@ export default function ProductsTab() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [prodRes, catRes, settingsRes] = await Promise.all([getAdminProducts(), getCategories(), getSettings()]);
+      const [prodRes, catRes, settingsRes, ingRes] = await Promise.all([getAdminProducts(), getCategories(), getSettings(), getRawIngredients()]);
       setProducts(prodRes.data.data);
       setCategories(catRes.data.data);
+      setRawIngredients(ingRes.data.data || []);
       
       if (settingsRes.data?.data?.custom_badges) {
         let parsed = settingsRes.data.data.custom_badges;
@@ -86,6 +92,23 @@ export default function ProductsTab() {
       loadComboOptions(product.id);
     } else {
       setComboOptions([]);
+    }
+    if (product.id) {
+      loadProductRecipes(product.id);
+    } else {
+      setProductRecipes([]);
+    }
+  };
+
+  const loadProductRecipes = async (id) => {
+    setRecipeLoading(true);
+    try {
+      const res = await getRecipes(id);
+      setProductRecipes(res.data.data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRecipeLoading(false);
     }
   };
 
@@ -124,8 +147,9 @@ export default function ProductsTab() {
   };
 
   const handleAdd = () => {
-    setCurrentProduct({ name: '', description: '', price: '', costPrice: '', image: '', categoryId: '', stock: 100, available: true, isCombo: false, tags: '', sizes: [] });
+    setCurrentProduct({ name: '', description: '', price: '', costPrice: '', image: '', categoryId: '', stock: 0, available: true, isCombo: false, tags: '', sizes: [] });
     setComboOptions([]);
+    setProductRecipes([]);
     setIsEditing(true);
   };
 
@@ -200,6 +224,28 @@ export default function ProductsTab() {
       }, 3000);
     } catch (error) {
       alert('Failed to restore product');
+    }
+  };
+
+  const confirmHardDelete = (product) => {
+    setProductToHardDelete(product);
+    setShowHardDeleteConfirm(true);
+  };
+
+  const executeHardDelete = async () => {
+    if (!productToHardDelete) return;
+    try {
+      await hardDeleteProduct(productToHardDelete.id);
+      setShowHardDeleteConfirm(false);
+      setProductToHardDelete(null);
+      loadData();
+
+      setSuccessMessage('Product permanently deleted!');
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 3000);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to permanently delete product');
     }
   };
 
@@ -657,42 +703,75 @@ export default function ProductsTab() {
                   
                   <div className="space-y-3">
                     {(currentProduct.addons || []).map((addon, index) => (
-                      <div key={index} className="flex gap-3 items-center animate-fade-in">
-                        <input 
-                          type="text" 
-                          placeholder="Add-on Name (e.g. Extra Cheese)" 
-                          value={addon.name} 
-                          onChange={e => {
-                            const newAddons = [...currentProduct.addons];
-                            newAddons[index].name = e.target.value;
-                            setCurrentProduct({...currentProduct, addons: newAddons});
-                          }}
-                          className="input-field flex-1 py-2 text-xs"
-                        />
-                        <div className="relative w-28">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 text-xs">₱</span>
+                      <div key={index} className="flex flex-col gap-2 p-3 bg-white border border-surface-200 rounded-xl animate-fade-in shadow-sm">
+                        <div className="flex gap-3 items-center">
                           <input 
-                            type="number" 
-                            placeholder="Price" 
-                            value={addon.price} 
+                            type="text" 
+                            placeholder="Add-on Name (e.g. Extra Cheese)" 
+                            value={addon.name} 
                             onChange={e => {
                               const newAddons = [...currentProduct.addons];
-                              newAddons[index].price = e.target.value;
+                              newAddons[index].name = e.target.value;
                               setCurrentProduct({...currentProduct, addons: newAddons});
                             }}
-                            className="input-field w-full pl-6 py-2 text-xs"
+                            className="input-field flex-1 py-1.5 text-xs"
+                          />
+                          <div className="relative w-24">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-surface-400 text-xs">₱</span>
+                            <input 
+                              type="number" 
+                              placeholder="Price" 
+                              value={addon.price} 
+                              onChange={e => {
+                                const newAddons = [...currentProduct.addons];
+                                newAddons[index].price = e.target.value;
+                                setCurrentProduct({...currentProduct, addons: newAddons});
+                              }}
+                              className="input-field w-full pl-6 py-1.5 text-xs"
+                            />
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              const newAddons = currentProduct.addons.filter((_, i) => i !== index);
+                              setCurrentProduct({...currentProduct, addons: newAddons});
+                            }}
+                            className="text-red-400 hover:text-red-600 p-1 flex-shrink-0"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="flex gap-3 items-center pt-2 border-t border-surface-100">
+                          <span className="text-[10px] uppercase font-bold text-surface-400 w-16">Deduct:</span>
+                          <select 
+                            value={addon.rawIngredientId || ''} 
+                            onChange={e => {
+                              const newAddons = [...currentProduct.addons];
+                              newAddons[index].rawIngredientId = e.target.value;
+                              setCurrentProduct({...currentProduct, addons: newAddons});
+                            }}
+                            className="input-field flex-[2] py-1.5 text-xs bg-surface-50"
+                          >
+                            <option value="">No Linked Ingredient</option>
+                            {rawIngredients.map(ing => (
+                              <option key={ing.id} value={ing.id}>{ing.name} ({ing.unit})</option>
+                            ))}
+                          </select>
+                          
+                          <input 
+                            type="number" 
+                            step="0.01"
+                            placeholder="Qty Used" 
+                            value={addon.quantityUsed || ''} 
+                            onChange={e => {
+                              const newAddons = [...currentProduct.addons];
+                              newAddons[index].quantityUsed = e.target.value;
+                              setCurrentProduct({...currentProduct, addons: newAddons});
+                            }}
+                            className="input-field w-24 py-1.5 text-xs bg-surface-50"
+                            title="How many units of this ingredient?"
                           />
                         </div>
-                        <button 
-                          type="button" 
-                          onClick={() => {
-                            const newAddons = currentProduct.addons.filter((_, i) => i !== index);
-                            setCurrentProduct({...currentProduct, addons: newAddons});
-                          }}
-                          className="text-red-400 hover:text-red-600 p-2"
-                        >
-                          ✕
-                        </button>
                       </div>
                     ))}
                     {(!currentProduct.addons || currentProduct.addons.length === 0) && (
@@ -702,10 +781,136 @@ export default function ProductsTab() {
                     )}
                   </div>
                 </div>
+
+                {/* Group 6: Recipe / Raw Ingredients */}
+                {currentProduct.id && (
+                  <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 ml-1">Recipe / Raw Ingredients</h4>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setProductRecipes([...productRecipes, { rawIngredientId: '', quantityUsed: '' }]);
+                        }}
+                        className="text-xs bg-amber-50 text-amber-600 px-3 py-1.5 rounded-lg font-bold border border-amber-100 hover:bg-amber-100 transition-all"
+                      >
+                        + Add Ingredient
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {productRecipes.map((recipe, index) => (
+                        <div key={recipe.id || index} className="flex gap-3 items-center animate-fade-in">
+                          <select 
+                            value={recipe.rawIngredientId} 
+                            onChange={e => {
+                              const newRecipes = [...productRecipes];
+                              newRecipes[index].rawIngredientId = e.target.value;
+                              setProductRecipes(newRecipes);
+                            }}
+                            className="input-field flex-[2] py-2 text-xs bg-white"
+                          >
+                            <option value="">Select Ingredient</option>
+                            {rawIngredients.map(ing => (
+                              <option key={ing.id} value={ing.id}>{ing.name} ({ing.unit})</option>
+                            ))}
+                          </select>
+                          
+                          <div className="flex-[1.5]">
+                            <input 
+                              type="number" 
+                              step="0.01"
+                              placeholder="Portions Used (e.g. 1)" 
+                              value={recipe.quantityUsed || 1} 
+                              onChange={e => {
+                                const newRecipes = [...productRecipes];
+                                newRecipes[index].quantityUsed = e.target.value;
+                                setProductRecipes(newRecipes);
+                              }}
+                              className="input-field w-full py-2 text-xs"
+                              title="How many portions of this ingredient does 1 order use? (Usually 1)"
+                            />
+                          </div>
+
+                          {!recipe.id ? (
+                            <button 
+                              type="button" 
+                              onClick={async () => {
+                                if (!recipe.rawIngredientId || !recipe.quantityUsed) return;
+                                try {
+                                  const res = await addRecipeItem({ 
+                                    productId: currentProduct.id, 
+                                    rawIngredientId: recipe.rawIngredientId, 
+                                    quantityUsed: recipe.quantityUsed 
+                                  });
+                                  const newRecipes = [...productRecipes];
+                                  newRecipes[index] = res.data.data;
+                                  setProductRecipes(newRecipes);
+                                } catch (e) {
+                                  alert('Failed to save recipe item');
+                                }
+                              }}
+                              className="text-emerald-500 hover:text-emerald-700 bg-emerald-50 p-2 rounded-lg text-xs font-bold"
+                            >
+                              Save
+                            </button>
+                          ) : (
+                            <button 
+                              type="button" 
+                              onClick={async () => {
+                                try {
+                                  await removeRecipeItem(recipe.id);
+                                  setProductRecipes(productRecipes.filter(r => r.id !== recipe.id));
+                                } catch (e) {
+                                  alert('Failed to remove recipe item');
+                                }
+                              }}
+                              className="text-red-400 hover:text-red-500 p-2"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          
+                          {!recipe.id && (
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                setProductRecipes(productRecipes.filter((_, i) => i !== index));
+                              }}
+                              className="text-red-400 hover:text-red-500 p-2"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {productRecipes.length === 0 && (
+                        <div className="text-center py-4 bg-surface-50 rounded-2xl border border-dashed border-surface-200">
+                          <p className="text-xs text-surface-400 font-medium">No ingredients linked. This product does not deduct raw inventory.</p>
+                        </div>
+                      )}
+                      
+                      {!currentProduct.id && (
+                        <p className="text-[10px] text-surface-400 font-bold uppercase py-2 text-center">Save product first before adding recipe items.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </form>
             </div>
 
             <div className="p-6 border-t border-surface-100 flex gap-3 flex-shrink-0 bg-surface-50 rounded-b-3xl">
+              {currentProduct.id && (
+                currentProduct.available ? (
+                  <button type="button" onClick={() => { setIsEditing(false); handleDelete(currentProduct); }} className="py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 font-bold rounded-lg transition-colors">
+                    Deactivate
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => { handleRestore(currentProduct); setIsEditing(false); }} className="py-3 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 font-bold rounded-lg transition-colors">
+                    Restore
+                  </button>
+                )
+              )}
               <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 bg-white border border-surface-200 hover:bg-surface-100 text-surface-700 font-bold rounded-lg transition-colors">
                 Cancel
               </button>
@@ -757,13 +962,14 @@ export default function ProductsTab() {
                     {product.available ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="p-4 text-right space-x-2">
-                  <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 font-medium px-2 py-1 bg-blue-50 rounded">Edit</button>
-                  {product.available ? (
-                    <button onClick={() => handleDelete(product)} className="text-red-500 hover:text-red-700 font-medium px-2 py-1 bg-red-50 rounded transition-colors">Deactivate</button>
+                <td className="p-4 text-right">
+                  {statusFilter === 'archived' ? (
+                    <div className="flex justify-end gap-2">
+                       <button onClick={() => handleRestore(product)} className="text-emerald-500 hover:text-emerald-700 font-bold px-4 py-1.5 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm">Reactivate</button>
+                       <button onClick={() => confirmHardDelete(product)} className="text-red-500 hover:text-red-700 font-bold px-4 py-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition-colors shadow-sm">Delete Forever</button>
+                    </div>
                   ) : (
-                    <button onClick={() => handleRestore(product)} 
-                      className="text-emerald-600 hover:text-emerald-800 font-medium px-2 py-1 bg-emerald-50 rounded">Restore</button>
+                    <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 font-medium px-4 py-1.5 bg-blue-50 rounded-lg">Edit</button>
                   )}
                 </td>
               </tr>
@@ -813,6 +1019,42 @@ export default function ProductsTab() {
         </div>
       </div>
     )}
+
+      {showHardDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in" onClick={() => setShowHardDeleteConfirm(false)}>
+          <div 
+            className="bg-white rounded-[32px] w-full max-w-sm overflow-hidden shadow-2xl animate-scale-in border border-red-500/20"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse border-4 border-red-100">
+                <AlertTriangle className="w-10 h-10 text-red-500" />
+              </div>
+              
+              <h3 className="text-2xl font-black text-surface-900 mb-3 tracking-tight">Delete Forever?</h3>
+              <p className="text-surface-500 font-medium leading-relaxed mb-8">
+                You are about to permanently delete <span className="text-red-600 font-bold">"{productToHardDelete?.name}"</span> from the database. This action cannot be undone!
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={executeHardDelete}
+                  className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Delete Forever
+                </button>
+                <button 
+                  onClick={() => setShowHardDeleteConfirm(false)}
+                  className="w-full py-4 bg-surface-100 hover:bg-surface-200 text-surface-600 font-black uppercase tracking-widest rounded-2xl transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
     {/* Dynamic centered success notification toast */}
     {successMessage && (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
@@ -822,7 +1064,6 @@ export default function ProductsTab() {
         </div>
       </div>
     )}
-    </div>
     </div>
   );
 }

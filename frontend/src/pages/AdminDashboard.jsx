@@ -11,6 +11,7 @@ import InventoryLogsTab from '../components/admin/InventoryLogsTab';
 import ExpensesTab from '../components/admin/ExpensesTab';
 import ReportsTab from '../components/admin/ReportsTab';
 import SettingsTab from '../components/admin/SettingsTab';
+import PackagesTab from '../components/admin/PackagesTab';
 import AuditLogsTab from '../components/admin/LogsTab';
 import StaffTab from '../components/admin/StaffTab';
 import SuppliersTab from '../components/admin/SuppliersTab';
@@ -92,20 +93,46 @@ export default function AdminDashboard() {
     }
   };
 
-  const navItems = [
-    { id: 'overview', label: 'Overview', icon: <BarChart2 className="w-5 h-5" /> },
-    { id: 'orders', label: 'Orders', icon: <ShoppingBag className="w-5 h-5" /> },
-    { id: 'categories', label: 'Categories', icon: <FolderTree className="w-5 h-5" /> },
-    { id: 'products', label: 'Products', icon: <PackageSearch className="w-5 h-5" /> },
-    { id: 'staff', label: 'Staff', icon: <Users className="w-5 h-5" /> },
-    { id: 'suppliers', label: 'Suppliers', icon: <Truck className="w-5 h-5" /> },
-    { id: 'inventory', label: 'Inventory', icon: <Package className="w-5 h-5" /> },
-    { id: 'inventory-logs', label: 'Stock History', icon: <RotateCcw className="w-5 h-5" /> },
-    { id: 'expenses', label: 'Expenses', icon: <Wallet className="w-5 h-5" /> },
-    { id: 'reports', label: 'Reports', icon: <LineChart className="w-5 h-5" /> },
-    { id: 'feedback', label: 'Feedback', icon: <MessageSquare className="w-5 h-5" /> },
-    { id: 'audit', label: 'Audit Logs', icon: <ClipboardList className="w-5 h-5" /> },
-    { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
+  const navGroups = [
+    {
+      label: 'Main',
+      items: [
+        { id: 'overview', label: 'Overview', icon: <BarChart2 className="w-5 h-5" /> },
+        { id: 'orders', label: 'Orders', icon: <ShoppingBag className="w-5 h-5" /> },
+        { id: 'reports', label: 'Reports', icon: <LineChart className="w-5 h-5" /> },
+      ]
+    },
+    {
+      label: 'Catalog',
+      items: [
+        { id: 'products', label: 'Products', icon: <PackageSearch className="w-5 h-5" /> },
+        { id: 'categories', label: 'Categories', icon: <FolderTree className="w-5 h-5" /> },
+        { id: 'packages', label: 'Packages', icon: <Store className="w-5 h-5" /> },
+      ]
+    },
+    {
+      label: 'Inventory',
+      items: [
+        { id: 'inventory', label: 'Stock', icon: <Package className="w-5 h-5" /> },
+        { id: 'inventory-logs', label: 'History', icon: <RotateCcw className="w-5 h-5" /> },
+        { id: 'suppliers', label: 'Suppliers', icon: <Truck className="w-5 h-5" /> },
+        { id: 'expenses', label: 'Expenses', icon: <Wallet className="w-5 h-5" /> },
+      ]
+    },
+    {
+      label: 'Management',
+      items: [
+        { id: 'staff', label: 'Staff', icon: <Users className="w-5 h-5" /> },
+        { id: 'feedback', label: 'Feedback', icon: <MessageSquare className="w-5 h-5" /> },
+      ]
+    },
+    {
+      label: 'System',
+      items: [
+        { id: 'audit', label: 'Logs', icon: <ClipboardList className="w-5 h-5" /> },
+        { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
+      ]
+    }
   ];
 
   if (loading && !summary) return (
@@ -140,16 +167,24 @@ export default function AdminDashboard() {
         </div>
         
         {/* Navigation Tabs */}
-        <nav className="flex md:flex-col overflow-x-auto md:overflow-y-auto px-2 py-3 md:p-4 gap-2 md:gap-1 scrollbar-hide justify-between md:justify-start">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex-shrink-0 md:flex-1 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-xl font-bold transition-all ${activeTab === item.id ? 'bg-primary-600/10 md:bg-primary-600 text-primary-500 md:text-white shadow-none md:shadow-lg md:shadow-primary-600/20' : 'text-surface-400 hover:text-white md:hover:bg-surface-800'}`}
-            >
-              <span className="text-xl md:text-lg leading-none">{item.icon}</span>
-              <span className="text-[10px] md:text-sm whitespace-nowrap">{item.label}</span>
-            </button>
+        <nav className="flex md:flex-col overflow-x-auto md:overflow-y-auto px-2 py-3 md:p-3 gap-2 md:gap-0 scrollbar-hide justify-start">
+          {navGroups.map((group, gIdx) => (
+            <div key={gIdx} className="flex md:flex-col shrink-0 flex-row gap-2 md:gap-1 md:mb-6">
+              <span className="hidden md:block text-[10px] font-black text-surface-500 uppercase tracking-widest px-3 mb-1 mt-1">{group.label}</span>
+              {group.items.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex-shrink-0 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-3 md:px-3 py-2 md:py-2.5 rounded-xl font-bold transition-all ${activeTab === item.id ? 'bg-primary-600/10 md:bg-primary-600 text-primary-500 md:text-white shadow-none md:shadow-lg md:shadow-primary-600/20' : 'text-surface-400 hover:text-white md:hover:bg-surface-800'}`}
+                >
+                  <span className="text-xl md:text-lg leading-none">{item.icon}</span>
+                  <span className="text-[10px] md:text-sm whitespace-nowrap">{item.label}</span>
+                </button>
+              ))}
+              {gIdx < navGroups.length - 1 && (
+                <div className="md:hidden w-px h-full bg-surface-800 mx-1 opacity-50"></div>
+              )}
+            </div>
           ))}
         </nav>
 
@@ -291,6 +326,7 @@ export default function AdminDashboard() {
 
           {activeTab === 'orders' && <OrdersTab />}
           {activeTab === 'categories' && <CategoriesTab />}
+          {activeTab === 'packages' && <PackagesTab />}
           {activeTab === 'products' && <ProductsTab />}
           {activeTab === 'staff' && <StaffTab />}
           {activeTab === 'suppliers' && <SuppliersTab />}

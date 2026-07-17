@@ -434,4 +434,60 @@ router.get('/export/suppliers', authenticate, authorize('admin'), async (req, re
   }
 });
 
+// GET /api/reports/sales-by-date?date=YYYY-MM-DD
+router.get('/sales-by-date', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) return res.status(400).json({ success: false, message: 'date query param required (YYYY-MM-DD)' });
+
+    // Use UTC day boundaries — this matches how the P&L table groups dates
+    // (the P&L uses toISOString().split('T')[0] = UTC date key)
+    const start = new Date(`${date}T00:00:00.000Z`);
+    const end   = new Date(`${date}T23:59:59.999Z`);
+
+    const items = await prisma.orderItem.findMany({
+      where: {
+        order: {
+          tenantId: req.tenantId,
+          status: 'completed',
+          createdAt: { gte: start, lte: end }
+        }
+      },
+      select: {
+        productName: true,
+        quantity: true,
+        subtotal: true,
+        productPrice: true,
+        product: { select: { costPrice: true } }
+      }
+    });
+
+    console.log(`[sales-by-date] date=${date} start=${start.toISOString()} end=${end.toISOString()} items=${items.length} tenantId=${req.tenantId}`);
+
+    const aggregated = {};
+    items.forEach(i => {
+      const costPrice = i.product?.costPrice || 0;
+      const totalCost = costPrice * i.quantity;
+      if (!aggregated[i.productName]) {
+        aggregated[i.productName] = { name: i.productName, quantity: 0, revenue: 0, cost: 0, profit: 0, unitPrice: i.productPrice, costPrice };
+      }
+      aggregated[i.productName].quantity += i.quantity;
+      aggregated[i.productName].revenue += i.subtotal;
+      aggregated[i.productName].cost   += totalCost;
+      aggregated[i.productName].profit += i.subtotal - totalCost;
+    });
+
+    const products = Object.values(aggregated).sort((a, b) => b.profit - a.profit);
+    const totalRevenue = products.reduce((s, p) => s + p.revenue, 0);
+    const totalProfit  = products.reduce((s, p) => s + p.profit, 0);
+    const totalItems   = products.reduce((s, p) => s + p.quantity, 0);
+
+    res.json({ success: true, data: { date, products, totalRevenue, totalProfit, totalItems } });
+  } catch (error) {
+    console.error('Sales-by-date error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load sales by date.' });
+  }
+});
+
 module.exports = router;
+

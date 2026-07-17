@@ -136,6 +136,7 @@ app.use('/api/customer', require('./routes/customer'));
 app.use('/api/rider', require('./routes/rider'));
 app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/push', require('./routes/push').router);
+app.use('/api/inventory/ingredients', require('./routes/rawIngredients'));
 
 // Socket.io
 require('./socket')(io, prisma);

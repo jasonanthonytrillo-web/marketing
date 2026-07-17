@@ -89,17 +89,32 @@ export const completeOrder = (id) => api.post(`/kitchen/orders/${id}/complete`);
 export const markServed = (id) => api.post(`/kitchen/orders/${id}/served`);
 
 // Admin
-export const getAdminOrders = (status, page) => api.get(`/admin/orders?status=${status || 'all'}&page=${page || 1}`);
+export const getAdminOrders = (status, page, search = '') => {
+  let url = `/admin/orders?status=${status || 'all'}&page=${page || 1}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+  return api.get(url);
+};
 export const getAdminProducts = () => api.get('/admin/products');
 export const createProduct = (data) => api.post('/admin/products', data);
 export const updateProduct = (id, data) => api.put(`/admin/products/${id}`, data);
 export const deleteProduct = (id) => api.delete(`/admin/products/${id}`);
+export const hardDeleteProduct = (id) => api.delete(`/admin/products/${id}/hard`);
 export const getStaff = () => api.get('/admin/staff');
 export const createStaff = (data) => api.post('/admin/staff', data);
 export const updateStaff = (id, data) => api.put(`/admin/staff/${id}`, data);
 export const deleteStaff = (id) => api.delete(`/admin/staff/${id}`);
 export const getInventory = () => api.get('/admin/inventory');
-export const restockProduct = (id, quantity) => api.post(`/admin/inventory/${id}/restock`, { quantity });
+
+// Raw Ingredients & Recipes
+export const getRawIngredients = () => api.get('/inventory/ingredients');
+export const createRawIngredient = (data) => api.post('/inventory/ingredients', data);
+export const updateRawIngredient = (id, data) => api.put(`/inventory/ingredients/${id}`, data);
+export const deleteRawIngredient = (id) => api.delete(`/inventory/ingredients/${id}`);
+export const getRecipes = (productId) => api.get(`/inventory/ingredients/recipes/${productId}`);
+export const addRecipeItem = (data) => api.post('/inventory/ingredients/recipes', data);
+export const removeRecipeItem = (id) => api.delete(`/inventory/ingredients/recipes/${id}`);
+
+export const restockProduct = (id, data) => api.post(`/admin/inventory/${id}/restock`, data);
 export const getAuditLogs = () => api.get('/admin/audit-logs');
 export const getSettings = () => api.get('/admin/settings');
 export const updateSettings = (settings) => api.post('/admin/settings', { settings });
@@ -116,6 +131,7 @@ export const getBestsellers = () => api.get('/reports/bestsellers');
 export const getAdminSummary = () => api.get('/reports/summary');
 export const getKitchenTimes = () => api.get('/reports/kitchen-times');
 export const getForecasting = () => api.get('/reports/forecasting');
+export const getSalesByDate = (date) => api.get(`/reports/sales-by-date?date=${date}`);
 
 // Suppliers
 export const getSuppliers = () => api.get('/suppliers');
@@ -153,5 +169,12 @@ export const getHistoryRiderOrders = () => api.get('/rider/history');
 export const pickupOrder = (id) => api.post(`/rider/orders/${id}/pickup`);
 export const deliverOrder = (id) => api.post(`/rider/orders/${id}/delivered`);
 export const notifyArrival = (id) => api.post(`/rider/orders/${id}/notify-arrival`);
+
+// Event Packages
+export const getAdminPackages = () => api.get('/admin/packages');
+export const createAdminPackage = (data) => api.post('/admin/packages', data);
+export const updateAdminPackage = (id, data) => api.put(`/admin/packages/${id}`, data);
+export const deleteAdminPackage = (id) => api.delete(`/admin/packages/${id}`);
+export const getPublicPackages = (slug) => api.get(`/public/tenant/${slug}/packages`);
 
 export default api;

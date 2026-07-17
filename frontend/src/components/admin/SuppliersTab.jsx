@@ -122,8 +122,7 @@ export default function SuppliersTab() {
                     <td className="px-6 py-4 text-surface-600 text-sm">{s.email || '-'}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleOpenModal(s)} className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-blue-100 flex items-center"><Edit className="w-4 h-4" /></button>
-                        <button onClick={() => handleDelete(s.id)} className="p-2 hover:bg-white rounded-lg text-red-600 shadow-sm border border-transparent hover:border-red-100 flex items-center"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => handleOpenModal(s)} className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-blue-100 flex items-center"><Edit className="w-4 h-4 mr-1" /><span className="text-xs font-bold">Edit</span></button>
                       </div>
                     </td>
                   </tr>
@@ -196,6 +195,15 @@ export default function SuppliersTab() {
               </div>
 
               <div className="flex gap-3 pt-4">
+                {editingSupplier && (
+                  <button 
+                    type="button" 
+                    onClick={() => handleDelete(editingSupplier.id)}
+                    className="py-4 px-5 bg-red-50 text-red-600 border border-red-100 font-bold rounded-2xl hover:bg-red-100 transition-all"
+                  >
+                    Delete
+                  </button>
+                )}
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}

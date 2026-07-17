@@ -39,6 +39,8 @@ model Tenant {
   systemSettings SystemSetting[]
   expenses      Expense[]
   suppliers     Supplier[]
+  rawIngredients RawIngredient[]
+  eventPackages EventPackage[]
 }
 
 model User {
@@ -90,7 +92,7 @@ model Product {
   description String?
   price       Float
   image       String?
-  stock       Int      @default(100)
+  stock       Int      @default(0)
   available   Boolean  @default(true)
   pointsCost  Int?
   sortOrder   Int      @default(0)
@@ -113,6 +115,8 @@ model Product {
   costPrice     Float          @default(0) // Internal cost of product
   tags          String?        // Comma-separated dietary/allergen badges (e.g. spicy,halal,recommended)
   sizes         Json?          // Array of {name, price, available} for size variants
+
+  recipeItems   RecipeItem[]
 }
 
 model ProductAddon {
@@ -124,7 +128,11 @@ model ProductAddon {
   available Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rawIngredientId Int?
+  quantityUsed    Float?
+
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rawIngredient RawIngredient? @relation(fields: [rawIngredientId], references: [id])
 }
 
 model ComboOption {
@@ -319,3 +327,63 @@ model BetaApplication {
   createdAt    DateTime @default(now())
 }
 
+model RawIngredient {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int      @default(1)
+  name        String
+  stock       Float    @default(0)
+  unit        String   // e.g. "Can", "Grams", "Pieces"
+  yield       Float    @default(1) // Global servings/portions this unit makes
+  costPrice   Float    @default(0) // Cost per unit (e.g. cost per 1 Can)
+  alertLevel  Float?   // Optional low stock warning threshold
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  recipeItems RecipeItem[]
+  addons      ProductAddon[]
+  logs        RawIngredientLog[]
+}
+
+model RecipeItem {
+  id              Int      @id @default(autoincrement())
+  productId       Int
+  rawIngredientId Int
+  quantityUsed    Float    // e.g., 0.166667 (1/6th of a can)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rawIngredient RawIngredient @relation(fields: [rawIngredientId], references: [id], onDelete: Cascade)
+  
+  @@unique([productId, rawIngredientId]) // A product should only link to an ingredient once
+}
+
+model RawIngredientLog {
+  id              Int      @id @default(autoincrement())
+  rawIngredientId Int
+  quantityChange  Float    // Negative for deductions, positive for restock
+  reason          String   // "order", "restock", "adjustment", "waste"
+  referenceId     String?  // Could be an Order ID string or restock note
+  staffId         Int?     // User who made the change (null if auto-deducted)
+  createdAt       DateTime @default(now())
+
+  rawIngredient   RawIngredient @relation(fields: [rawIngredientId], references: [id], onDelete: Cascade)
+}
+
+model EventPackage {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int      @default(1)
+  name        String
+  description String?
+  priceText   String
+  features    String?  // JSON string array of features
+  image       String?
+  icon        String?  @default("Coffee") // e.g. "Coffee", "Star", "Store"
+  isPopular   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+}

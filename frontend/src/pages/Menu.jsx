@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getProducts, changePassword, getOrder, trackVisit } from '../services/api';
+import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
 import { formatCurrency, unlockAudio } from '../utils/helpers';
@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
-import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag } from 'lucide-react';
+import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store } from 'lucide-react';
 
 const TRANSLATIONS = {
   en: {
@@ -95,6 +95,8 @@ export default function Menu() {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
+  const [showPackages, setShowPackages] = useState(false);
+  const [eventPackages, setEventPackages] = useState([]);
   const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
   const [comboStep, setComboStep] = useState(1); // 1 or 2
   const { addToCart, getItemCount, items, getSubtotal, clearCart } = useCart();
@@ -169,6 +171,23 @@ export default function Menu() {
         if (res.data.branding.primaryColor) {
           applyTheme(res.data.branding.primaryColor);
         }
+      }
+      
+      try {
+        let tenantSlug = searchParams.get('tenant');
+        if (!tenantSlug) {
+           const hostname = window.location.hostname;
+           const isPlatformDomain = hostname.includes('vercel.app') || hostname.includes('onrender.com');
+           if (!isPlatformDomain && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+             tenantSlug = hostname.split('.')[0];
+           } else {
+             tenantSlug = 'project-million';
+           }
+        }
+        const pkgRes = await getPublicPackages(tenantSlug);
+        setEventPackages(pkgRes.data.data || []);
+      } catch (err) {
+        console.error('Failed to load packages:', err);
       }
     } catch (e) {
       console.error('Failed to load products:', e);
@@ -355,6 +374,13 @@ export default function Menu() {
 
           <div className="flex items-center gap-4 relative">
             <button
+              onClick={() => setShowPackages(true)}
+              className="flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-white rounded-full text-xs md:text-sm font-black shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95"
+              style={{ color: brandingColor }}
+            >
+              <span>Packages</span>
+            </button>
+            <button
               onClick={toggleLanguage}
               className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-3 bg-white rounded-full text-xs md:text-sm font-black shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95"
             >
@@ -448,26 +474,26 @@ export default function Menu() {
               <p className="text-surface-500 text-xs md:text-sm mb-3 md:mb-6">{t('searchInstructions')}</p>
             </div>
 
-            <div className="flex overflow-x-auto md:grid md:grid-cols-1 gap-2 md:gap-4 pb-2 md:pb-20 scrollbar-hide px-1 md:overflow-y-auto rounded-xl md:rounded-3xl">
+            <div className="flex overflow-x-auto md:flex-col gap-2 md:gap-3 pb-2 md:pb-20 scrollbar-hide px-1 md:overflow-y-auto rounded-xl md:rounded-3xl">
               <button
                 onClick={() => setActiveCategory('all')}
-                className={`flex-shrink-0 w-20 md:w-auto flex flex-col items-center justify-center text-center aspect-square rounded-2xl md:rounded-3xl p-2 md:p-3 transition-all ${activeCategory === 'all' ? 'text-white shadow-lg shadow-primary-500/30 scale-[1.05]' : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:bg-surface-50 hover:scale-[1.05]'}`}
+                className={`flex-shrink-0 w-20 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start text-center md:text-left aspect-square md:aspect-auto rounded-2xl md:rounded-2xl p-2 md:py-3.5 md:px-5 transition-all ${activeCategory === 'all' ? 'text-white shadow-lg shadow-primary-500/30 scale-105 md:scale-100' : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:bg-surface-50 hover:scale-105 md:hover:scale-100'}`}
                 style={activeCategory === 'all' ? { backgroundColor: brandingColor } : {}}
               >
-                <div className="mb-1 md:mb-2 lg:mb-3"><Utensils className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10" /></div>
-                <span className="text-[10px] md:text-sm lg:text-base font-bold leading-tight">{t('allItems')}</span>
+                <div className="mb-1 md:mb-0 md:mr-4"><Utensils className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" /></div>
+                <span className="text-[10px] md:text-xs lg:text-sm font-bold leading-tight md:leading-normal">{t('allItems')}</span>
               </button>
               {categories.map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(String(cat.id))}
-                  className={`flex-shrink-0 w-20 md:w-auto flex flex-col items-center justify-center text-center aspect-square rounded-2xl md:rounded-3xl p-2 md:p-3 transition-all ${activeCategory === String(cat.id) ? 'text-white shadow-lg shadow-primary-500/30 scale-[1.05]' : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:bg-surface-50 hover:scale-[1.05]'}`}
+                  className={`flex-shrink-0 w-20 md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start text-center md:text-left aspect-square md:aspect-auto rounded-2xl md:rounded-2xl p-2 md:py-3.5 md:px-5 transition-all ${activeCategory === String(cat.id) ? 'text-white shadow-lg shadow-primary-500/30 scale-105 md:scale-100' : 'bg-white text-surface-600 border border-surface-200 hover:border-primary-300 hover:bg-surface-50 hover:scale-105 md:hover:scale-100'}`}
                   style={activeCategory === String(cat.id) ? { backgroundColor: brandingColor } : {}}
                 >
-                  <div className="mb-1 md:mb-2 lg:mb-3">
-                    {cat.icon === '📦' ? <Package className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10" /> : (cat.icon || <Package className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10" />)}
+                  <div className="mb-1 md:mb-0 md:mr-4">
+                    {cat.icon === '📦' ? <Package className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" /> : (cat.icon || <Package className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7" />)}
                   </div>
-                  <span className="text-[10px] md:text-sm lg:text-base font-bold leading-tight line-clamp-2">{cat.name}</span>
+                  <span className="text-[10px] md:text-xs lg:text-sm font-bold leading-tight md:leading-normal line-clamp-2 md:line-clamp-1">{cat.name}</span>
                 </button>
               ))}
             </div>
@@ -482,7 +508,7 @@ export default function Menu() {
                 <span className="w-2 h-8 rounded-full" style={{ backgroundColor: brandingColor }}></span>
                 {cat.name}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 md:gap-5">
                 {cat.products?.map((product, idx) => (
                   <button
                     key={product.id}
@@ -495,36 +521,35 @@ export default function Menu() {
                         src={product.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
                         className="w-full h-full object-cover absolute inset-0 md:static"
                       />
-                      {product.tags && (
-                        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 items-end">
-                          {product.tags.split(',').map(tag => {
-                            const defaultBadges = {
-                              recommended: { text: 'Best Seller', icon: <Star className="w-2.5 h-2.5 fill-current" />, style: 'bg-amber-500/95 text-white border-amber-400/20' },
-                              spicy: { text: 'Spicy', icon: <Flame className="w-2.5 h-2.5" />, style: 'bg-red-600/95 text-white border-red-500/20' },
-                              halal: { text: 'Halal Certified', icon: <CheckCircle className="w-2.5 h-2.5" />, style: 'bg-emerald-600/95 text-white border-emerald-500/20' },
-                              sugar_free: { text: 'Sugar-Free', icon: <Ban className="w-2.5 h-2.5" />, style: 'bg-cyan-600/95 text-white border-cyan-500/20' },
-                              gluten_free: { text: 'Gluten-Free', icon: <Wheat className="w-2.5 h-2.5" />, style: 'bg-yellow-500/95 text-slate-900 border-yellow-400/20' },
-                              nuts: { text: 'Contains Nuts', icon: <AlertCircle className="w-2.5 h-2.5" />, style: 'bg-amber-800/95 text-white border-amber-700/20' },
-                              vegan: { text: 'Vegan', icon: <Leaf className="w-2.5 h-2.5" />, style: 'bg-lime-600/95 text-white border-lime-500/20' }
-                            };
-                            
-                            let badgeStyles = defaultBadges[tag];
-                            if (!badgeStyles && branding?.custom_badges && Array.isArray(branding.custom_badges)) {
-                              const custom = branding.custom_badges.find(b => b.id === tag);
-                              if (custom) {
-                                // use color classes direct from custom, plus backdrop blur
-                                badgeStyles = { text: custom.label, icon: <Tag className="w-2.5 h-2.5" />, style: custom.color + ' backdrop-blur-sm border/50' };
-                              }
-                            }
-                            if (!badgeStyles) return null;
-                            return (
-                              <span key={tag} className={`text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-1 border ${badgeStyles.style}`}>
-                                {badgeStyles.icon} {badgeStyles.text}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
+                      {product.tags && (() => {
+                        const allTags = product.tags.split(',');
+                        // Prioritize 'recommended' (Best Seller) badge
+                        const priorityTag = allTags.includes('recommended') ? 'recommended' : allTags[0];
+                        const defaultBadges = {
+                          recommended: { text: 'Best Seller', icon: <Star className="w-2.5 h-2.5 fill-current" />, style: 'bg-amber-500/95 text-white border-amber-400/20' },
+                          spicy: { text: 'Spicy', icon: <Flame className="w-2.5 h-2.5" />, style: 'bg-red-600/95 text-white border-red-500/20' },
+                          halal: { text: 'Halal', icon: <CheckCircle className="w-2.5 h-2.5" />, style: 'bg-emerald-600/95 text-white border-emerald-500/20' },
+                          sugar_free: { text: 'Sugar-Free', icon: <Ban className="w-2.5 h-2.5" />, style: 'bg-cyan-600/95 text-white border-cyan-500/20' },
+                          gluten_free: { text: 'GF', icon: <Wheat className="w-2.5 h-2.5" />, style: 'bg-yellow-500/95 text-slate-900 border-yellow-400/20' },
+                          nuts: { text: 'Nuts', icon: <AlertCircle className="w-2.5 h-2.5" />, style: 'bg-amber-800/95 text-white border-amber-700/20' },
+                          vegan: { text: 'Vegan', icon: <Leaf className="w-2.5 h-2.5" />, style: 'bg-lime-600/95 text-white border-lime-500/20' }
+                        };
+                        let badgeStyles = defaultBadges[priorityTag];
+                        if (!badgeStyles && branding?.custom_badges && Array.isArray(branding.custom_badges)) {
+                          const custom = branding.custom_badges.find(b => b.id === priorityTag);
+                          if (custom) {
+                            badgeStyles = { text: custom.label, icon: <Tag className="w-2.5 h-2.5" />, style: custom.color + ' backdrop-blur-sm border/50' };
+                          }
+                        }
+                        if (!badgeStyles) return null;
+                        return (
+                          <div className="absolute top-2 right-2 z-10">
+                            <span className={`text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-md uppercase tracking-wider flex items-center gap-0.5 border ${badgeStyles.style}`}>
+                              {badgeStyles.icon} {badgeStyles.text}
+                            </span>
+                          </div>
+                        );
+                      })()}
                       {(!product.available || product.stock <= 0) && (
                         <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-[2px] flex items-center justify-center">
                           <span className="bg-red-500 text-white font-black px-4 py-1.5 rounded-xl text-xs uppercase tracking-widest -rotate-12">Sold Out</span>
@@ -533,6 +558,11 @@ export default function Menu() {
                     </div>
                     <div className="p-3 md:p-5 flex flex-col flex-1 w-full bg-white overflow-hidden">
                       <h3 className="font-heading font-bold text-surface-900 text-[15px] md:text-xl mb-0.5 md:mb-1 line-clamp-2 md:line-clamp-1 leading-tight">{product.name}</h3>
+                      {product.stock > 0 && product.stock < 5 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] md:text-[11px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full mb-1 animate-pulse uppercase tracking-wide">
+                          🔥 Only {product.stock} left!
+                        </span>
+                      )}
                       <p className="text-[11px] md:text-sm text-surface-500 line-clamp-2 md:line-clamp-2 mb-2 md:mb-4 flex-1 leading-snug">{product.description}</p>
                       <div className="flex items-center justify-between mt-auto">
                         <span className="font-heading font-black text-base md:text-2xl" style={{ color: brandingColor }}>
@@ -1033,6 +1063,86 @@ export default function Menu() {
           </div>
         </div>
       )}
+
+      {/* Event Packages Modal */}
+      {showPackages && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
+          <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={() => setShowPackages(false)}></div>
+          <div className="bg-white rounded-[28px] w-full max-w-4xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up scrollbar-hide">
+            
+            <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/95 backdrop-blur-md border-b border-surface-100">
+               <div>
+                 <h2 className="text-xl md:text-2xl font-heading font-black text-surface-900 leading-tight">Pop-Up Cafe <span style={{ color: brandingColor }}>Packages</span></h2>
+                 <p className="text-surface-500 font-medium mt-0.5 text-xs md:text-sm">Bring the premium coffee experience to your next event!</p>
+               </div>
+               <button
+                 onClick={() => setShowPackages(false)}
+                 className="w-8 h-8 md:w-10 md:h-10 bg-surface-100 hover:bg-surface-200 rounded-full flex items-center justify-center text-surface-600 transition-all active:scale-95 flex-shrink-0"
+               >
+                 <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+               </button>
+            </div>
+
+            <div className="p-4 md:p-6 space-y-6">
+              {/* Package Tiers */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                
+                {eventPackages.length === 0 ? (
+                  <div className="col-span-full py-8 text-center text-surface-500 font-medium border-2 border-dashed border-surface-200 rounded-2xl">
+                    No active packages available right now.
+                  </div>
+                ) : (
+                  eventPackages.map(pkg => (
+                    <div key={pkg.id} className={`rounded-[20px] p-5 text-center shadow-sm relative overflow-hidden group hover:border-primary-300 transition-all ${pkg.isPopular ? 'border-2 bg-white transform md:-translate-y-2 shadow-lg' : 'border border-surface-200 bg-surface-50/50'}`} style={pkg.isPopular ? { borderColor: brandingColor } : {}}>
+                       {pkg.isPopular && (
+                         <div className="absolute top-0 inset-x-0 py-1 text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest" style={{ backgroundColor: brandingColor }}>Most Popular</div>
+                       )}
+                       
+                       {pkg.image ? (
+                         <div className={`w-full h-32 md:h-40 rounded-xl overflow-hidden mb-4 shadow-sm ${pkg.isPopular ? 'mt-4' : 'mt-2'}`}>
+                           <img src={pkg.image.startsWith('http') ? pkg.image : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${pkg.image}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={pkg.name} />
+                         </div>
+                       ) : (
+                         <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-sm mx-auto mb-3 mt-4 group-hover:scale-110 transition-transform ${pkg.isPopular ? 'bg-white' : 'bg-white border border-surface-100'}`} style={pkg.isPopular ? { backgroundColor: `${brandingColor}10` } : {}}>
+                           {pkg.icon === 'Star' ? <Star className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { fill: brandingColor, color: brandingColor } : { color: '#94a3b8' }} /> : pkg.icon === 'Store' ? <Store className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} /> : <Coffee className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} />}
+                         </div>
+                       )}
+                       
+                       <h4 className="text-lg md:text-xl font-black text-surface-900 mb-1">{pkg.name}</h4>
+                       <p className="text-surface-500 text-xs mb-3 min-h-[36px] flex items-center justify-center">{pkg.description}</p>
+                       <div className="text-2xl md:text-3xl font-black mb-4" style={{ color: pkg.isPopular ? brandingColor : '#334155' }}>{pkg.priceText}</div>
+                       
+                       {pkg.features && (
+                         <ul className="text-xs text-surface-600 space-y-2 mb-6 text-left max-w-[200px] mx-auto min-h-[100px]">
+                           {pkg.features.split(',').map((feature, i) => (
+                             <li key={i} className="flex gap-1.5 items-start">
+                               <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" /> 
+                               <span className="leading-tight">{feature.trim()}</span>
+                             </li>
+                           ))}
+                         </ul>
+                       )}
+                       
+                       <a href="https://www.facebook.com/hometownbrew24" target="_blank" rel="noopener noreferrer" className={`block text-center w-full py-2.5 md:py-3 rounded-lg font-bold text-sm transition-transform hover:scale-105 ${pkg.isPopular ? 'text-white shadow-md' : 'bg-white border border-surface-200 text-surface-900 hover:bg-surface-100'}`} style={pkg.isPopular ? { backgroundColor: brandingColor } : {}}>
+                         Inquire Now
+                       </a>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              {/* Footer Note */}
+              <div className="bg-surface-100 rounded-2xl p-6 text-center border border-surface-200">
+                <Info className="w-6 h-6 text-surface-400 mx-auto mb-2" />
+                <h5 className="font-bold text-surface-800 mb-1">Need a custom quotation?</h5>
+                <p className="text-surface-500 text-sm">Please talk to our counter staff or reach us via our social media pages to finalize your event booking.</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

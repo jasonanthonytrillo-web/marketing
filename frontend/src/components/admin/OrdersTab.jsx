@@ -8,15 +8,20 @@ export default function OrdersTab() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    loadOrders();
-  }, [status, page]);
+    // Add simple debounce for search to prevent flashing on every keystroke
+    const timer = setTimeout(() => {
+      loadOrders();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [status, page, searchQuery]);
 
   const loadOrders = async () => {
     setLoading(true);
     try {
-      const res = await getAdminOrders(status, page);
+      const res = await getAdminOrders(status, page, searchQuery);
       setOrders(res.data.data);
     } catch (error) {
       console.error(error);
@@ -89,12 +94,26 @@ export default function OrdersTab() {
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
         <h2 className="font-heading text-2xl font-bold text-surface-900">Order Management</h2>
-        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide -mx-2 px-2">
-          {['all', 'pending', 'preparing', 'completed', 'cancelled'].map(s => (
-            <button key={s} onClick={() => { setStatus(s); setPage(1); }} className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${status === s ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'bg-white text-surface-500 border border-surface-200 hover:bg-surface-50'}`}>
-              {s}
-            </button>
-          ))}
+        
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative">
+            <input 
+              type="text"
+              placeholder="Search order # or name..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              className="input-field pl-10 pr-4 py-2 w-full sm:w-64"
+            />
+            <svg className="w-4 h-4 text-surface-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide -mx-2 px-2">
+            {['all', 'pending', 'preparing', 'completed', 'cancelled'].map(s => (
+              <button key={s} onClick={() => { setStatus(s); setPage(1); }} className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${status === s ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'bg-white text-surface-500 border border-surface-200 hover:bg-surface-50'}`}>
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -29,7 +29,7 @@ router.get('/history', authenticate, async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { customerId, customerName, orderType, paymentMethod, items, notes, deliveryAddress, deliveryLat, deliveryLng, deliveryFee, paymentReference } = req.body;
-    
+
     // RESTRICTION: Delivery orders must be paid first (no cash)
     if (orderType === 'delivery' && paymentMethod === 'cash') {
       return res.status(400).json({ success: false, message: 'Cash on Delivery is not allowed. Please choose an online payment method.' });
@@ -94,7 +94,7 @@ router.post('/', async (req, res) => {
       }
 
       let itemSubtotal = resolvedPrice * item.quantity;
-      
+
       // Zero out cash cost if it's a redemption
       if (item.isRedemption && product.pointsCost) {
         itemSubtotal = 0;
@@ -109,7 +109,12 @@ router.post('/', async (req, res) => {
           const id = typeof addonId === 'object' ? addonId.id : addonId;
           const addon = product.addons.find(a => a.id === id);
           if (addon) {
-            selectedAddons.push({ name: addon.name, price: addon.price });
+            selectedAddons.push({ 
+              name: addon.name, 
+              price: addon.price,
+              rawIngredientId: addon.rawIngredientId,
+              quantityUsed: addon.quantityUsed
+            });
             itemSubtotal += addon.price * item.quantity;
           }
         }
@@ -180,8 +185,60 @@ router.post('/', async (req, res) => {
         }
       }
     } else if (pointsToDeduct > 0) {
-        // This handles edge cases where pointsToDeduct was calculated but customerId is missing/invalid
-        return res.status(400).json({ success: false, message: 'You must be logged in as a customer to redeem points.' });
+      // This handles edge cases where pointsToDeduct was calculated but customerId is missing/invalid
+      return res.status(400).json({ success: false, message: 'You must be logged in as a customer to redeem points.' });
+    }
+
+    // ── Stock Validation ──
+    // Check every item has sufficient stock BEFORE creating the order
+    const outOfStockItems = [];
+    for (const item of items) {
+      const pid = item.productId || item.id;
+      if (!pid) continue;
+      const product = await prisma.product.findUnique({ 
+        where: { id: parseInt(pid) },
+        include: { addons: { include: { rawIngredient: true } } }
+      });
+      if (product && product.stock < item.quantity) {
+        outOfStockItems.push({ name: product.name, available: Math.max(product.stock, 0), requested: item.quantity });
+      }
+      
+      // Check addon raw ingredient stock
+      const addonsInput = item.addons || item.selectedAddons || [];
+      for (const addonId of addonsInput) {
+        const id = typeof addonId === 'object' ? addonId.id : addonId;
+        const addon = product?.addons?.find(a => a.id === id);
+        if (addon && addon.rawIngredientId && addon.quantityUsed) {
+          const requiredAmt = addon.quantityUsed * item.quantity;
+          if (addon.rawIngredient && addon.rawIngredient.stock < requiredAmt) {
+             outOfStockItems.push({ name: `${addon.name} (Add-on)`, available: Math.max(addon.rawIngredient.stock, 0), requested: requiredAmt });
+          }
+        }
+      }
+
+      // Also check combo sub-item stock
+      if (item.comboChoices) {
+        try {
+          const choices = typeof item.comboChoices === 'string' ? JSON.parse(item.comboChoices) : item.comboChoices;
+          for (const key in choices) {
+            const sub = choices[key];
+            if (sub && sub.id) {
+              const subProduct = await prisma.product.findUnique({ where: { id: parseInt(sub.id) } });
+              if (subProduct && subProduct.stock < item.quantity) {
+                outOfStockItems.push({ name: subProduct.name, available: Math.max(subProduct.stock, 0), requested: item.quantity });
+              }
+            }
+          }
+        } catch (err) { /* ignore parse errors */ }
+      }
+    }
+    if (outOfStockItems.length > 0) {
+      const names = [...new Set(outOfStockItems.map(i => i.name))];
+      return res.status(400).json({
+        success: false,
+        message: `Sorry, the following item(s) just sold out: ${names.join(', ')}. Please update your cart and try again.`,
+        outOfStockItems
+      });
     }
 
     // Create order with items
@@ -245,6 +302,60 @@ router.post('/', async (req, res) => {
         }
       });
 
+      // Recipe Deduction for Main Product
+      try {
+        const recipes = await prisma.recipeItem.findMany({ where: { productId: parseInt(pid) }, include: { rawIngredient: true } });
+        for (const recipe of recipes) {
+          const deductAmount = (recipe.quantityUsed / Math.max(recipe.rawIngredient?.yield || 1, 0.001)) * item.quantity;
+          await prisma.rawIngredient.update({
+            where: { id: recipe.rawIngredientId },
+            data: { stock: { decrement: deductAmount } }
+          });
+          await prisma.rawIngredientLog.create({
+            data: {
+              rawIngredientId: recipe.rawIngredientId,
+              quantityChange: -deductAmount,
+              reason: 'order',
+              referenceId: order.orderNumber
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Recipe deduction error:', err);
+      }
+
+      // Addon Ingredient Deduction
+      const addonsInput = item.addons || item.selectedAddons || [];
+      if (addonsInput.length > 0) {
+        try {
+          const fullProduct = await prisma.product.findUnique({
+             where: { id: parseInt(pid) },
+             include: { addons: true }
+          });
+          for (const addonId of addonsInput) {
+            const id = typeof addonId === 'object' ? addonId.id : addonId;
+            const addon = fullProduct?.addons?.find(a => a.id === id);
+            if (addon && addon.rawIngredientId && addon.quantityUsed) {
+              const deductAmount = addon.quantityUsed * item.quantity;
+              await prisma.rawIngredient.update({
+                 where: { id: addon.rawIngredientId },
+                 data: { stock: { decrement: deductAmount } }
+              });
+              await prisma.rawIngredientLog.create({
+                 data: {
+                   rawIngredientId: addon.rawIngredientId,
+                   quantityChange: -deductAmount,
+                   reason: 'order',
+                   referenceId: order.orderNumber
+                 }
+              });
+            }
+          }
+        } catch(err) {
+          console.error('Addon stock update error:', err);
+        }
+      }
+
       // Update sub-item stock if it's a combo
       if (item.comboChoices) {
         try {
@@ -256,7 +367,7 @@ router.post('/', async (req, res) => {
                 where: { id: parseInt(subProduct.id) },
                 data: { stock: { decrement: item.quantity } }
               });
-              
+
               await prisma.inventoryLog.create({
                 data: {
                   productId: parseInt(subProduct.id),
@@ -265,6 +376,24 @@ router.post('/', async (req, res) => {
                   referenceId: order.orderNumber
                 }
               });
+
+              // Recipe Deduction for Sub Product
+              const subRecipes = await prisma.recipeItem.findMany({ where: { productId: parseInt(subProduct.id) }, include: { rawIngredient: true } });
+              for (const recipe of subRecipes) {
+                const subDeduct = (recipe.quantityUsed / Math.max(recipe.rawIngredient?.yield || 1, 0.001)) * item.quantity;
+                await prisma.rawIngredient.update({
+                  where: { id: recipe.rawIngredientId },
+                  data: { stock: { decrement: subDeduct } }
+                });
+                await prisma.rawIngredientLog.create({
+                  data: {
+                    rawIngredientId: recipe.rawIngredientId,
+                    quantityChange: -subDeduct,
+                    reason: 'order',
+                    referenceId: order.orderNumber
+                  }
+                });
+              }
             }
           }
         } catch (err) {
@@ -403,6 +532,92 @@ router.post('/:orderNumber/cancel', async (req, res) => {
           referenceId: `CANCEL-${order.orderNumber}`
         }
       });
+
+      // Restore recipe ingredients
+      try {
+        const recipes = await prisma.recipeItem.findMany({ where: { productId: item.productId }, include: { rawIngredient: true } });
+        for (const recipe of recipes) {
+          const addAmount = (recipe.quantityUsed / Math.max(recipe.rawIngredient?.yield || 1, 0.001)) * item.quantity;
+          await prisma.rawIngredient.update({
+            where: { id: recipe.rawIngredientId },
+            data: { stock: { increment: addAmount } }
+          });
+          await prisma.rawIngredientLog.create({
+            data: {
+              rawIngredientId: recipe.rawIngredientId,
+              quantityChange: addAmount,
+              reason: 'order',
+              referenceId: `CANCEL-${order.orderNumber}`
+            }
+          });
+        }
+      } catch (err) { }
+
+      // Restore addon ingredients
+      if (item.addons) {
+        try {
+          const selectedAddons = typeof item.addons === 'string' ? JSON.parse(item.addons) : item.addons;
+          for (const addon of selectedAddons) {
+            if (addon.rawIngredientId && addon.quantityUsed) {
+              const addAmount = addon.quantityUsed * item.quantity;
+              await prisma.rawIngredient.update({
+                where: { id: addon.rawIngredientId },
+                data: { stock: { increment: addAmount } }
+              });
+              await prisma.rawIngredientLog.create({
+                data: {
+                  rawIngredientId: addon.rawIngredientId,
+                  quantityChange: addAmount,
+                  reason: 'order',
+                  referenceId: `CANCEL-${order.orderNumber}`
+                }
+              });
+            }
+          }
+        } catch(err) { }
+      }
+
+      // Restore combo items
+      if (item.comboChoices) {
+        try {
+          const choices = typeof item.comboChoices === 'string' ? JSON.parse(item.comboChoices) : item.comboChoices;
+          for (const key in choices) {
+            const subProduct = choices[key];
+            if (subProduct && subProduct.id) {
+              await prisma.product.update({
+                where: { id: parseInt(subProduct.id) },
+                data: { stock: { increment: item.quantity } }
+              });
+              await prisma.inventoryLog.create({
+                data: {
+                  productId: parseInt(subProduct.id),
+                  quantityChange: item.quantity,
+                  reason: 'order',
+                  referenceId: `CANCEL-${order.orderNumber}`
+                }
+              });
+
+              // Restore combo recipe items
+              const subRecipes = await prisma.recipeItem.findMany({ where: { productId: parseInt(subProduct.id) }, include: { rawIngredient: true } });
+              for (const recipe of subRecipes) {
+                const subAdd = (recipe.quantityUsed / Math.max(recipe.rawIngredient?.yield || 1, 0.001)) * item.quantity;
+                await prisma.rawIngredient.update({
+                  where: { id: recipe.rawIngredientId },
+                  data: { stock: { increment: subAdd } }
+                });
+                await prisma.rawIngredientLog.create({
+                  data: {
+                    rawIngredientId: recipe.rawIngredientId,
+                    quantityChange: subAdd,
+                    reason: 'order',
+                    referenceId: `CANCEL-${order.orderNumber}`
+                  }
+                });
+              }
+            }
+          }
+        } catch (err) { }
+      }
     }
 
     // Points Reversal Logic for Customer Cancellation

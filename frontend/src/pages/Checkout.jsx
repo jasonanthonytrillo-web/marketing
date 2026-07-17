@@ -446,7 +446,9 @@ export default function Checkout() {
                     {t('paymentRef')}
                   </label>
                   <input 
-                    type="text" 
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={paymentReference}
                     onChange={e => {
                       const val = e.target.value.replace(/\D/g, '').slice(0, 4);

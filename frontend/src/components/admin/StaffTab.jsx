@@ -190,31 +190,28 @@ export default function StaffTab() {
                   </td>
                   <td className="p-6 text-right">
                     <div className="flex justify-end gap-3 transition-all">
-                      {user.active ? (
-                        <>
-                          {user.role !== 'customer' && (
-                            <button
-                              onClick={() => handleEditClick(user)}
-                              className="text-primary-500 hover:text-primary-700 font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider"
-                            >
-                              <Edit2 className="w-3 h-3" /> Edit
-                            </button>
-                          )}
-                          {user.role !== 'admin' && (
-                            <button
-                              onClick={() => handleDeactivate(user)}
-                              className="text-red-400 hover:text-red-600 font-bold text-[11px] uppercase tracking-wider"
-                            >
-                              {user.role === 'customer' ? 'Restrict' : 'Deactivate'}
-                            </button>
-                          )}
-                        </>
+                      {user.role === 'customer' ? (
+                        user.active ? (
+                          <button
+                            onClick={() => handleDeactivate(user)}
+                            className="text-red-400 hover:text-red-600 font-bold text-[11px] uppercase tracking-wider"
+                          >
+                            Restrict
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleRestore(user)}
+                            className="text-emerald-500 hover:text-emerald-700 font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Restore
+                          </button>
+                        )
                       ) : (
                         <button
-                          onClick={() => handleRestore(user)}
-                          className="text-emerald-500 hover:text-emerald-700 font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider"
+                          onClick={() => handleEditClick(user)}
+                          className="text-blue-500 hover:text-blue-700 font-medium px-4 py-1.5 bg-blue-50 rounded-lg flex items-center gap-1"
                         >
-                          <RotateCcw className="w-3 h-3" /> Restore
+                          <Edit2 className="w-4 h-4 mr-1" /> Edit
                         </button>
                       )}
                     </div>
@@ -354,13 +351,34 @@ export default function StaffTab() {
                   </select>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={updating}
-                  className="w-full bg-primary-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-500 transition-all uppercase tracking-widest mt-4 disabled:opacity-50"
-                >
-                  {updating ? 'Saving Changes...' : 'Save Changes'}
-                </button>
+                <div className="flex gap-3 pt-4 border-t border-slate-100">
+                  {editingUser.role !== 'admin' && (
+                    editingUser.active ? (
+                      <button
+                        type="button"
+                        onClick={() => { handleDeactivate(editingUser); setEditingUser(null); }}
+                        className="w-1/3 bg-red-50 text-red-600 border border-red-100 font-black py-4 rounded-2xl hover:bg-red-100 transition-all uppercase tracking-widest mt-4"
+                      >
+                        Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { handleRestore(editingUser); setEditingUser(null); }}
+                        className="w-1/3 bg-emerald-50 text-emerald-600 border border-emerald-100 font-black py-4 rounded-2xl hover:bg-emerald-100 transition-all uppercase tracking-widest mt-4"
+                      >
+                        Restore
+                      </button>
+                    )
+                  )}
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="flex-1 bg-primary-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-500 transition-all uppercase tracking-widest mt-4 disabled:opacity-50"
+                  >
+                    {updating ? 'Saving Changes...' : 'Save Changes'}
+                  </button>
+                </div>
               </form>
             </div>
           </div>

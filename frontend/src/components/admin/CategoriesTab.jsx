@@ -99,9 +99,8 @@ export default function CategoriesTab() {
                     {cat.active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="p-4 text-right space-x-2">
-                  <button onClick={() => handleEdit(cat)} className="text-blue-500 hover:text-blue-700 font-medium px-2 py-1 bg-blue-50 rounded">Edit</button>
-                  <button onClick={() => handleDelete(cat.id)} className="text-red-500 hover:text-red-700 font-medium px-2 py-1 bg-red-50 rounded">Delete</button>
+                <td className="p-4 text-right">
+                  <button onClick={() => handleEdit(cat)} className="text-blue-500 hover:text-blue-700 font-medium px-4 py-1.5 bg-blue-50 rounded-lg">Edit</button>
                 </td>
               </tr>
             ))}
@@ -134,6 +133,15 @@ export default function CategoriesTab() {
                 <label htmlFor="catActive" className="text-sm font-medium text-surface-700">Active</label>
               </div>
               <div className="flex gap-3 pt-4">
+                {currentCategory.id && (
+                  <button 
+                    type="button" 
+                    onClick={() => handleDelete(currentCategory.id)} 
+                    className="py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 font-bold rounded-lg transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
                 <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 bg-white border border-surface-200 text-surface-700 font-bold rounded-lg">Cancel</button>
                 <button type="submit" className="flex-[2] btn-primary">Save Category</button>
               </div>

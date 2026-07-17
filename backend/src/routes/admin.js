@@ -68,9 +68,17 @@ router.post('/upload-image', authenticate, authorize('admin'), async (req, res) 
 });
 router.get('/orders', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { status, page = 1, limit = 50 } = req.query;
+    const { status, page = 1, limit = 50, search } = req.query;
     const where = { tenantId: req.tenantId };
     if (status && status !== 'all') where.status = status;
+    
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { customerName: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    
     const orders = await prisma.order.findMany({
       where,
       include: { items: true, payments: true },
@@ -118,7 +126,13 @@ router.post('/products', authenticate, authorize('admin'), async (req, res) => {
         comboGroup2Name: comboGroup2Name || null,
         tags: tags || null,
         sizes: sizes && sizes.length > 0 ? sizes : null,
-        addons: addons ? { create: addons.map(a => ({ tenantId: req.tenantId, name: a.name, price: parseFloat(a.price) })) } : undefined
+        addons: addons ? { create: addons.map(a => ({ 
+          tenantId: req.tenantId, 
+          name: a.name, 
+          price: parseFloat(a.price),
+          rawIngredientId: a.rawIngredientId ? parseInt(a.rawIngredientId) : null,
+          quantityUsed: a.quantityUsed ? parseFloat(a.quantityUsed) : null
+        })) } : undefined
       },
       include: { category: true, addons: true }
     });
@@ -164,7 +178,9 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
           create: addons.map(a => ({ 
             tenantId: req.tenantId, 
             name: a.name, 
-            price: parseFloat(a.price) 
+            price: parseFloat(a.price),
+            rawIngredientId: a.rawIngredientId ? parseInt(a.rawIngredientId) : null,
+            quantityUsed: a.quantityUsed ? parseFloat(a.quantityUsed) : null
           })) 
         } : undefined
       },
@@ -176,6 +192,33 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
     res.json({ success: true, data: product });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to update product.' });
+  }
+});
+
+router.delete('/products/:id/hard', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+    
+    // Perform HARD DELETE
+    const product = await prisma.product.delete({
+      where: { id: productId, tenantId: req.tenantId }
+    });
+
+    await prisma.auditLog.create({
+      data: { 
+        userId: req.user.id, 
+        tenantId: req.tenantId,
+        action: 'hard_delete_product', 
+        entityType: 'product', 
+        entityId: product.name, 
+        details: `Permanently deleted product "${product.name}"` 
+      }
+    });
+
+    res.json({ success: true, message: 'Product permanently deleted.' });
+  } catch (error) {
+    console.error('Hard Delete Error:', error);
+    res.status(500).json({ success: false, message: 'Cannot delete product linked to past orders.' });
   }
 });
 
@@ -279,7 +322,7 @@ router.delete('/staff/:id', authenticate, authorize('admin'), async (req, res) =
       data: { active: false } 
     });
     await prisma.auditLog.create({
-      data: { tenantId: req.tenantId, userId: req.user.id, action: 'deactivate_staff', entityType: 'user', entityId: parseInt(req.params.id), details: `Deactivated staff ID: ${req.params.id}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'deactivate_staff', entityType: 'user', entityId: String(req.params.id), details: `Deactivated staff ID: ${req.params.id}` }
     });
     res.json({ success: true, message: 'Staff deactivated.' });
   } catch (error) {
@@ -318,11 +361,12 @@ router.post('/inventory/:id/restock', authenticate, authorize('admin'), async (r
       }
     });
     await prisma.auditLog.create({
-      data: { tenantId: req.tenantId, userId: req.user.id, action: 'restock_product', entityType: 'product', entityId: product.id, details: `Added ${quantity} units to ${product.name}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'restock_product', entityType: 'product', entityId: String(product.id), details: `Added ${quantity} units to ${product.name}` }
     });
     res.json({ success: true, data: product });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to restock.' });
+    console.error('Restock error:', error);
+    res.status(500).json({ success: false, message: 'Failed to restock.', error: error.message });
   }
 });
 
@@ -552,6 +596,102 @@ router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => 
   } catch (error) {
     console.error('Audit Log Error:', error);
     res.status(500).json({ success: false, message: 'Failed to load audit logs.' });
+  }
+});
+
+// ── EVENT PACKAGES MANAGEMENT ──
+
+// GET /api/admin/packages
+router.get('/packages', authenticate, authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const packages = await prisma.eventPackage.findMany({
+      where: { tenantId: req.tenantId },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json({ success: true, data: packages });
+  } catch (error) {
+    console.error('List Packages Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load packages.' });
+  }
+});
+
+// POST /api/admin/packages
+router.post('/packages', authenticate, authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const { name, description, priceText, features, icon, isPopular, isActive, image } = req.body;
+
+    const newPackage = await prisma.eventPackage.create({
+      data: {
+        tenantId: req.tenantId,
+        name,
+        description: description || null,
+        priceText,
+        features: features || null,
+        icon: icon || 'Coffee',
+        isPopular: isPopular === 'true' || isPopular === true,
+        isActive: isActive === 'true' || isActive === true,
+        image: image || null
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'create_package', entityType: 'package', entityId: String(newPackage.id), details: `Created package: ${name}` }
+    });
+    res.status(201).json({ success: true, data: newPackage });
+  } catch (error) {
+    console.error('Create Package Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create package.' });
+  }
+});
+
+// PUT /api/admin/packages/:id
+router.put('/packages/:id', authenticate, authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, priceText, features, icon, isPopular, isActive, image } = req.body;
+    
+    const updateData = {
+      name,
+      description: description || null,
+      priceText,
+      features: features || null,
+      icon: icon || 'Coffee',
+      isPopular: isPopular === 'true' || isPopular === true,
+      isActive: isActive === 'true' || isActive === true,
+    };
+    if (image !== undefined) {
+      updateData.image = image || null;
+    }
+
+    const updatedPackage = await prisma.eventPackage.update({
+      where: { id: parseInt(id), tenantId: req.tenantId },
+      data: updateData
+    });
+
+    await prisma.auditLog.create({
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'update_package', entityType: 'package', entityId: id, details: `Updated package: ${name}` }
+    });
+    res.json({ success: true, data: updatedPackage });
+  } catch (error) {
+    console.error('Update Package Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update package.' });
+  }
+});
+
+// DELETE /api/admin/packages/:id
+router.delete('/packages/:id', authenticate, authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.eventPackage.delete({
+      where: { id: parseInt(id), tenantId: req.tenantId }
+    });
+    await prisma.auditLog.create({
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'delete_package', entityType: 'package', entityId: id, details: `Deleted package ID: ${id}` }
+    });
+    res.json({ success: true, message: 'Package deleted successfully.' });
+  } catch (error) {
+    console.error('Delete Package Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete package.' });
   }
 });
 

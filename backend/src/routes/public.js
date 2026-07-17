@@ -242,4 +242,22 @@ router.post('/tenant/:slug/visit', async (req, res) => {
   }
 });
 
+// GET active packages for public menu
+router.get('/tenant/:slug/packages', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const tenant = await prisma.tenant.findUnique({ where: { slug }, select: { id: true } });
+    if (!tenant) return res.status(404).json({ success: false, message: 'Store not found' });
+
+    const packages = await prisma.eventPackage.findMany({
+      where: { tenantId: tenant.id, isActive: true },
+      orderBy: { id: 'asc' }
+    });
+    res.json({ success: true, data: packages });
+  } catch (error) {
+    console.error('Public Packages Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch packages' });
+  }
+});
+
 module.exports = router;
