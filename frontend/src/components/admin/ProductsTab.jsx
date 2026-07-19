@@ -26,6 +26,8 @@ export default function ProductsTab() {
   const [rawIngredients, setRawIngredients] = useState([]);
   const [productRecipes, setProductRecipes] = useState([]);
   const [recipeLoading, setRecipeLoading] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
 
   const API_BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
