@@ -411,9 +411,10 @@ router.get('/export/inventory', authenticate, authorize('admin'), async (req, re
     });
 
     csv += '\nRaw Ingredients\n';
-    csv += 'Ingredient,Unit,Stock,Servings Yield,Cost Per Unit (₱),Alert Level\n';
+    csv += 'Ingredient,Unit,Stock,Servings Yield,Cost Per Unit (₱),Total Cost (₱)\n';
     rawIngredients.forEach(ing => {
-      csv += `${ing.name},${ing.unit},${parseFloat(Number(ing.stock).toFixed(2))},${ing.yield || 1},${ing.costPrice || 0},${ing.alertLevel != null ? ing.alertLevel : 'N/A'}\n`;
+      const totalCost = parseFloat((ing.stock * (ing.costPrice || 0)).toFixed(2));
+      csv += `${ing.name},${ing.unit},${parseFloat(Number(ing.stock).toFixed(2))},${ing.yield || 1},${ing.costPrice || 0},${totalCost}\n`;
     });
 
     res.setHeader('Content-Type', 'text/csv');
