@@ -377,25 +377,6 @@ export default function StaffTab() {
                 </div>
 
                 <div className="flex gap-3 pt-4 border-t border-slate-100">
-                  {editingUser.role !== 'admin' && (
-                    editingUser.active ? (
-                      <button
-                        type="button"
-                        onClick={() => { handleDeactivate(editingUser); setEditingUser(null); }}
-                        className="w-1/3 bg-red-50 text-red-600 border border-red-100 font-black py-4 rounded-2xl hover:bg-red-100 transition-all uppercase tracking-widest mt-4"
-                      >
-                        Deactivate
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => { handleRestore(editingUser); setEditingUser(null); }}
-                        className="w-1/3 bg-emerald-50 text-emerald-600 border border-emerald-100 font-black py-4 rounded-2xl hover:bg-emerald-100 transition-all uppercase tracking-widest mt-4"
-                      >
-                        Restore
-                      </button>
-                    )
-                  )}
                   <button
                     type="submit"
                     disabled={updating}

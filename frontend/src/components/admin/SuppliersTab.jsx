@@ -230,15 +230,6 @@ export default function SuppliersTab() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                {editingSupplier && (
-                  <button 
-                    type="button" 
-                    onClick={() => handleDelete(editingSupplier.id)}
-                    className="py-4 px-5 bg-red-50 text-red-600 border border-red-100 font-bold rounded-2xl hover:bg-red-100 transition-all"
-                  >
-                    Delete
-                  </button>
-                )}
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}

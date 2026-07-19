@@ -913,17 +913,6 @@ export default function ProductsTab() {
             </div>
 
             <div className="p-6 border-t border-surface-100 flex gap-3 flex-shrink-0 bg-surface-50 rounded-b-3xl">
-              {currentProduct.id && (
-                currentProduct.available ? (
-                  <button type="button" onClick={() => { setIsEditing(false); handleDelete(currentProduct); }} className="py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 font-bold rounded-lg transition-colors">
-                    Deactivate
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => { handleRestore(currentProduct); setIsEditing(false); }} className="py-3 px-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 font-bold rounded-lg transition-colors">
-                    Restore
-                  </button>
-                )
-              )}
               <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 bg-white border border-surface-200 hover:bg-surface-100 text-surface-700 font-bold rounded-lg transition-colors">
                 Cancel
               </button>

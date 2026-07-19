@@ -170,15 +170,6 @@ export default function CategoriesTab() {
                 <label htmlFor="catActive" className="text-sm font-medium text-surface-700">Active</label>
               </div>
               <div className="flex gap-3 pt-4">
-                {currentCategory.id && (
-                  <button 
-                    type="button" 
-                    onClick={() => handleDelete(currentCategory.id)} 
-                    className="py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 font-bold rounded-lg transition-colors"
-                  >
-                    Delete
-                  </button>
-                )}
                 <button type="button" onClick={() => setIsEditing(false)} className="flex-1 py-3 bg-white border border-surface-200 text-surface-700 font-bold rounded-lg">Cancel</button>
                 <button type="submit" className="flex-[2] btn-primary">Save Category</button>
               </div>

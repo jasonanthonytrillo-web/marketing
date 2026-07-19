@@ -244,7 +244,7 @@ export default function InventoryTab() {
                     <th className="p-4">Unit</th>
                     <th className="p-4">Stock</th>
                     <th className="p-4">Serving</th>
-                    <th className="p-4">Cost</th>
+                    <th className="p-4">Cost / Value</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -272,7 +272,10 @@ export default function InventoryTab() {
                           <span className="text-surface-700 font-bold">{item.yield || 1}</span>
                           <span className="text-surface-400 text-xs ml-1">per {item.unit}</span>
                         </td>
-                        <td className="p-4 text-surface-600 whitespace-nowrap">₱{item.costPrice} / {item.unit}</td>
+                        <td className="p-4 whitespace-nowrap">
+                          <div className="text-surface-600 font-bold">₱{item.costPrice} <span className="font-normal text-xs text-surface-400">/ {item.unit}</span></div>
+                          <div className="text-[10px] uppercase font-black text-primary-600 mt-0.5 tracking-wider">Total: ₱{(item.costPrice * item.stock).toFixed(2)}</div>
+                        </td>
                         <td className="p-4 text-right">
                           <div className="relative inline-block" ref={openMenuId === item.id ? menuRef : null}>
                             <button
@@ -509,16 +512,6 @@ export default function InventoryTab() {
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-surface-100">
-                {editingIngredient?.id && (
-                  <button 
-                    type="button" 
-                    disabled={processing}
-                    onClick={() => setIsDeletingIngredient(true)} 
-                    className="py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg transition-colors border border-red-100"
-                  >
-                    Delete
-                  </button>
-                )}
                 <button type="button" onClick={() => setShowIngredientModal(false)} disabled={processing} className="flex-1 py-3 bg-surface-100 hover:bg-surface-200 text-surface-700 font-bold rounded-lg transition-colors">
                   Cancel
                 </button>
