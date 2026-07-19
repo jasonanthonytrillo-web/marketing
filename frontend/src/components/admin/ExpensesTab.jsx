@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
-import { Trash2, X } from 'lucide-react';
+import { Trash2, X, MoreVertical } from 'lucide-react';
 
 export default function ExpensesTab() {
   const [expenses, setExpenses] = useState([]);
@@ -9,9 +9,21 @@ export default function ExpensesTab() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', amount: '', category: 'Supplies', date: new Date().toISOString().split('T')[0], notes: '' });
   const [saving, setSaving] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     loadExpenses();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadExpenses = async () => {
@@ -96,9 +108,25 @@ export default function ExpensesTab() {
                     </td>
                     <td className="p-4 font-black text-red-600">{formatCurrency(exp.amount)}</td>
                     <td className="p-4 text-right">
-                      <button onClick={() => handleDelete(exp.id)} className="text-red-400 hover:text-red-600 transition-colors flex items-center justify-center w-full">
-                        <Trash2 className="w-4 h-4 ml-auto" />
-                      </button>
+                      <div className="relative inline-block" ref={openMenuId === exp.id ? menuRef : null}>
+                        <button
+                          onClick={() => setOpenMenuId(openMenuId === exp.id ? null : exp.id)}
+                          className="p-2 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                        >
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                        {openMenuId === exp.id && (
+                          <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-surface-200 overflow-hidden z-50 min-w-[140px] animate-fade-in shadow-surface-500/10">
+                            <button
+                              onClick={() => { setOpenMenuId(null); handleDelete(exp.id); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

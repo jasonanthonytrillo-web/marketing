@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getStaff, updateStaff, deleteStaff, createStaff } from '../../services/api';
-import { Plus, User, Wrench, Gem, Users, X, Edit2, RotateCcw } from 'lucide-react';
+import { Plus, User, Wrench, Gem, Users, X, Edit2, RotateCcw, MoreVertical, Ban } from 'lucide-react';
 
 export default function StaffTab() {
   const [users, setUsers] = useState([]);
@@ -12,9 +12,21 @@ export default function StaffTab() {
   const [editingUser, setEditingUser] = useState(null);
   const [editFormData, setEditFormData] = useState({ name: '', email: '', password: '', role: '' });
   const [updating, setUpdating] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadData = async () => {
@@ -189,30 +201,43 @@ export default function StaffTab() {
                     </span>
                   </td>
                   <td className="p-6 text-right">
-                    <div className="flex justify-end gap-3 transition-all">
-                      {user.role === 'customer' ? (
-                        user.active ? (
-                          <button
-                            onClick={() => handleDeactivate(user)}
-                            className="text-red-400 hover:text-red-600 font-bold text-[11px] uppercase tracking-wider"
-                          >
-                            Restrict
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleRestore(user)}
-                            className="text-emerald-500 hover:text-emerald-700 font-bold text-[11px] flex items-center gap-1 uppercase tracking-wider"
-                          >
-                            <RotateCcw className="w-3 h-3" /> Restore
-                          </button>
-                        )
-                      ) : (
-                        <button
-                          onClick={() => handleEditClick(user)}
-                          className="text-blue-500 hover:text-blue-700 font-medium px-4 py-1.5 bg-blue-50 rounded-lg flex items-center gap-1"
-                        >
-                          <Edit2 className="w-4 h-4 mr-1" /> Edit
-                        </button>
+                    <div className="relative inline-block" ref={openMenuId === user.id ? menuRef : null}>
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === user.id ? null : user.id)}
+                        className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      {openMenuId === user.id && (
+                        <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50 min-w-[140px] animate-fade-in shadow-slate-500/10">
+                          {user.role === 'customer' ? (
+                            user.active ? (
+                              <button
+                                onClick={() => { setOpenMenuId(null); handleDeactivate(user); }}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                <Ban className="w-4 h-4" />
+                                Restrict
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => { setOpenMenuId(null); handleRestore(user); }}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                                Restore
+                              </button>
+                            )
+                          ) : (
+                            <button
+                              onClick={() => { setOpenMenuId(null); handleEditClick(user); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4 text-blue-500" />
+                              Edit
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </td>

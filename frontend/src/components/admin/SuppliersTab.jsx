@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../../services/api';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, MoreVertical, Pencil } from 'lucide-react';
 
 export default function SuppliersTab() {
   const [suppliers, setSuppliers] = useState([]);
@@ -14,9 +14,21 @@ export default function SuppliersTab() {
     phone: '',
     address: ''
   });
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     loadSuppliers();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadSuppliers = async () => {
@@ -121,8 +133,31 @@ export default function SuppliersTab() {
                     <td className="px-6 py-4 text-surface-600 text-sm">{s.phone || '-'}</td>
                     <td className="px-6 py-4 text-surface-600 text-sm">{s.email || '-'}</td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleOpenModal(s)} className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-blue-100 flex items-center"><Edit className="w-4 h-4 mr-1" /><span className="text-xs font-bold">Edit</span></button>
+                      <div className="relative inline-block" ref={openMenuId === s.id ? menuRef : null}>
+                        <button
+                          onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}
+                          className="p-2 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                        >
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                        {openMenuId === s.id && (
+                          <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-surface-200 overflow-hidden z-50 min-w-[140px] animate-fade-in shadow-surface-500/10">
+                            <button
+                              onClick={() => { setOpenMenuId(null); handleOpenModal(s); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-surface-700 hover:bg-surface-50 transition-colors"
+                            >
+                              <Pencil className="w-4 h-4 text-blue-500" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => { setOpenMenuId(null); handleDelete(s.id); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

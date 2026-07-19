@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getInventory, restockProduct, getRawIngredients, createRawIngredient, updateRawIngredient, deleteRawIngredient } from '../../services/api';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, MoreVertical, Pencil, Trash2, Plus, CheckCircle } from 'lucide-react';
 
 export default function InventoryTab() {
   const [inventory, setInventory] = useState([]);
@@ -19,6 +19,9 @@ export default function InventoryTab() {
   const [editingIngredient, setEditingIngredient] = useState(null);
   const [showIngredientModal, setShowIngredientModal] = useState(false);
   const [isDeletingIngredient, setIsDeletingIngredient] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const menuRef = useRef(null);
 
   const uniqueCategories = [...new Set(inventory.map(item => item.category?.name).filter(Boolean))];
 
@@ -31,6 +34,17 @@ export default function InventoryTab() {
   useEffect(() => {
     loadData();
     loadSuppliers();
+  }, []);
+
+  // Close kebab menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadData = async () => {
@@ -181,19 +195,33 @@ export default function InventoryTab() {
                             </span>
                             {isLow && <span className="ml-2 text-xs text-red-500 font-bold">Low Stock!</span>}
                           </td>
-                          <td className="p-4 text-right space-x-2">
-                            <button
-                              onClick={() => { setRestockItem(item); setRestockQty('50'); }}
-                              className="btn-secondary py-1 px-3 text-xs"
-                            >
-                              Restock
-                            </button>
-                            <button
-                              onClick={() => { setWasteItem(item); setWasteQty('1'); }}
-                              className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold border border-red-100 transition-all"
-                            >
-                              Waste
-                            </button>
+                          <td className="p-4 text-right">
+                            <div className="relative inline-block" ref={openMenuId === item.id ? menuRef : null}>
+                              <button
+                                onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                                className="p-2 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                              >
+                                <MoreVertical className="w-5 h-5" />
+                              </button>
+                              {openMenuId === item.id && (
+                                <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-surface-200 overflow-hidden z-[60] min-w-[140px] animate-fade-in shadow-surface-500/10">
+                                  <button
+                                    onClick={() => { setOpenMenuId(null); setRestockItem(item); setRestockQty('50'); }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-surface-700 hover:bg-surface-50 transition-colors"
+                                  >
+                                    <Plus className="w-4 h-4 text-emerald-500" />
+                                    Restock
+                                  </button>
+                                  <button
+                                    onClick={() => { setOpenMenuId(null); setWasteItem(item); setWasteQty('1'); }}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Waste
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -231,7 +259,7 @@ export default function InventoryTab() {
                           <div className="flex flex-col gap-1 items-start">
                             <div>
                               <span className={`px-2 py-1 rounded text-sm font-bold ${isLow ? 'bg-red-100 text-red-700 animate-pulse' : 'bg-surface-100 text-surface-700'}`}>
-                                {item.stock} {item.unit}
+                                {parseFloat(Number(item.stock).toFixed(2))} {item.unit}
                               </span>
                               {isLow && <span className="ml-2 text-xs text-red-500 font-bold">Low!</span>}
                             </div>
@@ -246,12 +274,32 @@ export default function InventoryTab() {
                         </td>
                         <td className="p-4 text-surface-600 whitespace-nowrap">₱{item.costPrice} / {item.unit}</td>
                         <td className="p-4 text-right">
-                          <button
-                            onClick={() => { setEditingIngredient(item); setShowIngredientModal(true); }}
-                            className="text-blue-500 hover:text-blue-700 font-medium px-4 py-1.5 bg-blue-50 rounded-lg transition-colors"
-                          >
-                            Edit
-                          </button>
+                          <div className="relative inline-block" ref={openMenuId === item.id ? menuRef : null}>
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                              className="p-2 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                            >
+                              <MoreVertical className="w-5 h-5" />
+                            </button>
+                            {openMenuId === item.id && (
+                              <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-surface-200 overflow-hidden z-50 min-w-[140px] animate-fade-in">
+                                <button
+                                  onClick={() => { setOpenMenuId(null); setEditingIngredient(item); setShowIngredientModal(true); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-surface-700 hover:bg-surface-50 transition-colors"
+                                >
+                                  <Pencil className="w-4 h-4 text-blue-500" />
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => { setOpenMenuId(null); setEditingIngredient(item); setIsDeletingIngredient(true); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -385,9 +433,12 @@ export default function InventoryTab() {
                 };
                 if (editingIngredient.id) {
                   await updateRawIngredient(editingIngredient.id, payload);
+                  setSuccessMessage('Ingredient updated successfully!');
                 } else {
                   await createRawIngredient(payload);
+                  setSuccessMessage('Ingredient added successfully!');
                 }
+                setTimeout(() => setSuccessMessage(''), 3000);
                 setShowIngredientModal(false);
                 loadData();
               } catch (err) {
@@ -526,6 +577,16 @@ export default function InventoryTab() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic centered success notification toast */}
+      {successMessage && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
+          <div className="bg-primary-600 text-white px-8 py-5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-3 border border-white/20 font-black tracking-tight text-lg animate-scale-in pointer-events-auto">
+            <CheckCircle className="w-6 h-6" />
+            <span>{successMessage}</span>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAdminOrders } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, MoreVertical, Trash2 } from 'lucide-react';
 
 export default function OrdersTab() {
   const [orders, setOrders] = useState([]);
@@ -9,6 +9,8 @@ export default function OrdersTab() {
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     // Add simple debounce for search to prevent flashing on every keystroke
@@ -17,6 +19,16 @@ export default function OrdersTab() {
     }, 300);
     return () => clearTimeout(timer);
   }, [status, page, searchQuery]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -153,13 +165,25 @@ export default function OrdersTab() {
                   </td>
                   <td className="p-4 text-right">
                     {order.status === 'cancelled' && (
-                      <button 
-                        onClick={() => setConfirmDelete({ id: order.id, orderNumber: order.orderNumber })}
-                        className="relative px-4 py-2 bg-white text-red-600 border border-red-100 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white hover:border-red-600 hover:-translate-y-1 transition-all shadow-md hover:shadow-xl hover:shadow-red-600/20 active:scale-95"
-                        title="Permanently Delete Order"
-                      >
-                        Hard Delete
-                      </button>
+                      <div className="relative inline-block" ref={openMenuId === order.id ? menuRef : null}>
+                        <button
+                          onClick={() => setOpenMenuId(openMenuId === order.id ? null : order.id)}
+                          className="p-2 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                        >
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                        {openMenuId === order.id && (
+                          <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-surface-200 overflow-hidden z-50 min-w-[170px] animate-fade-in shadow-surface-500/10">
+                            <button
+                              onClick={() => { setOpenMenuId(null); setConfirmDelete({ id: order.id, orderNumber: order.orderNumber }); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Hard Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>

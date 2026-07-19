@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../../services/api';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 
 export default function CategoriesTab() {
   const [categories, setCategories] = useState([]);
@@ -9,9 +9,21 @@ export default function CategoriesTab() {
   const [currentCategory, setCurrentCategory] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     loadCategories();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadCategories = async () => {
@@ -100,7 +112,32 @@ export default function CategoriesTab() {
                   </span>
                 </td>
                 <td className="p-4 text-right">
-                  <button onClick={() => handleEdit(cat)} className="text-blue-500 hover:text-blue-700 font-medium px-4 py-1.5 bg-blue-50 rounded-lg">Edit</button>
+                  <div className="relative inline-block" ref={openMenuId === cat.id ? menuRef : null}>
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === cat.id ? null : cat.id)}
+                      className="p-2 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    {openMenuId === cat.id && (
+                      <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-surface-200 overflow-hidden z-50 min-w-[140px] animate-fade-in shadow-surface-500/10">
+                        <button
+                          onClick={() => { setOpenMenuId(null); handleEdit(cat); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-surface-700 hover:bg-surface-50 transition-colors"
+                        >
+                          <Pencil className="w-4 h-4 text-blue-500" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => { setOpenMenuId(null); handleDelete(cat.id); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

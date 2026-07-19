@@ -394,14 +394,26 @@ router.get('/export/sales', authenticate, authorize('admin'), async (req, res) =
 // GET /api/reports/export/inventory — Export inventory to CSV
 router.get('/export/inventory', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const products = await prisma.product.findMany({
-      where: { tenantId: req.tenantId },
-      include: { category: true }
-    });
+    const [products, rawIngredients] = await Promise.all([
+      prisma.product.findMany({
+        where: { tenantId: req.tenantId },
+        include: { category: true }
+      }),
+      prisma.rawIngredient.findMany({
+        where: { tenantId: req.tenantId }
+      })
+    ]);
 
-    let csv = '\ufeffProduct,Category,Current Stock,Cost Price (₱),Selling Price (₱)\n';
+    let csv = '\ufeffProduct Stock\n';
+    csv += 'Product,Category,Current Stock,Cost Price (₱),Selling Price (₱)\n';
     products.forEach(p => {
       csv += `${p.name},${p.category?.name || 'N/A'},${p.stock},${p.costPrice || 0},${p.price}\n`;
+    });
+
+    csv += '\nRaw Ingredients\n';
+    csv += 'Ingredient,Unit,Stock,Servings Yield,Cost Per Unit (₱),Alert Level\n';
+    rawIngredients.forEach(ing => {
+      csv += `${ing.name},${ing.unit},${parseFloat(Number(ing.stock).toFixed(2))},${ing.yield || 1},${ing.costPrice || 0},${ing.alertLevel != null ? ing.alertLevel : 'N/A'}\n`;
     });
 
     res.setHeader('Content-Type', 'text/csv');

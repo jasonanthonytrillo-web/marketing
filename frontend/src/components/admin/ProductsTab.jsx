@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getAdminProducts, createProduct, updateProduct, deleteProduct, hardDeleteProduct, getCategories, uploadImage, getSettings, getRawIngredients, getRecipes, addRecipeItem, removeRecipeItem } from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
-import { ClipboardList, FolderArchive, ImageIcon, Upload, FolderUp, Lightbulb, ArchiveX, AlertTriangle, CheckCircle, Gem } from 'lucide-react';
+import { ClipboardList, FolderArchive, ImageIcon, Upload, FolderUp, Lightbulb, ArchiveX, AlertTriangle, CheckCircle, Gem, MoreVertical, Pencil, Trash2, ArchiveRestore } from 'lucide-react';
+import { useRef } from 'react';
 
 export default function ProductsTab() {
   const [products, setProducts] = useState([]);
@@ -61,6 +62,16 @@ export default function ProductsTab() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const loadData = async () => {
@@ -963,14 +974,53 @@ export default function ProductsTab() {
                   </span>
                 </td>
                 <td className="p-4 text-right">
-                  {statusFilter === 'archived' ? (
-                    <div className="flex justify-end gap-2">
-                       <button onClick={() => handleRestore(product)} className="text-emerald-500 hover:text-emerald-700 font-bold px-4 py-1.5 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors shadow-sm">Reactivate</button>
-                       <button onClick={() => confirmHardDelete(product)} className="text-red-500 hover:text-red-700 font-bold px-4 py-1.5 bg-red-50 hover:bg-red-100 rounded-lg transition-colors shadow-sm">Delete Forever</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => handleEdit(product)} className="text-blue-500 hover:text-blue-700 font-medium px-4 py-1.5 bg-blue-50 rounded-lg">Edit</button>
-                  )}
+                  <div className="relative inline-block" ref={openMenuId === product.id ? menuRef : null}>
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === product.id ? null : product.id)}
+                      className="p-2 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors"
+                    >
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    {openMenuId === product.id && (
+                      <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-surface-200 overflow-hidden z-50 min-w-[150px] animate-fade-in shadow-surface-500/10">
+                        {statusFilter === 'archived' ? (
+                          <>
+                            <button
+                              onClick={() => { setOpenMenuId(null); handleRestore(product); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
+                            >
+                              <ArchiveRestore className="w-4 h-4" />
+                              Reactivate
+                            </button>
+                            <button
+                              onClick={() => { setOpenMenuId(null); confirmHardDelete(product); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete Forever
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => { setOpenMenuId(null); handleEdit(product); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-surface-700 hover:bg-surface-50 transition-colors"
+                            >
+                              <Pencil className="w-4 h-4 text-blue-500" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => { setOpenMenuId(null); handleDelete(product); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <ArchiveX className="w-4 h-4" />
+                              Deactivate
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </td>
               </tr>
             )) : (
