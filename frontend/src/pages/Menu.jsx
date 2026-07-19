@@ -829,13 +829,26 @@ export default function Menu() {
                     <div className="mb-6">
                       <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">{t('customAddons')}</h3>
                       <div className="flex flex-wrap gap-2">
-                        {selectedProduct.addons.map(addon => (
-                          <button key={addon.id} onClick={() => toggleAddon(addon)}
-                            className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${addOpts.addons.find(a => a.id === addon.id) ? 'border-transparent text-white' : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-primary-300'}`}
-                            style={addOpts.addons.find(a => a.id === addon.id) ? { backgroundColor: brandingColor } : {}}>
-                            {addon.name} +₱{addon.price}
-                          </button>
-                        ))}
+                        {selectedProduct.addons.map(addon => {
+                          const isDisabled = addon.available === false;
+                          const isSelected = addOpts.addons.find(a => a.id === addon.id);
+                          return (
+                            <button 
+                              key={addon.id} 
+                              onClick={() => !isDisabled && toggleAddon(addon)}
+                              disabled={isDisabled}
+                              className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                                isDisabled 
+                                  ? 'bg-surface-100 border-surface-200 text-surface-300 cursor-not-allowed line-through opacity-60'
+                                  : isSelected 
+                                    ? 'border-transparent text-white' 
+                                    : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-primary-300'
+                              }`}
+                              style={isSelected && !isDisabled ? { backgroundColor: brandingColor } : {}}>
+                              {addon.name} +₱{addon.price} {isDisabled && <span className="text-[10px] ml-1 uppercase">(Sold Out)</span>}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
