@@ -61,7 +61,11 @@ export default function Login() {
       else if (user.role === 'rider') navigate('/rider');
       else navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed.');
+      if (err.response?.data?.deviceUnauthorized) {
+        setError('🔒 ' + (err.response?.data?.message || 'This device is not authorized for staff login.'));
+      } else {
+        setError(err.response?.data?.message || 'Login failed.');
+      }
     } finally { setLoading(false); }
   };
 

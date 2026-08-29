@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { authenticate } = require('../middleware/auth');
+const crypto = require('crypto');
+const { authenticate, authorize } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
 const { OAuth2Client } = require('google-auth-library');
 const GOOGLE_CLIENT_ID = '542194625185-rd9qq05qqgej9n6qkhlgcdgfagid601l.apps.googleusercontent.com';
@@ -283,6 +284,38 @@ router.post('/login', loginLimiter, async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ success: false, message: 'Invalid username or password.' });
+    }
+
+    // DEVICE AUTHORIZATION CHECK: Staff roles must log in from an authorized device
+    const restrictedRoles = ['cashier', 'kitchen', 'rider'];
+    if (restrictedRoles.includes(user.role)) {
+      const { deviceToken } = req.body;
+      if (!deviceToken) {
+        return res.status(403).json({
+          success: false,
+          message: 'This device is not authorized for staff login. Please ask your manager to register this device.',
+          deviceUnauthorized: true
+        });
+      }
+      const device = await prisma.authorizedDevice.findFirst({
+        where: {
+          deviceToken,
+          tenantId: user.tenantId,
+          isActive: true
+        }
+      });
+      if (!device) {
+        return res.status(403).json({
+          success: false,
+          message: 'This device is not authorized for staff login. Please ask your manager to register this device.',
+          deviceUnauthorized: true
+        });
+      }
+      // Update last used timestamp
+      await prisma.authorizedDevice.update({
+        where: { id: device.id },
+        data: { lastUsedAt: new Date() }
+      });
     }
 
     const token = jwt.sign(
@@ -772,6 +805,163 @@ router.post('/change-password', authenticate, async (req, res) => {
 router.post('/logout', (req, res) => {
   res.clearCookie('pos_token', { httpOnly: true, secure: true, sameSite: 'none' });
   res.json({ success: true, message: 'Logged out successfully.' });
+});
+
+// ========================
+// DEVICE MANAGEMENT ROUTES
+// ========================
+
+// POST /api/auth/devices/register — Authorize this browser/device (Admin only)
+router.post('/devices/register', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { deviceName } = req.body;
+    if (!deviceName || !deviceName.trim()) {
+      return res.status(400).json({ success: false, message: 'Device name is required (e.g. "Main Counter POS").' });
+    }
+
+    // Generate a cryptographically secure token
+    const deviceToken = `dev_${crypto.randomUUID()}`;
+
+    const device = await prisma.authorizedDevice.create({
+      data: {
+        tenantId: req.tenantId,
+        deviceToken,
+        deviceName: deviceName.trim(),
+        addedById: req.user.id
+      }
+    });
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: 'register_device',
+        entityType: 'device',
+        entityId: device.id.toString(),
+        details: `Authorized device: ${deviceName.trim()}`
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        id: device.id,
+        deviceToken: device.deviceToken,
+        deviceName: device.deviceName,
+        createdAt: device.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Device registration error:', error);
+    res.status(500).json({ success: false, message: 'Failed to register device.' });
+  }
+});
+
+// GET /api/auth/devices — List all authorized devices for this tenant (Admin only)
+router.get('/devices', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const devices = await prisma.authorizedDevice.findMany({
+      where: { tenantId: req.tenantId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Get admin names for addedById
+    const adminIds = [...new Set(devices.map(d => d.addedById).filter(Boolean))];
+    const admins = adminIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: adminIds } },
+          select: { id: true, name: true }
+        })
+      : [];
+    const adminMap = Object.fromEntries(admins.map(a => [a.id, a.name]));
+
+    res.json({
+      success: true,
+      data: devices.map(d => ({
+        id: d.id,
+        deviceName: d.deviceName,
+        isActive: d.isActive,
+        addedBy: adminMap[d.addedById] || 'Unknown',
+        lastUsedAt: d.lastUsedAt,
+        createdAt: d.createdAt
+      }))
+    });
+  } catch (error) {
+    console.error('List devices error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch devices.' });
+  }
+});
+
+// POST /api/auth/devices/:id/revoke — Deactivate a device (Admin only)
+router.post('/devices/:id/revoke', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const deviceId = parseInt(req.params.id);
+    const device = await prisma.authorizedDevice.findFirst({
+      where: { id: deviceId, tenantId: req.tenantId }
+    });
+
+    if (!device) {
+      return res.status(404).json({ success: false, message: 'Device not found.' });
+    }
+
+    await prisma.authorizedDevice.update({
+      where: { id: deviceId },
+      data: { isActive: !device.isActive }
+    });
+
+    const action = device.isActive ? 'revoke_device' : 'reactivate_device';
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action,
+        entityType: 'device',
+        entityId: deviceId.toString(),
+        details: `${device.isActive ? 'Revoked' : 'Reactivated'} device: ${device.deviceName}`
+      }
+    });
+
+    res.json({
+      success: true,
+      message: device.isActive ? 'Device revoked successfully.' : 'Device reactivated successfully.'
+    });
+  } catch (error) {
+    console.error('Revoke device error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update device.' });
+  }
+});
+
+// DELETE /api/auth/devices/:id — Permanently delete a device (Admin only)
+router.delete('/devices/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const deviceId = parseInt(req.params.id);
+    const device = await prisma.authorizedDevice.findFirst({
+      where: { id: deviceId, tenantId: req.tenantId }
+    });
+
+    if (!device) {
+      return res.status(404).json({ success: false, message: 'Device not found.' });
+    }
+
+    await prisma.authorizedDevice.delete({ where: { id: deviceId } });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: 'delete_device',
+        entityType: 'device',
+        entityId: deviceId.toString(),
+        details: `Permanently deleted device: ${device.deviceName}`
+      }
+    });
+
+    res.json({ success: true, message: 'Device deleted permanently.' });
+  } catch (error) {
+    console.error('Delete device error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete device.' });
+  }
 });
 
 module.exports = router;

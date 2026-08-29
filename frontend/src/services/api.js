@@ -39,7 +39,10 @@ api.interceptors.request.use(config => {
 });
 
 // Auth
-export const login = (data) => api.post('/auth/login', data);
+export const login = (data) => api.post('/auth/login', {
+  ...data,
+  deviceToken: localStorage.getItem('pos_device_token') || undefined
+});
 export const googleLogin = (data) => api.post('/auth/google', data);
 export const register = (data) => api.post('/auth/register', data);
 export const registerCustomer = (data) => api.post('/auth/register-customer', data);
@@ -52,6 +55,13 @@ export const checkOTP = (data) => api.post('/auth/check-otp', data);
 export const resetPassword = (data) => api.post('/auth/reset-password', data);
 export const verifyRegistration = (data) => api.post('/auth/verify-registration', data);
 export const resendRegistrationOTP = (data) => api.post('/auth/resend-registration-otp', data);
+
+// Device Management (Admin)
+export const registerDevice = (data) => api.post('/auth/devices/register', data);
+export const getDevices = () => api.get('/auth/devices');
+export const revokeDevice = (id) => api.post(`/auth/devices/${id}/revoke`);
+export const deleteDevice = (id) => api.delete(`/auth/devices/${id}`);
+
 
 // Products (Public)
 export const getProducts = () => api.get('/products');

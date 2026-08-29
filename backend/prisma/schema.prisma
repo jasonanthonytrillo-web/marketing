@@ -43,6 +43,7 @@ model Tenant {
   rawIngredients RawIngredient[]
   eventPackages EventPackage[]
   promoCodes    PromoCode[]
+  authorizedDevices AuthorizedDevice[]
 }
 
 model User {
@@ -414,4 +415,18 @@ model PromoCode {
   tenant          Tenant    @relation(fields: [tenantId], references: [id])
   
   @@unique([tenantId, code])
+}
+
+model AuthorizedDevice {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  deviceToken String   @unique
+  deviceName  String   // e.g. "Main Counter POS", "Kitchen Tablet"
+  isActive    Boolean  @default(true)
+  addedById   Int?     // Admin who authorized this device
+  lastUsedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
 }
