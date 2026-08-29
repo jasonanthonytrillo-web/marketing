@@ -60,6 +60,7 @@ router.post('/', async (req, res) => {
       exists = !!check;
     }
 
+    const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
     const orderItems = [];
     let subtotal = 0;
 
@@ -139,7 +140,6 @@ router.post('/', async (req, res) => {
     }
 
     const taxRate = parseFloat(process.env.TAX_RATE || '0.00');
-    const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
     
     // Validate Promo Code
     let discountAmount = 0;
@@ -207,7 +207,7 @@ router.post('/', async (req, res) => {
 
     // Recalculate tax based on discounted subtotal (assuming tax is after discount)
     const taxableAmount = subtotal - discountAmount;
-    const taxAmount = taxRate > 0 && taxableAmount > 0 ? (taxableAmount - (taxableAmount / (1 + taxRate))) : 0;
+    let taxAmount = taxRate > 0 && taxableAmount > 0 ? (taxableAmount - (taxableAmount / (1 + taxRate))) : 0;
 
     // Round monetary values to 2 decimals to avoid FP rounding issues
     discountAmount = round2(discountAmount || 0);
