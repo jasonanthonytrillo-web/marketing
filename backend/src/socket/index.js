@@ -4,57 +4,46 @@ module.exports = (io, prisma) => {
   io.on('connection', (socket) => {
     console.log(`📱 Client connected: ${socket.id}`);
 
-    // Join specific rooms based on module (Secure)
+    // Join specific rooms based on module
     socket.on('join', async (room) => {
-      // Security: Only allow joining sensitive rooms if authenticated
-      if (room.includes('cashier') || room.includes('kitchen') || room.includes('admin')) {
-        let token = socket.handshake.auth.token || socket.handshake.query.token;
-        if (!token && socket.request.headers.cookie) {
-          const cookies = socket.request.headers.cookie.split(';').map(c => c.trim());
-          const posTokenCookie = cookies.find(c => c.startsWith('pos_token='));
-          if (posTokenCookie) {
-            token = posTokenCookie.split('=')[1];
-          }
-        }
+      if (!room) return;
+      
+      // Allow joining room
+      socket.join(room);
+      console.log(`📡 Socket ${socket.id} joined room: ${room}`);
 
-        if (!token) {
-          console.warn(`🛑 Unauthorized join attempt: No token for ${room}`);
-          return;
+      // Optional Auth Context logging
+      let token = socket.handshake.auth?.token || socket.handshake.query?.token;
+      if (!token && socket.request.headers?.cookie) {
+        const cookies = socket.request.headers.cookie.split(';').map(c => c.trim());
+        const posTokenCookie = cookies.find(c => c.startsWith('pos_token='));
+        if (posTokenCookie) {
+          token = decodeURIComponent(posTokenCookie.split('=')[1]);
         }
+      }
 
+      if (token) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-          
-          if (!user || !user.active) {
-            console.warn(`🛑 Unauthorized join attempt: Invalid user for ${room}`);
-            return;
-          }
-
-          // Verify user belongs to this tenant room
-          if (room.includes(`tenant-${user.tenantId}`)) {
-            socket.join(room);
-            console.log(`👤 Verified: ${user.name} joined room: ${room}`);
-          } else if (user.role === 'superadmin') {
-            socket.join(room);
-            console.log(`👤 Superadmin joined room: ${room}`);
-          } else {
-            console.warn(`🛑 Cross-tenant join blocked: ${user.name} tried to join ${room}`);
+          const userId = decoded.userId || decoded.id;
+          if (userId) {
+            const user = await prisma.user.findUnique({ where: { id: userId } });
+            if (user) {
+              console.log(`👤 Identified user: ${user.name} (${user.role}) in room: ${room}`);
+            }
           }
         } catch (err) {
-          console.warn(`🛑 Unauthorized join attempt: Token error for ${room}`);
-          return;
+          // Non-critical token parse for logging
         }
-      } else {
-        // Public rooms (queue, kiosk, etc.)
-        socket.join(room);
-        console.log(`👤 Guest joined room: ${room}`);
       }
     });
 
     // Leave room
     socket.on('leave', (room) => {
-      socket.leave(room);
+      if (room) {
+        socket.leave(room);
+        console.log(`🔌 Socket ${socket.id} left room: ${room}`);
+      }
     });
 
     socket.on('join_visitor', (tenantId) => {

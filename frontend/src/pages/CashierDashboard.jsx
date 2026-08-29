@@ -55,7 +55,7 @@ export default function CashierDashboard() {
   useEffect(() => {
     loadOrders();
     checkShiftStatus();
-    if (connected && user?.tenantId) {
+    if (user?.tenantId) {
       joinRoom('cashier', user.tenantId);
     }
 

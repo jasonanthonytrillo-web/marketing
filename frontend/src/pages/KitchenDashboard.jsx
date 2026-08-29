@@ -45,7 +45,7 @@ export default function KitchenDashboard() {
   useEffect(() => {
     loadOrders();
     checkShiftStatus();
-    if (connected && user?.tenantId) {
+    if (user?.tenantId) {
       joinRoom('kitchen', user.tenantId);
     }
 
