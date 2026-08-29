@@ -8,7 +8,15 @@ module.exports = (io, prisma) => {
     socket.on('join', async (room) => {
       // Security: Only allow joining sensitive rooms if authenticated
       if (room.includes('cashier') || room.includes('kitchen') || room.includes('admin')) {
-        const token = socket.handshake.auth.token || socket.handshake.query.token;
+        let token = socket.handshake.auth.token || socket.handshake.query.token;
+        if (!token && socket.request.headers.cookie) {
+          const cookies = socket.request.headers.cookie.split(';').map(c => c.trim());
+          const posTokenCookie = cookies.find(c => c.startsWith('pos_token='));
+          if (posTokenCookie) {
+            token = posTokenCookie.split('=')[1];
+          }
+        }
+
         if (!token) {
           console.warn(`🛑 Unauthorized join attempt: No token for ${room}`);
           return;
