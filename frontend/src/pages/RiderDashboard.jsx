@@ -173,6 +173,7 @@ export default function RiderDashboard() {
 
   // Shift Attendance State
   const [activeShift, setActiveShift] = useState(null);
+  const [shiftSummary, setShiftSummary] = useState(null);
   const [showTimeInModal, setShowTimeInModal] = useState(false);
   const [showTimeOutModal, setShowTimeOutModal] = useState(false);
   const [timeInLoading, setTimeInLoading] = useState(false);
@@ -216,11 +217,12 @@ export default function RiderDashboard() {
     try {
       const res = await cashierTimeOut({});
       const closed = res.data.data;
-      alert(`Shift Completed!\n\n⏱️ Time In: ${formatDate(closed.startTime)}\n⏱️ Time Out: ${formatDate(closed.endTime)}`);
+      
+      setShiftSummary(closed);
+
       setActiveShift(null);
       setIsRestricted(true);
       setShowTimeOutModal(false);
-      setShowTimeInModal(true);
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to record time-out');
     } finally {
@@ -861,6 +863,41 @@ export default function RiderDashboard() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shift Summary Modal */}
+      {shiftSummary && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-scale-in">
+            <div className="bg-emerald-600 p-6 text-white text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckCircle className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-black text-2xl tracking-tight">Shift Completed!</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Time In</span>
+                  <span className="font-bold text-slate-800">{formatDate(shiftSummary.startTime)}</span>
+                </div>
+                <div className="flex justify-between pb-2">
+                  <span className="text-slate-500 font-medium">Time Out</span>
+                  <span className="font-bold text-slate-800">{formatDate(shiftSummary.endTime)}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShiftSummary(null);
+                  setShowTimeInModal(true);
+                }}
+                className="w-full py-4 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg transition-all"
+              >
+                Okay, Got it
+              </button>
             </div>
           </div>
         </div>

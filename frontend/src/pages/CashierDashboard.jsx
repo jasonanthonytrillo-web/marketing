@@ -39,6 +39,7 @@ export default function CashierDashboard() {
   const [timeOutNotes, setTimeOutNotes] = useState('');
   const [timeOutLoading, setTimeOutLoading] = useState(false);
   const [isRestricted, setIsRestricted] = useState(false);
+  const [shiftSummary, setShiftSummary] = useState(null);
 
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
@@ -258,22 +259,14 @@ export default function CashierDashboard() {
     try {
       const res = await cashierTimeOut({ endingCash: amount, notes: timeOutNotes });
       const closed = res.data.data;
-      alert(`Shift Completed!\n\n` +
-        `⏱️ Time In: ${formatDate(closed.startTime)}\n` +
-        `⏱️ Time Out: ${formatDate(closed.endTime)}\n` +
-        `💵 Starting Cash Float: ${formatCurrency(closed.startingCash)}\n` +
-        `💰 Shift Cash Sales: ${formatCurrency(closed.cashSales)}\n` +
-        `📈 Expected Register Cash: ${formatCurrency(closed.expectedCash)}\n` +
-        `🧾 Counted Ending Cash: ${formatCurrency(closed.endingCash)}\n` +
-        `⚖️ Cash Variance: ${closed.cashDifference >= 0 ? '+' : ''}${formatCurrency(closed.cashDifference)}`);
+      
+      setShiftSummary(closed);
 
       setActiveShift(null);
       setIsRestricted(true);
       setShowTimeOutModal(false);
       setEndingCash('');
       setTimeOutNotes('');
-      setShowTimeInModal(true);
-      setTimeInStep('prompt');
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to close shift.');
     } finally {
@@ -699,6 +692,64 @@ export default function CashierDashboard() {
         </div>
       )}
 
+      {/* Shift Summary Modal */}
+      {shiftSummary && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-100 animate-scale-in">
+            <div className="bg-emerald-600 p-6 text-white text-center">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckCircle className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-black text-2xl tracking-tight">Shift Completed!</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Time In</span>
+                  <span className="font-bold text-slate-800">{formatDate(shiftSummary.startTime)}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Time Out</span>
+                  <span className="font-bold text-slate-800">{formatDate(shiftSummary.endTime)}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Starting Cash Float</span>
+                  <span className="font-bold text-slate-800">{formatCurrency(shiftSummary.startingCash)}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Shift Cash Sales</span>
+                  <span className="font-bold text-emerald-600">{formatCurrency(shiftSummary.cashSales)}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Expected Register Cash</span>
+                  <span className="font-bold text-slate-800">{formatCurrency(shiftSummary.expectedCash)}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Counted Ending Cash</span>
+                  <span className="font-bold text-slate-800">{formatCurrency(shiftSummary.endingCash)}</span>
+                </div>
+                <div className="flex justify-between pt-2">
+                  <span className="font-black text-slate-700">Cash Variance</span>
+                  <span className={`font-black ${shiftSummary.cashDifference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {shiftSummary.cashDifference >= 0 ? '+' : ''}{formatCurrency(shiftSummary.cashDifference)}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShiftSummary(null);
+                  setShowTimeInModal(true);
+                  setTimeInStep('prompt');
+                }}
+                className="w-full py-4 mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-lg transition-all"
+              >
+                Okay, Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Time-Out Modal */}
       {showTimeOutModal && activeShift && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md animate-fade-in">

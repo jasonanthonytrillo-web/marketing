@@ -314,7 +314,7 @@ export default function ShiftsTab() {
           >
             <option value="all">All Statuses</option>
             <option value="active">Active Only (Currently Timed In)</option>
-            <option value="closed">Closed Only (Timed Out)</option>
+            <option value="closed">Timed Out</option>
           </select>
         </div>
 
@@ -421,7 +421,7 @@ export default function ShiftsTab() {
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full font-bold text-[10px] uppercase tracking-wider">
-                            <CheckCircle className="w-3 h-3 text-slate-400" /> Closed
+                            <CheckCircle className="w-3 h-3 text-slate-400" /> Timed Out
                           </span>
                         )}
                       </td>

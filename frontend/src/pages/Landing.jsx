@@ -259,10 +259,6 @@ export default function Landing() {
             ? asset
             : `${backendUrl}${asset}`;
 
-          const isVid = typeof asset === 'string' && (
-            /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(asset.split(/[?#]/)[0]) ||
-            (asset.includes('/uploads/') && !/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(asset))
-          );
           const isActive = index === currentAssetIndex;
 
           return (
@@ -271,23 +267,11 @@ export default function Landing() {
               className={`absolute inset-0 asset-transition ${isActive ? 'opacity-100' : 'opacity-0'}`}
               style={{ zIndex: isActive ? 1 : 0 }}
             >
-              {isVid ? (
-                <video
-                  key={fullUrl}
-                  autoPlay muted loop playsInline
-                  preload="auto"
-                  poster="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=1000&auto=format&fit=crop"
-                  className="w-full h-full object-cover"
-                >
-                  <source src={fullUrl} />
-                </video>
-              ) : (
-                <img
-                  src={fullUrl}
-                  alt=""
-                  className={`w-full h-full object-cover ${isActive ? 'animate-kenburns' : ''}`}
-                />
-              )}
+              <img
+                src={fullUrl}
+                alt=""
+                className={`w-full h-full object-cover ${isActive ? 'animate-kenburns' : ''}`}
+              />
             </div>
           );
         })}
