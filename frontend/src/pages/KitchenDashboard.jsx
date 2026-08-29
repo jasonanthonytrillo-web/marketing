@@ -29,6 +29,7 @@ export default function KitchenDashboard() {
   const [timeInLoading, setTimeInLoading] = useState(false);
   const [timeOutLoading, setTimeOutLoading] = useState(false);
   const [isRestricted, setIsRestricted] = useState(false);
+  const [restrictionModal, setRestrictionModal] = useState(null);
 
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
@@ -175,8 +176,8 @@ export default function KitchenDashboard() {
 
   const handleAction = async (orderId, action) => {
     if (isRestricted || !activeShift) {
-      setShowTimeInModal(true);
-      return alert('Action restricted: Please Time In to operate kitchen tickets.');
+      setRestrictionModal({ message: 'Please Time In to operate kitchen tickets.' });
+      return;
     }
     setProcessing(true);
     try {
@@ -195,7 +196,7 @@ export default function KitchenDashboard() {
       }
       loadOrders();
     } catch (e) {
-      alert('Action failed');
+      console.error('Action failed:', e);
     } finally {
       setProcessing(false);
     }
@@ -203,8 +204,8 @@ export default function KitchenDashboard() {
 
   const handleConfirmPrep = async (mins) => {
     if (isRestricted || !activeShift) {
-      setShowTimeInModal(true);
-      return alert('Action restricted: Please Time In to operate kitchen tickets.');
+      setRestrictionModal({ message: 'Please Time In to operate kitchen tickets.' });
+      return;
     }
     if (!prepModalOrder) return;
     setProcessing(true);
@@ -214,7 +215,7 @@ export default function KitchenDashboard() {
       setPrepModalOrder(null);
       loadOrders();
     } catch (e) {
-      alert('Action failed');
+      console.error('Action failed:', e);
     } finally {
       setProcessing(false);
     }
@@ -222,8 +223,8 @@ export default function KitchenDashboard() {
   
   const handleConfirmServe = async () => {
     if (isRestricted || !activeShift) {
-      setShowTimeInModal(true);
-      return alert('Action restricted: Please Time In to operate kitchen tickets.');
+      setRestrictionModal({ message: 'Please Time In to operate kitchen tickets.' });
+      return;
     }
     if (!serveModalOrder) return;
     setProcessing(true);
@@ -233,7 +234,7 @@ export default function KitchenDashboard() {
       setServeModalOrder(null);
       loadOrders();
     } catch (e) {
-      alert('Action failed');
+      console.error('Action failed:', e);
     } finally {
       setProcessing(false);
     }
@@ -629,6 +630,59 @@ export default function KitchenDashboard() {
                 className="w-full py-4 text-surface-500 font-bold hover:text-white transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action Restricted Modal */}
+      {restrictionModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div 
+            className="bg-surface-900 border border-surface-800 rounded-[2.5rem] w-full max-w-sm p-6 sm:p-8 shadow-2xl animate-scale-in text-center relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Ambient soft glow */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
+
+            {/* Lock Icon */}
+            <div className="w-16 h-16 bg-gradient-to-tr from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-500 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-xl shadow-amber-500/10 animate-pulse">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-widest mb-2">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Time In Required</span>
+            </div>
+
+            <h3 className="font-heading text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">
+              Action Restricted
+            </h3>
+            <p className="text-surface-400 text-xs sm:text-sm font-medium leading-relaxed mb-6 px-2">
+              {restrictionModal.message || 'Please Time In to operate kitchen tickets and manage orders.'}
+            </p>
+
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setRestrictionModal(null);
+                  setShowTimeInModal(true);
+                }}
+                className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 active:scale-95 text-white font-black rounded-2xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
+              >
+                <Timer className="w-4 h-4" />
+                <span>Time In Now</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRestrictionModal(null)}
+                className="w-full py-3 bg-surface-800 hover:bg-surface-700 active:scale-95 text-surface-400 hover:text-surface-200 font-bold rounded-2xl transition-all text-xs uppercase tracking-wider"
+              >
+                Dismiss (Read-Only Mode)
               </button>
             </div>
           </div>

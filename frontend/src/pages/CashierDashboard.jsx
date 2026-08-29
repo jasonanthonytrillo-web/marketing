@@ -40,6 +40,13 @@ export default function CashierDashboard() {
   const [timeOutLoading, setTimeOutLoading] = useState(false);
   const [isRestricted, setIsRestricted] = useState(false);
   const [shiftSummary, setShiftSummary] = useState(null);
+  const [restrictionModal, setRestrictionModal] = useState(null);
+
+  const handleRestrictedAction = (actionName = 'perform this action') => {
+    setRestrictionModal({
+      message: `You must Time In before ${actionName}.`
+    });
+  };
 
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
@@ -278,20 +285,20 @@ export default function CashierDashboard() {
 
   const handleConfirmPayment = async () => {
     if (isRestricted || !activeShift) {
-      handleOpenTimeIn();
-      return alert('Action restricted: You must Time In before processing payments.');
+      handleRestrictedAction('processing payments');
+      return;
     }
     if (!selectedOrder) return;
     if (!calcResult) {
        await calculateTotals(); // Try calculating again 
-       return alert('Calculating totals... Please try again in a second.');
+       return;
     }
-    if (!paymentData.received) return alert('Please enter the amount received.');
-    if (calcResult.isInsufficient) return alert('Insufficient payment amount. The total due is ' + formatCurrency(calcResult.total));
+    if (!paymentData.received) return;
+    if (calcResult.isInsufficient) return;
 
     // Enforce reference number for online payments (except for delivery orders where customer provides it)
     if ((paymentData.method === 'gcash' || paymentData.method === 'maya') && selectedOrder.orderType !== 'delivery' && !paymentData.referenceNumber) {
-      return alert(`Please enter the Reference Number (Last 4 Digits) for ${paymentData.method.toUpperCase()} payment.`);
+      return;
     }
 
     setProcessing(true);
@@ -316,7 +323,7 @@ export default function CashierDashboard() {
       setCalcResult(null);
       loadOrders();
     } catch (e) {
-      alert(e.response?.data?.message || 'Failed to confirm order');
+      console.error('Failed to confirm order:', e);
     } finally {
       setProcessing(false);
     }
@@ -324,8 +331,8 @@ export default function CashierDashboard() {
 
   const handleServeOrder = async () => {
     if (isRestricted || !activeShift) {
-      handleOpenTimeIn();
-      return alert('Action restricted: You must Time In before completing or serving orders.');
+      handleRestrictedAction('completing or serving orders');
+      return;
     }
     if (!selectedOrder) return;
     setProcessing(true);
@@ -335,7 +342,7 @@ export default function CashierDashboard() {
       setSelectedOrder(null);
       loadOrders();
     } catch (e) {
-      alert('Failed to mark order as served');
+      console.error('Failed to mark order as served:', e);
     } finally {
       setProcessing(false);
     }
@@ -343,8 +350,8 @@ export default function CashierDashboard() {
 
   const handleStartPreparing = () => {
     if (isRestricted || !activeShift) {
-      handleOpenTimeIn();
-      return alert('Action restricted: You must Time In before updating kitchen orders.');
+      handleRestrictedAction('updating kitchen orders');
+      return;
     }
     setPrepTime(15); // reset default
     setShowPrepModal(true);
@@ -352,8 +359,8 @@ export default function CashierDashboard() {
 
   const handleConfirmPrep = async (minutes) => {
     if (isRestricted || !activeShift) {
-      handleOpenTimeIn();
-      return alert('Action restricted: You must Time In before updating kitchen orders.');
+      handleRestrictedAction('updating kitchen orders');
+      return;
     }
     if (!selectedOrder) return;
     const time = parseInt(minutes) || 15;
@@ -364,7 +371,7 @@ export default function CashierDashboard() {
       setSelectedOrder(null);
       loadOrders();
     } catch (e) {
-      alert('Failed to start preparing: ' + (e.response?.data?.message || e.message));
+      console.error('Failed to start preparing:', e);
     } finally {
       setProcessing(false);
     }
@@ -372,8 +379,8 @@ export default function CashierDashboard() {
 
   const handleCompleteOrder = async () => {
     if (isRestricted || !activeShift) {
-      handleOpenTimeIn();
-      return alert('Action restricted: You must Time In before completing orders.');
+      handleRestrictedAction('completing orders');
+      return;
     }
     if (!selectedOrder) return;
     setProcessing(true);
@@ -382,7 +389,7 @@ export default function CashierDashboard() {
       setSelectedOrder(null);
       loadOrders();
     } catch (e) {
-      alert('Failed to mark order as ready');
+      console.error('Failed to mark order as ready:', e);
     } finally {
       setProcessing(false);
     }
@@ -390,8 +397,8 @@ export default function CashierDashboard() {
 
   const handleDispatchOrder = async () => {
     if (isRestricted || !activeShift) {
-      handleOpenTimeIn();
-      return alert('Action restricted: You must Time In before dispatching delivery orders.');
+      handleRestrictedAction('dispatching delivery orders');
+      return;
     }
     if (!selectedOrder) return;
     setProcessing(true);
@@ -400,7 +407,7 @@ export default function CashierDashboard() {
       setSelectedOrder(null);
       loadOrders();
     } catch (e) {
-      alert('Failed to dispatch order');
+      console.error('Failed to dispatch order:', e);
     } finally {
       setProcessing(false);
     }
@@ -408,8 +415,8 @@ export default function CashierDashboard() {
 
   const handleCancel = () => {
     if (isRestricted || !activeShift) {
-      handleOpenTimeIn();
-      return alert('Action restricted: You must Time In before managing orders.');
+      handleRestrictedAction('managing or cancelling orders');
+      return;
     }
     if (!selectedOrder) return;
     setCancelReason('Customer changed mind');
@@ -1607,6 +1614,58 @@ export default function CashierDashboard() {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Action Restricted Modal */}
+      {restrictionModal && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div 
+            className="bg-slate-900 border border-slate-800 rounded-[2.5rem] w-full max-w-sm p-6 sm:p-8 shadow-2xl animate-scale-in text-center relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Ambient soft glow */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none" />
+
+            {/* Lock Icon */}
+            <div className="w-16 h-16 bg-gradient-to-tr from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-500 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-xl shadow-amber-500/10 animate-pulse">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-widest mb-2">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Time In Required</span>
+            </div>
+
+            <h3 className="font-heading text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">
+              Action Restricted
+            </h3>
+            <p className="text-slate-400 text-xs sm:text-sm font-medium leading-relaxed mb-6 px-2">
+              {restrictionModal.message || 'You must Time In to start your shift before processing payments and managing orders.'}
+            </p>
+
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setRestrictionModal(null);
+                  handleOpenTimeIn();
+                }}
+                className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 active:scale-95 text-white font-black rounded-2xl shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
+              >
+                <Timer className="w-4 h-4" />
+                <span>Time In Now</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRestrictionModal(null)}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700/80 active:scale-95 text-slate-400 hover:text-slate-200 font-bold rounded-2xl transition-all text-xs uppercase tracking-wider"
+              >
+                Dismiss (Read-Only Mode)
+              </button>
             </div>
           </div>
         </div>

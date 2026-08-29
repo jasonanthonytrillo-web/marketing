@@ -104,16 +104,18 @@ export default function ShiftsTab() {
     const rows = filteredShifts.map(s => {
       const hours = getShiftHours(s.startTime, s.endTime);
       const role = s.role || 'cashier';
+      const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+      const statusLabel = s.status === 'active' ? 'Active' : s.status === 'closed' ? 'Timed Out' : (s.status || '');
       const rate = role === 'kitchen' ? kitchenRate : role === 'rider' ? riderRate : cashierRate;
       const salary = hours * rate;
 
       return [
         s.cashierName || s.user?.name || '',
         s.user?.email || '',
-        role,
-        s.status || '',
+        roleLabel,
+        statusLabel,
         s.startTime ? new Date(s.startTime).toLocaleString() : '',
-        s.endTime ? new Date(s.endTime).toLocaleString() : '',
+        s.endTime ? new Date(s.endTime).toLocaleString() : 'In Progress',
         getShiftDuration(s.startTime, s.endTime),
         hours.toFixed(2),
         rate,
