@@ -182,53 +182,61 @@ export default function ShiftsTab() {
 
       {/* Summary KPI Cards */}
       {summary && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="glass-card p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Shifts</span>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="glass-card p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Shifts</span>
             </div>
-            <p className="text-2xl font-black text-slate-900 font-heading">{summary.totalShifts}</p>
-            <div className="flex items-center gap-2 mt-1 text-xs font-semibold">
+            <p className="text-xl font-black text-slate-900 font-heading">{summary.totalShifts}</p>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px] font-semibold">
               <span className="text-emerald-600">{summary.activeShiftsCount} Active</span>
               <span className="text-slate-300">•</span>
               <span className="text-slate-500">{summary.closedShiftsCount} Closed</span>
             </div>
           </div>
 
-          <div className="glass-card p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Opening Floats</span>
+          <div className="glass-card p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Opening Floats</span>
             </div>
-            <p className="text-2xl font-black text-slate-900 font-heading">{formatCurrency(summary.totalStartingCash)}</p>
-            <p className="text-xs text-slate-400 font-medium mt-1">Total initial float recorded</p>
+            <p className="text-xl font-black text-slate-900 font-heading">{formatCurrency(summary.totalStartingCash)}</p>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Total initial float</p>
           </div>
 
-          <div className="glass-card p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Shift Cash Sales</span>
+          <div className="glass-card p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cash Sales</span>
             </div>
-            <p className="text-2xl font-black text-emerald-600 font-heading">{formatCurrency(summary.totalCashSales)}</p>
-            <p className="text-xs text-slate-400 font-medium mt-1">Total Sales: {formatCurrency(summary.totalSales)}</p>
+            <p className="text-xl font-black text-emerald-600 font-heading">{formatCurrency(summary.totalCashSales)}</p>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">Physical drawer cash</p>
           </div>
 
-          <div className="glass-card p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Net Discrepancy</span>
+          <div className="glass-card p-4 bg-white rounded-2xl border border-blue-100 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Online Sales</span>
             </div>
-            <p className={`text-2xl font-black font-heading ${summary.totalDifference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <p className="text-xl font-black text-blue-600 font-heading">{formatCurrency(summary.totalOnlineSales || 0)}</p>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">GCash / Maya / Card</p>
+          </div>
+
+          <div className="glass-card p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Discrepancy</span>
+            </div>
+            <p className={`text-xl font-black font-heading ${summary.totalDifference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
               {summary.totalDifference >= 0 ? '+' : ''}{formatCurrency(summary.totalDifference)}
             </p>
-            <p className="text-xs text-slate-400 font-medium mt-1">
-              {summary.totalDifference === 0 ? 'Exact match' : summary.totalDifference > 0 ? 'Surplus across shifts' : 'Shortage across shifts'}
+            <p className="text-[11px] text-slate-400 font-medium mt-1">
+              {summary.totalDifference === 0 ? 'Exact match' : summary.totalDifference > 0 ? 'Drawer surplus' : 'Drawer shortage'}
             </p>
           </div>
 
-          <div className="glass-card p-5 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-black text-emerald-800 uppercase tracking-widest">Est. Total Payout</span>
+          <div className="glass-card p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl shadow-sm">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Est. Total Payout</span>
             </div>
-            <p className="text-2xl font-black text-emerald-700 font-heading">{formatCurrency(totalPayout)}</p>
-            <p className="text-xs text-emerald-600/90 font-bold mt-1">Estimating {filteredShifts.length} shifts</p>
+            <p className="text-xl font-black text-emerald-700 font-heading">{formatCurrency(totalPayout)}</p>
+            <p className="text-[11px] text-emerald-600/90 font-bold mt-1">For {filteredShifts.length} shifts</p>
           </div>
         </div>
       )}
@@ -376,6 +384,8 @@ export default function ShiftsTab() {
                   <th className="py-4 px-4 text-right">Est. Salary</th>
                   <th className="py-4 px-4 text-right">Opening Float</th>
                   <th className="py-4 px-4 text-right">Cash Sales</th>
+                  <th className="py-4 px-4 text-right">Online Sales</th>
+                  <th className="py-4 px-4 text-right">Total Sales</th>
                   <th className="py-4 px-4 text-right">Expected Drawer</th>
                   <th className="py-4 px-4 text-right">Counted Ending</th>
                   <th className="py-4 px-4 text-right">Variance</th>
@@ -456,6 +466,14 @@ export default function ShiftsTab() {
 
                       <td className="py-4 px-4 text-right font-mono font-bold text-emerald-600">
                         {s.cashSales !== null ? formatCurrency(s.cashSales) : '—'}
+                      </td>
+
+                      <td className="py-4 px-4 text-right font-mono font-bold text-blue-600">
+                        {s.onlineSales !== null ? formatCurrency(s.onlineSales) : '—'}
+                      </td>
+
+                      <td className="py-4 px-4 text-right font-mono font-black text-slate-900">
+                        {s.totalSales !== null ? formatCurrency(s.totalSales) : '—'}
                       </td>
 
                       <td className="py-4 px-4 text-right font-mono font-bold text-slate-800">

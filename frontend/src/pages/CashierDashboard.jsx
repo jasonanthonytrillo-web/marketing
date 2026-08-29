@@ -730,6 +730,14 @@ export default function CashierDashboard() {
                   <span className="font-bold text-emerald-600">{formatCurrency(shiftSummary.cashSales)}</span>
                 </div>
                 <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Shift Online (GCash/Maya)</span>
+                  <span className="font-bold text-blue-600">{formatCurrency(shiftSummary.onlineSales || 0)}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                  <span className="text-slate-500 font-medium">Total Shift Sales</span>
+                  <span className="font-black text-slate-900">{formatCurrency(shiftSummary.totalSales || 0)}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-100 pb-2">
                   <span className="text-slate-500 font-medium">Expected Register Cash</span>
                   <span className="font-bold text-slate-800">{formatCurrency(shiftSummary.expectedCash)}</span>
                 </div>
@@ -784,6 +792,14 @@ export default function CashierDashboard() {
                 <div className="flex justify-between text-slate-600">
                   <span>Cash Sales (Shift):</span>
                   <span className="font-bold font-mono text-emerald-600">+{formatCurrency(activeShift.liveStats?.cashSales || 0)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Online Sales (GCash/Maya):</span>
+                  <span className="font-bold font-mono text-blue-600">+{formatCurrency(activeShift.liveStats?.onlineSales || 0)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Total Sales (Shift):</span>
+                  <span className="font-bold font-mono text-slate-900">{formatCurrency(activeShift.liveStats?.totalSales || 0)}</span>
                 </div>
                 <div className="flex justify-between text-slate-800 pt-2 border-t border-slate-200 font-bold">
                   <span>Expected Cash in Drawer:</span>
