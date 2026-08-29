@@ -8,7 +8,10 @@ import {
   pickupOrder,
   deliverOrder,
   notifyArrival,
-  getPublicTenant
+  getPublicTenant,
+  getCashierActiveShift,
+  cashierTimeIn,
+  cashierTimeOut
 } from '../services/api';
 import {
   Truck,
@@ -26,7 +29,10 @@ import {
   Bike,
   AlertTriangle,
   Locate,
-  X
+  X,
+  Timer,
+  ShieldAlert,
+  Lock
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -165,6 +171,63 @@ export default function RiderDashboard() {
   const [currentRiderPos, setCurrentRiderPos] = useState(null);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
 
+  // Shift Attendance State
+  const [activeShift, setActiveShift] = useState(null);
+  const [showTimeInModal, setShowTimeInModal] = useState(false);
+  const [showTimeOutModal, setShowTimeOutModal] = useState(false);
+  const [timeInLoading, setTimeInLoading] = useState(false);
+  const [timeOutLoading, setTimeOutLoading] = useState(false);
+  const [isRestricted, setIsRestricted] = useState(false);
+
+  const checkShiftStatus = async () => {
+    try {
+      const res = await getCashierActiveShift();
+      if (res.data?.data) {
+        setActiveShift(res.data.data);
+        setIsRestricted(false);
+        setShowTimeInModal(false);
+      } else {
+        setActiveShift(null);
+        setIsRestricted(true);
+        setShowTimeInModal(true);
+      }
+    } catch (err) {
+      console.error('Error checking rider shift status:', err);
+      setIsRestricted(true);
+    }
+  };
+
+  const handleConfirmTimeIn = async () => {
+    setTimeInLoading(true);
+    try {
+      const res = await cashierTimeIn({ startingCash: 0 });
+      setActiveShift(res.data.data);
+      setIsRestricted(false);
+      setShowTimeInModal(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to record time-in');
+    } finally {
+      setTimeInLoading(false);
+    }
+  };
+
+  const handleConfirmTimeOut = async () => {
+    setTimeOutLoading(true);
+    try {
+      const res = await cashierTimeOut({});
+      const closed = res.data.data;
+      alert(`Shift Completed!\n\n⏱️ Time In: ${formatDate(closed.startTime)}\n⏱️ Time Out: ${formatDate(closed.endTime)}`);
+      setActiveShift(null);
+      setIsRestricted(true);
+      setShowTimeOutModal(false);
+      setShowTimeInModal(true);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to record time-out');
+    } finally {
+      setTimeOutLoading(false);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -192,6 +255,7 @@ export default function RiderDashboard() {
 
   useEffect(() => {
     loadData();
+    checkShiftStatus();
   }, [activeTab]);
 
   useEffect(() => {
@@ -278,6 +342,10 @@ export default function RiderDashboard() {
   }, [activeTab, orders.length > 0, emit]); // stable dependencies
 
   const handlePickup = async (orderId) => {
+    if (isRestricted || !activeShift) {
+      setShowTimeInModal(true);
+      return alert('Action restricted: Please Time In to accept and deliver orders.');
+    }
     try {
       await pickupOrder(orderId);
       setActiveTab('active');
@@ -346,12 +414,29 @@ export default function RiderDashboard() {
               )}
             </div>
           </div>
-          <button
-            onClick={logoutUser}
-            className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-100 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {activeShift ? (
+              <button
+                onClick={() => setShowTimeOutModal(true)}
+                className="px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+              >
+                <Timer className="w-4 h-4 text-rose-600" /> Time Out
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowTimeInModal(true)}
+                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+              >
+                <Timer className="w-4 h-4" /> Time In
+              </button>
+            )}
+            <button
+              onClick={logoutUser}
+              className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Custom Tabs */}
@@ -379,6 +464,93 @@ export default function RiderDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Restricted Mode Banner */}
+      {isRestricted && (
+        <div className="mx-6 mt-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white p-4 rounded-2xl flex items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+              <ShieldAlert className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-xs font-black tracking-wide uppercase">Restricted Read-Only Mode</p>
+              <p className="text-[10px] text-white/90 font-medium">You are not timed in. Delivery actions are locked until you time in.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowTimeInModal(true)}
+            className="px-3.5 py-2 bg-white text-orange-600 active:scale-95 rounded-xl font-black text-xs uppercase tracking-wider shadow-sm flex items-center gap-1"
+          >
+            <Timer className="w-3.5 h-3.5" /> Time In
+          </button>
+        </div>
+      )}
+
+      {/* Time-In Modal */}
+      {showTimeInModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white text-center">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Bike className="w-9 h-9 text-white" />
+              </div>
+              <h3 className="font-black text-2xl tracking-tight mb-1">Start Rider Shift</h3>
+              <p className="text-white/90 text-xs font-semibold">You are about to time in for delivery duty</p>
+            </div>
+            <div className="p-6 sm:p-8 space-y-4">
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
+                <Clock className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-blue-950 leading-relaxed font-medium">
+                  Timing in records your attendance and enables accepting & delivering orders. If you choose <strong>Cancel</strong>, you can only view in read-only mode.
+                </div>
+              </div>
+              <div className="space-y-3 pt-2">
+                <button onClick={handleConfirmTimeIn} disabled={timeInLoading} className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black rounded-2xl shadow-xl shadow-blue-600/25 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider">
+                  <Timer className="w-5 h-5" /> {timeInLoading ? 'Recording...' : 'Time In'}
+                </button>
+                <button onClick={() => { setShowTimeInModal(false); setIsRestricted(true); }} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 font-bold rounded-2xl transition-all text-xs uppercase tracking-widest">
+                  Cancel (Read-Only Mode)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Time-Out Modal */}
+      {showTimeOutModal && activeShift && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-md">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+            <div className="bg-gradient-to-br from-rose-600 to-pink-700 p-7 text-white text-center">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                <Timer className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-black text-xl tracking-tight mb-1">Time Out & End Rider Shift</h3>
+              <p className="text-white/90 text-xs font-semibold">Clock out and record your shift completion</p>
+            </div>
+            <div className="p-6 sm:p-8 space-y-4">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Shift Started:</span>
+                  <span className="font-bold text-slate-900">{formatDate(activeShift.startTime)}</span>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Rider Name:</span>
+                  <span className="font-bold text-slate-900">{user?.name}</span>
+                </div>
+              </div>
+              <div className="space-y-2 pt-2">
+                <button onClick={handleConfirmTimeOut} disabled={timeOutLoading} className="w-full py-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black rounded-2xl shadow-xl shadow-rose-600/25 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider">
+                  {timeOutLoading ? 'Recording Time Out...' : 'Confirm Time Out'}
+                </button>
+                <button onClick={() => setShowTimeOutModal(false)} className="w-full py-3 text-slate-500 hover:text-slate-800 font-bold text-xs uppercase tracking-widest transition-all">
+                  Cancel / Stay on Shift
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Background Tracking Warning */}
       {trackingActive && (

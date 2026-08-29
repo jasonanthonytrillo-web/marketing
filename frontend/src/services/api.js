@@ -91,6 +91,10 @@ export const updateOrderStatus = (id, status) => {
   }
   return api.post(`/cashier/orders/${id}/status`, { status });
 };
+export const getCashierActiveShift = () => api.get('/cashier/shift/current');
+export const cashierTimeIn = (data) => api.post('/cashier/shift/time-in', data);
+export const cashierTimeOut = (data) => api.post('/cashier/shift/time-out', data);
+export const getCashierShiftHistory = () => api.get('/cashier/shift/history');
 
 // Kitchen
 export const getKitchenOrders = () => api.get('/kitchen/orders');
@@ -142,6 +146,7 @@ export const getAdminSummary = () => api.get('/reports/summary');
 export const getKitchenTimes = () => api.get('/reports/kitchen-times');
 export const getForecasting = () => api.get('/reports/forecasting');
 export const getSalesByDate = (date) => api.get(`/reports/sales-by-date?date=${date}`);
+export const getAdminShifts = (params) => api.get('/admin/shifts', { params });
 
 // Suppliers
 export const getSuppliers = () => api.get('/suppliers');

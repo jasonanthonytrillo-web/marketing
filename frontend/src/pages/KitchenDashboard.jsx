@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { getKitchenOrders, startPreparing, completeOrder, markServed } from '../services/api';
+import { getKitchenOrders, startPreparing, completeOrder, markServed, getCashierActiveShift, cashierTimeIn, cashierTimeOut } from '../services/api';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import { getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
+import { getElapsedMinutes, playNotificationSound, unlockAudio, updateAppBadge, requestNotificationPermission, showSystemNotification, formatDate } from '../utils/helpers';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
-import { Bell, BellOff, ChefHat, LogOut, UtensilsCrossed, PackageOpen, Gift, AlertTriangle, MapPin, CheckCircle } from 'lucide-react';
+import { Bell, BellOff, ChefHat, LogOut, UtensilsCrossed, PackageOpen, Gift, AlertTriangle, MapPin, CheckCircle, Timer, Clock, ShieldAlert, Lock } from 'lucide-react';
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState([]);
@@ -20,6 +20,15 @@ export default function KitchenDashboard() {
   const [prepModalOrder, setPrepModalOrder] = useState(null);
   const [serveModalOrder, setServeModalOrder] = useState(null);
   const [isAlerting, setIsAlerting] = useState(false);
+
+  // Shift Attendance State
+  const [activeShift, setActiveShift] = useState(null);
+  const [showTimeInModal, setShowTimeInModal] = useState(false);
+  const [showTimeOutModal, setShowTimeOutModal] = useState(false);
+  const [timeInLoading, setTimeInLoading] = useState(false);
+  const [timeOutLoading, setTimeOutLoading] = useState(false);
+  const [isRestricted, setIsRestricted] = useState(false);
+
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
   const alertInterval = useRef(null);
@@ -34,6 +43,7 @@ export default function KitchenDashboard() {
 
   useEffect(() => {
     loadOrders();
+    checkShiftStatus();
     if (connected && user?.tenantId) {
       joinRoom('kitchen', user.tenantId);
     }
@@ -112,7 +122,60 @@ export default function KitchenDashboard() {
     };
   }, [orders]);
 
+  const checkShiftStatus = async () => {
+    try {
+      const res = await getCashierActiveShift();
+      if (res.data?.data) {
+        setActiveShift(res.data.data);
+        setIsRestricted(false);
+        setShowTimeInModal(false);
+      } else {
+        setActiveShift(null);
+        setIsRestricted(true);
+        setShowTimeInModal(true);
+      }
+    } catch (err) {
+      console.error('Error checking shift status:', err);
+      setIsRestricted(true);
+    }
+  };
+
+  const handleConfirmTimeIn = async () => {
+    setTimeInLoading(true);
+    try {
+      const res = await cashierTimeIn({ startingCash: 0 });
+      setActiveShift(res.data.data);
+      setIsRestricted(false);
+      setShowTimeInModal(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to record time-in');
+    } finally {
+      setTimeInLoading(false);
+    }
+  };
+
+  const handleConfirmTimeOut = async () => {
+    setTimeOutLoading(true);
+    try {
+      const res = await cashierTimeOut({});
+      const closed = res.data.data;
+      alert(`Shift Completed!\n\n⏱️ Time In: ${formatDate(closed.startTime)}\n⏱️ Time Out: ${formatDate(closed.endTime)}`);
+      setActiveShift(null);
+      setIsRestricted(true);
+      setShowTimeOutModal(false);
+      setShowTimeInModal(true);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to record time-out');
+    } finally {
+      setTimeOutLoading(false);
+    }
+  };
+
   const handleAction = async (orderId, action) => {
+    if (isRestricted || !activeShift) {
+      setShowTimeInModal(true);
+      return alert('Action restricted: Please Time In to operate kitchen tickets.');
+    }
     setProcessing(true);
     try {
       if (action === 'start') {
@@ -137,6 +200,10 @@ export default function KitchenDashboard() {
   };
 
   const handleConfirmPrep = async (mins) => {
+    if (isRestricted || !activeShift) {
+      setShowTimeInModal(true);
+      return alert('Action restricted: Please Time In to operate kitchen tickets.');
+    }
     if (!prepModalOrder) return;
     setProcessing(true);
     setShowPrepModal(false);
@@ -152,6 +219,10 @@ export default function KitchenDashboard() {
   };
   
   const handleConfirmServe = async () => {
+    if (isRestricted || !activeShift) {
+      setShowTimeInModal(true);
+      return alert('Action restricted: Please Time In to operate kitchen tickets.');
+    }
     if (!serveModalOrder) return;
     setProcessing(true);
     setShowServeModal(false);
@@ -215,11 +286,152 @@ export default function KitchenDashboard() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {activeShift ? (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded-xl text-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="font-bold">Shift Active</span>
+            </div>
+          ) : (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-950/60 border border-amber-800 text-amber-300 rounded-lg text-xs font-bold">
+              <Lock className="w-3 h-3" /> Not Timed In
+            </span>
+          )}
+
+          {activeShift ? (
+            <button
+              onClick={() => setShowTimeOutModal(true)}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-rose-950/60 border border-rose-800 text-rose-300 hover:bg-rose-900 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+            >
+              <Timer className="w-4 h-4 text-rose-400" />
+              <span className="hidden xs:inline">End Shift /</span> Time Out
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowTimeInModal(true)}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+            >
+              <Timer className="w-4 h-4" />
+              Time In
+            </button>
+          )}
+
           <span className="text-xs sm:text-sm font-medium text-surface-400 hidden sm:flex sm:items-center sm:gap-1.5"><ChefHat className="w-4 h-4" /> {user?.name}</span>
           <button onClick={logoutUser} className="text-surface-500 hover:text-red-400 text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5"><LogOut className="w-4 h-4" /> Log Out</button>
         </div>
       </header>
+
+      {/* Restricted Mode Banner */}
+      {isRestricted && (
+        <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white px-4 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-3 shadow-md z-20 animate-fade-in no-print">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+              <ShieldAlert className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-black tracking-wide uppercase">Restricted Read-Only Mode</p>
+              <p className="text-[11px] sm:text-xs text-white/90 font-medium">You are not timed in. Kitchen prep and ticket actions are restricted until you time in.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowTimeInModal(true)}
+            className="px-4 py-2 bg-white text-orange-700 hover:bg-orange-50 active:scale-95 rounded-xl font-black text-xs uppercase tracking-wider shadow-sm transition-all flex items-center gap-1.5"
+          >
+            <Timer className="w-4 h-4" /> Time In Now
+          </button>
+        </div>
+      )}
+
+      {/* Time-In Modal */}
+      {showTimeInModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-surface-900 w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in border border-surface-800">
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-8 text-white text-center relative overflow-hidden">
+              <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <ChefHat className="w-9 h-9 text-white" />
+              </div>
+              <h3 className="font-heading font-black text-2xl tracking-tight mb-1">Start Kitchen Shift</h3>
+              <p className="text-white/90 text-xs font-semibold">You are about to time in for kitchen duty</p>
+            </div>
+
+            <div className="p-6 sm:p-8 space-y-4">
+              <div className="bg-surface-800 border border-surface-700 rounded-2xl p-4 flex items-start gap-3">
+                <Clock className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-surface-300 leading-relaxed font-medium">
+                  Timing in records your attendance and enables full ticket preparation controls. If you choose <strong>Cancel</strong>, you can only view orders in read-only mode.
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleConfirmTimeIn}
+                  disabled={timeInLoading}
+                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
+                >
+                  <Timer className="w-5 h-5" />
+                  <span>{timeInLoading ? 'Recording Time In...' : 'Time In'}</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => { setShowTimeInModal(false); setIsRestricted(true); }}
+                  className="w-full py-3.5 bg-surface-800 hover:bg-surface-700 active:scale-95 text-surface-400 font-bold rounded-2xl transition-all text-xs uppercase tracking-widest"
+                >
+                  Cancel (Read-Only Mode)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Time-Out Modal */}
+      {showTimeOutModal && activeShift && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-surface-900 w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in border border-surface-800">
+            <div className="bg-gradient-to-br from-rose-600 to-pink-700 p-7 text-white text-center relative overflow-hidden">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                <Timer className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-heading font-black text-xl tracking-tight mb-1">Time Out & End Kitchen Shift</h3>
+              <p className="text-white/90 text-xs font-semibold">Clock out and record your shift completion</p>
+            </div>
+
+            <div className="p-6 sm:p-8 space-y-4">
+              <div className="bg-surface-800 border border-surface-700 rounded-2xl p-4 space-y-2 text-xs">
+                <div className="flex justify-between text-surface-400">
+                  <span>Shift Started:</span>
+                  <span className="font-bold text-white">{formatDate(activeShift.startTime)}</span>
+                </div>
+                <div className="flex justify-between text-surface-400">
+                  <span>Staff Member:</span>
+                  <span className="font-bold text-white">{user?.name}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleConfirmTimeOut}
+                  disabled={timeOutLoading}
+                  className="w-full py-4 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-black rounded-2xl shadow-xl shadow-rose-600/25 transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider"
+                >
+                  {timeOutLoading ? 'Recording Time Out...' : 'Confirm Time Out'}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowTimeOutModal(false)}
+                  className="w-full py-3 text-surface-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all"
+                >
+                  Cancel / Stay on Shift
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Tab Switcher */}
       <div className="md:hidden flex p-2 bg-surface-900 border-b border-surface-800 gap-1 flex-shrink-0">

@@ -828,4 +828,90 @@ router.delete('/orders/:id', authenticate, authorize('admin'), async (req, res) 
   }
 });
 
+// GET /api/admin/shifts — Get all staff shifts & attendance for this tenant
+router.get('/shifts', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
+  try {
+    const { status, role, userId, startDate, endDate } = req.query;
+    const where = { tenantId: req.tenantId };
+
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    if (role && role !== 'all') {
+      where.role = role;
+    }
+
+    if (userId && userId !== 'all') {
+      where.userId = parseInt(userId);
+    }
+
+    if (startDate || endDate) {
+      where.startTime = {};
+      if (startDate) {
+        where.startTime.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.startTime.lte = end;
+      }
+    }
+
+    const shifts = await prisma.cashierShift.findMany({
+      where,
+      include: {
+        user: { select: { id: true, name: true, email: true, role: true } }
+      },
+      orderBy: { startTime: 'desc' }
+    });
+
+    // Calculate aggregated statistics
+    let totalStartingCash = 0;
+    let totalEndingCash = 0;
+    let totalExpectedCash = 0;
+    let totalCashSales = 0;
+    let totalOnlineSales = 0;
+    let totalSales = 0;
+    let totalDifference = 0;
+    let activeShiftsCount = 0;
+    let closedShiftsCount = 0;
+
+    shifts.forEach(s => {
+      totalStartingCash += s.startingCash || 0;
+      totalEndingCash += s.endingCash || 0;
+      totalExpectedCash += s.expectedCash || 0;
+      totalCashSales += s.cashSales || 0;
+      totalOnlineSales += s.onlineSales || 0;
+      totalSales += s.totalSales || 0;
+      totalDifference += s.cashDifference || 0;
+      if (s.status === 'active') activeShiftsCount++;
+      else closedShiftsCount++;
+    });
+
+    res.json({
+      success: true,
+      data: {
+        shifts,
+        summary: {
+          totalShifts: shifts.length,
+          activeShiftsCount,
+          closedShiftsCount,
+          totalStartingCash: Math.round(totalStartingCash * 100) / 100,
+          totalEndingCash: Math.round(totalEndingCash * 100) / 100,
+          totalExpectedCash: Math.round(totalExpectedCash * 100) / 100,
+          totalCashSales: Math.round(totalCashSales * 100) / 100,
+          totalOnlineSales: Math.round(totalOnlineSales * 100) / 100,
+          totalSales: Math.round(totalSales * 100) / 100,
+          totalDifference: Math.round(totalDifference * 100) / 100
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Admin Shifts Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load shifts.' });
+  }
+});
+
 module.exports = router;
+

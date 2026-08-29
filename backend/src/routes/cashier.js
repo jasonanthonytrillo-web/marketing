@@ -514,4 +514,236 @@ router.post('/orders/:id/status', authenticate, authorize('cashier', 'admin'), a
   }
 });
 
+// --- CASHIER SHIFT & CASH REGISTER TRACKING ---
+
+// Helper to compute sales during a time window
+async function computeShiftSales(tenantId, startTime, endTime = new Date()) {
+  const orders = await prisma.order.findMany({
+    where: {
+      tenantId,
+      status: { in: ['confirmed', 'preparing', 'ready', 'on_the_way', 'completed'] },
+      createdAt: { gte: startTime, lte: endTime }
+    },
+    include: { payments: true }
+  });
+
+  let cashSales = 0;
+  let onlineSales = 0;
+  let totalSales = 0;
+
+  for (const order of orders) {
+    const orderTotal = parseFloat(order.total) || 0;
+    totalSales += orderTotal;
+
+    // Check payment method
+    const method = (order.paymentMethod || '').toLowerCase();
+    if (method === 'cash') {
+      cashSales += orderTotal;
+    } else {
+      onlineSales += orderTotal;
+    }
+  }
+
+  return {
+    orderCount: orders.length,
+    cashSales: Math.round(cashSales * 100) / 100,
+    onlineSales: Math.round(onlineSales * 100) / 100,
+    totalSales: Math.round(totalSales * 100) / 100
+  };
+}
+
+// GET /api/cashier/shift/current — Get current active shift for logged-in staff
+router.get('/shift/current', authenticate, authorize('cashier', 'kitchen', 'rider', 'admin'), async (req, res) => {
+  try {
+    const activeShift = await prisma.cashierShift.findFirst({
+      where: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        status: 'active'
+      },
+      orderBy: { startTime: 'desc' }
+    });
+
+    if (!activeShift) {
+      return res.json({ success: true, data: null });
+    }
+
+    if (activeShift.role === 'cashier') {
+      const liveStats = await computeShiftSales(req.tenantId, activeShift.startTime);
+      const expectedCash = Math.round(((activeShift.startingCash || 0) + liveStats.cashSales) * 100) / 100;
+
+      return res.json({
+        success: true,
+        data: {
+          ...activeShift,
+          liveStats: {
+            ...liveStats,
+            expectedCash
+          }
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: activeShift
+    });
+  } catch (error) {
+    console.error('Error fetching current shift:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch current shift.' });
+  }
+});
+
+// POST /api/cashier/shift/time-in — Start shift
+router.post('/shift/time-in', authenticate, authorize('cashier', 'kitchen', 'rider', 'admin'), async (req, res) => {
+  try {
+    const { startingCash } = req.body;
+
+    // Check if there is already an active shift
+    const existing = await prisma.cashierShift.findFirst({
+      where: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        status: 'active'
+      }
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have an active shift.',
+        data: existing
+      });
+    }
+
+    const role = req.user.role || 'staff';
+    const initialAmount = role === 'cashier' ? Math.max(0, parseFloat(startingCash) || 0) : 0;
+
+    const shift = await prisma.cashierShift.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        cashierName: req.user.name || 'Staff',
+        role,
+        startingCash: initialAmount,
+        status: 'active',
+        startTime: new Date()
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: 'staff_time_in',
+        entityType: 'staff_shift',
+        entityId: shift.id.toString(),
+        details: `${req.user.name} (${role}) timed in${role === 'cashier' ? ` with starting cash ₱${initialAmount.toFixed(2)}` : ''}.`
+      }
+    });
+
+    res.json({
+      success: true,
+      data: shift,
+      message: 'Time-in recorded successfully. Shift has started!'
+    });
+  } catch (error) {
+    console.error('Error starting shift:', error);
+    res.status(500).json({ success: false, message: 'Failed to record time-in.' });
+  }
+});
+
+// POST /api/cashier/shift/time-out — End shift
+router.post('/shift/time-out', authenticate, authorize('cashier', 'kitchen', 'rider', 'admin'), async (req, res) => {
+  try {
+    const { endingCash, notes } = req.body;
+
+    const activeShift = await prisma.cashierShift.findFirst({
+      where: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        status: 'active'
+      },
+      orderBy: { startTime: 'desc' }
+    });
+
+    if (!activeShift) {
+      return res.status(400).json({ success: false, message: 'No active shift found to close.' });
+    }
+
+    const endTime = new Date();
+    const isCashier = activeShift.role === 'cashier';
+
+    let shiftData = {
+      endTime,
+      notes: notes ? notes.trim() : null,
+      status: 'closed'
+    };
+
+    if (isCashier) {
+      const stats = await computeShiftSales(req.tenantId, activeShift.startTime, endTime);
+      const endingCashVal = Math.max(0, parseFloat(endingCash) || 0);
+      const expectedCash = Math.round(((activeShift.startingCash || 0) + stats.cashSales) * 100) / 100;
+      const cashDifference = Math.round((endingCashVal - expectedCash) * 100) / 100;
+
+      shiftData = {
+        ...shiftData,
+        endingCash: endingCashVal,
+        expectedCash,
+        cashSales: stats.cashSales,
+        onlineSales: stats.onlineSales,
+        totalSales: stats.totalSales,
+        orderCount: stats.orderCount,
+        cashDifference
+      };
+    }
+
+    const closedShift = await prisma.cashierShift.update({
+      where: { id: activeShift.id },
+      data: shiftData
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: 'staff_time_out',
+        entityType: 'staff_shift',
+        entityId: closedShift.id.toString(),
+        details: `${req.user.name} (${activeShift.role}) timed out.${isCashier ? ` Ending Cash: ₱${closedShift.endingCash?.toFixed(2)}, Diff: ₱${closedShift.cashDifference?.toFixed(2)}.` : ''}`
+      }
+    });
+
+    res.json({
+      success: true,
+      data: closedShift,
+      message: 'Time-out recorded successfully. Shift closed!'
+    });
+  } catch (error) {
+    console.error('Error ending shift:', error);
+    res.status(500).json({ success: false, message: 'Failed to record time-out.' });
+  }
+});
+
+// GET /api/cashier/shift/history — Recent shifts for this staff
+router.get('/shift/history', authenticate, authorize('cashier', 'kitchen', 'rider', 'admin'), async (req, res) => {
+  try {
+    const shifts = await prisma.cashierShift.findMany({
+      where: {
+        tenantId: req.tenantId,
+        userId: req.user.id
+      },
+      orderBy: { startTime: 'desc' },
+      take: 20
+    });
+
+    res.json({ success: true, data: shifts });
+  } catch (error) {
+    console.error('Error fetching shift history:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch shift history.' });
+  }
+});
+
 module.exports = router;
+
+
