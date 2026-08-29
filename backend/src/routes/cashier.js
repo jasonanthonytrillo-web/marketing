@@ -517,12 +517,35 @@ router.post('/orders/:id/status', authenticate, authorize('cashier', 'admin'), a
 // --- CASHIER SHIFT & CASH REGISTER TRACKING ---
 
 // Helper to compute sales during a time window
-async function computeShiftSales(tenantId, startTime, endTime = new Date()) {
+async function computeShiftSales(tenantId, startTime, endTime = new Date(), userId = null) {
+  const cashierFilter = userId ? { OR: [{ cashierId: userId }, { cashierId: null }] } : {};
+
   const orders = await prisma.order.findMany({
     where: {
       tenantId,
       status: { in: ['confirmed', 'preparing', 'ready', 'on_the_way', 'completed'] },
-      createdAt: { gte: startTime, lte: endTime }
+      OR: [
+        // 1. Order was confirmed by this cashier (or during shift)
+        {
+          confirmedAt: { gte: startTime, lte: endTime },
+          ...cashierFilter
+        },
+        // 2. Payment was processed during shift window
+        {
+          payments: {
+            some: {
+              createdAt: { gte: startTime, lte: endTime },
+              ...(userId ? { cashierId: userId } : {})
+            }
+          }
+        },
+        // 3. Fallback: Order created and paid during shift window
+        {
+          confirmedAt: null,
+          createdAt: { gte: startTime, lte: endTime },
+          ...cashierFilter
+        }
+      ]
     },
     include: { payments: true }
   });
@@ -539,6 +562,8 @@ async function computeShiftSales(tenantId, startTime, endTime = new Date()) {
     const method = (order.paymentMethod || '').toLowerCase();
     if (method === 'cash') {
       cashSales += orderTotal;
+    } else if (method === 'points') {
+      // points redemption (0 cash)
     } else {
       onlineSales += orderTotal;
     }
@@ -569,7 +594,7 @@ router.get('/shift/current', authenticate, authorize('cashier', 'kitchen', 'ride
     }
 
     if (activeShift.role === 'cashier') {
-      const liveStats = await computeShiftSales(req.tenantId, activeShift.startTime);
+      const liveStats = await computeShiftSales(req.tenantId, activeShift.startTime, new Date(), activeShift.userId);
       const expectedCash = Math.round(((activeShift.startingCash || 0) + liveStats.cashSales) * 100) / 100;
 
       return res.json({
@@ -681,7 +706,7 @@ router.post('/shift/time-out', authenticate, authorize('cashier', 'kitchen', 'ri
     };
 
     if (isCashier) {
-      const stats = await computeShiftSales(req.tenantId, activeShift.startTime, endTime);
+      const stats = await computeShiftSales(req.tenantId, activeShift.startTime, endTime, activeShift.userId);
       const endingCashVal = Math.max(0, parseFloat(endingCash) || 0);
       const expectedCash = Math.round(((activeShift.startingCash || 0) + stats.cashSales) * 100) / 100;
       const cashDifference = Math.round((endingCashVal - expectedCash) * 100) / 100;
