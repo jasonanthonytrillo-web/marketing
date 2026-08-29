@@ -151,8 +151,7 @@ export default function ShiftsTab() {
       {/* Header & Title */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black font-heading text-slate-900 flex items-center gap-2">
-            <Timer className="w-7 h-7 text-primary-500" />
+          <h2 className="text-2xl font-black font-heading text-slate-900">
             Staff Shifts & Attendance
           </h2>
           <p className="text-sm text-slate-500 font-medium mt-1">
@@ -185,9 +184,6 @@ export default function ShiftsTab() {
           <div className="glass-card p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Shifts</span>
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
-                <Timer className="w-4 h-4" />
-              </div>
             </div>
             <p className="text-2xl font-black text-slate-900 font-heading">{summary.totalShifts}</p>
             <div className="flex items-center gap-2 mt-1 text-xs font-semibold">
@@ -200,9 +196,6 @@ export default function ShiftsTab() {
           <div className="glass-card p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Opening Floats</span>
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs">
-                <Coins className="w-4 h-4" />
-              </div>
             </div>
             <p className="text-2xl font-black text-slate-900 font-heading">{formatCurrency(summary.totalStartingCash)}</p>
             <p className="text-xs text-slate-400 font-medium mt-1">Total initial float recorded</p>
@@ -211,9 +204,6 @@ export default function ShiftsTab() {
           <div className="glass-card p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Shift Cash Sales</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
-                <Wallet className="w-4 h-4" />
-              </div>
             </div>
             <p className="text-2xl font-black text-emerald-600 font-heading">{formatCurrency(summary.totalCashSales)}</p>
             <p className="text-xs text-slate-400 font-medium mt-1">Total Sales: {formatCurrency(summary.totalSales)}</p>
@@ -222,9 +212,6 @@ export default function ShiftsTab() {
           <div className="glass-card p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Net Discrepancy</span>
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${summary.totalDifference >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                {summary.totalDifference >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-              </div>
             </div>
             <p className={`text-2xl font-black font-heading ${summary.totalDifference >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
               {summary.totalDifference >= 0 ? '+' : ''}{formatCurrency(summary.totalDifference)}
@@ -237,9 +224,6 @@ export default function ShiftsTab() {
           <div className="glass-card p-5 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-black text-emerald-800 uppercase tracking-widest">Est. Total Payout</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-xs">
-                <DollarSign className="w-4 h-4" />
-              </div>
             </div>
             <p className="text-2xl font-black text-emerald-700 font-heading">{formatCurrency(totalPayout)}</p>
             <p className="text-xs text-emerald-600/90 font-bold mt-1">Estimating {filteredShifts.length} shifts</p>
@@ -372,7 +356,6 @@ export default function ShiftsTab() {
           </div>
         ) : filteredShifts.length === 0 ? (
           <div className="p-12 text-center text-slate-400">
-            <Timer className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="font-bold text-slate-700 text-base">No shift records found</p>
             <p className="text-xs text-slate-400 mt-1">Shifts will appear here when staff Time In on their dashboards.</p>
           </div>
