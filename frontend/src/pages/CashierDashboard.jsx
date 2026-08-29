@@ -77,9 +77,10 @@ export default function CashierDashboard() {
   }, [connected, user?.tenantId]);
 
   useEffect(() => {
-    if (!connected || !onEvent) return;
+    if (!onEvent) return;
 
     const unsub = onEvent('new_order', (data) => {
+      console.log('🔔 new_order event received:', data);
       playNotificationSound('newOrder');
 
       const displayNum = data.order?.orderNumber?.includes('-') ? data.order.orderNumber.split('-')[1] : data.order?.orderNumber;
@@ -89,11 +90,12 @@ export default function CashierDashboard() {
     });
 
     const unsub2 = onEvent('order_update', (data) => {
+      console.log('🔔 order_update event received:', data);
       loadOrders(); // Refresh list when order status changes
     });
 
     return () => { unsub(); unsub2(); };
-  }, [connected, onEvent]);
+  }, [onEvent]);
 
   useEffect(() => {
     if (selectedOrder && selectedOrder.status === 'pending') {

@@ -150,11 +150,16 @@ module.exports = (io, prisma) => {
   // Helper: broadcast new order to cashier
   io.emitNewOrder = (order) => {
     const tId = order.tenantId;
-    io.to(`tenant-${tId}-cashier`).emit('new_order', {
+    const cashierRoom = `tenant-${tId}-cashier`;
+    const adminRoom = `tenant-${tId}-admin`;
+    const cashierClients = io.sockets.adapter.rooms.get(cashierRoom)?.size || 0;
+    const adminClients = io.sockets.adapter.rooms.get(adminRoom)?.size || 0;
+    console.log(`📢 Emitting new_order to ${cashierRoom} (${cashierClients} clients) and ${adminRoom} (${adminClients} clients)`);
+    io.to(cashierRoom).emit('new_order', {
       order,
       timestamp: new Date().toISOString()
     });
-    io.to(`tenant-${tId}-admin`).emit('new_order', {
+    io.to(adminRoom).emit('new_order', {
       order,
       timestamp: new Date().toISOString()
     });

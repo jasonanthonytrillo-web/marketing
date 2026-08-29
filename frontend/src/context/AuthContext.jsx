@@ -52,7 +52,10 @@ export function AuthProvider({ children }) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const loginUser = (token, userData) => {
-    // token is now managed by HttpOnly cookie
+    // Store token for WebSocket authentication handshake
+    if (token) {
+      localStorage.setItem('pos_token', token);
+    }
     if (userData.tenantId) {
       localStorage.setItem('tenant_id', userData.tenantId.toString());
     }
@@ -76,6 +79,7 @@ export function AuthProvider({ children }) {
       console.error('Logout error:', e);
     }
     
+    localStorage.removeItem('pos_token');
     localStorage.removeItem('tenant_id');
     setUser(null);
     setShowLogoutConfirm(false);

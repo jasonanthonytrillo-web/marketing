@@ -96,13 +96,14 @@ export function SocketProvider({ children }) {
 
 
   const joinRoom = (room, tenantId) => { 
-    if (socketRef.current && connected) {
-      const roomName = tenantId ? `tenant-${tenantId}-${room}` : room;
-      if (!joinedRoomsRef.current.has(roomName)) {
-        socketRef.current.emit('join', roomName);
-        joinedRoomsRef.current.add(roomName);
-        console.log(`📡 Joining room: ${roomName}`);
-      }
+    const roomName = tenantId ? `tenant-${tenantId}-${room}` : room;
+    // Always track the room so it gets joined/rejoined on (re)connect
+    joinedRoomsRef.current.add(roomName);
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('join', roomName);
+      console.log(`📡 Joining room: ${roomName}`);
+    } else {
+      console.log(`📡 Queued room join (will join on connect): ${roomName}`);
     }
   };
 
