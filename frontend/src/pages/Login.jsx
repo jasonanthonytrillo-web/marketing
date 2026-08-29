@@ -62,7 +62,7 @@ export default function Login() {
       else navigate('/');
     } catch (err) {
       if (err.response?.data?.deviceUnauthorized) {
-        setError(err.response?.data?.message || 'This device is not authorized for staff login.'));
+        setError(err.response?.data?.message || 'This device is not authorized for staff login.');
       } else {
         setError(err.response?.data?.message || 'Login failed.');
       }
