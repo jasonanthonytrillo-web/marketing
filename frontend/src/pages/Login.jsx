@@ -52,7 +52,7 @@ export default function Login() {
       const { token, user } = res.data.data;
       unlockAudio(); // Automatically enable sound system
       loginUser(token, user);
-      
+
       // Redirect based on role
       if (user.role === 'superadmin') navigate('/superadmin');
       else if (user.role === 'admin') navigate('/admin');
@@ -62,7 +62,7 @@ export default function Login() {
       else navigate('/');
     } catch (err) {
       if (err.response?.data?.deviceUnauthorized) {
-        setError('🔒 ' + (err.response?.data?.message || 'This device is not authorized for staff login.'));
+        setError(+ (err.response?.data?.message || 'This device is not authorized for staff login.'));
       } else {
         setError(err.response?.data?.message || 'Login failed.');
       }
@@ -102,11 +102,11 @@ export default function Login() {
     setForgotError('');
     setForgotSuccess('');
     try {
-      await resetPassword({ 
-        email: forgotEmail.trim(), 
-        otp: otpCode, 
+      await resetPassword({
+        email: forgotEmail.trim(),
+        otp: otpCode,
         newPassword,
-        tenantSlug 
+        tenantSlug
       });
       setForgotSuccess('Your password has been successfully reset! You can now log in.');
       setTimeout(() => {
@@ -148,13 +148,13 @@ export default function Login() {
 
           <div className="relative">
             <label className="block text-sm font-medium text-white/60 mb-1.5">Password</label>
-            <input 
-              type={showPassword ? "text" : "password"} 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-black/20 border border-white/15 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all pr-12" 
-              placeholder="••••••••" 
+              className="w-full px-4 py-3 bg-black/20 border border-white/15 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all pr-12"
+              placeholder="••••••••"
             />
             <button
               type="button"
@@ -194,8 +194,8 @@ export default function Login() {
         </form>
 
         <div className="text-center mt-6">
-          <a 
-            href="/" 
+          <a
+            href="/"
             className="text-sm font-semibold transition-all hover:opacity-85 text-white/60 hover:text-white"
           >
             ← Back to Kiosk
@@ -209,13 +209,13 @@ export default function Login() {
           <div className="bg-surface-800 border border-surface-700 w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-white tracking-tight">Forgot Password</h3>
-              <button 
+              <button
                 onClick={() => {
                   setShowForgotModal(false);
                   setForgotStep(1);
                   setForgotError('');
                   setForgotSuccess('');
-                }} 
+                }}
                 className="text-surface-400 hover:text-white transition-colors"
               >
                 ✕
@@ -240,7 +240,7 @@ export default function Login() {
                 </p>
                 <div>
                   <label className="block text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">Email Address</label>
-                  <input 
+                  <input
                     type="email" required
                     className="w-full bg-surface-900 border border-surface-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all placeholder-surface-600 font-bold"
                     placeholder="e.g. admin@mkfood.com"
@@ -248,8 +248,8 @@ export default function Login() {
                     onChange={e => setForgotEmail(e.target.value)}
                   />
                 </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={forgotLoading}
                   className="w-full py-3.5 mt-2 rounded-xl text-white font-bold transition-all transform active:scale-[0.98]"
                   style={{ backgroundColor: brandingColor }}
@@ -264,7 +264,7 @@ export default function Login() {
                 </p>
                 <div>
                   <label className="block text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">Security Code</label>
-                  <input 
+                  <input
                     type="text" required maxLength={6}
                     className="w-full bg-surface-900 border border-surface-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all placeholder-surface-600 text-center font-mono font-bold tracking-widest"
                     placeholder="000000"
@@ -274,7 +274,7 @@ export default function Login() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">New Password</label>
-                  <input 
+                  <input
                     type="password" required minLength={6}
                     className="w-full bg-surface-900 border border-surface-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all placeholder-surface-600"
                     placeholder="Minimum 6 characters"
@@ -284,7 +284,7 @@ export default function Login() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-surface-400 uppercase tracking-wider mb-2">Confirm New Password</label>
-                  <input 
+                  <input
                     type="password" required minLength={6}
                     className="w-full bg-surface-900 border border-surface-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all placeholder-surface-600"
                     placeholder="Repeat new password"
@@ -293,7 +293,7 @@ export default function Login() {
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => {
                       setForgotStep(1);
@@ -304,8 +304,8 @@ export default function Login() {
                   >
                     Back
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={forgotLoading}
                     className="flex-1 py-3.5 rounded-xl text-white font-bold transition-all transform active:scale-[0.98]"
                     style={{ backgroundColor: brandingColor }}
