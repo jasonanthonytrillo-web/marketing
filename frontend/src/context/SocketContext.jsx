@@ -71,7 +71,10 @@ export function SocketProvider({ children }) {
       console.log('✅ WebSocket Connected (Secure)');
       setConnected(true);
       // Rejoin rooms on reconnect
-      joinedRoomsRef.current.clear();
+      joinedRoomsRef.current.forEach(roomName => {
+        newSocket.emit('join', roomName);
+        console.log(`📡 Re-joining room: ${roomName}`);
+      });
     });
 
     newSocket.on('disconnect', () => {
