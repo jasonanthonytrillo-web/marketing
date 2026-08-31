@@ -44,8 +44,8 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
       return res.status(404).json({ success: false, message: 'Order not found.' });
     }
 
-    if (order.status !== 'pending') {
-      return res.status(400).json({ success: false, message: 'Order is already processed.' });
+    if (order.paymentStatus === 'paid') {
+      return res.status(400).json({ success: false, message: 'Payment for this order has already been processed.' });
     }
 
     currentStep = 'calculating totals';
@@ -120,10 +120,12 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
       }
     }
 
+    const nextStatus = order.status === 'pending' ? 'confirmed' : order.status;
+
     const updated = await prisma.order.update({
       where: { id: orderId, tenantId: req.tenantId },
       data: {
-        status: 'confirmed',
+        status: nextStatus,
         paymentStatus: 'paid',
         paymentMethod: method,
         discountType: effectiveDiscountType || null,
@@ -131,7 +133,7 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
         taxAmount: roundedTax,
         total,
         cashierId: req.user.id,
-        confirmedAt: new Date(),
+        confirmedAt: order.confirmedAt || new Date(),
         paymentReference: referenceNumber || order.paymentReference
       },
       include: { items: true }

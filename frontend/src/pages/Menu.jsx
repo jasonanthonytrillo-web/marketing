@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
-import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store } from 'lucide-react';
+import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles } from 'lucide-react';
 
 const DEFAULT_MENU_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
 
@@ -314,13 +314,44 @@ export default function Menu() {
           </div>
 
           <div className="flex items-center gap-1.5 md:gap-4 relative flex-wrap sm:flex-nowrap justify-end text-right">
-            <button
-              onClick={() => setShowPackages(true)}
-              className="flex items-center justify-center px-3 py-2 md:px-5 md:py-3 bg-white rounded-full text-[10px] md:text-sm font-black shadow-sm border border-surface-200 hover:border-primary-300 hover:shadow-md transition-all active:scale-95"
-              style={{ color: brandingColor }}
-            >
-              <span>Packages</span>
-            </button>
+            {/* EPIC EYE-CATCHING PACKAGES BUTTON */}
+            <div className="relative group shrink-0">
+              {/* Outer pulsing neon glow aura */}
+              <div 
+                className="absolute -inset-1 rounded-full blur-md opacity-70 group-hover:opacity-100 animate-pulse transition duration-500 pointer-events-none"
+                style={{ 
+                  background: `radial-gradient(circle, ${brandingColor || '#10b981'} 0%, #f59e0b 50%, #ec4899 100%)` 
+                }}
+              />
+
+              <button
+                onClick={() => setShowPackages(true)}
+                className="relative flex items-center justify-center gap-1.5 md:gap-2 px-3.5 py-1.5 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm font-black text-white shadow-xl overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/40 animate-epic-pulse"
+                style={{
+                  background: `linear-gradient(135deg, ${brandingColor || '#10b981'}, #f59e0b, #ec4899)`,
+                  boxShadow: `0 4px 15px ${brandingColor ? `${brandingColor}66` : 'rgba(16, 185, 129, 0.4)'}`
+                }}
+              >
+                {/* Continuous Shimmer Light Sweep */}
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer-sweep pointer-events-none" />
+
+                {/* Animated Sparkles Icon */}
+                <Sparkles 
+                  className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-200 animate-spin flex-shrink-0" 
+                  style={{ animationDuration: '4s' }} 
+                />
+
+                {/* Label */}
+                <span className="font-heading font-black uppercase tracking-wider text-[11px] md:text-xs drop-shadow-sm">
+                  Packages
+                </span>
+
+                {/* Mini Pop-Up Tag Badge */}
+                <span className="bg-black/30 backdrop-blur-xs text-amber-200 text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest border border-amber-300/40 hidden sm:inline-block shadow-inner">
+                  Pop-Up
+                </span>
+              </button>
+            </div>
             {isCustomer && user && !branding?.saRewardsDisabled && (
               <>
                 <button

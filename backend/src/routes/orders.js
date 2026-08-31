@@ -353,7 +353,8 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Create order with items
+    const initialStatus = req.body.status === 'confirmed' ? 'confirmed' : 'pending';
+    const confirmedAt = initialStatus === 'confirmed' ? new Date() : null;
 
     const order = await prisma.order.create({
       data: {
@@ -363,8 +364,9 @@ router.post('/', async (req, res) => {
         customerName: customerName || (validCustomerId ? undefined : 'Guest'),
         orderType: orderType || 'dine_in',
         paymentMethod: paymentMethod || 'cash',
-        status: 'pending',
+        status: initialStatus,
         paymentStatus: 'unpaid',
+        confirmedAt,
         subtotal,
         discountType: appliedPromoId ? 'promo' : null,
         discountAmount,
@@ -539,6 +541,11 @@ router.post('/', async (req, res) => {
     const io = req.io;
     if (io && io.emitNewOrder) {
       io.emitNewOrder(order);
+    }
+    if (order.status === 'confirmed') {
+      if (io && io.emitOrderUpdate) {
+        io.emitOrderUpdate(order, 'confirmed');
+      }
     }
 
     res.status(201).json({ success: true, data: order });

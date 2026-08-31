@@ -1049,12 +1049,19 @@ export default function CashierDashboard() {
                       <p className="text-xs sm:text-sm text-surface-500">{order.customerName}</p>
                     </div>
                     <div className="text-right">
-                      <span className={`badge text-[10px] sm:text-xs mb-1 ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : order.orderType === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {order.orderType === 'dine_in' ? 'Dine In' : order.orderType === 'delivery' ? (order.status === 'on_the_way' ? 'Out for Delivery' : 'Delivery') : 'Take Out'}
-                      </span>
-                      {order.paymentMethod === 'points' && (
-                        <span className="badge text-[10px] sm:text-xs bg-purple-100 text-purple-700 ml-1 inline-flex items-center gap-1"><Gift className="w-3 h-3" /> Reward</span>
-                      )}
+                      <div className="flex items-center gap-1 justify-end flex-wrap mb-1">
+                        <span className={`badge text-[10px] sm:text-xs ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : order.orderType === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {order.orderType === 'dine_in' ? 'Dine In' : order.orderType === 'delivery' ? (order.status === 'on_the_way' ? 'Out for Delivery' : 'Delivery') : 'Take Out'}
+                        </span>
+                        {order.paymentStatus === 'unpaid' && (
+                          <span className="badge text-[10px] sm:text-xs bg-rose-100 text-rose-800 border border-rose-300 font-black animate-pulse">
+                            UNPAID
+                          </span>
+                        )}
+                        {order.paymentMethod === 'points' && (
+                          <span className="badge text-[10px] sm:text-xs bg-purple-100 text-purple-700 inline-flex items-center gap-1"><Gift className="w-3 h-3" /> Reward</span>
+                        )}
+                      </div>
                       <p className="text-[10px] sm:text-xs text-surface-400">{getElapsedMinutes(order.createdAt)} min ago</p>
                     </div>
                   </div>
@@ -1091,7 +1098,18 @@ export default function CashierDashboard() {
                   <h2 className="font-heading text-2xl font-bold text-surface-900 mb-1">{selectedOrder.orderNumber}</h2>
                   <p className="text-surface-500">{selectedOrder.customerName} • {formatDate(selectedOrder.createdAt)}</p>
                 </div>
-                <span className={`badge text-sm px-3 py-1 badge-${selectedOrder.status}`}>{selectedOrder.status.toUpperCase()}</span>
+                <div className="flex items-center gap-2">
+                  {selectedOrder.paymentStatus === 'unpaid' ? (
+                    <span className="badge text-xs px-2.5 py-1 bg-rose-100 text-rose-800 border border-rose-300 font-black animate-pulse">
+                      🔴 UNPAID
+                    </span>
+                  ) : (
+                    <span className="badge text-xs px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 font-black">
+                      ✅ PAID
+                    </span>
+                  )}
+                  <span className={`badge text-sm px-3 py-1 badge-${selectedOrder.status}`}>{selectedOrder.status.toUpperCase()}</span>
+                </div>
               </div>
 
               {/* Scrollable Body */}
@@ -1202,7 +1220,7 @@ export default function CashierDashboard() {
 
                 {/* Cash Register / Payment Section */}
                 <div className="p-6 bg-surface-50 flex-1">
-                  {selectedOrder.status === 'pending' ? (
+                  {selectedOrder.status === 'pending' || selectedOrder.paymentStatus === 'unpaid' ? (
                     <div className="space-y-4">
                       {/* Payment Calculator */}
                       {calcResult && (
@@ -1474,6 +1492,45 @@ export default function CashierDashboard() {
                             </button>
                           </div>
                         </>
+                      )}
+
+                      {/* Workflow buttons for active unpaid orders (e.g. Cook First, Pay Later) */}
+                      {selectedOrder.status !== 'pending' && selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled' && (
+                        <div className="pt-4 border-t border-surface-200 space-y-2">
+                          <label className="block text-xs font-black text-surface-400 uppercase tracking-widest mb-1">
+                            Kitchen / Service Progress
+                          </label>
+                          {selectedOrder.status === 'confirmed' && (
+                            <button 
+                              onClick={handleStartPreparing} 
+                              disabled={processing} 
+                              className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-2xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                              <ChefHat className="w-4 h-4" />
+                              <span>START PREPARING</span>
+                            </button>
+                          )}
+                          {selectedOrder.status === 'preparing' && (
+                            <button 
+                              onClick={handleCompleteOrder} 
+                              disabled={processing} 
+                              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              <span>MARK AS READY</span>
+                            </button>
+                          )}
+                          {selectedOrder.status === 'ready' && (
+                            <button 
+                              onClick={() => setShowServeModal(true)} 
+                              disabled={processing} 
+                              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                              <ShoppingBag className="w-4 h-4" />
+                              <span>MARK AS SERVED</span>
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   ) : (
