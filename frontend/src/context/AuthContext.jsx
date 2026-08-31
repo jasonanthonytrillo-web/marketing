@@ -112,7 +112,7 @@ export function AuthProvider({ children }) {
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none"></div>
             
             <div className="w-16 h-16 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-xl shadow-red-500/5 animate-pulse">
-              🚪
+    
             </div>
             
             <h3 className="font-heading text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">Confirm Logout</h3>

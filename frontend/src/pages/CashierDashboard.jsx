@@ -1623,7 +1623,7 @@ export default function CashierDashboard() {
               <div className="print-only receipt-container">
                 <div className="receipt-header">
                   <span className="receipt-logo">Hometown Brew</span>
-                  <span className="receipt-subtitle">Official Receipt</span>
+                  <span className="receipt-subtitle"> Unofficial Receipt</span>
                 </div>
 
                 <div className="receipt-info">
