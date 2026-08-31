@@ -874,15 +874,16 @@ export default function CashierDashboard() {
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-surface-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 z-10 no-print">
+      <header className="bg-white border-b border-surface-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 z-10 no-print gap-2">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover shadow-sm" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
-          <div className="flex flex-col">
-            <h2 className="font-heading font-black text-lg sm:text-xl text-primary-600 tracking-tight uppercase truncate leading-tight">Hometown Brew Cashier Dashboard</h2>
+          <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover shadow-sm flex-shrink-0" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
+          <div className="flex flex-col min-w-0">
+            <h2 className="font-heading font-black text-base sm:text-xl text-primary-600 tracking-tight uppercase truncate leading-tight">Hometown Brew</h2>
+            <span className="text-[10px] sm:text-xs font-bold text-surface-400 uppercase tracking-widest">Cashier Dashboard</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {activeShift ? (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -898,7 +899,7 @@ export default function CashierDashboard() {
           {activeShift ? (
             <button
               onClick={handleOpenTimeOut}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
             >
               <Timer className="w-4 h-4 text-rose-600" />
               <span className="hidden xs:inline">End Shift /</span> Time Out
@@ -906,7 +907,7 @@ export default function CashierDashboard() {
           ) : (
             <button
               onClick={handleOpenTimeIn}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-orange-500/20"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-orange-500/20 whitespace-nowrap"
             >
               <Timer className="w-4 h-4" />
               Time In
