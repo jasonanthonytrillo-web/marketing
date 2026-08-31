@@ -1,6 +1,41 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (io, prisma) => {
+  // Middleware to authenticate the connection (if token is provided)
+  io.use(async (socket, next) => {
+    let token = socket.handshake.auth?.token || socket.handshake.query?.token;
+
+    // Fallback: look for pos_token in cookie headers if possible
+    if (!token && socket.request.headers?.cookie) {
+      try {
+        const cookies = socket.request.headers.cookie.split(';').map(c => c.trim());
+        const posTokenCookie = cookies.find(c => c.startsWith('pos_token='));
+        if (posTokenCookie) {
+          token = decodeURIComponent(posTokenCookie.split('=')[1]);
+        }
+      } catch (err) {
+        // Non-critical cookie parsing failure
+      }
+    }
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.userId || decoded.id;
+        if (userId) {
+          const user = await prisma.user.findUnique({ where: { id: userId } });
+          if (user && user.active) {
+            socket.user = user;
+          }
+        }
+      } catch (err) {
+        console.warn(`🛑 Invalid token during connection handshake: ${err.message}`);
+        // Do not block connection; let them connect as a guest
+      }
+    }
+    next();
+  });
+
   io.on('connection', (socket) => {
     console.log(`📱 Client connected: ${socket.id}`);
 
@@ -8,34 +43,21 @@ module.exports = (io, prisma) => {
     socket.on('join', async (room) => {
       // Security: Only allow joining sensitive rooms if authenticated
       if (room.includes('cashier') || room.includes('kitchen') || room.includes('admin')) {
-        const token = socket.handshake.auth.token || socket.handshake.query.token;
-        if (!token) {
-          console.warn(`🛑 Unauthorized join attempt: No token for ${room}`);
+        const user = socket.user;
+        if (!user) {
+          console.warn(`🛑 Unauthorized join attempt: No verified user session for ${room}`);
           return;
         }
 
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-          
-          if (!user || !user.active) {
-            console.warn(`🛑 Unauthorized join attempt: Invalid user for ${room}`);
-            return;
-          }
-
-          // Verify user belongs to this tenant room
-          if (room.includes(`tenant-${user.tenantId}`)) {
-            socket.join(room);
-            console.log(`👤 Verified: ${user.name} joined room: ${room}`);
-          } else if (user.role === 'superadmin') {
-            socket.join(room);
-            console.log(`👤 Superadmin joined room: ${room}`);
-          } else {
-            console.warn(`🛑 Cross-tenant join blocked: ${user.name} tried to join ${room}`);
-          }
-        } catch (err) {
-          console.warn(`🛑 Unauthorized join attempt: Token error for ${room}`);
-          return;
+        // Verify user belongs to this tenant room
+        if (room.includes(`tenant-${user.tenantId}`)) {
+          socket.join(room);
+          console.log(`👤 Verified: ${user.name} joined room: ${room}`);
+        } else if (user.role === 'superadmin') {
+          socket.join(room);
+          console.log(`👤 Superadmin joined room: ${room}`);
+        } else {
+          console.warn(`🛑 Cross-tenant join blocked: ${user.name} tried to join ${room}`);
         }
       } else {
         // Public rooms (queue, kiosk, etc.)
@@ -80,6 +102,13 @@ module.exports = (io, prisma) => {
     socket.on('rider_location_update', async (data) => {
       const { orderNumber, tenantId, lat, lng } = data;
       if (!orderNumber || !tenantId) return;
+
+      // Enforce rider location updates to be authenticated
+      const user = socket.user;
+      if (!user || (user.tenantId !== tenantId && user.role !== 'superadmin')) {
+        console.warn(`🛑 Blocked unauthorized rider location update by ${user ? user.name : 'Guest'} for tenant ${tenantId}`);
+        return;
+      }
       
       const payload = {
         orderNumber,
