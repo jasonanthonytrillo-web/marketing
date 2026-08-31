@@ -885,8 +885,8 @@ export default function CashierDashboard() {
           </div>
         </div>
 
-        {/* Mode Toggle: Orders vs Show Menu */}
-        <div className="flex items-center p-1 bg-surface-100 rounded-2xl border border-surface-200 shadow-xs">
+        {/* Mode Toggle: Orders vs Show Menu (Desktop / Tablet) */}
+        <div className="hidden md:flex items-center p-1 bg-surface-100 rounded-2xl border border-surface-200 shadow-xs">
           <button
             type="button"
             onClick={() => setViewMode('orders')}
@@ -935,7 +935,7 @@ export default function CashierDashboard() {
           {activeShift ? (
             <button
               onClick={handleOpenTimeOut}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
             >
               <Timer className="w-4 h-4 text-rose-600" />
               <span className="hidden xs:inline">End Shift /</span> Time Out
@@ -954,6 +954,40 @@ export default function CashierDashboard() {
           <button onClick={logoutUser} title="Logout" className="text-surface-400 hover:text-red-500 text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5"><LogOut className="w-5 h-5" /></button>
         </div>
       </header>
+
+      {/* MOBILE-ONLY DEDICATED VIEW SWITCHER (Always visible and easily tap-able on mobile phones) */}
+      <div className="md:hidden bg-slate-900 px-3 py-2 flex items-center gap-2 shadow-md z-20 flex-shrink-0 no-print">
+        <button
+          type="button"
+          onClick={() => setViewMode('orders')}
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+            viewMode === 'orders'
+              ? 'bg-white text-slate-900 shadow-md scale-[1.01]'
+              : 'bg-slate-800/90 text-slate-300 hover:text-white'
+          }`}
+        >
+          <Store className="w-4 h-4 text-orange-500" />
+          <span>Orders</span>
+          {orders.filter(o => o.status === 'pending').length > 0 && (
+            <span className="px-1.5 py-0.2 bg-orange-500 text-white rounded-full text-[10px] font-black animate-pulse">
+              {orders.filter(o => o.status === 'pending').length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setViewMode('menu')}
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+            viewMode === 'menu'
+              ? 'bg-orange-500 text-white shadow-md shadow-orange-500/25 scale-[1.01]'
+              : 'bg-slate-800/90 text-slate-300 hover:text-white'
+          }`}
+        >
+          <ChefHat className="w-4 h-4" />
+          <span>Show Menu</span>
+        </button>
+      </div>
 
       {/* Restricted Mode Alert Banner */}
       {isRestricted && (
