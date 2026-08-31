@@ -102,7 +102,7 @@ router.post('/verify-otp', loginLimiter, async (req, res) => {
     });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
+      { userId: user.id, email: user.email, role: user.role, tenantId: user.tenantId },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
@@ -321,10 +321,10 @@ router.post('/login', loginLimiter, async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, role: user.role, tenantId: user.tenantId },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
-    res.cookie('pos_token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie('pos_token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     // Audit log
     try {
@@ -438,10 +438,10 @@ router.post('/google', async (req, res) => {
     const jwtToken = jwt.sign(
       { userId: user.id, role: user.role, tenantId: user.tenantId },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
-    res.cookie('pos_token', jwtToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie('pos_token', jwtToken, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
 
     res.json({
       success: true,
@@ -639,7 +639,7 @@ router.post('/verify-registration', async (req, res) => {
 
     // Generate login token immediately after verification
     const token = jwt.sign(
-      { id: updatedUser.id, email: updatedUser.email, role: updatedUser.role, tenantId: updatedUser.tenantId },
+      { userId: updatedUser.id, email: updatedUser.email, role: updatedUser.role, tenantId: updatedUser.tenantId },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );

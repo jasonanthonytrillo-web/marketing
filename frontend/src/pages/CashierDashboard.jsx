@@ -83,7 +83,7 @@ export default function CashierDashboard() {
       document.removeEventListener('click', unlock);
       document.removeEventListener('touchstart', unlock);
     };
-  }, [connected, user?.tenantId]);
+  }, [user?.tenantId]);
 
   useEffect(() => {
     if (!onEvent) return;
@@ -1491,18 +1491,6 @@ export default function CashierDashboard() {
                                       : 'Confirm Payment'}
                             </button>
                           </div>
-
-                          {selectedOrder.status === 'pending' && (
-                            <button
-                              type="button"
-                              onClick={handleStartPreparing}
-                              disabled={processing}
-                              className="w-full py-3.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-black rounded-2xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-xs active:scale-95 mt-2"
-                            >
-                              <ChefHat className="w-4 h-4 text-amber-600" />
-                              <span>Send to Kitchen (Cook First, Pay Later)</span>
-                            </button>
-                          )}
                         </>
                       )}
 

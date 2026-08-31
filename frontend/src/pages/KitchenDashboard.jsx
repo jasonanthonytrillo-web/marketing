@@ -70,7 +70,7 @@ export default function KitchenDashboard() {
       document.removeEventListener('click', unlock);
       document.removeEventListener('touchstart', unlock);
     };
-  }, [connected, user?.tenantId]);
+  }, [user?.tenantId]);
 
   const stopAlert = () => {
     setIsAlerting(false);

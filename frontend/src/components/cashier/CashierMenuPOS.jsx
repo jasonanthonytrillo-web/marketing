@@ -440,8 +440,8 @@ export default function CashierMenuPOS({
                       <span className="font-heading font-black text-primary-600 text-xs sm:text-sm">
                         {formatCurrency(product.price)}
                       </span>
-                      <span className="w-6 h-6 rounded-lg bg-primary-50 text-primary-600 group-hover:bg-primary-600 group-hover:text-white flex items-center justify-center transition-colors shadow-xs">
-                        <Plus className="w-3.5 h-3.5" />
+                      <span className="w-7 h-7 rounded-lg bg-primary-600 text-white flex items-center justify-center shadow-sm active:scale-95 transition-transform flex-shrink-0">
+                        <Plus className="w-4 h-4" strokeWidth={3} />
                       </span>
                     </div>
                   </button>
@@ -675,29 +675,16 @@ export default function CashierMenuPOS({
                   className="w-full pl-7 pr-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-bold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none shadow-xs"
                 />
               </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-1.5 pt-0.5">
+            )}            {/* Action Buttons */}
+            <div className="flex pt-0.5">
               <button
                 type="button"
-                onClick={() => handlePlaceOrder(true)}
+                onClick={() => handlePlaceOrder()}
                 disabled={submitting || isCashInsufficient}
-                className="flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
-                {submitting ? 'Placing...' : `Pay & Place (${formatCurrency(total)})`}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePlaceOrder(false)}
-                disabled={submitting}
-                title="Send ticket to kitchen immediately. Customer pays after eating."
-                className="px-3 py-2.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-black text-[11px] uppercase tracking-wider rounded-xl transition-all whitespace-nowrap flex items-center gap-1 active:scale-95 shadow-xs"
-              >
-                <ChefHat className="w-3.5 h-3.5 text-amber-700" />
-                <span>Cook First (Pay Later)</span>
+                <span>{submitting ? 'Placing...' : `Confirm Order (${formatCurrency(total)})`}</span>
               </button>
             </div>
           </div>
