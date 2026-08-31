@@ -177,6 +177,10 @@ export default function Checkout() {
   if (total < 0) total = 0;
 
   const handleApplyPromo = async () => {
+    if (!user) {
+      setPromoError('Promo codes are exclusively available for registered members. Please log in to apply discount codes.');
+      return;
+    }
     if (!promoCodeInput.trim()) return;
     setValidatingPromo(true);
     setPromoError('');
@@ -190,7 +194,8 @@ export default function Checkout() {
       const res = await validatePromo({
         tenantSlug: tenantSlug || user?.tenantSlug,
         code: promoCodeInput.trim(),
-        items: orderItems
+        items: orderItems,
+        customerId: user?.id
       });
       if (res.data.success) {
         setAppliedPromo(res.data.data);
@@ -515,10 +520,28 @@ export default function Checkout() {
         {(!branding?.saPromoDisabled) && !isFullRedemption && (
           <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
             <label className="flex items-center gap-2 text-sm font-semibold text-surface-700 mb-2">
-              <Tag className="w-4 h-4 text-indigo-500" /> Apply Promo Code
+              <Tag className="w-4 h-4 text-indigo-500" /> Promo Code & Discounts
             </label>
             
-            {appliedPromo ? (
+            {!user ? (
+              <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 text-amber-700 font-bold text-sm">
+                    🔒
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-amber-900">Member Exclusive Discounts</p>
+                    <p className="text-[11px] text-amber-700 font-medium">Promo codes are only available for registered customers.</p>
+                  </div>
+                </div>
+                <Link
+                  to={`/login?tenant=${tenantSlug || 'project-million'}&redirect=checkout`}
+                  className="text-xs font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-4 py-2 rounded-xl uppercase tracking-wider transition-all whitespace-nowrap shadow-sm active:scale-95"
+                >
+                  Log In
+                </Link>
+              </div>
+            ) : appliedPromo ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
                 <div>
                   <p className="font-bold text-emerald-800 text-sm tracking-tight">{appliedPromo.code}</p>
@@ -533,7 +556,7 @@ export default function Checkout() {
                     type="text" 
                     value={promoCodeInput} 
                     onChange={e => setPromoCodeInput(e.target.value.toUpperCase())}
-                    placeholder="Enter code" 
+                    placeholder="Enter code (e.g. SUMMER20)" 
                     className="input-field flex-1 uppercase font-bold"
                   />
                   <button 

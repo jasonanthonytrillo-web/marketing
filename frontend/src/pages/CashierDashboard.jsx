@@ -7,11 +7,13 @@ import { formatCurrency, formatDate, getElapsedMinutes, playNotificationSound, u
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import { Clock, AlertTriangle, Store, User, CreditCard, Gift, Banknote, Smartphone, CheckCircle, Navigation, Printer, ChefHat, ShoppingBag, Truck, MapPin, LogOut, Tag, Timer, DollarSign, Lock, Unlock, ShieldAlert, Coins, Sparkles } from 'lucide-react';
+import CashierMenuPOS from '../components/cashier/CashierMenuPOS';
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('pending'); // pending, confirmed, preparing, ready
+  const [viewMode, setViewMode] = useState('orders'); // 'orders' | 'menu'
   const [paymentData, setPaymentData] = useState({ received: '', method: 'cash', discountType: '', discountPercent: '', referenceNumber: '' });
   const [calcResult, setCalcResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -883,6 +885,40 @@ export default function CashierDashboard() {
           </div>
         </div>
 
+        {/* Mode Toggle: Orders vs Show Menu */}
+        <div className="flex items-center p-1 bg-surface-100 rounded-2xl border border-surface-200 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setViewMode('orders')}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+              viewMode === 'orders'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-surface-600 hover:text-surface-900'
+            }`}
+          >
+            <Store className="w-3.5 h-3.5 text-primary-600" />
+            <span>Orders</span>
+            {orders.filter(o => o.status === 'pending').length > 0 && (
+              <span className="px-1.5 py-0.5 bg-orange-500 text-white rounded-full text-[10px] font-black animate-pulse">
+                {orders.filter(o => o.status === 'pending').length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('menu')}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+              viewMode === 'menu'
+                ? 'bg-primary-600 text-white shadow-md shadow-primary-600/20'
+                : 'text-surface-600 hover:text-surface-900'
+            }`}
+          >
+            <ChefHat className="w-3.5 h-3.5" />
+            <span>Show Menu</span>
+          </button>
+        </div>
+
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {activeShift ? (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
@@ -940,8 +976,18 @@ export default function CashierDashboard() {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Left Panel: Order List */}
+      {viewMode === 'menu' ? (
+        <CashierMenuPOS
+          onBackToOrders={() => setViewMode('orders')}
+          activeOrdersCount={orders.filter(o => o.status === 'pending').length}
+          cashierName={user?.name || 'Cashier'}
+          isRestricted={isRestricted}
+          onRestrictedAction={handleRestrictedAction}
+          onOrderCreated={loadOrders}
+        />
+      ) : (
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* Left Panel: Order List */}
         <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none min-w-0 no-print`}>
           <div className="p-2 sm:p-4 border-b border-surface-200 flex gap-1.5 sm:gap-2 overflow-x-auto bg-white flex-shrink-0 scrollbar-hide">
             {['pending', 'confirmed', 'preparing', 'ready', 'on_the_way', 'completed'].map(tab => (
@@ -1594,6 +1640,7 @@ export default function CashierDashboard() {
           )}
         </div>
       </div>
+      )}
       {/* Serve/Deliver Confirmation Modal */}
       {showServeModal && selectedOrder && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">

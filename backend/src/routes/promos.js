@@ -6,10 +6,18 @@ const { authenticate, authorize } = require('../middleware/auth');
 // Public endpoint to validate and calculate promo code
 router.post('/validate', async (req, res) => {
   try {
-    const { tenantSlug, code, items } = req.body; // items = [{ productId, quantity, price, categoryId }]
+    const { tenantSlug, code, items, customerId } = req.body; // items = [{ productId, quantity, price, categoryId }]
 
     if (!tenantSlug || !code || !items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // RESTRICTION: Promo codes are exclusively for registered members (no guests)
+    if (!customerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Promo codes are exclusively available for registered members. Please log in or create an account to use discount codes.'
+      });
     }
 
     const tenant = await prisma.tenant.findUnique({
@@ -21,6 +29,18 @@ router.post('/validate', async (req, res) => {
     // Check if Super Admin killed the promo system
     if (tenant.saPromoDisabled) {
       return res.status(400).json({ success: false, message: 'Promotions are currently disabled for this store.' });
+    }
+
+    // Verify customer exists and is active
+    const customer = await prisma.user.findUnique({
+      where: { id: parseInt(customerId, 10) }
+    });
+
+    if (!customer || !customer.active) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid customer account. Please log in to apply promo codes.'
+      });
     }
 
     const promo = await prisma.promoCode.findUnique({
@@ -45,25 +65,65 @@ router.post('/validate', async (req, res) => {
       return res.status(400).json({ success: false, message: 'This promo code has expired.' });
     }
 
-    // Check usage limits
+    // Check global usage limits
     if (promo.maxUses && promo.currentUses >= promo.maxUses) {
-      return res.status(400).json({ success: false, message: 'This promo code has reached its usage limit.' });
+      return res.status(400).json({ success: false, message: 'This promo code has reached its overall usage limit.' });
+    }
+
+    // Check per-user usage limits
+    if (promo.maxUsesPerUser && promo.maxUsesPerUser > 0) {
+      const userPromoUses = await prisma.order.count({
+        where: {
+          tenantId: tenant.id,
+          customerId: customer.id,
+          discountType: 'promo',
+          status: { not: 'cancelled' },
+          OR: [
+            { promoCode: promo.code },
+            { notes: { contains: `Promo: ${promo.code}` } }
+          ]
+        }
+      });
+
+      if (userPromoUses >= promo.maxUsesPerUser) {
+        return res.status(400).json({
+          success: false,
+          message: `You have reached your personal usage limit (${promo.maxUsesPerUser} time${promo.maxUsesPerUser > 1 ? 's' : ''}) for this promo code.`
+        });
+      }
     }
 
     let subtotal = 0;
     let applicableSubtotal = 0;
 
+    // Fetch product details for all items from DB to reliably identify category & product
+    const productIds = items
+      .map(item => parseInt(item.productId || item.id, 10))
+      .filter(id => !isNaN(id));
+
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } }
+    });
+    const productMap = new Map(products.map(p => [p.id, p]));
+
     // Calculate how much of the cart applies to the discount
     items.forEach(item => {
-      const itemTotal = parseFloat(item.price) * parseInt(item.quantity);
+      const pid = parseInt(item.productId || item.id, 10);
+      const product = productMap.get(pid);
+      const categoryId = item.categoryId ? parseInt(item.categoryId, 10) : (product ? product.categoryId : null);
+
+      const itemTotal = parseFloat(item.price) * parseInt(item.quantity, 10);
       subtotal += itemTotal;
 
       let isApplicable = false;
       if (promo.appliesTo === 'ALL') {
         isApplicable = true;
-      } else if (promo.appliesTo === 'PRODUCT' && promo.targetId === item.productId) {
+      } else if (promo.appliesTo === 'PRODUCT' && promo.targetId && parseInt(promo.targetId, 10) === pid) {
         isApplicable = true;
-      } else if (promo.appliesTo === 'CATEGORY' && promo.targetId === item.categoryId) {
+      } else if (promo.appliesTo === 'CATEGORY' && promo.targetId && (
+        (categoryId && parseInt(promo.targetId, 10) === parseInt(categoryId, 10)) ||
+        (product && parseInt(promo.targetId, 10) === parseInt(product.categoryId, 10))
+      )) {
         isApplicable = true;
       }
 
@@ -149,8 +209,9 @@ router.post('/', async (req, res) => {
         type: data.type,
         value: parseFloat(data.value),
         appliesTo: data.appliesTo || 'ALL',
-        targetId: data.targetId ? parseInt(data.targetId) : null,
-        maxUses: data.maxUses ? parseInt(data.maxUses) : null,
+        targetId: data.targetId ? parseInt(data.targetId, 10) : null,
+        maxUses: data.maxUses ? parseInt(data.maxUses, 10) : null,
+        maxUsesPerUser: data.maxUsesPerUser ? parseInt(data.maxUsesPerUser, 10) : null,
         startDate: data.startDate ? new Date(data.startDate) : null,
         endDate: data.endDate ? new Date(data.endDate) : null,
         isActive: data.isActive !== undefined ? data.isActive : true
@@ -172,13 +233,14 @@ router.put('/:id', async (req, res) => {
     
     if (data.code) data.code = data.code.toUpperCase();
     if (data.value) data.value = parseFloat(data.value);
-    if (data.targetId) data.targetId = parseInt(data.targetId);
-    if (data.maxUses) data.maxUses = parseInt(data.maxUses);
+    if (data.targetId !== undefined) data.targetId = data.targetId ? parseInt(data.targetId, 10) : null;
+    if (data.maxUses !== undefined) data.maxUses = data.maxUses ? parseInt(data.maxUses, 10) : null;
+    if (data.maxUsesPerUser !== undefined) data.maxUsesPerUser = data.maxUsesPerUser ? parseInt(data.maxUsesPerUser, 10) : null;
     if (data.startDate) data.startDate = new Date(data.startDate);
     if (data.endDate) data.endDate = new Date(data.endDate);
 
     const promo = await prisma.promoCode.updateMany({
-      where: { id: parseInt(id), tenantId: req.user.tenantId },
+      where: { id: parseInt(id, 10), tenantId: req.user.tenantId },
       data
     });
 

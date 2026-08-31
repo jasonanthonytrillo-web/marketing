@@ -11,7 +11,7 @@ export default function PromosTab() {
   const [showModal, setShowModal] = useState(false);
   const [editingPromo, setEditingPromo] = useState(null);
   const [formData, setFormData] = useState({
-    code: '', type: 'PERCENTAGE', value: '', appliesTo: 'ALL', targetId: '', maxUses: '', startDate: '', endDate: '', isActive: true
+    code: '', type: 'PERCENTAGE', value: '', appliesTo: 'ALL', targetId: '', maxUses: '', maxUsesPerUser: '', startDate: '', endDate: '', isActive: true
   });
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -71,6 +71,7 @@ export default function PromosTab() {
       appliesTo: promo.appliesTo,
       targetId: promo.targetId || '',
       maxUses: promo.maxUses ? promo.maxUses.toString() : '',
+      maxUsesPerUser: promo.maxUsesPerUser ? promo.maxUsesPerUser.toString() : '',
       startDate: promo.startDate ? promo.startDate.split('T')[0] : '',
       endDate: promo.endDate ? promo.endDate.split('T')[0] : '',
       isActive: promo.isActive
@@ -107,7 +108,7 @@ export default function PromosTab() {
   };
 
   const resetForm = () => {
-    setFormData({ code: '', type: 'PERCENTAGE', value: '', appliesTo: 'ALL', targetId: '', maxUses: '', startDate: '', endDate: '', isActive: true });
+    setFormData({ code: '', type: 'PERCENTAGE', value: '', appliesTo: 'ALL', targetId: '', maxUses: '', maxUsesPerUser: '', startDate: '', endDate: '', isActive: true });
     setEditingPromo(null);
   };
 
@@ -191,6 +192,9 @@ export default function PromosTab() {
                 </td>
                 <td className="p-5">
                   <p className="text-xs font-bold text-black tracking-widest">{promo.currentUses} <span className="text-gray-500 font-medium">/ {promo.maxUses || '∞'}</span></p>
+                  <p className="text-[10px] font-bold text-gray-500 mt-0.5">
+                    {promo.maxUsesPerUser ? `Max ${promo.maxUsesPerUser}x / user` : 'Unlimited / user'}
+                  </p>
                 </td>
                 <td className="p-5">
                   <button onClick={() => toggleStatus(promo)} className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border ${promo.isActive ? 'bg-black text-white border-black hover:bg-gray-900' : 'bg-gray-200 text-gray-600 border-gray-300 hover:bg-gray-300'} transition-all`}>
@@ -308,15 +312,27 @@ export default function PromosTab() {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2 ml-1">Max Uses (Optional)</label>
-                  <input 
-                    type="number" min="1"
-                    className="w-full bg-white border border-gray-300 rounded-2xl px-5 py-3.5 text-sm text-black focus:border-black outline-none"
-                    placeholder="Leave blank for unlimited"
-                    value={formData.maxUses}
-                    onChange={e => setFormData({...formData, maxUses: e.target.value})}
-                  />
+                <div className="flex gap-4">
+                  <div className="w-1/2">
+                    <label className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2 ml-1">Total Uses (Optional)</label>
+                    <input 
+                      type="number" min="1"
+                      className="w-full bg-white border border-gray-300 rounded-2xl px-5 py-3.5 text-sm text-black focus:border-black outline-none"
+                      placeholder="Unlimited"
+                      value={formData.maxUses}
+                      onChange={e => setFormData({...formData, maxUses: e.target.value})}
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <label className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2 ml-1">Limit / User (Optional)</label>
+                    <input 
+                      type="number" min="1"
+                      className="w-full bg-white border border-gray-300 rounded-2xl px-5 py-3.5 text-sm text-black focus:border-black outline-none"
+                      placeholder="e.g. 1"
+                      value={formData.maxUsesPerUser}
+                      onChange={e => setFormData({...formData, maxUsesPerUser: e.target.value})}
+                    />
+                  </div>
                 </div>
 
                 {editingPromo && (

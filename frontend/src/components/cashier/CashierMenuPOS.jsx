@@ -1,0 +1,1014 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { getProducts, createOrder, confirmOrder } from '../../services/api';
+import { formatCurrency, formatDate } from '../../utils/helpers';
+import { 
+  Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, 
+  Smartphone, CreditCard, CheckCircle, X, ArrowLeft, Printer, 
+  Sparkles, Tag, Coffee, Layers, User, Hash, AlertCircle, RefreshCw, Flame
+} from 'lucide-react';
+
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
+
+export default function CashierMenuPOS({ 
+  onBackToOrders, 
+  activeOrdersCount = 0, 
+  cashierName = 'Cashier',
+  isRestricted = false,
+  onRestrictedAction = () => {},
+  onOrderCreated = () => {}
+}) {
+  // Products & Categories
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Cart & Order Form State
+  const [cartItems, setCartItems] = useState([]);
+  const [customerName, setCustomerName] = useState('Walk-in Customer');
+  const [orderType, setOrderType] = useState('dine_in'); // 'dine_in' | 'take_out'
+  const [orderNotes, setOrderNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'gcash' | 'maya' | 'card'
+  const [cashReceived, setCashReceived] = useState('');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  
+  // Customizer Modal for Items with Sizes/Addons/Combos
+  const [customizingProduct, setCustomizingProduct] = useState(null);
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedFlavor, setSelectedFlavor] = useState('');
+  const [selectedAddons, setSelectedAddons] = useState([]);
+  const [itemNote, setItemNote] = useState('');
+  const [comboChoices, setComboChoices] = useState({ group1: '', group2: '' });
+
+  // Submission & Success Modal
+  const [submitting, setSubmitting] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(null); // { order, change, amountReceived }
+
+  useEffect(() => {
+    loadMenuData();
+  }, []);
+
+  const loadMenuData = async () => {
+    try {
+      setLoading(true);
+      const res = await getProducts();
+      setCategories(res.data.data || []);
+    } catch (err) {
+      console.error('Failed to load menu products for cashier:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Flatten products for search & filtering
+  const allProducts = useMemo(() => {
+    const list = [];
+    categories.forEach(cat => {
+      if (cat.products && Array.isArray(cat.products)) {
+        cat.products.forEach(prod => {
+          list.push({ ...prod, categoryName: cat.name });
+        });
+      }
+    });
+    return list;
+  }, [categories]);
+
+  // Filtered products
+  const displayedProducts = useMemo(() => {
+    let prods = [];
+    if (activeCategory === 'all') {
+      prods = allProducts;
+    } else {
+      const cat = categories.find(c => String(c.id) === String(activeCategory));
+      prods = cat?.products || [];
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      prods = prods.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        (p.description && p.description.toLowerCase().includes(q))
+      );
+    }
+
+    return prods;
+  }, [allProducts, categories, activeCategory, searchQuery]);
+
+  // Handle clicking a product in the grid
+  const handleProductClick = (product) => {
+    if (isRestricted) {
+      onRestrictedAction('taking orders');
+      return;
+    }
+
+    if (product.stock <= 0) return;
+
+    const hasSizes = product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0;
+    const hasAddons = product.addons && Array.isArray(product.addons) && product.addons.length > 0;
+    const isCombo = product.isCombo;
+
+    if (hasSizes || hasAddons || isCombo) {
+      // Open customization modal
+      setCustomizingProduct(product);
+      setSelectedSize(hasSizes ? product.sizes[0]?.name : '');
+      setSelectedFlavor('');
+      setSelectedAddons([]);
+      setItemNote('');
+      setComboChoices({ group1: '', group2: '' });
+    } else {
+      // Direct add to cart
+      addItemToCart({
+        product,
+        size: null,
+        price: product.price,
+        flavor: '',
+        addons: [],
+        comboChoices: null,
+        notes: ''
+      });
+    }
+  };
+
+  const addItemToCart = ({ product, size, price, flavor, addons, comboChoices, notes }) => {
+    const cartKey = `${product.id}-${size || ''}-${flavor || ''}-${addons.map(a => a.id).sort().join(',')}-${JSON.stringify(comboChoices || {})}`;
+    
+    setCartItems(prev => {
+      const existingIdx = prev.findIndex(item => item.cartKey === cartKey);
+      if (existingIdx >= 0) {
+        const copy = [...prev];
+        copy[existingIdx].quantity += 1;
+        return copy;
+      }
+      return [
+        ...prev,
+        {
+          cartKey,
+          productId: product.id,
+          name: product.name,
+          categoryId: product.categoryId,
+          price: parseFloat(price),
+          image: product.image,
+          size: size || null,
+          flavor: flavor || null,
+          addons: addons || [],
+          comboChoices: comboChoices || null,
+          notes: notes || '',
+          quantity: 1
+        }
+      ];
+    });
+  };
+
+  const handleConfirmCustomization = (e) => {
+    e.preventDefault();
+    if (!customizingProduct) return;
+
+    let finalPrice = customizingProduct.price;
+    if (selectedSize && customizingProduct.sizes && Array.isArray(customizingProduct.sizes)) {
+      const match = customizingProduct.sizes.find(s => s.name === selectedSize);
+      if (match) finalPrice = parseFloat(match.price);
+    }
+
+    addItemToCart({
+      product: customizingProduct,
+      size: selectedSize,
+      price: finalPrice,
+      flavor: selectedFlavor,
+      addons: selectedAddons,
+      comboChoices: customizingProduct.isCombo ? comboChoices : null,
+      notes: itemNote
+    });
+
+    setCustomizingProduct(null);
+  };
+
+  const updateItemQty = (cartKey, delta) => {
+    setCartItems(prev => {
+      return prev.map(item => {
+        if (item.cartKey === cartKey) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
+        }
+        return item;
+      }).filter(Boolean);
+    });
+  };
+
+  const removeItem = (cartKey) => {
+    setCartItems(prev => prev.filter(i => i.cartKey !== cartKey));
+  };
+
+  const clearCurrentCart = () => {
+    setCartItems([]);
+    setCustomerName('Walk-in Customer');
+    setOrderNotes('');
+    setCashReceived('');
+    setReferenceNumber('');
+  };
+
+  // Calculations
+  const subtotal = useMemo(() => {
+    return cartItems.reduce((acc, item) => {
+      let itemPrice = item.price;
+      if (item.addons && Array.isArray(item.addons)) {
+        item.addons.forEach(a => { itemPrice += (parseFloat(a.price) || 0); });
+      }
+      return acc + (itemPrice * item.quantity);
+    }, 0);
+  }, [cartItems]);
+
+  const total = subtotal; // Counter orders have 0 delivery fee
+
+  const calculatedChange = useMemo(() => {
+    if (paymentMethod !== 'cash') return 0;
+    const received = parseFloat(cashReceived) || 0;
+    return received >= total ? received - total : 0;
+  }, [cashReceived, total, paymentMethod]);
+
+  const isCashInsufficient = useMemo(() => {
+    if (paymentMethod !== 'cash') return false;
+    const received = parseFloat(cashReceived) || 0;
+    return total > 0 && received < total;
+  }, [cashReceived, total, paymentMethod]);
+
+  // Order Submission
+  const handlePlaceOrder = async (autoConfirmPaid = true) => {
+    if (isRestricted) {
+      onRestrictedAction('placing orders');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert('Cart is empty. Please add items to place an order.');
+      return;
+    }
+
+    if (autoConfirmPaid && paymentMethod === 'cash') {
+      const received = parseFloat(cashReceived) || total;
+      if (received < total) {
+        alert(`Insufficient cash amount. Total is ${formatCurrency(total)}, received is ${formatCurrency(received)}`);
+        return;
+      }
+    }
+
+    setSubmitting(true);
+    try {
+      const orderItems = cartItems.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        size: item.size,
+        flavor: item.flavor,
+        notes: item.notes,
+        addons: item.addons?.map(a => a.id) || [],
+        comboChoices: item.comboChoices
+      }));
+
+      const resOrder = await createOrder({
+        customerName: customerName.trim() || 'Walk-in Customer',
+        orderType,
+        paymentMethod,
+        items: orderItems,
+        notes: orderNotes,
+        paymentReference: paymentMethod !== 'cash' ? referenceNumber : undefined
+      });
+
+      const newOrder = resOrder.data.data;
+
+      let finalPaidAmount = total;
+      let finalChange = 0;
+
+      if (autoConfirmPaid) {
+        finalPaidAmount = paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total;
+        finalChange = paymentMethod === 'cash' ? (finalPaidAmount - total) : 0;
+
+        // Auto-confirm payment so it goes directly to shift sales & kitchen
+        await confirmOrder(newOrder.id, {
+          amountReceived: finalPaidAmount,
+          paymentMethod,
+          referenceNumber: referenceNumber || undefined
+        });
+      }
+
+      // Notify parent to refresh cashier orders
+      onOrderCreated();
+
+      // Show receipt success modal
+      setOrderSuccess({
+        order: newOrder,
+        items: cartItems,
+        total,
+        amountReceived: finalPaidAmount,
+        change: finalChange,
+        paymentMethod,
+        orderType,
+        customerName: customerName.trim() || 'Walk-in Customer',
+        isPaid: autoConfirmPaid
+      });
+
+      // Clear the cart
+      clearCurrentCart();
+
+    } catch (err) {
+      console.error('Failed to place cashier counter order:', err);
+      alert(err.response?.data?.message || 'Failed to place order.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePrintReceipt = () => {
+    window.print();
+  };
+
+  return (
+    <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-100 relative">
+      
+      {/* LEFT PANEL: Fast Cashier Menu Grid */}
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50 border-r border-slate-200 overflow-hidden no-print">
+        
+        {/* Sub-header with Category Pills & Search */}
+        <div className="p-3 sm:p-4 bg-white border-b border-slate-200 flex flex-col gap-3 flex-shrink-0 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onBackToOrders}
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back to</span> Orders
+                {activeOrdersCount > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-orange-500 text-white rounded-full text-[10px] font-black animate-pulse">
+                    {activeOrdersCount}
+                  </span>
+                )}
+              </button>
+              <h2 className="font-black text-slate-800 text-base sm:text-lg flex items-center gap-2">
+                <Coffee className="w-5 h-5 text-orange-500" />
+                Counter POS Menu
+              </h2>
+            </div>
+
+            {/* Quick Search */}
+            <div className="relative w-48 sm:w-64">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search items..."
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:bg-white focus:border-orange-500 outline-none transition-all"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Category Tabs */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+            <button
+              onClick={() => setActiveCategory('all')}
+              className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all uppercase tracking-wider flex items-center gap-1.5 ${
+                activeCategory === 'all'
+                  ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20 scale-[1.02]'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" /> All Items
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all uppercase tracking-wider ${
+                  String(activeCategory) === String(cat.id)
+                    ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20 scale-[1.02]'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product Grid */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+          {loading ? (
+            <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3">
+              <RefreshCw className="w-8 h-8 animate-spin text-orange-500" />
+              <p className="text-sm font-bold">Loading Menu...</p>
+            </div>
+          ) : displayedProducts.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-2">
+              <Coffee className="w-12 h-12 text-slate-300" />
+              <p className="text-sm font-bold">No products found in this category.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+              {displayedProducts.map(product => {
+                const isOutOfStock = product.stock <= 0;
+                const hasVariants = (product.sizes && product.sizes.length > 0) || (product.addons && product.addons.length > 0) || product.isCombo;
+
+                return (
+                  <button
+                    key={product.id}
+                    onClick={() => handleProductClick(product)}
+                    disabled={isOutOfStock}
+                    className={`group text-left bg-white border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between transition-all relative overflow-hidden shadow-sm active:scale-95 ${
+                      isOutOfStock 
+                        ? 'opacity-50 grayscale cursor-not-allowed' 
+                        : 'hover:border-orange-500 hover:shadow-md hover:scale-[1.01]'
+                    }`}
+                  >
+                    <div>
+                      <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 mb-2 relative">
+                        <img 
+                          src={product.image || DEFAULT_IMAGE} 
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => { e.currentTarget.src = DEFAULT_IMAGE; }}
+                        />
+                        {isOutOfStock && (
+                          <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center">
+                            <span className="px-2 py-1 bg-red-600 text-white font-black text-[10px] rounded-lg uppercase tracking-wider">Sold Out</span>
+                          </div>
+                        )}
+                        {hasVariants && !isOutOfStock && (
+                          <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase">
+                            Options
+                          </div>
+                        )}
+                      </div>
+                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-tight mb-1">
+                        {product.name}
+                      </h4>
+                      {product.categoryName && (
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                          {product.categoryName}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+                      <span className="font-black text-orange-600 text-sm sm:text-base">
+                        {formatCurrency(product.price)}
+                      </span>
+                      <span className="w-7 h-7 rounded-xl bg-orange-50 text-orange-600 group-hover:bg-orange-500 group-hover:text-white flex items-center justify-center transition-colors shadow-xs">
+                        <Plus className="w-4 h-4" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* RIGHT PANEL: Live Order & Fast Cashier Checkout */}
+      <div className="w-full md:w-[420px] lg:w-[460px] flex flex-col bg-white border-l border-slate-200 flex-shrink-0 z-10 shadow-xl overflow-hidden no-print">
+        
+        {/* Cart Header */}
+        <div className="p-4 bg-slate-900 text-white flex items-center justify-between flex-shrink-0">
+          <div>
+            <h3 className="font-black text-base flex items-center gap-2">
+              <ShoppingBag className="w-5 h-5 text-orange-400" />
+              Counter Order
+            </h3>
+            <p className="text-[11px] text-slate-400 font-medium">Cashier: {cashierName}</p>
+          </div>
+          {cartItems.length > 0 && (
+            <button
+              onClick={clearCurrentCart}
+              className="text-xs text-red-400 hover:text-red-300 font-bold uppercase tracking-wider flex items-center gap-1 bg-red-950/50 px-2.5 py-1 rounded-lg border border-red-800/40 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear
+            </button>
+          )}
+        </div>
+
+        {/* Customer & Order Settings Bar */}
+        <div className="p-3 bg-slate-50 border-b border-slate-200 space-y-2.5 flex-shrink-0">
+          {/* Order Type Toggle */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-200/80 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setOrderType('dine_in')}
+              className={`py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
+                orderType === 'dine_in' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Utensils className="w-3.5 h-3.5 text-emerald-600" /> Dine In
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrderType('take_out')}
+              className={`py-2 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
+                orderType === 'take_out' 
+                  ? 'bg-white text-slate-900 shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-amber-600" /> Take Out
+            </button>
+          </div>
+
+          {/* Customer Name */}
+          <div className="relative">
+            <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text"
+              value={customerName}
+              onChange={e => setCustomerName(e.target.value)}
+              placeholder="Customer Name (e.g. John, Walk-in)"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:border-orange-500 outline-none shadow-xs"
+            />
+          </div>
+        </div>
+
+        {/* Scrollable Cart Items List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {cartItems.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+              <Coffee className="w-12 h-12 text-slate-300 mb-2" />
+              <p className="font-bold text-sm text-slate-600">No items selected</p>
+              <p className="text-xs text-slate-400 mt-1">Tap items on the menu to add to this counter order.</p>
+            </div>
+          ) : (
+            cartItems.map((item) => {
+              const itemTotal = (item.price + (item.addons?.reduce((s, a) => s + a.price, 0) || 0)) * item.quantity;
+
+              return (
+                <div 
+                  key={item.cartKey}
+                  className="bg-white border border-slate-200 rounded-xl p-2.5 flex items-center justify-between gap-3 shadow-xs hover:border-slate-300 transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <h5 className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
+                      {item.name}
+                    </h5>
+                    <div className="text-[11px] text-slate-500 font-medium space-y-0.5 mt-0.5">
+                      {item.size && <span className="mr-1.5">Size: <strong className="text-slate-700">{item.size}</strong></span>}
+                      {item.flavor && <span className="mr-1.5">Flavor: <strong className="text-slate-700">{item.flavor}</strong></span>}
+                      {item.addons && item.addons.length > 0 && (
+                        <div className="text-orange-600 text-[10px]">
+                          + {item.addons.map(a => `${a.name} (₱${a.price})`).join(', ')}
+                        </div>
+                      )}
+                      {item.comboChoices && (
+                        <div className="text-blue-600 text-[10px]">
+                          Combo: {item.comboChoices.group1} / {item.comboChoices.group2}
+                        </div>
+                      )}
+                    </div>
+                    <div className="font-black text-slate-900 text-xs mt-1">
+                      {formatCurrency(itemTotal)}
+                    </div>
+                  </div>
+
+                  {/* Quantity Controls */}
+                  <div className="flex items-center gap-1.5 bg-slate-100 rounded-lg p-1">
+                    <button
+                      type="button"
+                      onClick={() => updateItemQty(item.cartKey, -1)}
+                      className="w-6 h-6 rounded-md bg-white text-slate-700 hover:bg-slate-200 flex items-center justify-center font-bold text-xs shadow-xs active:scale-95"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="font-black text-xs text-slate-900 w-5 text-center">
+                      {item.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => updateItemQty(item.cartKey, 1)}
+                      className="w-6 h-6 rounded-md bg-white text-slate-700 hover:bg-slate-200 flex items-center justify-center font-bold text-xs shadow-xs active:scale-95"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Order Summary & Payment Box */}
+        {cartItems.length > 0 && (
+          <div className="p-3.5 bg-slate-50 border-t border-slate-200 space-y-3 flex-shrink-0 shadow-lg">
+            {/* Total Display */}
+            <div className="bg-slate-900 rounded-2xl p-3 text-white flex items-center justify-between shadow-md">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Due</span>
+                <p className="text-xs text-slate-300 font-medium">{cartItems.reduce((s, i) => s + i.quantity, 0)} items</p>
+              </div>
+              <span className="font-black text-2xl text-orange-400 font-mono tracking-tight">
+                {formatCurrency(total)}
+              </span>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+                Payment Method
+              </label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { id: 'cash', label: 'Cash', icon: <Banknote className="w-3.5 h-3.5" /> },
+                  { id: 'gcash', label: 'GCash', icon: <Smartphone className="w-3.5 h-3.5" /> },
+                  { id: 'maya', label: 'Maya', icon: <CreditCard className="w-3.5 h-3.5" /> },
+                  { id: 'card', label: 'Card', icon: <CreditCard className="w-3.5 h-3.5" /> }
+                ].map(method => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod(method.id);
+                      if (method.id !== 'cash') {
+                        setCashReceived(total.toString());
+                      }
+                    }}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold flex flex-col items-center gap-1 border transition-all ${
+                      paymentMethod === method.id 
+                        ? 'bg-slate-900 border-slate-900 text-white shadow-sm' 
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {method.icon}
+                    <span>{method.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cash Input & Change Calculation */}
+            {paymentMethod === 'cash' ? (
+              <div className="space-y-2 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-700">Cash Received:</span>
+                  <div className="relative w-32">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₱</span>
+                    <input 
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={cashReceived}
+                      onChange={e => setCashReceived(e.target.value)}
+                      placeholder={total.toString()}
+                      className="w-full pl-6 pr-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-black text-right text-slate-900 focus:bg-white focus:border-orange-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Cash Chips */}
+                <div className="grid grid-cols-4 gap-1 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setCashReceived(total.toString())}
+                    className="py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded-lg transition-colors"
+                  >
+                    Exact (₱{total})
+                  </button>
+                  {[50, 100, 500, 1000].filter(amt => amt >= total || total > 500).slice(0, 3).map(amt => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setCashReceived(amt.toString())}
+                      className="py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] rounded-lg transition-colors"
+                    >
+                      ₱{amt}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Live Change */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <span className="text-xs font-black text-slate-700">Change (Sukli):</span>
+                  <span className={`text-base font-black font-mono ${calculatedChange > 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
+                    {formatCurrency(calculatedChange)}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="relative">
+                <Hash className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input 
+                  type="text"
+                  value={referenceNumber}
+                  onChange={e => setReferenceNumber(e.target.value)}
+                  placeholder="Reference Number (Optional)"
+                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 placeholder-slate-400 focus:border-orange-500 outline-none shadow-xs"
+                />
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => handlePlaceOrder(true)}
+                disabled={submitting || isCashInsufficient}
+                className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {submitting ? 'Placing Order...' : `Pay & Place Order (${formatCurrency(total)})`}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handlePlaceOrder(false)}
+                disabled={submitting}
+                className="w-full py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-all"
+              >
+                Send as Unpaid (Pay Later)
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* CUSTOMIZER MODAL FOR PRODUCTS WITH VARIANTS */}
+      {customizingProduct && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in no-print">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-scale-in border border-slate-100 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-5 bg-slate-900 text-white flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 flex-shrink-0">
+                  <img 
+                    src={customizingProduct.image || DEFAULT_IMAGE} 
+                    alt={customizingProduct.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-black text-base leading-tight">{customizingProduct.name}</h3>
+                  <p className="text-xs text-orange-400 font-bold mt-0.5">
+                    Base Price: {formatCurrency(customizingProduct.price)}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setCustomizingProduct(null)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleConfirmCustomization} className="flex-1 overflow-y-auto p-5 space-y-5">
+              
+              {/* Size Selection */}
+              {customizingProduct.sizes && Array.isArray(customizingProduct.sizes) && customizingProduct.sizes.length > 0 && (
+                <div>
+                  <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">
+                    Choose Size Variant
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {customizingProduct.sizes.map(size => (
+                      <button
+                        key={size.name}
+                        type="button"
+                        onClick={() => setSelectedSize(size.name)}
+                        className={`p-3 rounded-2xl border text-center transition-all ${
+                          selectedSize === size.name 
+                            ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-500/20' 
+                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="block font-black text-xs">{size.name}</span>
+                        <span className="block text-[11px] font-semibold mt-0.5 opacity-90">₱{size.price}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Addons Selection */}
+              {customizingProduct.addons && Array.isArray(customizingProduct.addons) && customizingProduct.addons.length > 0 && (
+                <div>
+                  <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-2">
+                    Optional Add-ons
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {customizingProduct.addons.map(addon => {
+                      const isSelected = selectedAddons.some(a => a.id === addon.id);
+                      return (
+                        <button
+                          key={addon.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedAddons(prev => prev.filter(a => a.id !== addon.id));
+                            } else {
+                              setSelectedAddons(prev => [...prev, addon]);
+                            }
+                          }}
+                          className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all ${
+                            isSelected 
+                              ? 'bg-slate-900 border-slate-900 text-white shadow-sm' 
+                              : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="text-xs font-bold">{addon.name}</span>
+                          <span className="text-[11px] font-black text-orange-400">+₱{addon.price}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Combo Options */}
+              {customizingProduct.isCombo && customizingProduct.comboOptions && (
+                <div className="space-y-3 p-3 bg-blue-50/80 rounded-2xl border border-blue-100">
+                  <span className="text-xs font-black text-blue-900 uppercase tracking-wider block">
+                    Mix & Match Combo Selections
+                  </span>
+                  <div>
+                    <label className="block text-[11px] font-bold text-blue-800 mb-1">
+                      {customizingProduct.comboGroup1Name || 'Option 1'}:
+                    </label>
+                    <select
+                      value={comboChoices.group1}
+                      onChange={e => setComboChoices({ ...comboChoices, group1: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                    >
+                      <option value="">Select Option...</option>
+                      {customizingProduct.comboOptions.filter(o => o.groupNumber === 1).map(opt => (
+                        <option key={opt.id} value={opt.product?.name || `Product #${opt.productId}`}>
+                          {opt.product?.name} {opt.priceBonus > 0 ? `(+₱${opt.priceBonus})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-blue-800 mb-1">
+                      {customizingProduct.comboGroup2Name || 'Option 2'}:
+                    </label>
+                    <select
+                      value={comboChoices.group2}
+                      onChange={e => setComboChoices({ ...comboChoices, group2: e.target.value })}
+                      className="w-full p-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                    >
+                      <option value="">Select Option...</option>
+                      {customizingProduct.comboOptions.filter(o => o.groupNumber === 2).map(opt => (
+                        <option key={opt.id} value={opt.product?.name || `Product #${opt.productId}`}>
+                          {opt.product?.name} {opt.priceBonus > 0 ? `(+₱${opt.priceBonus})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Item Notes */}
+              <div>
+                <label className="block text-xs font-black text-slate-600 uppercase tracking-wider mb-1.5">
+                  Special Instructions (Optional)
+                </label>
+                <input 
+                  type="text"
+                  value={itemNote}
+                  onChange={e => setItemNote(e.target.value)}
+                  placeholder="e.g. Less ice, extra hot, no mayo"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:bg-white focus:border-orange-500 outline-none"
+                />
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setCustomizingProduct(null)}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs uppercase tracking-wider transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-2 py-3 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-orange-500/20 transition-all"
+                >
+                  Add to Order
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RECEIPT / SUCCESS MODAL */}
+      {orderSuccess && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in border border-slate-100">
+            
+            {/* Header */}
+            <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white text-center relative no-print">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                <CheckCircle className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="font-heading font-black text-xl tracking-tight mb-1">Order #{orderSuccess.order.orderNumber}</h3>
+              <p className="text-white/90 text-xs font-semibold">
+                {orderSuccess.isPaid ? 'Payment Confirmed & Sent to Kitchen' : 'Saved as Pending'}
+              </p>
+            </div>
+
+            {/* Printable Receipt Card Body */}
+            <div className="p-6 space-y-4 print:p-0 print:space-y-2 text-xs text-slate-800">
+              <div className="text-center pb-3 border-b border-dashed border-slate-300">
+                <h4 className="font-black text-sm uppercase tracking-wider text-slate-900">Hometown Brew POS</h4>
+                <p className="text-[10px] text-slate-500 mt-0.5">{formatDate(new Date())}</p>
+                <div className="flex justify-between text-[11px] font-bold text-slate-700 mt-2">
+                  <span>Order: <strong>{orderSuccess.order.orderNumber}</strong></span>
+                  <span className="capitalize">{orderSuccess.orderType.replace('_', ' ')}</span>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-600">
+                  <span>Customer: {orderSuccess.customerName}</span>
+                  <span>Cashier: {cashierName}</span>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                {orderSuccess.items.map((item, i) => (
+                  <div key={i} className="flex justify-between items-start text-xs">
+                    <div>
+                      <span className="font-bold">{item.quantity}x {item.name}</span>
+                      {item.size && <span className="text-[10px] text-slate-500 block">Size: {item.size}</span>}
+                    </div>
+                    <span className="font-mono font-bold">
+                      {formatCurrency((item.price + (item.addons?.reduce((s, a) => s + a.price, 0) || 0)) * item.quantity)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Financial Totals */}
+              <div className="border-t border-dashed border-slate-300 pt-3 space-y-1 text-xs">
+                <div className="flex justify-between font-bold text-slate-900 text-sm">
+                  <span>Total Amount:</span>
+                  <span className="font-mono">{formatCurrency(orderSuccess.total)}</span>
+                </div>
+                {orderSuccess.isPaid && (
+                  <>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Paid via ({orderSuccess.paymentMethod.toUpperCase()}):</span>
+                      <span className="font-mono">{formatCurrency(orderSuccess.amountReceived)}</span>
+                    </div>
+                    {orderSuccess.change > 0 && (
+                      <div className="flex justify-between font-black text-emerald-700 text-sm pt-1 border-t border-slate-100">
+                        <span>Change (Sukli):</span>
+                        <span className="font-mono">{formatCurrency(orderSuccess.change)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Action Buttons (Hidden when printing) */}
+              <div className="space-y-2 pt-3 no-print">
+                <button
+                  type="button"
+                  onClick={handlePrintReceipt}
+                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-black rounded-2xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md"
+                >
+                  <Printer className="w-4 h-4" /> Print Receipt
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOrderSuccess(null)}
+                    className="py-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  >
+                    Next Order
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderSuccess(null);
+                      onBackToOrders();
+                    }}
+                    className="py-2.5 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                  >
+                    View Orders
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

@@ -166,6 +166,7 @@ model Order {
   subtotal           Float     @default(0)
   discountType       String? // senior, pwd, promo
   discountAmount     Float     @default(0)
+  promoCode          String?
   taxAmount          Float     @default(0)
   total              Float     @default(0)
   deliveryAddress    String?
@@ -406,6 +407,7 @@ model PromoCode {
   
   // Limits
   maxUses         Int?      // Null means unlimited
+  maxUsesPerUser  Int?      // Null means unlimited per user (e.g. 1 means 1 use per customer)
   currentUses     Int       @default(0)
   startDate       DateTime?
   endDate         DateTime?

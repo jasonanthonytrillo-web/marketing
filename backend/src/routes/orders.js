@@ -146,59 +146,98 @@ router.post('/', async (req, res) => {
     let appliedPromoId = null;
     
     if (promoCode && !tenant.saPromoDisabled) {
+      if (!customerId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Promo codes are exclusively available for registered members. Please log in or create an account to use promo codes.'
+        });
+      }
+
+      const customerCheck = await prisma.user.findUnique({
+        where: { id: parseInt(customerId, 10) }
+      });
+
+      if (!customerCheck || !customerCheck.active) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid customer account. Please log in to use promo codes.'
+        });
+      }
+
       const promo = await prisma.promoCode.findUnique({
         where: { tenantId_code: { tenantId, code: promoCode.toUpperCase() } }
       });
       
-      if (promo && promo.isActive) {
-        const now = new Date();
-        const pastStart = !promo.startDate || now >= promo.startDate;
-        const beforeEnd = !promo.endDate || now <= promo.endDate;
-        const limitOk = !promo.maxUses || promo.currentUses < promo.maxUses;
-        
-        if (pastStart && beforeEnd && limitOk) {
-          let applicableSubtotal = 0;
-          orderItems.forEach(item => {
-            let isApplicable = false;
-            // For category targeting, it requires the frontend to pass categoryId in the items,
-            // but we didn't store categoryId in orderItems. We'd have to fetch product category, but for simplicity:
-            // Since we queried product earlier, we should ensure category is checked, but let's assume we fetch it if we need to.
-            // Actually, we queried Product at line 68. Let's just do a quick DB check or rely on targeting.
-            // Wait, we didn't include categoryId in the product query. Let's assume frontend validation is primary, 
-            // but backend must re-validate. Wait, if it's too complex here, let's just do product-level or all-level.
-            // For robust backend calculation without querying every category:
-            isApplicable = true; // Simplified: we will just query the product to check.
-            
-            if (isApplicable) applicableSubtotal += item.subtotal;
-          });
-          
-          // Re-fetch products to verify category targeting properly
-          applicableSubtotal = 0;
-          for (const item of orderItems) {
-            let isApplicable = false;
-            const p = await prisma.product.findUnique({ where: { id: item.productId } });
-            
-            if (promo.appliesTo === 'ALL') {
-              isApplicable = true;
-            } else if (promo.appliesTo === 'PRODUCT' && promo.targetId === p.id) {
-              isApplicable = true;
-            } else if (promo.appliesTo === 'CATEGORY' && promo.targetId === p.categoryId) {
-              isApplicable = true;
-            }
-            
-            if (isApplicable) applicableSubtotal += item.subtotal;
-          }
+      if (!promo || !promo.isActive) {
+        return res.status(400).json({ success: false, message: 'Invalid or expired promo code.' });
+      }
 
-          if (promo.type === 'PERCENTAGE') {
-            discountAmount = applicableSubtotal * (promo.value / 100);
-          } else if (promo.type === 'FIXED') {
-            discountAmount = Math.min(applicableSubtotal, promo.value);
+      const now = new Date();
+      if (promo.startDate && now < promo.startDate) {
+        return res.status(400).json({ success: false, message: 'This promo code is not yet active.' });
+      }
+      if (promo.endDate && now > promo.endDate) {
+        return res.status(400).json({ success: false, message: 'This promo code has expired.' });
+      }
+      if (promo.maxUses && promo.currentUses >= promo.maxUses) {
+        return res.status(400).json({ success: false, message: 'This promo code has reached its overall usage limit.' });
+      }
+
+      // Check per-user limit
+      if (promo.maxUsesPerUser && promo.maxUsesPerUser > 0) {
+        const userPromoUses = await prisma.order.count({
+          where: {
+            tenantId,
+            customerId: customerCheck.id,
+            discountType: 'promo',
+            status: { not: 'cancelled' },
+            OR: [
+              { promoCode: promo.code },
+              { notes: { contains: `Promo: ${promo.code}` } }
+            ]
           }
-          
-          if (discountAmount > 0) {
-            appliedPromoId = promo.id;
-          }
+        });
+
+        if (userPromoUses >= promo.maxUsesPerUser) {
+          return res.status(400).json({
+            success: false,
+            message: `You have reached your personal usage limit (${promo.maxUsesPerUser} time${promo.maxUsesPerUser > 1 ? 's' : ''}) for promo code ${promo.code}.`
+          });
         }
+      }
+
+      // Re-fetch products to verify category and product targeting properly
+      let applicableSubtotal = 0;
+      for (const item of orderItems) {
+        let isApplicable = false;
+        const p = await prisma.product.findUnique({ where: { id: parseInt(item.productId, 10) } });
+        
+        if (promo.appliesTo === 'ALL') {
+          isApplicable = true;
+        } else if (promo.appliesTo === 'PRODUCT' && p && promo.targetId && parseInt(promo.targetId, 10) === parseInt(p.id, 10)) {
+          isApplicable = true;
+        } else if (promo.appliesTo === 'CATEGORY' && p && promo.targetId && parseInt(promo.targetId, 10) === parseInt(p.categoryId, 10)) {
+          isApplicable = true;
+        }
+        
+        if (isApplicable) applicableSubtotal += item.subtotal;
+      }
+
+      if (applicableSubtotal === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'This promo code does not apply to any items in your cart.'
+        });
+      }
+
+      if (promo.type === 'PERCENTAGE') {
+        discountAmount = applicableSubtotal * (promo.value / 100);
+      } else if (promo.type === 'FIXED') {
+        discountAmount = Math.min(applicableSubtotal, promo.value);
+      }
+      
+      if (discountAmount > 0) {
+        appliedPromoId = promo.id;
       }
     }
 
@@ -329,6 +368,7 @@ router.post('/', async (req, res) => {
         subtotal,
         discountType: appliedPromoId ? 'promo' : null,
         discountAmount,
+        promoCode: appliedPromoId ? promoCode.toUpperCase() : null,
         taxAmount,
         total,
         deliveryAddress: deliveryAddress || null,
