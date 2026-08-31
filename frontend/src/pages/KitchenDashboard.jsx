@@ -271,21 +271,21 @@ export default function KitchenDashboard() {
       )}
 
       {/* Header */}
-      <header className="bg-surface-900 border-b border-surface-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 z-10">
+      <header className="bg-surface-900 border-b border-surface-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 z-10 gap-2">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover shadow-sm" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
-          <div className="flex flex-col">
-            <h2 className="font-heading font-black text-emerald-500 text-lg sm:text-xl tracking-tight uppercase truncate leading-tight">Hometown Brew Kitchen Dashboard</h2>
+          <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover shadow-sm flex-shrink-0" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
+          <div className="flex flex-col min-w-0">
+            <h2 className="font-heading font-black text-emerald-500 text-base sm:text-xl tracking-tight uppercase truncate leading-tight">Hometown Brew</h2>
             <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
-              <span className="text-[10px] font-bold text-surface-500 uppercase tracking-widest">
-                {connected ? 'Realtime Active' : 'Offline'}
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
+              <span className="text-[10px] font-bold text-surface-400 uppercase tracking-widest truncate">
+                Kitchen Dashboard • {connected ? 'Live' : 'Offline'}
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {activeShift ? (
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded-xl text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -300,7 +300,7 @@ export default function KitchenDashboard() {
           {activeShift ? (
             <button
               onClick={() => setShowTimeOutModal(true)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-rose-950/60 border border-rose-800 text-rose-300 hover:bg-rose-900 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-rose-950/60 border border-rose-800 text-rose-300 hover:bg-rose-900 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
             >
               <Timer className="w-4 h-4 text-rose-400" />
               <span className="hidden xs:inline">End Shift /</span> Time Out
@@ -308,7 +308,7 @@ export default function KitchenDashboard() {
           ) : (
             <button
               onClick={() => setShowTimeInModal(true)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 whitespace-nowrap"
             >
               <Timer className="w-4 h-4" />
               Time In
@@ -316,7 +316,7 @@ export default function KitchenDashboard() {
           )}
 
           <span className="text-xs sm:text-sm font-medium text-surface-400 hidden sm:flex sm:items-center sm:gap-1.5"><ChefHat className="w-4 h-4" /> {user?.name}</span>
-          <button onClick={logoutUser} className="text-surface-500 hover:text-red-400 text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5"><LogOut className="w-4 h-4" /> Log Out</button>
+          <button onClick={logoutUser} className="text-surface-500 hover:text-red-400 text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap"><LogOut className="w-4 h-4" /> Log Out</button>
         </div>
       </header>
 

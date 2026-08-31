@@ -402,39 +402,43 @@ export default function RiderDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
-      <div className="bg-white px-6 pt-12 pb-6 shadow-sm border-b border-slate-100 sticky top-0 z-30">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Rider Dashboard</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{user?.name} • Delivery Team</p>
-              {trackingActive && (
-                <div className="flex items-center gap-1.5 bg-blue-50 px-2 py-0.5 rounded-full animate-pulse border border-blue-100">
-                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-tight">GPS Live</span>
-                </div>
-              )}
+      <div className="bg-white px-4 sm:px-6 pt-8 sm:pt-10 pb-5 shadow-sm border-b border-slate-100 sticky top-0 z-30">
+        <div className="flex justify-between items-center mb-5 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <img src="/hb_logo.jpg" className="w-10 h-10 rounded-xl object-cover shadow-sm flex-shrink-0" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight uppercase truncate leading-tight">Hometown Brew</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider truncate">{user?.name} • Rider</p>
+                {trackingActive && (
+                  <div className="flex items-center gap-1.5 bg-blue-50 px-2 py-0.5 rounded-full animate-pulse border border-blue-100 flex-shrink-0">
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                    <span className="text-[10px] font-black text-blue-600 uppercase tracking-tight">GPS Live</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {activeShift ? (
               <button
                 onClick={() => setShowTimeOutModal(true)}
-                className="px-3 py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+                className="px-3 sm:px-4 py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
               >
                 <Timer className="w-4 h-4 text-rose-600" /> Time Out
               </button>
             ) : (
               <button
                 onClick={() => setShowTimeInModal(true)}
-                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+                className="px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20 whitespace-nowrap"
               >
                 <Timer className="w-4 h-4" /> Time In
               </button>
             )}
             <button
               onClick={logoutUser}
-              className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors"
+              title="Log Out"
+              className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors flex-shrink-0"
             >
               <LogOut className="w-5 h-5" />
             </button>
