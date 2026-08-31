@@ -4,7 +4,7 @@ import { formatCurrency, formatDate } from '../../utils/helpers';
 import { 
   Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, 
   Smartphone, CreditCard, CheckCircle, X, ArrowLeft, Printer, 
-  Sparkles, Tag, Coffee, Layers, User, Hash, AlertCircle, RefreshCw, Flame
+  Sparkles, Tag, Coffee, Layers, User, Hash, AlertCircle, RefreshCw, Flame, ChefHat
 } from 'lucide-react';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';

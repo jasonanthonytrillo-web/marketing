@@ -29,13 +29,14 @@ router.post('/orders/:id/start', authenticate, authorize('kitchen', 'admin', 'ca
     const order = await prisma.order.findUnique({ 
       where: { id: orderId, tenantId: req.tenantId } 
     });
-    if (!order || order.status !== 'confirmed') {
-      return res.status(400).json({ success: false, message: 'Order not found or not confirmed.' });
+    if (!order || !['confirmed', 'pending'].includes(order.status)) {
+      return res.status(400).json({ success: false, message: 'Order not found or cannot be prepared.' });
     }
     const updated = await prisma.order.update({
       where: { id: orderId, tenantId: req.tenantId },
       data: { 
         status: 'preparing', 
+        confirmedAt: order.confirmedAt || new Date(),
         kitchenStartedAt: new Date(),
         estimatedPrepTime: prepTime ? parseInt(prepTime) : null
       },

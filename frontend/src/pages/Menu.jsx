@@ -342,13 +342,8 @@ export default function Menu() {
                 />
 
                 {/* Label */}
-                <span className="font-heading font-black uppercase tracking-wider text-[11px] md:text-xs drop-shadow-sm">
+                <span className="font-heading font-black uppercase tracking-wider text-xs md:text-sm drop-shadow-sm px-1">
                   Packages
-                </span>
-
-                {/* Mini Pop-Up Tag Badge */}
-                <span className="bg-black/30 backdrop-blur-xs text-amber-200 text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest border border-amber-300/40 hidden sm:inline-block shadow-inner">
-                  Pop-Up
                 </span>
               </button>
             </div>
