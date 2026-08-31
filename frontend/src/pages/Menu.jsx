@@ -525,15 +525,9 @@ export default function Menu() {
                             : `₱${product.price.toFixed(2)}`
                           }
                         </span>
-                        {!branding?.storeClosed ? (
-                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>
-                            +
-                          </div>
-                        ) : (
-                          <div className="text-[10px] font-black text-surface-450 uppercase tracking-widest bg-surface-100 px-2.5 py-1.5 rounded-lg border border-surface-200/50" style={{ color: '#6b7280' }}>
-                            View
-                          </div>
-                        )}
+                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>
+                          +
+                        </div>
                       </div>
                     </div>
                   </button>

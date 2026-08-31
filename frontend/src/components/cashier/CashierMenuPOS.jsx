@@ -30,6 +30,7 @@ export default function CashierMenuPOS({
   const [orderNotes, setOrderNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'gcash' | 'maya' | 'card'
   const [cashReceived, setCashReceived] = useState('');
+  const [showCashKeypad, setShowCashKeypad] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState('');
   
   // Customizer Modal for Items with Sizes/Addons/Combos
@@ -632,25 +633,28 @@ export default function CashierMenuPOS({
             {/* Cash Input & Change Calculation */}
             {paymentMethod === 'cash' ? (
               <div className="bg-white p-2 rounded-xl border border-surface-200 space-y-1.5 shadow-xs">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-1.5">
                   <span className="text-xs font-bold text-surface-700 whitespace-nowrap">Cash:</span>
+                  
+                  {/* Native System Numpad Input */}
                   <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-surface-400">₱</span>
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-surface-400">₱</span>
                     <input 
-                      type="number"
-                      step="any"
-                      min="0"
+                      type="text"
+                      inputMode="decimal"
+                      pattern="[0-9]*[.]?[0-9]*"
                       value={cashReceived}
                       onChange={e => setCashReceived(e.target.value)}
-                      placeholder={total.toString()}
-                      className="w-full pl-5 pr-2 py-1 bg-surface-50 border border-surface-200 rounded-lg text-xs font-black text-right text-surface-900 focus:bg-white focus:border-primary-500 outline-none"
+                      placeholder={total.toFixed(2)}
+                      className="w-full pl-6 pr-2 py-1.5 bg-surface-50 border border-surface-200 rounded-lg text-xs font-black text-right text-surface-900 focus:bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all font-mono"
                     />
                   </div>
+
                   {/* Quick Exact Button */}
                   <button
                     type="button"
                     onClick={() => setCashReceived(total.toString())}
-                    className="px-2 py-1 bg-surface-100 hover:bg-surface-200 text-surface-700 font-bold text-[10px] rounded-lg transition-colors whitespace-nowrap"
+                    className="px-2.5 py-1.5 bg-surface-900 hover:bg-surface-800 text-white font-bold text-[10px] rounded-lg transition-colors whitespace-nowrap active:scale-95 shadow-xs"
                   >
                     Exact
                   </button>
