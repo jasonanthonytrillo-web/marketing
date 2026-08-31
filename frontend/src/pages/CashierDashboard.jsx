@@ -876,30 +876,30 @@ export default function CashierDashboard() {
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-surface-200 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 z-10 no-print gap-2">
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      <header className="bg-white border-b border-surface-200 px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center justify-between flex-shrink-0 z-10 no-print gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover shadow-sm flex-shrink-0" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
-          <div className="flex flex-col min-w-0">
-            <h2 className="font-heading font-black text-base sm:text-xl text-primary-600 tracking-tight uppercase truncate leading-tight">Hometown Brew</h2>
-            <span className="text-[10px] sm:text-xs font-bold text-surface-400 uppercase tracking-widest">Cashier Dashboard</span>
+          <div className="flex flex-col">
+            <h2 className="font-heading font-black text-sm sm:text-base lg:text-lg text-primary-600 tracking-tight uppercase leading-tight whitespace-nowrap">Hometown Brew</h2>
+            <span className="text-[9px] sm:text-[10px] font-bold text-surface-400 uppercase tracking-widest leading-none">Cashier Dashboard</span>
           </div>
         </div>
 
         {/* Mode Toggle: Orders vs Show Menu (Desktop / Tablet) */}
-        <div className="hidden md:flex items-center p-1 bg-surface-100 rounded-2xl border border-surface-200 shadow-xs">
+        <div className="hidden md:flex items-center p-1 bg-surface-100 rounded-2xl border border-surface-200 shadow-xs flex-shrink-0">
           <button
             type="button"
             onClick={() => setViewMode('orders')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+            className={`px-3 lg:px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
               viewMode === 'orders'
-                ? 'bg-white text-slate-900 shadow-sm'
+                ? 'bg-white text-surface-900 shadow-sm'
                 : 'text-surface-600 hover:text-surface-900'
             }`}
           >
             <Store className="w-3.5 h-3.5 text-primary-600" />
             <span>Orders</span>
             {orders.filter(o => o.status === 'pending').length > 0 && (
-              <span className="px-1.5 py-0.5 bg-orange-500 text-white rounded-full text-[10px] font-black animate-pulse">
+              <span className="px-1.5 py-0.5 bg-primary-500 text-white rounded-full text-[10px] font-black animate-pulse">
                 {orders.filter(o => o.status === 'pending').length}
               </span>
             )}
@@ -908,7 +908,7 @@ export default function CashierDashboard() {
           <button
             type="button"
             onClick={() => setViewMode('menu')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+            className={`px-3 lg:px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
               viewMode === 'menu'
                 ? 'bg-primary-600 text-white shadow-md shadow-primary-600/20'
                 : 'text-surface-600 hover:text-surface-900'
@@ -919,12 +919,12 @@ export default function CashierDashboard() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
           {activeShift ? (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span className="font-bold text-emerald-800">Shift Active</span>
-              <span className="text-emerald-600 font-medium font-mono">Float: {formatCurrency(activeShift.startingCash)}</span>
+              <span className="text-emerald-600 font-medium font-mono text-[11px]">₱{Number(activeShift.startingCash || 0).toLocaleString()}</span>
             </div>
           ) : (
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-bold">
@@ -935,41 +935,41 @@ export default function CashierDashboard() {
           {activeShift ? (
             <button
               onClick={handleOpenTimeOut}
-              className="px-2.5 sm:px-4 py-1.5 sm:py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
+              className="px-2.5 sm:px-3.5 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
             >
-              <Timer className="w-4 h-4 text-rose-600" />
-              <span className="hidden xs:inline">End Shift /</span> Time Out
+              <Timer className="w-3.5 h-3.5 text-rose-600" />
+              <span>Time Out</span>
             </button>
           ) : (
             <button
               onClick={handleOpenTimeIn}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-orange-500/20 whitespace-nowrap"
+              className="px-2.5 sm:px-3.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-orange-500/20 whitespace-nowrap"
             >
-              <Timer className="w-4 h-4" />
-              Time In
+              <Timer className="w-3.5 h-3.5" />
+              <span>Time In</span>
             </button>
           )}
 
-          <span className="text-xs sm:text-sm font-medium text-surface-600 hidden sm:flex sm:items-center sm:gap-1.5"><User className="w-4 h-4" /> {user?.name}</span>
-          <button onClick={logoutUser} title="Logout" className="text-surface-400 hover:text-red-500 text-xs sm:text-sm font-medium transition-colors flex items-center gap-1.5"><LogOut className="w-5 h-5" /></button>
+          <span className="text-xs font-semibold text-surface-600 hidden lg:flex items-center gap-1"><User className="w-3.5 h-3.5" /> {user?.name}</span>
+          <button onClick={logoutUser} title="Logout" className="text-surface-400 hover:text-red-500 text-xs font-medium transition-colors p-1"><LogOut className="w-4 h-4" /></button>
         </div>
       </header>
 
       {/* MOBILE-ONLY DEDICATED VIEW SWITCHER (Always visible and easily tap-able on mobile phones) */}
-      <div className="md:hidden bg-slate-900 px-3 py-2 flex items-center gap-2 shadow-md z-20 flex-shrink-0 no-print">
+      <div className="md:hidden bg-surface-900 px-3 py-2 flex items-center gap-2 shadow-md z-20 flex-shrink-0 no-print">
         <button
           type="button"
           onClick={() => setViewMode('orders')}
           className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
             viewMode === 'orders'
-              ? 'bg-white text-slate-900 shadow-md scale-[1.01]'
-              : 'bg-slate-800/90 text-slate-300 hover:text-white'
+              ? 'bg-white text-surface-900 shadow-md scale-[1.01]'
+              : 'bg-surface-800 text-surface-300 hover:text-white'
           }`}
         >
-          <Store className="w-4 h-4 text-orange-500" />
+          <Store className="w-4 h-4 text-primary-600" />
           <span>Orders</span>
           {orders.filter(o => o.status === 'pending').length > 0 && (
-            <span className="px-1.5 py-0.2 bg-orange-500 text-white rounded-full text-[10px] font-black animate-pulse">
+            <span className="px-1.5 py-0.2 bg-primary-500 text-white rounded-full text-[10px] font-black animate-pulse">
               {orders.filter(o => o.status === 'pending').length}
             </span>
           )}
@@ -980,8 +980,8 @@ export default function CashierDashboard() {
           onClick={() => setViewMode('menu')}
           className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
             viewMode === 'menu'
-              ? 'bg-orange-500 text-white shadow-md shadow-orange-500/25 scale-[1.01]'
-              : 'bg-slate-800/90 text-slate-300 hover:text-white'
+              ? 'bg-primary-600 text-white shadow-md shadow-primary-600/25 scale-[1.01]'
+              : 'bg-surface-800 text-surface-300 hover:text-white'
           }`}
         >
           <ChefHat className="w-4 h-4" />
