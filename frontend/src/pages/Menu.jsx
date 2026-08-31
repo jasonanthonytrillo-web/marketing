@@ -112,17 +112,17 @@ export default function Menu() {
           applyTheme(res.data.branding.primaryColor);
         }
       }
-      
+
       try {
         let tenantSlug = searchParams.get('tenant');
         if (!tenantSlug) {
-           const hostname = window.location.hostname;
-           const isPlatformDomain = hostname.includes('vercel.app') || hostname.includes('onrender.com');
-           if (!isPlatformDomain && hostname !== 'localhost' && hostname !== '127.0.0.1') {
-             tenantSlug = hostname.split('.')[0];
-           } else {
-             tenantSlug = 'project-million';
-           }
+          const hostname = window.location.hostname;
+          const isPlatformDomain = hostname.includes('vercel.app') || hostname.includes('onrender.com');
+          if (!isPlatformDomain && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+            tenantSlug = hostname.split('.')[0];
+          } else {
+            tenantSlug = 'project-million';
+          }
         }
         const pkgRes = await getPublicPackages(tenantSlug);
         setEventPackages(pkgRes.data.data || []);
@@ -201,7 +201,7 @@ export default function Menu() {
     const slug = new URLSearchParams(window.location.search).get('tenant') || 'project-million';
     const key = `visited_${slug}`;
     if (!sessionStorage.getItem(key)) {
-      trackVisit(slug).catch(() => {});
+      trackVisit(slug).catch(() => { });
       sessionStorage.setItem(key, '1');
     }
   }, []);
@@ -317,10 +317,10 @@ export default function Menu() {
             {/* EPIC EYE-CATCHING PACKAGES BUTTON */}
             <div className="relative group shrink-0">
               {/* Outer pulsing neon glow aura */}
-              <div 
+              <div
                 className="absolute -inset-1 rounded-full blur-md opacity-70 group-hover:opacity-100 animate-pulse transition duration-500 pointer-events-none"
-                style={{ 
-                  background: `radial-gradient(circle, ${brandingColor || '#10b981'} 0%, #f59e0b 50%, #ec4899 100%)` 
+                style={{
+                  background: `radial-gradient(circle, ${brandingColor || '#10b981'} 0%, #f59e0b 50%, #ec4899 100%)`
                 }}
               />
 
@@ -336,9 +336,9 @@ export default function Menu() {
                 <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer-sweep pointer-events-none" />
 
                 {/* Animated Sparkles Icon */}
-                <Sparkles 
-                  className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-200 animate-spin flex-shrink-0" 
-                  style={{ animationDuration: '4s' }} 
+                <Sparkles
+                  className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-200 animate-spin flex-shrink-0"
+                  style={{ animationDuration: '4s' }}
                 />
 
                 {/* Label */}
@@ -525,9 +525,15 @@ export default function Menu() {
                             : `₱${product.price.toFixed(2)}`
                           }
                         </span>
-                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>
-                          +
-                        </div>
+                        {!branding?.storeClosed ? (
+                          <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>
+                            +
+                          </div>
+                        ) : (
+                          <div className="text-[10px] font-black text-surface-450 uppercase tracking-widest bg-surface-100 px-2.5 py-1.5 rounded-lg border border-surface-200/50" style={{ color: '#6b7280' }}>
+                            View
+                          </div>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -611,7 +617,7 @@ export default function Menu() {
                       nuts: { text: 'Contains Nuts', icon: <AlertCircle className="w-2.5 h-2.5" />, style: 'bg-amber-800 text-white' },
                       vegan: { text: 'Vegan', icon: <Leaf className="w-2.5 h-2.5" />, style: 'bg-lime-600 text-white' }
                     };
-                    
+
                     let badgeStyles = defaultBadges[tag];
                     if (!badgeStyles && branding?.custom_badges && Array.isArray(branding.custom_badges)) {
                       const custom = branding.custom_badges.find(b => b.id === tag);
@@ -768,10 +774,10 @@ export default function Menu() {
                                 setOptionError(false);
                               }}
                               className={`px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${isDisabled
-                                  ? 'bg-surface-100 border-surface-200 text-surface-300 cursor-not-allowed line-through opacity-60'
-                                  : isActive
-                                    ? 'border-transparent text-white shadow-md'
-                                    : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-surface-400'
+                                ? 'bg-surface-100 border-surface-200 text-surface-300 cursor-not-allowed line-through opacity-60'
+                                : isActive
+                                  ? 'border-transparent text-white shadow-md'
+                                  : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-surface-400'
                                 }`}
                               style={isActive && !isDisabled ? { backgroundColor: brandingColor } : {}}
                             >
@@ -793,17 +799,16 @@ export default function Menu() {
                           const isDisabled = addon.available === false;
                           const isSelected = addOpts.addons.find(a => a.id === addon.id);
                           return (
-                            <button 
-                              key={addon.id} 
+                            <button
+                              key={addon.id}
                               onClick={() => !isDisabled && toggleAddon(addon)}
                               disabled={isDisabled}
-                              className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
-                                isDisabled 
+                              className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${isDisabled
                                   ? 'bg-surface-100 border-surface-200 text-surface-300 cursor-not-allowed line-through opacity-60'
-                                  : isSelected 
-                                    ? 'border-transparent text-white' 
+                                  : isSelected
+                                    ? 'border-transparent text-white'
                                     : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-primary-300'
-                              }`}
+                                }`}
                               style={isSelected && !isDisabled ? { backgroundColor: brandingColor } : {}}>
                               {addon.name} +₱{addon.price} {isDisabled && <span className="text-[10px] ml-1 uppercase">(Sold Out)</span>}
                             </button>
@@ -1044,24 +1049,24 @@ export default function Menu() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
           <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={() => setShowPackages(false)}></div>
           <div className="bg-white rounded-[28px] w-full max-w-4xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up scrollbar-hide">
-            
+
             <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/95 backdrop-blur-md border-b border-surface-100">
-               <div>
-                 <h2 className="text-xl md:text-2xl font-heading font-black text-surface-900 leading-tight">Pop-Up Cafe <span style={{ color: brandingColor }}>Packages</span></h2>
-                 <p className="text-surface-500 font-medium mt-0.5 text-xs md:text-sm">Bring the premium coffee experience to your next event!</p>
-               </div>
-               <button
-                 onClick={() => setShowPackages(false)}
-                 className="w-8 h-8 md:w-10 md:h-10 bg-surface-100 hover:bg-surface-200 rounded-full flex items-center justify-center text-surface-600 transition-all active:scale-95 flex-shrink-0"
-               >
-                 <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-               </button>
+              <div>
+                <h2 className="text-xl md:text-2xl font-heading font-black text-surface-900 leading-tight">Pop-Up Cafe <span style={{ color: brandingColor }}>Packages</span></h2>
+                <p className="text-surface-500 font-medium mt-0.5 text-xs md:text-sm">Bring the premium coffee experience to your next event!</p>
+              </div>
+              <button
+                onClick={() => setShowPackages(false)}
+                className="w-8 h-8 md:w-10 md:h-10 bg-surface-100 hover:bg-surface-200 rounded-full flex items-center justify-center text-surface-600 transition-all active:scale-95 flex-shrink-0"
+              >
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
 
             <div className="p-4 md:p-6 space-y-6">
               {/* Package Tiers */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                
+
                 {eventPackages.length === 0 ? (
                   <div className="col-span-full py-8 text-center text-surface-500 font-medium border-2 border-dashed border-surface-200 rounded-2xl">
                     No active packages available right now.
@@ -1069,43 +1074,43 @@ export default function Menu() {
                 ) : (
                   eventPackages.map(pkg => (
                     <div key={pkg.id} className={`rounded-[20px] p-5 text-center shadow-sm relative overflow-hidden group hover:border-primary-300 transition-all ${pkg.isPopular ? 'border-2 bg-white transform md:-translate-y-2 shadow-lg' : 'border border-surface-200 bg-surface-50/50'}`} style={pkg.isPopular ? { borderColor: brandingColor } : {}}>
-                       {pkg.isPopular && (
-                         <div className="absolute top-0 inset-x-0 py-1 text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest" style={{ backgroundColor: brandingColor }}>Most Popular</div>
-                       )}
-                       
-                       {pkg.image ? (
-                         <div className={`w-full h-32 md:h-40 rounded-xl overflow-hidden mb-4 shadow-sm ${pkg.isPopular ? 'mt-4' : 'mt-2'}`}>
-                           <img src={pkg.image.startsWith('http') ? pkg.image : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${pkg.image}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={pkg.name} />
-                         </div>
-                       ) : (
-                         <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-sm mx-auto mb-3 mt-4 group-hover:scale-110 transition-transform ${pkg.isPopular ? 'bg-white' : 'bg-white border border-surface-100'}`} style={pkg.isPopular ? { backgroundColor: `${brandingColor}10` } : {}}>
-                           {pkg.icon === 'Star' ? <Star className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { fill: brandingColor, color: brandingColor } : { color: '#94a3b8' }} /> : pkg.icon === 'Store' ? <Store className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} /> : <Coffee className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} />}
-                         </div>
-                       )}
-                       
-                       <h4 className="text-lg md:text-xl font-black text-surface-900 mb-1">{pkg.name}</h4>
-                       <p className="text-surface-500 text-xs mb-3 min-h-[36px] flex items-center justify-center">{pkg.description}</p>
-                       <div className="text-2xl md:text-3xl font-black mb-4" style={{ color: pkg.isPopular ? brandingColor : '#334155' }}>{pkg.priceText}</div>
-                       
-                       {pkg.features && (
-                         <ul className="text-xs text-surface-600 space-y-2 mb-6 text-left max-w-[200px] mx-auto min-h-[100px]">
-                           {pkg.features.split(',').map((feature, i) => (
-                             <li key={i} className="flex gap-1.5 items-start">
-                               <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" /> 
-                               <span className="leading-tight">{feature.trim()}</span>
-                             </li>
-                           ))}
-                         </ul>
-                       )}
-                       
-                       <a href="https://www.facebook.com/hometownbrew24" target="_blank" rel="noopener noreferrer" className={`block text-center w-full py-2.5 md:py-3 rounded-lg font-bold text-sm transition-transform hover:scale-105 ${pkg.isPopular ? 'text-white shadow-md' : 'bg-white border border-surface-200 text-surface-900 hover:bg-surface-100'}`} style={pkg.isPopular ? { backgroundColor: brandingColor } : {}}>
-                         Inquire Now
-                       </a>
+                      {pkg.isPopular && (
+                        <div className="absolute top-0 inset-x-0 py-1 text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest" style={{ backgroundColor: brandingColor }}>Most Popular</div>
+                      )}
+
+                      {pkg.image ? (
+                        <div className={`w-full h-32 md:h-40 rounded-xl overflow-hidden mb-4 shadow-sm ${pkg.isPopular ? 'mt-4' : 'mt-2'}`}>
+                          <img src={pkg.image.startsWith('http') ? pkg.image : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${pkg.image}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={pkg.name} />
+                        </div>
+                      ) : (
+                        <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-sm mx-auto mb-3 mt-4 group-hover:scale-110 transition-transform ${pkg.isPopular ? 'bg-white' : 'bg-white border border-surface-100'}`} style={pkg.isPopular ? { backgroundColor: `${brandingColor}10` } : {}}>
+                          {pkg.icon === 'Star' ? <Star className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { fill: brandingColor, color: brandingColor } : { color: '#94a3b8' }} /> : pkg.icon === 'Store' ? <Store className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} /> : <Coffee className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} />}
+                        </div>
+                      )}
+
+                      <h4 className="text-lg md:text-xl font-black text-surface-900 mb-1">{pkg.name}</h4>
+                      <p className="text-surface-500 text-xs mb-3 min-h-[36px] flex items-center justify-center">{pkg.description}</p>
+                      <div className="text-2xl md:text-3xl font-black mb-4" style={{ color: pkg.isPopular ? brandingColor : '#334155' }}>{pkg.priceText}</div>
+
+                      {pkg.features && (
+                        <ul className="text-xs text-surface-600 space-y-2 mb-6 text-left max-w-[200px] mx-auto min-h-[100px]">
+                          {pkg.features.split(',').map((feature, i) => (
+                            <li key={i} className="flex gap-1.5 items-start">
+                              <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                              <span className="leading-tight">{feature.trim()}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      <a href="https://www.facebook.com/hometownbrew24" target="_blank" rel="noopener noreferrer" className={`block text-center w-full py-2.5 md:py-3 rounded-lg font-bold text-sm transition-transform hover:scale-105 ${pkg.isPopular ? 'text-white shadow-md' : 'bg-white border border-surface-200 text-surface-900 hover:bg-surface-100'}`} style={pkg.isPopular ? { backgroundColor: brandingColor } : {}}>
+                        Inquire Now
+                      </a>
                     </div>
                   ))
                 )}
               </div>
-              
+
               {/* Footer Note */}
               <div className="bg-surface-100 rounded-2xl p-6 text-center border border-surface-200">
                 <Info className="w-6 h-6 text-surface-400 mx-auto mb-2" />
