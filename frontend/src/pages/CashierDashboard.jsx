@@ -1099,15 +1099,6 @@ export default function CashierDashboard() {
                   <p className="text-surface-500">{selectedOrder.customerName} • {formatDate(selectedOrder.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {selectedOrder.paymentStatus === 'unpaid' ? (
-                    <span className="badge text-xs px-2.5 py-1 bg-rose-100 text-rose-800 border border-rose-300 font-black animate-pulse">
-                      🔴 UNPAID
-                    </span>
-                  ) : (
-                    <span className="badge text-xs px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 font-black">
-                      ✅ PAID
-                    </span>
-                  )}
                   <span className={`badge text-sm px-3 py-1 badge-${selectedOrder.status}`}>{selectedOrder.status.toUpperCase()}</span>
                 </div>
               </div>
