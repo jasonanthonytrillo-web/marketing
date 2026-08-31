@@ -29,12 +29,12 @@ export default function Landing() {
     return `${backendUrl}${path}`;
   };
 
-  const absoluteFavicon = getAbsoluteUrl(tenant?.favicon);
-  const absoluteOgImage = getAbsoluteUrl(tenant?.ogImage || tenant?.logo);
+  const absoluteFavicon = tenant?.favicon ? getAbsoluteUrl(tenant.favicon) : '/favicon.png';
+  const absoluteOgImage = tenant?.ogImage ? getAbsoluteUrl(tenant.ogImage) : '/favicon.png';
 
-  useDynamicBranding(tenant?.name || 'Hometown Brew', absoluteFavicon, {
+  useDynamicBranding('Hometown Brew', absoluteFavicon, {
     image: absoluteOgImage,
-    description: `Order from ${tenant?.name || 'Hometown Brew'} — Self-Service Kiosk`
+    description: `Order from Hometown Brew — Self-Service Kiosk`
   });
 
   useEffect(() => {
@@ -115,17 +115,14 @@ export default function Landing() {
     init();
   }, [searchParams]);
 
-  const tenantName = tenant ? tenant.name : 'Hometown Brew';
+  const tenantName = 'Hometown Brew';
   const menuLink = '/menu';
   const queueLink = '/queue';
   const portalLink = '/member-portal';
   const primaryColor = tenant?.primaryColor || '#0a3d01';
 
-  // Smart background fallback based on tenant type
-  const burgerBackground = 'https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=2000&auto=format&fit=crop';
-  const defaultBackground = 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?q=80&w=2000&auto=format&fit=crop';
-
-  const bannerImage = tenant?.bannerImage || (tenant?.slug === 'burger-palace' ? burgerBackground : defaultBackground);
+  const defaultBackground = '/hb_logo.jpg';
+  const bannerImage = tenant?.bannerImage || defaultBackground;
 
   const [currentAssetIndex, setCurrentAssetIndex] = useState(0);
 
@@ -162,7 +159,7 @@ export default function Landing() {
           Service <span className="text-red-500">Suspended</span>
         </h1>
         <p className="text-surface-400 text-lg md:text-xl max-w-md mx-auto mb-10 leading-relaxed">
-          The storefront for <span className="text-white font-bold">{tenant.name}</span> is temporarily unavailable.
+          The storefront for <span className="text-white font-bold">Hometown Brew</span> is temporarily unavailable.
           Please contact the system administrator for more information.
         </p>
         <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -206,17 +203,11 @@ export default function Landing() {
           <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-[120px] animate-pulse opacity-15" style={{ backgroundColor: primaryColor }} />
 
           <div className="splash-logo w-28 h-28 md:w-40 md:h-40 rounded-[48px] overflow-hidden ring-8 ring-white/10">
-            {tenant?.logo ? (
-              <img src={tenant.logo} className="w-full h-full object-cover" alt={tenant.name} />
-            ) : (
-              <div className="w-full h-full bg-white/10 backdrop-blur-md flex items-center justify-center">
-                {tenant?.slug === 'burger-palace' ? <Utensils className="w-14 h-14 md:w-20 md:h-20 text-white/90" /> : <Coffee className="w-14 h-14 md:w-20 md:h-20 text-white/90" />}
-              </div>
-            )}
+            <img src="/hb_logo.jpg" className="w-full h-full object-cover" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
           </div>
 
           <h2 className="splash-text font-heading text-2xl md:text-4xl font-black text-white uppercase tracking-[0.2em] mt-8">
-            {tenantName}
+            HOMETOWN BREW
           </h2>
 
           <p className="splash-tagline text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] mt-3" style={{ color: primaryColor }}>
@@ -250,16 +241,13 @@ export default function Landing() {
         </style>
 
         {assets.map((asset, index) => {
-          // Resolve URL: 
-          // 1. If it's a full URL or data URI, use it as is.
-          // 2. If it's an upload (/uploads/...), prefix with backend API URL.
-          // 3. If it's a local public asset (starts with / but not /uploads/), use it as is.
           const backendUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || (import.meta.env.PROD ? '' : 'http://localhost:5000');
           const fullUrl = (asset.startsWith('http') || asset.startsWith('data:') || (asset.startsWith('/') && !asset.startsWith('/uploads/')))
             ? asset
             : `${backendUrl}${asset}`;
 
           const isActive = index === currentAssetIndex;
+          const isVideo = fullUrl.endsWith('.mp4') || fullUrl.endsWith('.webm');
 
           return (
             <div
@@ -267,11 +255,22 @@ export default function Landing() {
               className={`absolute inset-0 asset-transition ${isActive ? 'opacity-100' : 'opacity-0'}`}
               style={{ zIndex: isActive ? 1 : 0 }}
             >
-              <img
-                src={fullUrl}
-                alt=""
-                className={`w-full h-full object-cover ${isActive ? 'animate-kenburns' : ''}`}
-              />
+              {isVideo ? (
+                <video
+                  src={fullUrl}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <img
+                  src={fullUrl}
+                  alt=""
+                  className={`w-full h-full object-cover ${isActive ? 'animate-kenburns' : ''}`}
+                />
+              )}
             </div>
           );
         })}
@@ -295,40 +294,21 @@ export default function Landing() {
         )}
 
         <div className="flex justify-center mb-10">
-          {tenant?.logo ? (
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-[40px] overflow-hidden shadow-2xl ring-8 ring-white/5 animate-scale-in transition-transform hover:scale-110 duration-500">
-              <img src={tenant.logo} className="w-full h-full object-cover" alt={tenant.name} />
-            </div>
-          ) : (
-            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/10 backdrop-blur-md rounded-[40px] flex items-center justify-center shadow-2xl border border-white/20 animate-scale-in ring-8 ring-white/5">
-              {tenant?.slug === 'burger-palace' ? <Utensils className="w-10 h-10 md:w-16 md:h-16 text-white/90" /> : <Coffee className="w-10 h-10 md:w-16 md:h-16 text-white/90" />}
-            </div>
-          )}
+          <div className="w-24 h-24 md:w-32 md:h-32 rounded-[40px] overflow-hidden shadow-2xl ring-8 ring-white/5 animate-scale-in transition-transform hover:scale-110 duration-500 bg-white/10">
+            <img src="/hb_logo.jpg" className="w-full h-full object-cover" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
+          </div>
         </div>
 
         <h1 className="font-heading text-6xl md:text-9xl font-black text-white leading-[0.85] mb-8 uppercase tracking-tighter">
-          {tenant ? (
-            <>
-              {tenant.name.split(' ')[0]} <br />
-              <span style={{ color: primaryColor }} className="drop-shadow-[0_0_30px_rgba(var(--primary-custom),0.3)]">
-                {tenant.name.split(' ').slice(1).join(' ')}
-              </span>
-            </>
-          ) : (
-            <>
-              HOMETOWN
-              <br />
-              <span style={{ color: '#0a3d01' }}>
-                BREW
-              </span>
-            </>
-          )}
+          HOMETOWN
+          <br />
+          <span style={{ color: primaryColor }} className="drop-shadow-[0_0_30px_rgba(10,61,1,0.5)]">
+            BREW
+          </span>
         </h1>
 
         <p className="text-lg md:text-2xl text-surface-300 max-w-2xl mx-auto font-medium leading-relaxed mb-12">
-          {tenant?.landing_description || (tenant?.slug === 'burger-palace'
-            ? 'The most royal burgers in the palace. Order now and skip the wait!'
-            : 'Fresh food, fast service. Order right from this screen and enjoy your meal.')}
+          {tenant?.landing_description || 'Brining home closer, One cup at a time. Order right from this screen and enjoy your drink.'}
         </p>
 
         {/* Action Buttons */}

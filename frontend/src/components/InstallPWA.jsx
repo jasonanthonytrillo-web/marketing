@@ -6,9 +6,7 @@ export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [searchParams] = useSearchParams();
-  const tenant = searchParams.get('tenant') || 'Hometown Brew';
-  const tenantName = tenant.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const tenantName = 'Hometown Brew';
 
   useEffect(() => {
     // Check if already installed

@@ -363,7 +363,7 @@ export default function Menu() {
   };
 
   // Dynamic favicon & title
-  useDynamicBranding(tenantName, branding?.favicon);
+  useDynamicBranding('Hometown Brew', branding?.favicon || '/favicon.png');
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a3d01] gap-6">
@@ -448,17 +448,18 @@ export default function Menu() {
                             <Lock className="w-4 h-4" /> {t('changePassword')}
                           </button>
                         )}
-                        <Link
-                          to="/account"
-                          className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
-                        >
-                          <ScrollText className="w-4 h-4" /> {t('orderHistory')}
-                        </Link>
                         <button
                           onClick={() => {
                             setShowUserMenu(false);
-                            logoutUser();
+                            setShowHistoryModal(true);
                           }}
+                          className="flex items-center gap-3 w-full p-3 rounded-2xl text-surface-600 hover:bg-surface-50 hover:text-primary-600 transition-all font-bold text-sm"
+                        >
+                          <ScrollText className="w-4 h-4" /> {t('orderHistory')}
+                        </button>
+                        <div className="border-t border-surface-100 my-1"></div>
+                        <button
+                          onClick={logoutUser}
                           className="flex items-center gap-3 w-full p-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm"
                         >
                           <LogOut className="w-4 h-4" /> {t('signOut')}
@@ -469,6 +470,14 @@ export default function Menu() {
                 </div>
               </>
             )}
+            
+            {/* Language Switcher */}
+            <button
+              onClick={() => setLang(lang === 'en' ? 'tl' : 'en')}
+              className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 bg-white rounded-full text-xs md:text-sm font-bold text-surface-700 shadow-sm border border-surface-200 hover:border-primary-300 transition-all active:scale-95 shrink-0"
+            >
+              <span>{lang === 'en' ? '🇺🇸 EN' : '🇵🇭 TL'}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -479,16 +488,10 @@ export default function Menu() {
           <div className="md:sticky md:top-6 md:max-h-[calc(100vh-3rem)] flex flex-col">
             <div className="flex-shrink-0 mb-6">
               <div className="flex items-center gap-3 mb-2 md:mb-3">
-                {branding?.logo ? (
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl overflow-hidden shadow-lg border-2 border-white flex-shrink-0">
-                    <img src={branding.logo} className="w-full h-full object-cover" alt={tenantName} />
-                  </div>
-                ) : (
-                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center text-xl md:text-2xl shadow-lg border-2 border-white flex-shrink-0" style={{ color: brandingColor }}>
-                    <Gem className="w-6 h-6" />
-                  </div>
-                )}
-                <h1 className="font-heading text-xl md:text-2xl lg:text-3xl font-bold text-surface-900 uppercase leading-tight" style={{ color: brandingColor }}>{tenantName}</h1>
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl overflow-hidden shadow-lg border-2 border-white flex-shrink-0 bg-white">
+                  <img src="/hb_logo.jpg" className="w-full h-full object-cover" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
+                </div>
+                <h1 className="font-heading text-xl md:text-2xl lg:text-3xl font-bold text-surface-900 uppercase leading-tight" style={{ color: brandingColor }}>Hometown Brew</h1>
               </div>
               <p className="text-surface-500 text-xs md:text-sm mb-3 md:mb-6">{t('searchInstructions')}</p>
             </div>

@@ -51,7 +51,7 @@ export default function QueueDisplay() {
   };
 
   // Dynamic favicon & title
-  useDynamicBranding(branding?.name || 'Order Queue', branding?.favicon);
+  useDynamicBranding('Hometown Brew Queue', branding?.favicon || '/favicon.png');
 
   useEffect(() => {
     if (!onEvent) return;
@@ -84,7 +84,7 @@ export default function QueueDisplay() {
             <span className="text-base sm:text-lg leading-none">←</span> <span className="hidden sm:inline">Back Home</span><span className="sm:hidden">Back</span>
           </Link>
           <span className="text-slate-300 ml-1 hidden sm:inline">|</span>
-          <span className="text-slate-700 font-bold hidden sm:inline">{branding?.name || 'Order Queue'}</span>
+          <span className="text-slate-700 font-bold hidden sm:inline">Hometown Brew</span>
         </div>
         <div className="text-right">
           <div className="font-heading text-lg sm:text-2xl font-black text-slate-900 tracking-tight tabular-nums">

@@ -70,8 +70,8 @@ export default function MemberPortal() {
   }, [actionParam]);
 
   useDynamicBranding(
-    tenantData ? `${tenantData.name} - Member Portal` : 'Member Portal',
-    tenantData?.favicon
+    'Hometown Brew - Member Portal',
+    tenantData?.favicon || '/favicon.png'
   );
 
   useEffect(() => {
@@ -304,13 +304,9 @@ export default function MemberPortal() {
           ) : (
             <>
               <div className="text-center mb-10">
-                {tenantData?.logo ? (
-                  <img src={tenantData.logo} className="w-20 h-20 rounded-3xl object-cover mx-auto mb-6 shadow-xl shadow-primary-500/20 border-2 border-white/10" alt={tenantData.name} />
-                ) : (
-                  <div className="w-16 h-16 bg-primary-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary-500/20">
-                    <Gem className="w-8 h-8 text-white" />
-                  </div>
-                )}
+                <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-6 shadow-xl shadow-primary-500/20 border-2 border-white/10 bg-white">
+                  <img src="/hb_logo.jpg" className="w-full h-full object-cover" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
+                </div>
                 <h1 className="text-3xl font-black text-[#2D241E] mb-2 tracking-tight">
                   {user ? `Welcome back, ${user.name.split(' ')[0]}!` : (mode === 'login' ? 'Welcome Back!' : (mode === 'verify' ? 'Verify Email' : 'Join the Club'))}
                 </h1>
@@ -321,8 +317,8 @@ export default function MemberPortal() {
                 ) : (
                   <p className="text-[#6D5D53] text-sm">
                     {mode === 'login'
-                      ? `Sign in to ${tenantData?.name || 'the shop'} to earn points.`
-                      : (mode === 'verify' ? `Enter the code sent to ${formData.email}` : `Create a ${tenantData?.name || ''} account to start earning rewards.`)}
+                      ? `Sign in to Hometown Brew to earn points.`
+                      : (mode === 'verify' ? `Enter the code sent to ${formData.email}` : `Create a Hometown Brew account to start earning rewards.`)}
                   </p>
                 )}
               </div>

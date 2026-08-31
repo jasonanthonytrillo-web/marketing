@@ -36,7 +36,7 @@ export default function KitchenDashboard() {
   const alertInterval = useRef(null);
 
   // Dynamic favicon & title
-  useDynamicBranding(`${user?.tenantName || 'Kitchen'} Dashboard`, user?.tenantFavicon);
+  useDynamicBranding('Hometown Brew Kitchen Dashboard', user?.tenantFavicon || '/favicon.png');
 
   useEffect(() => {
     if (user?.tenantColor) applyTheme(user.tenantColor);
@@ -273,13 +273,9 @@ export default function KitchenDashboard() {
       {/* Header */}
       <header className="bg-surface-900 border-b border-surface-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 z-10">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          {user?.tenantLogo ? (
-            <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover shadow-sm" alt={user.tenantName} />
-          ) : (
-            <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-500 shadow-inner"><ChefHat className="w-4 h-4" /></div>
-          )}
+          <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover shadow-sm" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
           <div className="flex flex-col">
-            <h2 className="font-heading font-black text-emerald-500 text-lg sm:text-xl tracking-tight uppercase truncate leading-tight">{user?.tenantName || 'Kitchen'} Dashboard</h2>
+            <h2 className="font-heading font-black text-emerald-500 text-lg sm:text-xl tracking-tight uppercase truncate leading-tight">Hometown Brew Kitchen Dashboard</h2>
             <div className="flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
               <span className="text-[10px] font-bold text-surface-500 uppercase tracking-widest">

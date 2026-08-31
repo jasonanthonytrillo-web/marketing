@@ -286,7 +286,7 @@ export default function SuperAdminDashboard() {
                   <input 
                     type="text" required
                     className="w-full bg-slate-800 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder-slate-600"
-                    placeholder="e.g. MK Food Corner"
+                    placeholder="e.g. Hometown Brew"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                   />
@@ -296,7 +296,7 @@ export default function SuperAdminDashboard() {
                   <input 
                     type="text" required
                     className="w-full bg-slate-800 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder-slate-600"
-                    placeholder="e.g. mk-food"
+                    placeholder="e.g. hometown-brew"
                     value={formData.slug}
                     onChange={e => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})}
                   />
@@ -341,7 +341,7 @@ export default function SuperAdminDashboard() {
                   <input 
                     type="email" required
                     className="w-full bg-slate-800 border border-white/5 rounded-2xl px-6 py-4 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder-slate-600"
-                    placeholder="e.g. admin@mkfood.com"
+                    placeholder="e.g. admin@hometownbrew.com"
                     value={formData.adminEmail}
                     onChange={e => setFormData({...formData, adminEmail: e.target.value})}
                   />

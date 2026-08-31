@@ -42,7 +42,7 @@ export default function AdminDashboard() {
   const { joinRoom, leaveRoom, connected, onEvent } = useSocket();
 
   // Dynamic favicon & title
-  useDynamicBranding(`${user?.tenantName || 'Admin'} Dashboard`, user?.tenantFavicon);
+  useDynamicBranding('Hometown Brew Admin Dashboard', user?.tenantFavicon || '/favicon.png');
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -164,12 +164,8 @@ export default function AdminDashboard() {
         {/* Desktop Only Header */}
         <div className="flex p-6 border-b border-surface-800 justify-between items-center">
           <h1 className="font-heading text-xl font-black tracking-tight text-white flex items-center gap-2">
-            {user?.tenantLogo ? (
-              <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover" alt={user.tenantName} />
-            ) : (
-              <span className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-sm shadow-lg shadow-primary-500/20" style={{ backgroundColor: user?.tenantColor || user?.tenant?.primaryColor || (user?.tenantName?.toLowerCase().includes('burger') ? '#e11d48' : '#f97316') }}>POS</span>
-            )}
-            <span className="truncate">{user?.tenantName || 'ADMIN'}</span>
+            <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
+            <span className="truncate">Hometown Brew</span>
           </h1>
         </div>
         
@@ -206,12 +202,8 @@ export default function AdminDashboard() {
         {/* Mobile Drawer Header */}
         <div className="flex p-6 border-b border-surface-800 justify-between items-center flex-shrink-0">
           <h1 className="font-heading text-xl font-black tracking-tight text-white flex items-center gap-2">
-            {user?.tenantLogo ? (
-              <img src={user.tenantLogo} className="w-8 h-8 rounded-lg object-cover" alt={user.tenantName} />
-            ) : (
-              <span className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center text-sm shadow-lg shadow-primary-500/20" style={{ backgroundColor: user?.tenantColor || user?.tenant?.primaryColor || (user?.tenantName?.toLowerCase().includes('burger') ? '#e11d48' : '#f97316') }}>POS</span>
-            )}
-            <span className="truncate">{user?.tenantName || 'ADMIN'}</span>
+            <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
+            <span className="truncate">Hometown Brew</span>
           </h1>
           <button 
             onClick={() => setShowDrawer(false)}
@@ -257,7 +249,7 @@ export default function AdminDashboard() {
             <div>
               <h2 className="font-heading text-lg md:text-xl font-black text-surface-900 leading-tight">Admin Dashboard</h2>
               <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.25em] text-surface-500 mt-1">
-                {user?.tenantName || 'Business Control Center'}
+                Hometown Brew Control Center
               </p>
             </div>
           </div>

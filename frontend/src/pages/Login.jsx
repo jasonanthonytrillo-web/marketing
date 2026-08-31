@@ -133,7 +133,7 @@ export default function Login() {
           <img src="/favicon.png" alt="Hometown Brew" className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-[0_0_40px_rgba(255,255,255,0.1)]" />
           <h1 className="font-heading text-3xl font-bold text-white mb-2">Staff Login</h1>
           <p className="text-white/50">
-            {branding?.name ? `Sign in to ${branding.name}` : 'Sign in to Hometown Brew'}
+            Sign in to Hometown Brew
           </p>
         </div>
 
@@ -243,7 +243,7 @@ export default function Login() {
                   <input
                     type="email" required
                     className="w-full bg-surface-900 border border-surface-700 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500 outline-none transition-all placeholder-surface-600 font-bold"
-                    placeholder="e.g. admin@mkfood.com"
+                    placeholder="e.g. admin@hometownbrew.com"
                     value={forgotEmail}
                     onChange={e => setForgotEmail(e.target.value)}
                   />
