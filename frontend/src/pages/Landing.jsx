@@ -1,6 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { getOrder, getPublicTenant, trackVisit } from '../services/api';
+import { getOrder, getOrderHistory, getPublicTenant, trackVisit } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
@@ -89,7 +89,18 @@ export default function Landing() {
       const lastOrderKey = `${orderStoragePrefix}_${orderOwnerKey}_last_order_number`;
       const savedOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
       const lastOrderNum = localStorage.getItem(lastOrderKey);
-      const allOrderNums = Array.from(new Set([...savedOrders, lastOrderNum].filter(Boolean)));
+      let accountOrders = [];
+      if (user?.role === 'customer') {
+        try {
+          const historyRes = await getOrderHistory();
+          accountOrders = (historyRes.data.data || [])
+            .filter(order => order.status !== 'completed' && order.status !== 'cancelled')
+            .map(order => order.orderNumber);
+        } catch (error) {
+          // Local order tracking remains available if history cannot be loaded.
+        }
+      }
+      const allOrderNums = Array.from(new Set([...savedOrders, lastOrderNum, ...accountOrders].filter(Boolean)));
 
       const validOrders = [];
       for (const orderNum of allOrderNums) {
