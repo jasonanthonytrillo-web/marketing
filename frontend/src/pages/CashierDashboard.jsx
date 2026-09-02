@@ -8,7 +8,7 @@ import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import { Clock, AlertTriangle, Store, User, CreditCard, Gift, Banknote, Smartphone, CheckCircle, Navigation, Printer, ChefHat, ShoppingBag, Truck, MapPin, LogOut, Tag, Timer, DollarSign, Lock, Unlock, ShieldAlert, Coins, Sparkles } from 'lucide-react';
 import CashierMenuPOS from '../components/cashier/CashierMenuPOS';
-import { getOfflineOrderRecords } from '../services/offlineQueue';
+import { getOfflineOrderRecords, isOfflineOrder, updateOfflineOrder } from '../services/offlineQueue';
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);
@@ -430,6 +430,16 @@ export default function CashierDashboard() {
     if (!selectedOrder) return;
     setProcessing(true);
     try {
+      if (isOfflineOrder(selectedOrder)) {
+        updateOfflineOrder(selectedOrder.id, {
+          status: 'completed',
+          servedAt: new Date().toISOString()
+        });
+        setShowServeModal(false);
+        setSelectedOrder(null);
+        loadOrders();
+        return;
+      }
       await markServed(selectedOrder.id);
       setShowServeModal(false);
       setSelectedOrder(null);
@@ -459,6 +469,17 @@ export default function CashierDashboard() {
     const time = parseInt(minutes) || 15;
     setProcessing(true);
     try {
+      if (isOfflineOrder(selectedOrder)) {
+        updateOfflineOrder(selectedOrder.id, {
+          status: 'preparing',
+          estimatedPrepTime: time,
+          kitchenStartedAt: new Date().toISOString()
+        });
+        setShowPrepModal(false);
+        setSelectedOrder(null);
+        loadOrders();
+        return;
+      }
       await startPreparing(selectedOrder.id, time);
       setShowPrepModal(false);
       setSelectedOrder(null);
@@ -478,6 +499,15 @@ export default function CashierDashboard() {
     if (!selectedOrder) return;
     setProcessing(true);
     try {
+      if (isOfflineOrder(selectedOrder)) {
+        updateOfflineOrder(selectedOrder.id, {
+          status: 'ready',
+          kitchenCompletedAt: new Date().toISOString()
+        });
+        setSelectedOrder(null);
+        loadOrders();
+        return;
+      }
       await completeOrder(selectedOrder.id);
       setSelectedOrder(null);
       loadOrders();

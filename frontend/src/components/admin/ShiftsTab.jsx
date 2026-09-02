@@ -149,22 +149,22 @@ export default function ShiftsTab() {
   const totalPayout = filteredShifts.reduce((acc, s) => acc + calculateSalary(s), 0);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 lg:space-y-6 animate-fade-in min-w-0">
       {/* Header & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black font-heading text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-black font-heading text-slate-900">
             Staff Shifts & Attendance
           </h2>
-          <p className="text-sm text-slate-500 font-medium mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1 max-w-2xl">
             Track all staff attendance, shift durations, and cashier cash register audit.
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
           <button
             onClick={exportCSV}
             disabled={filteredShifts.length === 0}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white rounded-2xl text-xs font-black shadow-sm transition-all flex items-center gap-2"
+            className="flex-1 lg:flex-none justify-center px-3 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white rounded-2xl text-xs font-black shadow-sm transition-all flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -172,7 +172,7 @@ export default function ShiftsTab() {
           <button
             onClick={loadShifts}
             disabled={loading}
-            className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-2xl text-xs font-black text-slate-700 shadow-sm transition-all flex items-center gap-2"
+            className="flex-1 lg:flex-none justify-center px-3 sm:px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-2xl text-xs font-black text-slate-700 shadow-sm transition-all flex items-center gap-2"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -182,8 +182,8 @@ export default function ShiftsTab() {
 
       {/* Summary KPI Cards */}
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div className="glass-card p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 lg:gap-4">
+          <div className="glass-card p-3.5 sm:p-4 bg-white rounded-2xl border border-slate-200 shadow-sm min-w-0">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Shifts</span>
             </div>
@@ -242,13 +242,13 @@ export default function ShiftsTab() {
       )}
 
       {/* Hourly Wage Settings Panel */}
-      <div className="bg-gradient-to-r from-slate-50 to-slate-100 p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="bg-gradient-to-r from-slate-50 to-slate-100 p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="min-w-0">
           <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">Salary Calculator Settings</h4>
           <p className="text-[11px] text-slate-500 font-semibold">Define hourly rates for each role to estimate salaries instantly.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
+          <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
             <span className="text-xs font-bold text-slate-600">Cashier:</span>
             <div className="flex items-center">
               <span className="text-xs text-slate-400 font-bold mr-0.5">₱</span>
@@ -262,7 +262,7 @@ export default function ShiftsTab() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
             <span className="text-xs font-bold text-slate-600">Kitchen:</span>
             <div className="flex items-center">
               <span className="text-xs text-slate-400 font-bold mr-0.5">₱</span>
@@ -276,7 +276,7 @@ export default function ShiftsTab() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm">
             <span className="text-xs font-bold text-slate-600">Rider:</span>
             <div className="flex items-center">
               <span className="text-xs text-slate-400 font-bold mr-0.5">₱</span>
@@ -293,9 +293,9 @@ export default function ShiftsTab() {
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
-          <div className="relative flex-1 min-w-[200px]">
+      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex items-center gap-2.5 flex-1 min-w-0">
+          <div className="relative sm:col-span-2 lg:col-span-1 flex-1 min-w-0 lg:min-w-[200px]">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -309,7 +309,7 @@ export default function ShiftsTab() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer focus:outline-none focus:border-primary-500"
+            className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer focus:outline-none focus:border-primary-500"
           >
             <option value="all">All Roles</option>
             <option value="cashier">Cashier</option>
@@ -320,7 +320,7 @@ export default function ShiftsTab() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer focus:outline-none focus:border-primary-500"
+            className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer focus:outline-none focus:border-primary-500"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active Only (Currently Timed In)</option>
@@ -328,8 +328,8 @@ export default function ShiftsTab() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+        <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 w-full lg:w-auto">
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold whitespace-nowrap">
             <Calendar className="w-4 h-4 text-slate-400" />
             <span>Date Range:</span>
           </div>
@@ -337,19 +337,19 @@ export default function ShiftsTab() {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="py-2 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary-500"
+            className="w-full min-w-0 py-2 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary-500"
           />
           <span className="text-slate-400 text-xs">to</span>
           <input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="py-2 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary-500"
+            className="w-full min-w-0 py-2 px-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-primary-500"
           />
           {(startDate || endDate) && (
             <button
               onClick={() => { setStartDate(''); setEndDate(''); }}
-              className="text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1"
+              className="sm:col-span-4 justify-self-end text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1"
             >
               Clear
             </button>
@@ -371,7 +371,7 @@ export default function ShiftsTab() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[1100px] text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
                   <th className="py-4 px-4">Staff</th>

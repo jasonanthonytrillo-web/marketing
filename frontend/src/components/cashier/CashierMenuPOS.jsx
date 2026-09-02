@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getProducts, createOrder, confirmOrder } from '../../services/api';
+import { getProducts, createOrder, confirmOrder, startPreparing, completeOrder, markServed } from '../../services/api';
 import {
   cacheCashierMenu,
   createClientOrderId,
@@ -92,7 +92,7 @@ export default function CashierMenuPOS({
     if (!navigator.onLine || syncing) return;
     setSyncing(true);
     try {
-      await syncOfflineOrders(createOrder, confirmOrder);
+      await syncOfflineOrders(createOrder, confirmOrder, { startPreparing, completeOrder, markServed });
       setPendingSyncCount(getOfflineOrderCount());
       if (getOfflineOrderCount() === 0) onOrderCreated();
     } finally {

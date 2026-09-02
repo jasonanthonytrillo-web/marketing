@@ -40,13 +40,32 @@ export const enqueueOfflineOrder = (payload, localOrder) => {
 export const getOfflineOrderRecords = () =>
   getOfflineOrders().map(entry => entry.localOrder).filter(Boolean);
 
+export const isOfflineOrder = (order) =>
+  Boolean(order) && getOfflineOrders().some(entry =>
+    entry.clientOrderId === order.id || entry.clientOrderId === order.clientOrderId
+  );
+
+export const updateOfflineOrder = (clientOrderId, changes) => {
+  const queue = getOfflineOrders();
+  const entry = queue.find(item => item.clientOrderId === clientOrderId);
+  if (!entry) return false;
+  entry.localOrder = { ...entry.localOrder, ...changes, updatedAt: new Date().toISOString() };
+  entry.payload = {
+    ...entry.payload,
+    offlineStatus: changes.status,
+    prepTime: changes.estimatedPrepTime ?? entry.payload.prepTime
+  };
+  write(ORDER_QUEUE_KEY, queue);
+  return true;
+};
+
 const isAlreadyPaid = (error) =>
   error?.response?.status === 400 && /already been processed/i.test(error.response?.data?.message || '');
 
 const isRetryableNetworkError = (error) => !error?.response || !navigator.onLine;
 
 // Sends one complete sale at a time so stock and payment order remain predictable.
-export const syncOfflineOrders = async (createOrder, confirmOrder) => {
+export const syncOfflineOrders = async (createOrder, confirmOrder, statusHandlers = {}) => {
   const queue = getOfflineOrders();
   if (!queue.length || !navigator.onLine) return { synced: 0, pending: queue.length };
 
@@ -57,6 +76,16 @@ export const syncOfflineOrders = async (createOrder, confirmOrder) => {
       const order = created.data.data;
       if (order.paymentStatus !== 'paid') {
         await confirmOrder(order.id, entry.payload.payment);
+      }
+      const offlineStatus = entry.payload.offlineStatus;
+      if (['preparing', 'ready', 'completed'].includes(offlineStatus) && statusHandlers.startPreparing) {
+        await statusHandlers.startPreparing(order.id, entry.payload.prepTime || 15);
+      }
+      if (['ready', 'completed'].includes(offlineStatus) && statusHandlers.completeOrder) {
+        await statusHandlers.completeOrder(order.id);
+      }
+      if (offlineStatus === 'completed' && statusHandlers.markServed) {
+        await statusHandlers.markServed(order.id);
       }
 
       const current = getOfflineOrders().filter(item => item.clientOrderId !== entry.clientOrderId);
