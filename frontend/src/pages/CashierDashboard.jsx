@@ -278,6 +278,26 @@ export default function CashierDashboard() {
     setIsRestricted(true);
   };
 
+  const activateOfflineShift = (amount) => {
+    const offlineShift = {
+      id: `offline-shift-${Date.now()}`,
+      userId: user.id,
+      tenantId: user.tenantId,
+      cashierName: user.name || 'Cashier',
+      role: 'cashier',
+      startingCash: amount,
+      status: 'active',
+      startTime: new Date().toISOString(),
+      offline: true
+    };
+    saveOfflineShift(offlineShift);
+    setActiveShift(offlineShift);
+    setIsRestricted(false);
+    setShowTimeInModal(false);
+    setStartingCash('');
+    setTimeInStep('prompt');
+  };
+
   const handleConfirmTimeIn = async (e) => {
     if (e) e.preventDefault();
     const amount = parseFloat(startingCash);
@@ -287,23 +307,7 @@ export default function CashierDashboard() {
     setTimeInLoading(true);
     try {
       if (!navigator.onLine) {
-        const offlineShift = {
-          id: `offline-shift-${Date.now()}`,
-          userId: user.id,
-          tenantId: user.tenantId,
-          cashierName: user.name || 'Cashier',
-          role: 'cashier',
-          startingCash: amount,
-          status: 'active',
-          startTime: new Date().toISOString(),
-          offline: true
-        };
-        saveOfflineShift(offlineShift);
-        setActiveShift(offlineShift);
-        setIsRestricted(false);
-        setShowTimeInModal(false);
-        setStartingCash('');
-        setTimeInStep('prompt');
+        activateOfflineShift(amount);
         return;
       }
       const res = await cashierTimeIn({ startingCash: amount });
@@ -313,7 +317,11 @@ export default function CashierDashboard() {
       setStartingCash('');
       setTimeInStep('prompt');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to start shift.');
+      if (!err.response) {
+        activateOfflineShift(amount);
+      } else {
+        alert(err.response?.data?.message || 'Failed to start shift.');
+      }
     } finally {
       setTimeInLoading(false);
     }
