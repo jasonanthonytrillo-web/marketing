@@ -23,18 +23,22 @@ export const getCachedCashierMenu = () => read(MENU_CACHE_KEY, []);
 export const getOfflineOrders = () => read(ORDER_QUEUE_KEY, []);
 export const getOfflineOrderCount = () => getOfflineOrders().length;
 
-export const enqueueOfflineOrder = (payload) => {
+export const enqueueOfflineOrder = (payload, localOrder) => {
   const queue = getOfflineOrders();
   if (!queue.some(entry => entry.clientOrderId === payload.clientOrderId)) {
     queue.push({
       clientOrderId: payload.clientOrderId,
       payload,
+      localOrder,
       queuedAt: new Date().toISOString()
     });
     write(ORDER_QUEUE_KEY, queue);
   }
   return payload.clientOrderId;
 };
+
+export const getOfflineOrderRecords = () =>
+  getOfflineOrders().map(entry => entry.localOrder).filter(Boolean);
 
 const isAlreadyPaid = (error) =>
   error?.response?.status === 400 && /already been processed/i.test(error.response?.data?.message || '');

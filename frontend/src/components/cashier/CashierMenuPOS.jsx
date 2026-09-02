@@ -319,6 +319,32 @@ export default function CashierMenuPOS({
         paymentReference: paymentMethod !== 'cash' ? referenceNumber : undefined,
         clientOrderId
       };
+      const localOrder = {
+        id: clientOrderId,
+        clientOrderId,
+        orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}`,
+        customerName: customerName.trim() || 'Walk-in Customer',
+        orderType,
+        paymentMethod,
+        paymentStatus: 'paid',
+        status: 'confirmed',
+        subtotal: total,
+        total,
+        notes: orderNotes,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        items: cartItems.map(item => ({
+          id: `${clientOrderId}-${item.cartKey}`,
+          productId: item.productId,
+          productName: item.name,
+          productPrice: item.price,
+          quantity: item.quantity,
+          subtotal: (item.price + (item.addons || []).reduce((sum, addon) => sum + (parseFloat(addon.price) || 0), 0)) * item.quantity,
+          size: item.size,
+          flavor: item.flavor,
+          notes: item.notes
+        }))
+      };
 
       if (!navigator.onLine) {
         enqueueOfflineOrder({
@@ -328,8 +354,9 @@ export default function CashierMenuPOS({
             paymentMethod,
             referenceNumber: referenceNumber || undefined
           }
-        });
+        }, localOrder);
         setPendingSyncCount(getOfflineOrderCount());
+        onOrderCreated();
         setOrderSuccess({
           order: { orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}` },
           items: cartItems,
@@ -397,13 +424,40 @@ export default function CashierMenuPOS({
           addons: item.addons?.map(a => a.id) || [],
           comboChoices: item.comboChoices
         }));
+        const localOrder = {
+          id: clientOrderId,
+          clientOrderId,
+          orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}`,
+          customerName: customerName.trim() || 'Walk-in Customer',
+          orderType,
+          paymentMethod,
+          paymentStatus: 'paid',
+          status: 'confirmed',
+          subtotal: total,
+          total,
+          notes: orderNotes,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          items: cartItems.map(item => ({
+            id: `${clientOrderId}-${item.cartKey}`,
+            productId: item.productId,
+            productName: item.name,
+            productPrice: item.price,
+            quantity: item.quantity,
+            subtotal: (item.price + (item.addons || []).reduce((sum, addon) => sum + (parseFloat(addon.price) || 0), 0)) * item.quantity,
+            size: item.size,
+            flavor: item.flavor,
+            notes: item.notes
+          }))
+        };
         enqueueOfflineOrder({
           customerName: customerName.trim() || 'Walk-in Customer', orderType, paymentMethod,
           items: orderItems, notes: orderNotes, status: 'confirmed', clientOrderId,
           paymentReference: paymentMethod !== 'cash' ? referenceNumber : undefined,
           payment: { amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total, paymentMethod, referenceNumber: referenceNumber || undefined }
-        });
+        }, localOrder);
         setPendingSyncCount(getOfflineOrderCount());
+        onOrderCreated();
         setOrderSuccess({ order: { orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}` }, items: cartItems, total, amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total, change: calculatedChange, paymentMethod, orderType, customerName: customerName.trim() || 'Walk-in Customer', isPaid: true, isOffline: true });
         clearCurrentCart();
         return;

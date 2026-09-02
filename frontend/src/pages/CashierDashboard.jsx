@@ -8,6 +8,7 @@ import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
 import { Clock, AlertTriangle, Store, User, CreditCard, Gift, Banknote, Smartphone, CheckCircle, Navigation, Printer, ChefHat, ShoppingBag, Truck, MapPin, LogOut, Tag, Timer, DollarSign, Lock, Unlock, ShieldAlert, Coins, Sparkles } from 'lucide-react';
 import CashierMenuPOS from '../components/cashier/CashierMenuPOS';
+import { getOfflineOrderRecords } from '../services/offlineQueue';
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);
@@ -141,13 +142,21 @@ export default function CashierDashboard() {
         return new Date(o.createdAt).setHours(0,0,0,0) === today || new Date(o.updatedAt).setHours(0,0,0,0) === today;
       });
 
-      setOrders(filteredOrders);
+      const localOrders = getOfflineOrderRecords();
+      const serverClientIds = new Set(filteredOrders.map(order => order.clientOrderId).filter(Boolean));
+      const visibleLocalOrders = localOrders.filter(order => !serverClientIds.has(order.clientOrderId));
+      setOrders([...visibleLocalOrders, ...filteredOrders]);
       if (selectedOrder) {
         const updated = filteredOrders.find(o => o.id === selectedOrder.id);
         if (updated) setSelectedOrder(updated);
         else setSelectedOrder(null);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      // Keep queued counter sales visible when the server cannot be reached.
+      const localOrders = getOfflineOrderRecords();
+      if (localOrders.length) setOrders(localOrders);
+    }
     finally { setLoading(false); }
   };
 
