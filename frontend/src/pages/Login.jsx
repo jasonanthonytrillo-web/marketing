@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { login, requestOTP, resetPassword, getPublicTenant } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,10 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaRef = useRef(null);
+  const captchaWidgetRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
   const [searchParams] = useSearchParams();
   const { loginUser } = useAuth();
@@ -29,6 +33,34 @@ export default function Login() {
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const [branding, setBranding] = useState(null);
   const brandingColor = branding?.primaryColor || '#0a3d01';
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  useEffect(() => {
+    if (!showCaptcha || !turnstileSiteKey || !captchaRef.current) return;
+    const renderCaptcha = () => {
+      if (!window.turnstile || captchaWidgetRef.current !== null) return;
+      captchaWidgetRef.current = window.turnstile.render(captchaRef.current, {
+        sitekey: turnstileSiteKey,
+        theme: 'dark',
+        callback: token => setCaptchaToken(token),
+        'expired-callback': () => setCaptchaToken(''),
+        'error-callback': () => setCaptchaToken('')
+      });
+    };
+    if (window.turnstile) renderCaptcha();
+    else {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.onload = renderCaptcha;
+      document.head.appendChild(script);
+    }
+    return () => {
+      if (window.turnstile && captchaWidgetRef.current !== null) window.turnstile.remove(captchaWidgetRef.current);
+      captchaWidgetRef.current = null;
+    };
+  }, [showCaptcha, turnstileSiteKey]);
 
   useEffect(() => {
     if (tenantSlug) {
@@ -48,7 +80,7 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const res = await login({ email, password, tenantSlug });
+      const res = await login({ email, password, tenantSlug, turnstileToken: captchaToken || undefined });
       const { token, user } = res.data.data;
       unlockAudio(); // Automatically enable sound system
       loginUser(token, user);
@@ -61,6 +93,10 @@ export default function Login() {
       else if (user.role === 'rider') navigate('/rider');
       else navigate('/');
     } catch (err) {
+      if (err.response?.data?.captchaRequired) {
+        setShowCaptcha(true);
+        setCaptchaToken('');
+      }
       if (err.response?.data?.deviceUnauthorized) {
         setError(err.response?.data?.message || 'This device is not authorized for staff login.');
       } else {
@@ -140,6 +176,13 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="bg-white/10 backdrop-blur-lg border border-white/15 rounded-2xl p-6 space-y-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           {error && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm">{error}</div>}
 
+          {showCaptcha && (
+            <div>
+              <p className="text-xs text-white/60 mb-2">Please complete the security check.</p>
+              {turnstileSiteKey ? <div ref={captchaRef} /> : <p className="text-xs text-amber-300">CAPTCHA is not configured yet.</p>}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-white/60 mb-1.5">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
@@ -188,7 +231,7 @@ export default function Login() {
             </button>
           </div>
 
-          <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl text-white font-bold transition-all transform active:scale-[0.98] shadow-lg" style={{ backgroundColor: brandingColor }}>
+          <button type="submit" disabled={loading || (showCaptcha && turnstileSiteKey && !captchaToken)} className="w-full py-3.5 rounded-xl text-white font-bold transition-all transform active:scale-[0.98] shadow-lg" style={{ backgroundColor: brandingColor }}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>

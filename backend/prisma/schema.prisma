@@ -57,6 +57,8 @@ model User {
   pin       String?
   points    Float    @default(0)
   active    Boolean  @default(true)
+  failedLoginAttempts Int      @default(0)
+  loginLockedUntil    DateTime?
   isGoogle  Boolean  @default(false)
   otpCode   String?
   otpExpires DateTime?

@@ -14,6 +14,22 @@ const rateLimit = require('../middleware/rateLimiter');
 const otpLimiter = rateLimit(60 * 1000, 5, 'Too many OTP requests. Please wait 1 minute before requesting again.');
 const loginLimiter = rateLimit(60 * 1000, 10, 'Too many attempts. Please try again in 1 minute.');
 
+const verifyTurnstile = async (token, remoteIp) => {
+  if (!process.env.TURNSTILE_SECRET_KEY || !token) return false;
+  try {
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ secret: process.env.TURNSTILE_SECRET_KEY, response: token, remoteip: remoteIp || '' })
+    });
+    const result = await response.json();
+    return result.success === true;
+  } catch (error) {
+    console.error('Turnstile verification failed:', error.message);
+    return false;
+  }
+};
+
 
 
 
@@ -219,7 +235,7 @@ router.post('/reset-password', async (req, res) => {
 router.post('/login', loginLimiter, async (req, res) => {
   console.log('Login attempt received for:', req.body.email);
   try {
-    const { email, password } = req.body;
+    const { email, password, turnstileToken } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
@@ -254,6 +270,18 @@ router.post('/login', loginLimiter, async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid username or password.' });
     }
 
+    if (user.loginLockedUntil && user.loginLockedUntil > new Date()) {
+      const retryAfter = Math.ceil((user.loginLockedUntil.getTime() - Date.now()) / 1000);
+      return res.status(429).json({ success: false, message: `Too many failed attempts. Try again in ${retryAfter} seconds.`, retryAfter });
+    }
+
+    if (user.failedLoginAttempts >= 3) {
+      const validCaptcha = await verifyTurnstile(turnstileToken, req.ip);
+      if (!validCaptcha) {
+        return res.status(403).json({ success: false, message: 'Please complete the security check before trying again.', captchaRequired: true });
+      }
+    }
+
     // VERIFICATION CHECK: Customers MUST be verified to log in
     if (user.role === 'customer' && !user.isVerified) {
       return res.status(403).json({ 
@@ -283,8 +311,19 @@ router.post('/login', loginLimiter, async (req, res) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.status(401).json({ success: false, message: 'Invalid username or password.' });
+      const failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      const lockSeconds = failedLoginAttempts >= 5 ? Math.min(30 * (2 ** (failedLoginAttempts - 5)), 30 * 60) : 0;
+      const loginLockedUntil = lockSeconds ? new Date(Date.now() + lockSeconds * 1000) : null;
+      await prisma.user.update({ where: { id: user.id }, data: { failedLoginAttempts, loginLockedUntil } });
+      return res.status(lockSeconds ? 429 : 401).json({
+        success: false,
+        message: lockSeconds ? `Too many failed attempts. Try again in ${lockSeconds} seconds.` : 'Invalid username or password.',
+        retryAfter: lockSeconds || undefined,
+        captchaRequired: failedLoginAttempts >= 3
+      });
     }
+
+    await prisma.user.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, loginLockedUntil: null } });
 
     // DEVICE AUTHORIZATION CHECK: Staff roles must log in from an authorized device
     const restrictedRoles = ['cashier', 'kitchen', 'rider'];
