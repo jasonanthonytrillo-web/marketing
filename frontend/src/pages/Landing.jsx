@@ -96,7 +96,10 @@ export default function Landing() {
         try {
           const res = await getOrder(orderNum);
           const order = res.data.data;
-          if (order && order.status !== 'completed' && order.status !== 'cancelled') {
+          const belongsToViewer = user?.role === 'customer'
+            ? order?.customerId === user.id
+            : !order?.customerId;
+          if (order && belongsToViewer && order.status !== 'completed' && order.status !== 'cancelled') {
             validOrders.push(orderNum);
           }
         } catch (error) {
