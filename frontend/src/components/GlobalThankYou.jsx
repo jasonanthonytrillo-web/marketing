@@ -39,8 +39,10 @@ export default function GlobalThankYou() {
       if (!order) return;
 
       if (order.status === 'completed') {
-        const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
-        const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
+        const orderStoragePrefix = tenantSlug || 'default';
+        const orderOwnerKey = order.customerId ? `customer_${order.customerId}` : 'guest';
+        const activeOrdersKey = `${orderStoragePrefix}_${orderOwnerKey}_active_orders`;
+        const lastOrderKey = `${orderStoragePrefix}_${orderOwnerKey}_last_order_number`;
         
         const activeOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
         const lastOrderNumber = localStorage.getItem(lastOrderKey);

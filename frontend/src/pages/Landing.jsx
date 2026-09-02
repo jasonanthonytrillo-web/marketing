@@ -83,8 +83,10 @@ export default function Landing() {
       }
 
       // Check for ALL active orders
-      const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
-      const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
+      const orderStoragePrefix = tenantSlug || 'default';
+      const orderOwnerKey = user?.id ? `customer_${user.id}` : 'guest';
+      const activeOrdersKey = `${orderStoragePrefix}_${orderOwnerKey}_active_orders`;
+      const lastOrderKey = `${orderStoragePrefix}_${orderOwnerKey}_last_order_number`;
       const savedOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
       const lastOrderNum = localStorage.getItem(lastOrderKey);
       const allOrderNums = Array.from(new Set([...savedOrders, lastOrderNum].filter(Boolean)));
@@ -113,7 +115,7 @@ export default function Landing() {
       setLoading(false);
     };
     init();
-  }, [searchParams]);
+  }, [searchParams, user?.id]);
 
   const tenantName = 'Hometown Brew';
   const menuLink = '/menu';

@@ -304,8 +304,10 @@ export default function OrderConfirmation() {
 
   useEffect(() => {
     if (order && (order.status === 'completed' || order.status === 'cancelled')) {
-      const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
-      const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
+      const orderStoragePrefix = tenantSlug || 'default';
+      const orderOwnerKey = order.customerId ? `customer_${order.customerId}` : 'guest';
+      const activeOrdersKey = `${orderStoragePrefix}_${orderOwnerKey}_active_orders`;
+      const lastOrderKey = `${orderStoragePrefix}_${orderOwnerKey}_last_order_number`;
 
       if (order.status === 'cancelled') {
         if (localStorage.getItem(lastOrderKey) === order.orderNumber) {

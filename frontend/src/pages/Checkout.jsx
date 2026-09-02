@@ -271,8 +271,10 @@ export default function Checkout() {
       });
       const order = res.data.data;
       
-      const activeOrdersKey = tenantSlug ? `${tenantSlug}_active_orders` : 'active_orders';
-      const lastOrderKey = tenantSlug ? `${tenantSlug}_last_order_number` : 'last_order_number';
+      const orderStoragePrefix = tenantSlug || 'default';
+      const orderOwnerKey = user?.id ? `customer_${user.id}` : 'guest';
+      const activeOrdersKey = `${orderStoragePrefix}_${orderOwnerKey}_active_orders`;
+      const lastOrderKey = `${orderStoragePrefix}_${orderOwnerKey}_last_order_number`;
 
       const activeOrders = JSON.parse(localStorage.getItem(activeOrdersKey) || '[]');
       if (!activeOrders.includes(order.orderNumber)) {
