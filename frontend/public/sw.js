@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elevate-pos-v2';
+const CACHE_NAME = 'elevate-pos-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html'
@@ -9,7 +9,19 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('📦 PWA: Caching critical assets');
-      return cache.addAll(ASSETS_TO_CACHE);
+      return cache.addAll(ASSETS_TO_CACHE).then(async () => {
+        try {
+          const response = await fetch('/index.html');
+          const html = await response.clone().text();
+          await cache.put('/index.html', response);
+          const assets = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)]
+            .map(match => match[1])
+            .filter(asset => asset.startsWith('/'));
+          await Promise.allSettled(assets.map(asset => cache.add(asset)));
+        } catch (error) {
+          console.warn('Bundle pre-cache skipped:', error.message);
+        }
+      });
     })
   );
 });
@@ -23,9 +35,10 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  self.clients.claim();
 });
 
-// Fetch Event - Network First with Cache Fallback
+// Fetch Event - Cache app assets first so refresh works offline.
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
@@ -35,30 +48,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Only cache successful responses
-        if (response && response.status === 200 && response.type === 'basic') {
-          const resClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, resClone);
-          });
-        }
-        return response;
-      })
-      .catch(async () => {
-        const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) return cachedResponse;
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
 
-        // If not in cache and network failed, we must return a valid Response (e.g. 404)
-        return new Response('Network error occurred', {
-          status: 408,
-          statusText: 'Network error occurred',
-          headers: new Headers({ 'Content-Type': 'text/plain' }),
-        });
-      })
-  );
+  event.respondWith((async () => {
+    const cachedResponse = await caches.match(event.request);
+    if (cachedResponse) return cachedResponse;
+
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(event.request, response.clone());
+      }
+      return response;
+    } catch {
+      if (event.request.mode === 'navigate') {
+        const cachedIndex = await caches.match('/index.html');
+        if (cachedIndex) return cachedIndex;
+      }
+      return new Response('Offline resource unavailable', { status: 503 });
+    }
+  })());
 });
 
 // Push Notification Event

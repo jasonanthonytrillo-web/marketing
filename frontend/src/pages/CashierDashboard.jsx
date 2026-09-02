@@ -53,6 +53,18 @@ export default function CashierDashboard() {
   const { joinRoom, onEvent, connected } = useSocket();
   const { logoutUser, user } = useAuth();
 
+  const offlineShiftKey = user?.id ? `pos_offline_shift_${user.id}_${user.tenantId || 'default'}` : null;
+  const getOfflineShift = () => {
+    if (!offlineShiftKey) return null;
+    try { return JSON.parse(localStorage.getItem(offlineShiftKey) || 'null'); } catch { return null; }
+  };
+  const saveOfflineShift = (shift) => {
+    if (offlineShiftKey) localStorage.setItem(offlineShiftKey, JSON.stringify(shift));
+  };
+  const clearOfflineShift = () => {
+    if (offlineShiftKey) localStorage.removeItem(offlineShiftKey);
+  };
+
   // Dynamic favicon & title
   useDynamicBranding('Hometown Brew Cashier Dashboard', user?.tenantFavicon || '/favicon.png');
 
@@ -84,6 +96,12 @@ export default function CashierDashboard() {
       document.removeEventListener('touchstart', unlock);
     };
   }, [user?.tenantId]);
+
+  useEffect(() => {
+    const handleOnline = () => checkShiftStatus();
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [user?.id, user?.tenantId]);
 
   useEffect(() => {
     if (!onEvent) return;
@@ -197,15 +215,50 @@ export default function CashierDashboard() {
         setActiveShift(res.data.data);
         setIsRestricted(false);
         setShowTimeInModal(false);
+        clearOfflineShift();
       } else {
-        setActiveShift(null);
-        setIsRestricted(true);
-        setShowTimeInModal(true);
-        setTimeInStep('prompt');
+        const offlineShift = getOfflineShift();
+        if (offlineShift) {
+          try {
+            const syncResponse = await cashierTimeIn({ startingCash: offlineShift.startingCash });
+            setActiveShift(syncResponse.data.data);
+            setIsRestricted(false);
+            clearOfflineShift();
+            setShowTimeInModal(false);
+          } catch (syncError) {
+            if (!navigator.onLine) {
+              setActiveShift(offlineShift);
+              setIsRestricted(false);
+              setShowTimeInModal(false);
+            } else if (syncError.response?.data?.data) {
+              setActiveShift(syncError.response.data.data);
+              setIsRestricted(false);
+              clearOfflineShift();
+              setShowTimeInModal(false);
+            } else {
+              setActiveShift(null);
+              setIsRestricted(true);
+              setShowTimeInModal(true);
+              setTimeInStep('prompt');
+            }
+          }
+        } else {
+          setActiveShift(null);
+          setIsRestricted(true);
+          setShowTimeInModal(true);
+          setTimeInStep('prompt');
+        }
       }
     } catch (err) {
       console.error('Error checking shift status:', err);
-      setIsRestricted(true);
+      const offlineShift = getOfflineShift();
+      if (!navigator.onLine && offlineShift) {
+        setActiveShift(offlineShift);
+        setIsRestricted(false);
+        setShowTimeInModal(false);
+      } else {
+        setIsRestricted(true);
+      }
     } finally {
       setIsShiftLoading(false);
     }
@@ -233,6 +286,26 @@ export default function CashierDashboard() {
     }
     setTimeInLoading(true);
     try {
+      if (!navigator.onLine) {
+        const offlineShift = {
+          id: `offline-shift-${Date.now()}`,
+          userId: user.id,
+          tenantId: user.tenantId,
+          cashierName: user.name || 'Cashier',
+          role: 'cashier',
+          startingCash: amount,
+          status: 'active',
+          startTime: new Date().toISOString(),
+          offline: true
+        };
+        saveOfflineShift(offlineShift);
+        setActiveShift(offlineShift);
+        setIsRestricted(false);
+        setShowTimeInModal(false);
+        setStartingCash('');
+        setTimeInStep('prompt');
+        return;
+      }
       const res = await cashierTimeIn({ startingCash: amount });
       setActiveShift(res.data.data);
       setIsRestricted(false);
@@ -274,6 +347,7 @@ export default function CashierDashboard() {
       setShiftSummary(closed);
 
       setActiveShift(null);
+      clearOfflineShift();
       setIsRestricted(true);
       setShowTimeOutModal(false);
       setEndingCash('');

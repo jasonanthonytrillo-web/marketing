@@ -18,6 +18,27 @@ const loginLimiter = rateLimit(60 * 1000, 30, 'Too many login requests. Please t
 const unknownLoginAttempts = new Map();
 const UNKNOWN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const UNKNOWN_LOGIN_MAX = 20;
+setInterval(() => {
+  const cutoff = Date.now() - UNKNOWN_LOGIN_WINDOW_MS;
+  for (const [ip, timestamps] of unknownLoginAttempts.entries()) {
+    const active = timestamps.filter(timestamp => timestamp > cutoff);
+    if (active.length) unknownLoginAttempts.set(ip, active);
+    else unknownLoginAttempts.delete(ip);
+  }
+}, UNKNOWN_LOGIN_WINDOW_MS);
+
+const recordLoginFailure = (user, tenantId, details) => {
+  prisma.auditLog.create({
+    data: {
+      tenantId: tenantId || user?.tenantId || 1,
+      userId: user?.id || null,
+      action: 'login_failed',
+      entityType: 'user',
+      entityId: user?.id?.toString() || null,
+      details
+    }
+  }).catch(error => console.error('Failed-login audit log failed:', error.message));
+};
 
 const verifyTurnstile = async (token, remoteIp) => {
   if (!process.env.TURNSTILE_SECRET_KEY || !token) return false;
@@ -279,8 +300,10 @@ router.post('/login', async (req, res) => {
       recentAttempts.push(now);
       unknownLoginAttempts.set(ip, recentAttempts);
       if (recentAttempts.length > UNKNOWN_LOGIN_MAX) {
+        recordLoginFailure(null, tenantId, 'Unknown account login rate limit exceeded.');
         return res.status(429).json({ success: false, message: 'Too many login attempts. Please try again later.' });
       }
+      recordLoginFailure(null, tenantId, 'Login failed for unknown account.');
       return res.status(401).json({ success: false, message: 'Invalid username or password.' });
     }
 
@@ -331,6 +354,7 @@ router.post('/login', async (req, res) => {
       const lockSeconds = failedLoginAttempts >= 5 ? Math.min(30 * (2 ** (failedLoginAttempts - 5)), 30 * 60) : 0;
       const loginLockedUntil = lockSeconds ? new Date(Date.now() + lockSeconds * 1000) : null;
       await prisma.user.update({ where: { id: user.id }, data: { failedLoginAttempts, loginLockedUntil } });
+      recordLoginFailure(user, tenantId, lockSeconds ? `Invalid password; account locked for ${lockSeconds} seconds.` : 'Invalid password.');
       return res.status(lockSeconds ? 429 : 401).json({
         success: false,
         message: lockSeconds ? `Too many failed attempts. Try again in ${lockSeconds} seconds.` : 'Invalid username or password.',
