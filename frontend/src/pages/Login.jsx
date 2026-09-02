@@ -36,6 +36,11 @@ export default function Login() {
   const brandingColor = branding?.primaryColor || '#0a3d01';
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
+  const normalizeAuthErrorMessage = (message, fallback) => {
+    if (!message) return fallback;
+    return String(message).replace(/^\(?\d{3}\)?\s*/, '').trim() || fallback;
+  };
+
   useEffect(() => {
     if (lockoutSeconds <= 0) return;
     const timer = window.setInterval(() => {
@@ -110,9 +115,9 @@ export default function Login() {
         setLockoutSeconds(Number(err.response.data.retryAfter));
       }
       if (err.response?.data?.deviceUnauthorized) {
-        setError(err.response?.data?.message || 'This device is not authorized for staff login.');
+        setError(normalizeAuthErrorMessage(err.response?.data?.message, 'This device is not authorized for staff login.'));
       } else {
-        setError(err.response?.data?.message || 'Login failed.');
+        setError(normalizeAuthErrorMessage(err.response?.data?.message, 'Login failed.'));
       }
     } finally { setLoading(false); }
   };
