@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getProducts, createOrder, confirmOrder } from '../../services/api';
+import {
+  cacheCashierMenu,
+  createClientOrderId,
+  enqueueOfflineOrder,
+  getCachedCashierMenu,
+  getOfflineOrderCount,
+  syncOfflineOrders
+} from '../../services/offlineQueue';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { 
   Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, 
@@ -44,20 +52,51 @@ export default function CashierMenuPOS({
   // Submission & Success Modal
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null); // { order, change, amountReceived }
+  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+  const [pendingSyncCount, setPendingSyncCount] = useState(() => getOfflineOrderCount());
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadMenuData();
+    const handleOnline = () => {
+      setIsOffline(false);
+      syncPendingOrders();
+    };
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    syncPendingOrders();
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   const loadMenuData = async () => {
     try {
       setLoading(true);
       const res = await getProducts();
-      setCategories(res.data.data || []);
+      const menu = res.data.data || [];
+      setCategories(menu);
+      cacheCashierMenu(menu);
     } catch (err) {
       console.error('Failed to load menu products for cashier:', err);
+      const cachedMenu = getCachedCashierMenu();
+      if (cachedMenu.length) setCategories(cachedMenu);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncPendingOrders = async () => {
+    if (!navigator.onLine || syncing) return;
+    setSyncing(true);
+    try {
+      await syncOfflineOrders(createOrder, confirmOrder);
+      setPendingSyncCount(getOfflineOrderCount());
+      if (getOfflineOrderCount() === 0) onOrderCreated();
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -244,6 +283,11 @@ export default function CashierMenuPOS({
       return;
     }
 
+    if (!navigator.onLine && paymentMethod !== 'cash') {
+      alert('Online payment methods are unavailable offline. Please use cash or reconnect to the internet.');
+      return;
+    }
+
     if (autoConfirmPaid && paymentMethod === 'cash') {
       const received = parseFloat(cashReceived) || total;
       if (received < total) {
@@ -253,6 +297,7 @@ export default function CashierMenuPOS({
     }
 
     setSubmitting(true);
+    const clientOrderId = createClientOrderId();
     try {
       const orderItems = cartItems.map(item => ({
         productId: item.productId,
@@ -264,15 +309,49 @@ export default function CashierMenuPOS({
         comboChoices: item.comboChoices
       }));
 
-      const resOrder = await createOrder({
+      const salePayload = {
         customerName: customerName.trim() || 'Walk-in Customer',
         orderType,
         paymentMethod,
         items: orderItems,
         notes: orderNotes,
         status: 'confirmed', // Directly sends ticket to kitchen display
-        paymentReference: paymentMethod !== 'cash' ? referenceNumber : undefined
-      });
+        paymentReference: paymentMethod !== 'cash' ? referenceNumber : undefined,
+        clientOrderId
+      };
+
+      if (!navigator.onLine) {
+        enqueueOfflineOrder({
+          ...salePayload,
+          payment: {
+            amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total,
+            paymentMethod,
+            referenceNumber: referenceNumber || undefined
+          }
+        });
+        setPendingSyncCount(getOfflineOrderCount());
+        setOrderSuccess({
+          order: { orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}` },
+          items: cartItems,
+          total,
+          amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total,
+          change: calculatedChange,
+          paymentMethod,
+          orderType,
+          customerName: customerName.trim() || 'Walk-in Customer',
+          isPaid: true,
+          isOffline: true
+        });
+        clearCurrentCart();
+        return;
+      }
+
+      const payment = {
+        amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total,
+        paymentMethod,
+        referenceNumber: referenceNumber || undefined
+      };
+      const resOrder = await createOrder(salePayload);
 
       const newOrder = resOrder.data.data;
 
@@ -284,11 +363,7 @@ export default function CashierMenuPOS({
         finalChange = paymentMethod === 'cash' ? (finalPaidAmount - total) : 0;
 
         // Auto-confirm payment so it goes directly to shift sales & kitchen
-        await confirmOrder(newOrder.id, {
-          amountReceived: finalPaidAmount,
-          paymentMethod,
-          referenceNumber: referenceNumber || undefined
-        });
+        await confirmOrder(newOrder.id, payment);
       }
 
       // Notify parent to refresh cashier orders
@@ -312,6 +387,27 @@ export default function CashierMenuPOS({
 
     } catch (err) {
       console.error('Failed to place cashier counter order:', err);
+      if (!err.response || !navigator.onLine) {
+        const orderItems = cartItems.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          size: item.size,
+          flavor: item.flavor,
+          notes: item.notes,
+          addons: item.addons?.map(a => a.id) || [],
+          comboChoices: item.comboChoices
+        }));
+        enqueueOfflineOrder({
+          customerName: customerName.trim() || 'Walk-in Customer', orderType, paymentMethod,
+          items: orderItems, notes: orderNotes, status: 'confirmed', clientOrderId,
+          paymentReference: paymentMethod !== 'cash' ? referenceNumber : undefined,
+          payment: { amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total, paymentMethod, referenceNumber: referenceNumber || undefined }
+        });
+        setPendingSyncCount(getOfflineOrderCount());
+        setOrderSuccess({ order: { orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}` }, items: cartItems, total, amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total, change: calculatedChange, paymentMethod, orderType, customerName: customerName.trim() || 'Walk-in Customer', isPaid: true, isOffline: true });
+        clearCurrentCart();
+        return;
+      }
       alert(err.response?.data?.message || 'Failed to place order.');
     } finally {
       setSubmitting(false);
@@ -324,6 +420,11 @@ export default function CashierMenuPOS({
 
   return (
     <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-surface-100 relative">
+      {(isOffline || pendingSyncCount > 0 || syncing) && (
+        <div className={`absolute top-2 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-full text-[11px] font-black shadow-lg ${isOffline ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'}`}>
+          {isOffline ? 'Offline mode: sales are saved on this device' : syncing ? 'Syncing offline sales...' : `${pendingSyncCount} sale${pendingSyncCount === 1 ? '' : 's'} waiting to sync`}
+        </div>
+      )}
       
       {/* LEFT PANEL: Fast Cashier Menu Grid */}
       <div className="flex-1 flex flex-col min-w-0 bg-surface-50 border-r border-surface-200 overflow-hidden no-print">

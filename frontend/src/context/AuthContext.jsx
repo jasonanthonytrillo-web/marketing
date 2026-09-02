@@ -3,6 +3,7 @@ import { getMe, logoutRequest } from '../services/api';
 import { LogOut } from 'lucide-react';
 
 const AuthContext = createContext(null);
+const OFFLINE_STAFF_SESSION_KEY = 'pos_offline_staff_session';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -37,14 +38,25 @@ export function AuthProvider({ children }) {
             setUser(null);
           } else {
             setUser(userData);
+            localStorage.setItem(OFFLINE_STAFF_SESSION_KEY, JSON.stringify(userData));
           }
         } else {
           localStorage.removeItem('tenant_id');
         }
       })
       .catch(() => { 
+      const cachedSession = localStorage.getItem(OFFLINE_STAFF_SESSION_KEY);
+      if (cachedSession) {
+        try {
+          const cachedUser = JSON.parse(cachedSession);
+          if (['admin', 'cashier'].includes(cachedUser.role)) setUser(cachedUser);
+        } catch {
+          localStorage.removeItem(OFFLINE_STAFF_SESSION_KEY);
+        }
+      } else {
         localStorage.removeItem('tenant_id');
         setUser(null);
+      }
       })
       .finally(() => setLoading(false));
   }, []);
@@ -59,6 +71,7 @@ export function AuthProvider({ children }) {
     if (userData.tenantId) {
       localStorage.setItem('tenant_id', userData.tenantId.toString());
     }
+    localStorage.setItem(OFFLINE_STAFF_SESSION_KEY, JSON.stringify(userData));
     setUser(userData);
   };
 
@@ -81,6 +94,7 @@ export function AuthProvider({ children }) {
     
     localStorage.removeItem('pos_token');
     localStorage.removeItem('tenant_id');
+    localStorage.removeItem(OFFLINE_STAFF_SESSION_KEY);
     setUser(null);
     setShowLogoutConfirm(false);
     

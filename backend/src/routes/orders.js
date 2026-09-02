@@ -28,7 +28,7 @@ router.get('/history', authenticate, async (req, res) => {
 // POST /api/orders — Kiosk: Place new order
 router.post('/', async (req, res) => {
   try {
-    const { customerId, customerName, orderType, paymentMethod, items, notes, deliveryAddress, deliveryLat, deliveryLng, deliveryFee, paymentReference, promoCode } = req.body;
+    const { customerId, customerName, orderType, paymentMethod, items, notes, deliveryAddress, deliveryLat, deliveryLng, deliveryFee, paymentReference, promoCode, clientOrderId } = req.body;
 
     // RESTRICTION: Delivery orders must be paid first (no cash)
     if (orderType === 'delivery' && paymentMethod === 'cash') {
@@ -50,6 +50,12 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Shop not found.' });
     }
     const tenantId = tenant.id;
+
+    // Offline cashier retries reuse this ID so a request cannot create a duplicate sale.
+    if (clientOrderId) {
+      const existingOrder = await prisma.order.findFirst({ where: { tenantId, clientOrderId }, include: { items: true } });
+      if (existingOrder) return res.json({ success: true, data: existingOrder, alreadyExists: true });
+    }
 
     // Generate unique random order number starting with 0
     let orderNumber;
@@ -360,6 +366,7 @@ router.post('/', async (req, res) => {
       data: {
         tenantId,
         orderNumber,
+        clientOrderId: clientOrderId || null,
         customerId: validCustomerId,
         customerName: customerName || (validCustomerId ? undefined : 'Guest'),
         orderType: orderType || 'dine_in',

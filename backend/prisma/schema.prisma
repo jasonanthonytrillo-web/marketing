@@ -156,6 +156,7 @@ model Order {
   id                 Int       @id @default(autoincrement())
   tenantId           Int?      
   orderNumber        String    @unique
+  clientOrderId      String?   @unique
   customerId         Int?
   customer           User?     @relation(fields: [customerId], references: [id])
   customerName       String    @default("Guest")
