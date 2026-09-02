@@ -5,8 +5,17 @@ import { LogOut } from 'lucide-react';
 const AuthContext = createContext(null);
 const OFFLINE_STAFF_SESSION_KEY = 'pos_offline_staff_session';
 
+const getCachedStaffSession = () => {
+  try {
+    const cachedUser = JSON.parse(localStorage.getItem(OFFLINE_STAFF_SESSION_KEY) || 'null');
+    return cachedUser && ['admin', 'cashier'].includes(cachedUser.role) ? cachedUser : null;
+  } catch {
+    return null;
+  }
+};
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(getCachedStaffSession);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
@@ -41,19 +50,15 @@ export function AuthProvider({ children }) {
             localStorage.setItem(OFFLINE_STAFF_SESSION_KEY, JSON.stringify(userData));
           }
         } else {
-          localStorage.removeItem('tenant_id');
+          const cachedUser = getCachedStaffSession();
+          if (cachedUser) setUser(cachedUser);
+          else localStorage.removeItem('tenant_id');
         }
       })
       .catch(() => { 
-      const cachedSession = localStorage.getItem(OFFLINE_STAFF_SESSION_KEY);
-      if (cachedSession) {
-        try {
-          const cachedUser = JSON.parse(cachedSession);
-          if (['admin', 'cashier'].includes(cachedUser.role)) setUser(cachedUser);
-        } catch {
-          localStorage.removeItem(OFFLINE_STAFF_SESSION_KEY);
-        }
-      } else {
+      const cachedUser = getCachedStaffSession();
+      if (cachedUser) setUser(cachedUser);
+      else {
         localStorage.removeItem('tenant_id');
         setUser(null);
       }

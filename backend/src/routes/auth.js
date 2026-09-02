@@ -12,7 +12,9 @@ const { sendOTPEmail } = require('../lib/mailer');
 const rateLimit = require('../middleware/rateLimiter');
 
 const otpLimiter = rateLimit(60 * 1000, 5, 'Too many OTP requests. Please wait 1 minute before requesting again.');
-const loginLimiter = rateLimit(60 * 1000, 10, 'Too many attempts. Please try again in 1 minute.');
+// Keep an IP emergency limit, while account-level failures below control CAPTCHA and lockouts.
+// A low limit here would block valid credentials before the account security flow can run.
+const loginLimiter = rateLimit(60 * 1000, 30, 'Too many login requests. Please try again in 1 minute.');
 
 const verifyTurnstile = async (token, remoteIp) => {
   if (!process.env.TURNSTILE_SECRET_KEY || !token) return false;
