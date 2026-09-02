@@ -15,6 +15,7 @@ export default function MemberPortal() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
   const captchaRef = useRef(null);
@@ -45,6 +46,14 @@ export default function MemberPortal() {
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const actionParam = searchParams.get('action');
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setLockoutSeconds(seconds => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [lockoutSeconds]);
 
   useEffect(() => {
     if (mode !== 'login' || !showCaptcha || !turnstileSiteKey || !captchaRef.current) return;
@@ -166,6 +175,9 @@ export default function MemberPortal() {
       if (err.response?.data?.captchaRequired) {
         setShowCaptcha(true);
         setCaptchaToken('');
+      }
+      if (err.response?.data?.retryAfter) {
+        setLockoutSeconds(Number(err.response.data.retryAfter));
       }
       if (err.response?.data?.unverified) {
         setMode('verify'); // Transition directly to OTP verification view!
@@ -547,13 +559,13 @@ export default function MemberPortal() {
 
                     <button
                       type="submit"
-                      disabled={loading || (mode === 'login' && showCaptcha && turnstileSiteKey && !captchaToken)}
+                      disabled={loading || (mode === 'login' && lockoutSeconds > 0) || (mode === 'login' && showCaptcha && turnstileSiteKey && !captchaToken)}
                       className="w-full py-5 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
                     >
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                       ) : (
-                        mode === 'login' ? 'Sign In' : (mode === 'verify' ? 'Verify Email' : 'Create Account')
+                        mode === 'login' ? (lockoutSeconds > 0 ? `Try again in ${lockoutSeconds}s` : 'Sign In') : (mode === 'verify' ? 'Verify Email' : 'Create Account')
                       )}
                     </button>
                   </form>

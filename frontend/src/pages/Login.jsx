@@ -10,6 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
   const captchaRef = useRef(null);
@@ -34,6 +35,14 @@ export default function Login() {
   const [branding, setBranding] = useState(null);
   const brandingColor = branding?.primaryColor || '#0a3d01';
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  useEffect(() => {
+    if (lockoutSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setLockoutSeconds(seconds => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [lockoutSeconds]);
 
   useEffect(() => {
     if (!showCaptcha || !turnstileSiteKey || !captchaRef.current) return;
@@ -96,6 +105,9 @@ export default function Login() {
       if (err.response?.data?.captchaRequired) {
         setShowCaptcha(true);
         setCaptchaToken('');
+      }
+      if (err.response?.data?.retryAfter) {
+        setLockoutSeconds(Number(err.response.data.retryAfter));
       }
       if (err.response?.data?.deviceUnauthorized) {
         setError(err.response?.data?.message || 'This device is not authorized for staff login.');
@@ -231,8 +243,8 @@ export default function Login() {
             </button>
           </div>
 
-          <button type="submit" disabled={loading || (showCaptcha && turnstileSiteKey && !captchaToken)} className="w-full py-3.5 rounded-xl text-white font-bold transition-all transform active:scale-[0.98] shadow-lg" style={{ backgroundColor: brandingColor }}>
-            {loading ? 'Signing in...' : 'Sign In'}
+          <button type="submit" disabled={loading || lockoutSeconds > 0 || (showCaptcha && turnstileSiteKey && !captchaToken)} className="w-full py-3.5 rounded-xl text-white font-bold transition-all transform active:scale-[0.98] shadow-lg" style={{ backgroundColor: brandingColor }}>
+            {loading ? 'Signing in...' : lockoutSeconds > 0 ? `Try again in ${lockoutSeconds}s` : 'Sign In'}
           </button>
         </form>
 

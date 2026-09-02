@@ -320,7 +320,7 @@ export default function Menu() {
               <div
                 className="absolute -inset-1 rounded-full blur-md opacity-70 group-hover:opacity-100 animate-pulse transition duration-500 pointer-events-none"
                 style={{
-                  background: `radial-gradient(circle, ${brandingColor || '#10b981'} 0%, #f59e0b 50%, #ec4899 100%)`
+                  background: `radial-gradient(circle, ${brandingColor} 0%, ${brandingColor}99 55%, ${brandingColor}33 100%)`
                 }}
               />
 
@@ -328,8 +328,8 @@ export default function Menu() {
                 onClick={() => setShowPackages(true)}
                 className="relative flex items-center justify-center gap-1.5 md:gap-2 px-3.5 py-1.5 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm font-black text-white shadow-xl overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/40 animate-epic-pulse"
                 style={{
-                  background: `linear-gradient(135deg, ${brandingColor || '#10b981'}, #f59e0b, #ec4899)`,
-                  boxShadow: `0 4px 15px ${brandingColor ? `${brandingColor}66` : 'rgba(16, 185, 129, 0.4)'}`
+                  background: `linear-gradient(135deg, ${brandingColor}, ${brandingColor}dd, ${brandingColor})`,
+                  boxShadow: `0 4px 15px ${brandingColor}66`
                 }}
               >
                 {/* Continuous Shimmer Light Sweep */}
@@ -337,7 +337,7 @@ export default function Menu() {
 
                 {/* Animated Sparkles Icon */}
                 <Sparkles
-                  className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-200 animate-spin flex-shrink-0"
+                  className="w-3.5 h-3.5 md:w-4 md:h-4 text-white/80 animate-spin flex-shrink-0"
                   style={{ animationDuration: '4s' }}
                 />
 
