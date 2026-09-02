@@ -15,6 +15,9 @@ const otpLimiter = rateLimit(60 * 1000, 5, 'Too many OTP requests. Please wait 1
 // Keep an IP emergency limit, while account-level failures below control CAPTCHA and lockouts.
 // A low limit here would block valid credentials before the account security flow can run.
 const loginLimiter = rateLimit(60 * 1000, 30, 'Too many login requests. Please try again in 1 minute.');
+const unknownLoginAttempts = new Map();
+const UNKNOWN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const UNKNOWN_LOGIN_MAX = 20;
 
 const verifyTurnstile = async (token, remoteIp) => {
   if (!process.env.TURNSTILE_SECRET_KEY || !token) return false;
@@ -234,7 +237,7 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', loginLimiter, async (req, res) => {
+router.post('/login', async (req, res) => {
   console.log('Login attempt received for:', req.body.email);
   try {
     const { email, password, turnstileToken } = req.body;
@@ -269,15 +272,26 @@ router.post('/login', loginLimiter, async (req, res) => {
     });
 
     if (!user) {
+      const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const now = Date.now();
+      const recentAttempts = (unknownLoginAttempts.get(ip) || [])
+        .filter(timestamp => now - timestamp < UNKNOWN_LOGIN_WINDOW_MS);
+      recentAttempts.push(now);
+      unknownLoginAttempts.set(ip, recentAttempts);
+      if (recentAttempts.length > UNKNOWN_LOGIN_MAX) {
+        return res.status(429).json({ success: false, message: 'Too many login attempts. Please try again later.' });
+      }
       return res.status(401).json({ success: false, message: 'Invalid username or password.' });
     }
+
+    const requiresCaptcha = true;
 
     if (user.loginLockedUntil && user.loginLockedUntil > new Date()) {
       const retryAfter = Math.ceil((user.loginLockedUntil.getTime() - Date.now()) / 1000);
       return res.status(429).json({ success: false, message: `Too many failed attempts. Try again in ${retryAfter} seconds.`, retryAfter });
     }
 
-    if (user.failedLoginAttempts >= 3) {
+    if (requiresCaptcha && user.failedLoginAttempts >= 3) {
       const validCaptcha = await verifyTurnstile(turnstileToken, req.ip);
       if (!validCaptcha) {
         return res.status(403).json({ success: false, message: 'Please complete the security check before trying again.', captchaRequired: true });
@@ -321,7 +335,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         success: false,
         message: lockSeconds ? `Too many failed attempts. Try again in ${lockSeconds} seconds.` : 'Invalid username or password.',
         retryAfter: lockSeconds || undefined,
-        captchaRequired: failedLoginAttempts >= 3
+        captchaRequired: requiresCaptcha && failedLoginAttempts >= 3
       });
     }
 

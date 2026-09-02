@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { login, googleLogin, registerCustomer, getPublicTenant, requestOTP, verifyOTP, checkOTP, verifyRegistration, resendRegistrationOTP, resetPassword, trackVisit } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +15,10 @@ export default function MemberPortal() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaRef = useRef(null);
+  const captchaWidgetRef = useRef(null);
   const [otp, setOtp] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resendSuccessMessage, setResendSuccessMessage] = useState('');
@@ -40,6 +44,34 @@ export default function MemberPortal() {
 
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const actionParam = searchParams.get('action');
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  useEffect(() => {
+    if (mode !== 'login' || !showCaptcha || !turnstileSiteKey || !captchaRef.current) return;
+    const renderCaptcha = () => {
+      if (!window.turnstile || captchaWidgetRef.current !== null) return;
+      captchaWidgetRef.current = window.turnstile.render(captchaRef.current, {
+        sitekey: turnstileSiteKey,
+        theme: 'light',
+        callback: token => setCaptchaToken(token),
+        'expired-callback': () => setCaptchaToken(''),
+        'error-callback': () => setCaptchaToken('')
+      });
+    };
+    if (window.turnstile) renderCaptcha();
+    else {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.onload = renderCaptcha;
+      document.head.appendChild(script);
+    }
+    return () => {
+      if (window.turnstile && captchaWidgetRef.current !== null) window.turnstile.remove(captchaWidgetRef.current);
+      captchaWidgetRef.current = null;
+    };
+  }, [mode, showCaptcha, turnstileSiteKey]);
 
   const { joinRoom, leaveRoom, connected, emit } = useSocket();
   const [hasVisited, setHasVisited] = useState(false);
@@ -102,7 +134,7 @@ export default function MemberPortal() {
 
     try {
       if (mode === 'login') {
-        const res = await login({ email: formData.email, password: formData.password, tenantSlug });
+        const res = await login({ email: formData.email, password: formData.password, tenantSlug, turnstileToken: captchaToken || undefined });
         loginUser(res.data.data.token, res.data.data.user);
         navigate('/menu');
       } else if (mode === 'register') {
@@ -131,6 +163,10 @@ export default function MemberPortal() {
       const msg = err.response?.data?.message || err.message || 'Something went wrong.';
       const status = err.response?.status ? `(${err.response.status}) ` : '';
       setError(`${status}${msg}`);
+      if (err.response?.data?.captchaRequired) {
+        setShowCaptcha(true);
+        setCaptchaToken('');
+      }
       if (err.response?.data?.unverified) {
         setMode('verify'); // Transition directly to OTP verification view!
       }
@@ -502,9 +538,16 @@ export default function MemberPortal() {
                       </>
                     )}
 
+                    {mode === 'login' && showCaptcha && (
+                      <div className="mt-3 rounded-2xl border border-[#DCD6C8] bg-[#FAF7F2] p-3">
+                        <p className="text-xs text-[#8A796E] mb-2">Please complete the security check.</p>
+                        {turnstileSiteKey ? <div ref={captchaRef} /> : <p className="text-xs text-amber-700">CAPTCHA is not configured yet.</p>}
+                      </div>
+                    )}
+
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || (mode === 'login' && showCaptcha && turnstileSiteKey && !captchaToken)}
                       className="w-full py-5 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-primary-600/20 flex items-center justify-center gap-2 disabled:opacity-50 mt-4"
                     >
                       {loading ? (
