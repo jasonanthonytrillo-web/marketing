@@ -47,6 +47,11 @@ export default function MemberPortal() {
   const actionParam = searchParams.get('action');
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
+  const getCustomerErrorMessage = (err, fallback) => {
+    const message = err.response?.data?.message || err.message || fallback;
+    return String(message).replace(/^\(?\d{3}\)?\s*/, '').trim() || fallback;
+  };
+
   useEffect(() => {
     if (lockoutSeconds <= 0) return;
     const timer = window.setInterval(() => {
@@ -169,9 +174,7 @@ export default function MemberPortal() {
       }
     } catch (err) {
       console.error('Registration/Verification Error:', err);
-      const msg = err.response?.data?.message || err.message || 'Something went wrong.';
-      const status = err.response?.status ? `(${err.response.status}) ` : '';
-      setError(`${status}${msg}`);
+      setError(getCustomerErrorMessage(err, 'Something went wrong.'));
       if (err.response?.data?.captchaRequired) {
         setShowCaptcha(true);
         setCaptchaToken('');
@@ -197,9 +200,7 @@ export default function MemberPortal() {
       navigate('/menu');
     } catch (err) {
       console.error('Frontend Error:', err);
-      const msg = err.response?.data?.message || err.message || 'Unknown Error';
-      const status = err.response?.status ? `(${err.response.status}) ` : '';
-      setError(`${status}${msg}`);
+      setError(getCustomerErrorMessage(err, 'Unknown Error'));
     } finally {
       setLoading(false);
     }
@@ -220,7 +221,7 @@ export default function MemberPortal() {
       setForgotStep(2);
       setForgotSuccess('A 6-digit security code has been sent to your email.');
     } catch (err) {
-      setForgotError(err.response?.data?.message || 'Failed to send security code.');
+      setForgotError(getCustomerErrorMessage(err, 'Failed to send security code.'));
     } finally {
       setForgotLoading(false);
     }
@@ -235,7 +236,7 @@ export default function MemberPortal() {
       await requestOTP({ email: forgotEmail.trim(), tenantSlug });
       setForgotSuccess('A new 6-digit security code has been sent to your Gmail!');
     } catch (err) {
-      setForgotError(err.response?.data?.message || 'Failed to resend security code.');
+      setForgotError(getCustomerErrorMessage(err, 'Failed to resend security code.'));
     } finally {
       setForgotLoading(false);
     }
@@ -251,7 +252,7 @@ export default function MemberPortal() {
       setResendSuccessMessage('A new verification code has been sent to your Gmail!');
       setTimeout(() => setResendSuccessMessage(''), 6000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resend verification code.');
+      setError(getCustomerErrorMessage(err, 'Failed to resend verification code.'));
     } finally {
       setLoading(false);
     }
@@ -268,7 +269,7 @@ export default function MemberPortal() {
       setForgotStep(3);
       setForgotSuccess('Security code verified! Please set your new password below.');
     } catch (err) {
-      setForgotError(err.response?.data?.message || 'Invalid or expired security code.');
+      setForgotError(getCustomerErrorMessage(err, 'Invalid or expired security code.'));
     } finally {
       setForgotLoading(false);
     }
@@ -308,7 +309,7 @@ export default function MemberPortal() {
         setForgotSuccess('');
       }, 3000);
     } catch (err) {
-      setForgotError(err.response?.data?.message || 'Failed to reset password.');
+      setForgotError(getCustomerErrorMessage(err, 'Failed to reset password.'));
     } finally {
       setForgotLoading(false);
     }
