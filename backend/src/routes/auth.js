@@ -16,14 +16,19 @@ const otpLimiter = rateLimit(60 * 1000, 5, 'Too many OTP requests. Please wait 1
 // A low limit here would block valid credentials before the account security flow can run.
 const loginLimiter = rateLimit(60 * 1000, 30, 'Too many login requests. Please try again in 1 minute.');
 const unknownLoginAttempts = new Map();
+const loginRequestTimes = new Map();
 const UNKNOWN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const UNKNOWN_LOGIN_MAX = 20;
+const LOGIN_REQUEST_INTERVAL_MS = 1000;
 setInterval(() => {
   const cutoff = Date.now() - UNKNOWN_LOGIN_WINDOW_MS;
   for (const [ip, timestamps] of unknownLoginAttempts.entries()) {
     const active = timestamps.filter(timestamp => timestamp > cutoff);
     if (active.length) unknownLoginAttempts.set(ip, active);
     else unknownLoginAttempts.delete(ip);
+  }
+  for (const [ip, timestamp] of loginRequestTimes.entries()) {
+    if (timestamp <= cutoff) loginRequestTimes.delete(ip);
   }
 }, UNKNOWN_LOGIN_WINDOW_MS);
 
@@ -261,6 +266,15 @@ router.post('/reset-password', async (req, res) => {
 router.post('/login', async (req, res) => {
   console.log('Login attempt received for:', req.body.email);
   try {
+    const requestIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+    const lastRequestAt = loginRequestTimes.get(requestIp) || 0;
+    if (now - lastRequestAt < LOGIN_REQUEST_INTERVAL_MS) {
+      const retryAfter = Math.ceil((LOGIN_REQUEST_INTERVAL_MS - (now - lastRequestAt)) / 1000);
+      return res.status(429).json({ success: false, message: 'Please wait a moment before trying again.', retryAfter });
+    }
+    loginRequestTimes.set(requestIp, now);
+
     const { email, password, turnstileToken } = req.body;
 
     if (!email || !password) {
