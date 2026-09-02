@@ -16,6 +16,7 @@ const otpLimiter = rateLimit(60 * 1000, 5, 'Too many OTP requests. Please wait 1
 // A low limit here would block valid credentials before the account security flow can run.
 const loginLimiter = rateLimit(60 * 1000, 30, 'Too many login requests. Please try again in 1 minute.');
 const unknownLoginAttempts = new Map();
+const unknownLoginLockouts = new Map();
 const loginRequestTimes = new Map();
 const UNKNOWN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const UNKNOWN_LOGIN_MAX = 20;
@@ -29,6 +30,9 @@ setInterval(() => {
   }
   for (const [ip, timestamp] of loginRequestTimes.entries()) {
     if (timestamp <= cutoff) loginRequestTimes.delete(ip);
+  }
+  for (const [ip, lockout] of unknownLoginLockouts.entries()) {
+    if (lockout.lockedUntil <= Date.now()) unknownLoginLockouts.delete(ip);
   }
 }, UNKNOWN_LOGIN_WINDOW_MS);
 
@@ -309,10 +313,23 @@ router.post('/login', async (req, res) => {
     if (!user) {
       const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       const now = Date.now();
+      const activeLockout = unknownLoginLockouts.get(ip);
+      if (activeLockout?.lockedUntil > now) {
+        const retryAfter = Math.ceil((activeLockout.lockedUntil - now) / 1000);
+        return res.status(429).json({ success: false, message: `Try again in ${retryAfter} seconds.`, retryAfter });
+      }
       const recentAttempts = (unknownLoginAttempts.get(ip) || [])
         .filter(timestamp => now - timestamp < UNKNOWN_LOGIN_WINDOW_MS);
       recentAttempts.push(now);
       unknownLoginAttempts.set(ip, recentAttempts);
+      if (recentAttempts.length >= 5) {
+        const previousLockSeconds = activeLockout?.lockSeconds || 0;
+        const lockSeconds = previousLockSeconds ? Math.min(previousLockSeconds * 2, 30 * 60) : 30;
+        unknownLoginLockouts.set(ip, { lockSeconds, lockedUntil: now + (lockSeconds * 1000) });
+        unknownLoginAttempts.set(ip, []);
+        recordLoginFailure(null, tenantId, `Unknown account login cooldown: ${lockSeconds} seconds.`);
+        return res.status(429).json({ success: false, message: `Try again in ${lockSeconds} seconds.`, retryAfter: lockSeconds });
+      }
       if (recentAttempts.length > UNKNOWN_LOGIN_MAX) {
         recordLoginFailure(null, tenantId, 'Unknown account login rate limit exceeded.');
         return res.status(429).json({ success: false, message: 'Too many login attempts. Please try again later.' });
