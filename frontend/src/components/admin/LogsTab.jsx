@@ -3,6 +3,45 @@ import { getAuditLogs } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
 import { Search, SearchX } from 'lucide-react';
 
+const settingLabels = {
+  points_rate: 'Points rate',
+  tenant_assets: 'Landing page media',
+  tenant_slug: 'Store URL',
+  seasonal_effect: 'Seasonal effect',
+  landing_description: 'Landing page message',
+  saDeliveryDisabled: 'Delivery service',
+  saRewardsDisabled: 'Rewards program',
+  custom_badges: 'Custom badges',
+  total_visits: 'Site visits',
+  storeLat: 'Store latitude',
+  storeLng: 'Store longitude',
+  tenant_name: 'Store name',
+  tenant_logo: 'Store logo',
+  tenant_favicon: 'Store favicon',
+  tenant_og_image: 'Social sharing image',
+  tenant_banner: 'Store banner',
+  primary_color: 'Primary color',
+  secondary_color: 'Secondary color'
+};
+
+const humanizeSetting = (key) => settingLabels[key] || key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ').replace(/^./, char => char.toUpperCase());
+
+const formatLogDetails = (log) => {
+  if (log.action === 'update_settings' && log.details) {
+    const settingText = log.details.split(':').slice(1).join(':').trim();
+    const keys = settingText.split(',').map(key => key.trim()).filter(Boolean);
+    if (keys.length > 0) {
+      const visibleKeys = keys.slice(0, 4).map(humanizeSetting).join(', ');
+      const remainingCount = keys.length - 4;
+      return `Updated store settings: ${visibleKeys}${remainingCount > 0 ? `, and ${remainingCount} more` : ''}.`;
+    }
+    return 'Updated store settings and branding.';
+  }
+
+  if (log.details) return log.details;
+  return `Performed ${log.action.replace(/_/g, ' ')} on ${log.entityType} (${log.entityId || 'N/A'})`;
+};
+
 export default function LogsTab() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -173,7 +212,7 @@ export default function LogsTab() {
                   <td className="p-6">
                     <div className="flex flex-col gap-1">
                       <p className="text-slate-700 font-medium leading-relaxed">
-                        {log.details || `Performed ${log.action} on ${log.entityType} (${log.entityId})`}
+                        {formatLogDetails(log)}
                       </p>
                       <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                         <span className="opacity-50">{log.entityType}:</span>
@@ -217,7 +256,7 @@ export default function LogsTab() {
             </div>
             <div className="border-t border-slate-100 pt-3">
               <p className="text-slate-700 font-medium leading-relaxed text-sm">
-                {log.details || `Performed ${log.action} on ${log.entityType} (${log.entityId})`}
+                {formatLogDetails(log)}
               </p>
               <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                 <span>{formatDate(log.createdAt)}</span>
