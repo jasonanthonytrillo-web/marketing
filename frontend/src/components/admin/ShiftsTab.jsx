@@ -73,7 +73,10 @@ export default function ShiftsTab() {
     const grossSalary = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
     const shortage = completedShifts.reduce((total, shift) => total + Math.max(0, -(Number(shift.cashDifference) || 0)), 0);
     const netSalary = Math.max(0, grossSalary - shortage);
-    setPayrollConfirmation({ group, period, grossSalary, shortage, netSalary });
+    const previousPayment = payrollPayments.find(payment => payment.userId === group.staffId && payment.status === 'paid');
+    const previouslyPaid = Number(previousPayment?.amount || 0);
+    const additionalDue = Math.max(0, netSalary - previouslyPaid);
+    setPayrollConfirmation({ group, period, grossSalary, shortage, netSalary, previouslyPaid, additionalDue });
   };
 
   const confirmPayrollPayment = async () => {
@@ -267,7 +270,7 @@ export default function ShiftsTab() {
           <div className="w-full max-w-md overflow-hidden rounded-[2rem] bg-white shadow-2xl">
             <div className="bg-slate-900 px-6 py-5 text-white">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Confirm Payroll</p>
-              <h3 className="mt-1 font-heading text-2xl font-black">Mark salary as paid?</h3>
+              <h3 className="mt-1 font-heading text-2xl font-black">{payrollConfirmation.previouslyPaid > 0 ? 'Pay remaining salary?' : 'Mark salary as paid?'}</h3>
               <p className="mt-1 text-sm text-slate-300">This payment will be recorded for {payrollConfirmation.group.name}.</p>
             </div>
             <div className="space-y-3 p-6">
@@ -280,9 +283,13 @@ export default function ShiftsTab() {
                   <span className="font-semibold text-slate-500">Shortage deduction</span>
                   <span className="font-black text-rose-600">{formatCurrency(payrollConfirmation.shortage)}</span>
                 </div>
+                {payrollConfirmation.previouslyPaid > 0 && <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="font-semibold text-slate-500">Already paid</span>
+                  <span className="font-black text-slate-700">{formatCurrency(payrollConfirmation.previouslyPaid)}</span>
+                </div>}
                 <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
-                  <span className="font-black text-slate-900">Final amount to pay</span>
-                  <span className="text-xl font-black text-emerald-600">{formatCurrency(payrollConfirmation.netSalary)}</span>
+                  <span className="font-black text-slate-900">Additional amount to pay</span>
+                  <span className="text-xl font-black text-emerald-600">{formatCurrency(payrollConfirmation.additionalDue)}</span>
                 </div>
               </div>
               <p className="text-xs leading-relaxed text-slate-500">The salary and any shortage deduction will be saved for this pay period.</p>
@@ -406,7 +413,7 @@ export default function ShiftsTab() {
                           <p className={`font-black ${payrollMatches ? 'text-emerald-600' : hasPayrollAdjustment ? 'text-orange-600' : hasUnpaidPayroll ? 'text-amber-600' : 'text-slate-400'}`}>{payrollStatus}</p>
                         </div>
                         <button type="button" onClick={() => markStaffPayrollPaid(group)} disabled={!hasUnpaidPayroll} className="w-full min-h-[56px] sm:col-span-4 px-3 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                          {payrollMatches ? 'Paid' : hasUnpaidPayroll ? (hasPayrollAdjustment ? 'Pay Updated Total' : shortage > 0 ? 'Approve & Pay' : 'Mark Salary Paid') : 'No Salary'}
+                          {payrollMatches ? 'Paid' : hasUnpaidPayroll ? (hasPayrollAdjustment ? 'Pay Difference' : shortage > 0 ? 'Approve & Pay' : 'Mark Salary Paid') : 'No Salary'}
                         </button>
                       </div>
                     </div>
