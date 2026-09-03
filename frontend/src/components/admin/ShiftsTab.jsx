@@ -387,6 +387,16 @@ export default function ShiftsTab() {
                 const paidTotal = isPaid ? Number(payrollPayment.amount || 0) : 0;
                 const hasUnpaidPayroll = !payrollMatches && completedShifts.length > 0;
                 const payrollStatus = payrollMatches ? 'Paid' : hasPayrollAdjustment ? 'Additional Salary Due' : 'No Shifts';
+                const remainingDue = Math.max(0, netTotal - paidTotal);
+                const paidShiftIds = new Set();
+                let paidCoverage = paidTotal;
+                [...completedShifts].sort((a, b) => new Date(a.startTime) - new Date(b.startTime)).forEach(shift => {
+                  const shiftSalary = calculateSalary(shift);
+                  if (paidCoverage >= shiftSalary - 0.01) {
+                    paidShiftIds.add(shift.id);
+                    paidCoverage -= shiftSalary;
+                  }
+                });
 
                 return (
                   <div key={`${group.name}-${group.role}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
@@ -413,7 +423,7 @@ export default function ShiftsTab() {
                           <p className={`font-black ${payrollMatches ? 'text-emerald-600' : hasPayrollAdjustment ? 'text-orange-600' : hasUnpaidPayroll ? 'text-amber-600' : 'text-slate-400'}`}>{payrollStatus}</p>
                         </div>
                         <button type="button" onClick={() => markStaffPayrollPaid(group)} disabled={!hasUnpaidPayroll} className="w-full min-h-[56px] sm:col-span-4 px-3 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                          {payrollMatches ? 'Paid' : hasUnpaidPayroll ? (hasPayrollAdjustment ? 'Pay Difference' : shortage > 0 ? 'Approve & Pay' : 'Mark Salary Paid') : 'No Salary'}
+                          {payrollMatches ? 'Paid' : hasUnpaidPayroll ? (hasPayrollAdjustment ? `Pay Difference ${formatCurrency(remainingDue)}` : shortage > 0 ? 'Approve & Pay' : 'Mark Salary Paid') : 'No Salary'}
                         </button>
                       </div>
                     </div>
@@ -423,8 +433,8 @@ export default function ShiftsTab() {
                         <div key={shift.id} className="flex items-center justify-between gap-3 rounded-xl bg-white border border-slate-100 px-3 py-2.5 text-xs">
                           <span className="text-slate-500">{formatDate(shift.startTime)} · {getShiftDuration(shift.startTime, shift.endTime)}</span>
                           <span className="font-bold text-slate-800">{formatCurrency(calculateSalary(shift))}</span>
-                          <span className={`text-[9px] font-black uppercase ${shift.status === 'active' ? 'text-blue-600' : payrollMatches ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {shift.status === 'active' ? 'Active' : payrollMatches ? 'Paid' : 'Needs Payment'}
+                          <span className={`text-[9px] font-black uppercase ${shift.status === 'active' ? 'text-blue-600' : payrollMatches || paidShiftIds.has(shift.id) ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {shift.status === 'active' ? 'Active' : payrollMatches || paidShiftIds.has(shift.id) ? 'Paid' : 'Needs Payment'}
                           </span>
                         </div>
                       ))}
