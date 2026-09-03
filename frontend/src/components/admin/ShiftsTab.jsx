@@ -278,24 +278,24 @@ export default function ShiftsTab() {
                         <h4 className="font-heading text-lg font-black text-slate-900 truncate">{group.name}</h4>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{group.role} · {completedShifts.length} timed-out shift{completedShifts.length === 1 ? '' : 's'}</p>
                       </div>
-                      <div className="flex items-center gap-4 sm:text-right">
-                        <div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:flex-1">
+                        <div className="rounded-xl bg-white border border-slate-100 px-3 py-2.5 sm:text-right">
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gross Salary</p>
                           <p className="font-black text-slate-900">{formatCurrency(estimatedTotal)}</p>
                         </div>
-                        <div>
+                        <div className="rounded-xl bg-white border border-slate-100 px-3 py-2.5 sm:text-right">
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Net Pay</p>
                           <p className="font-black text-emerald-600">{formatCurrency(netTotal)}</p>
                         </div>
-                        {shortage > 0 && <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shortage</p>
-                          <p className="font-black text-rose-600">-{formatCurrency(shortage)}</p>
-                        </div>}
-                        <div>
+                        <div className="rounded-xl bg-white border border-slate-100 px-3 py-2.5 sm:text-right">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Deduction</p>
+                          <p className="font-black text-rose-600">{formatCurrency(shortage)}</p>
+                        </div>
+                        <div className="rounded-xl bg-white border border-slate-100 px-3 py-2.5 sm:text-right">
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payroll Status</p>
                           <p className={`font-black ${isPaid ? 'text-emerald-600' : hasUnpaidPayroll ? 'text-amber-600' : 'text-slate-400'}`}>{payrollStatus}</p>
                         </div>
-                        <button type="button" onClick={() => markStaffPayrollPaid(group)} disabled={!hasUnpaidPayroll} className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                        <button type="button" onClick={() => markStaffPayrollPaid(group)} disabled={!hasUnpaidPayroll} className="w-full min-h-[56px] sm:col-span-4 px-3 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
                           {isPaid ? 'Paid' : hasUnpaidPayroll ? (shortage > 0 ? 'Approve & Pay' : 'Mark Salary Paid') : 'No Salary'}
                         </button>
                       </div>
