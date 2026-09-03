@@ -290,7 +290,7 @@ export default function ShiftsTab() {
                         {shortage > 0 && <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shortage</p>
                           <p className="font-black text-rose-600">-{formatCurrency(shortage)}</p>
-                        </div>
+                        </div>}
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payroll Status</p>
                           <p className={`font-black ${isPaid ? 'text-emerald-600' : hasUnpaidPayroll ? 'text-amber-600' : 'text-slate-400'}`}>{payrollStatus}</p>
