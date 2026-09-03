@@ -237,7 +237,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden lg:h-screen">
+      <main className="relative z-40 flex-1 flex flex-col min-h-0 overflow-hidden lg:h-screen">
         <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-surface-200 bg-white/80 backdrop-blur-xl flex-shrink-0">
           <div className="flex items-center gap-4">
             <button

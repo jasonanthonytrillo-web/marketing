@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAdminShifts, getStaffPayroll, updateStaffPayroll } from '../../services/api';
+import { getAdminShifts, getStaff, getStaffPayroll, updateStaffPayroll } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { Timer, Search, Calendar, User, DollarSign, Clock, AlertTriangle, CheckCircle, RefreshCw, ArrowUpRight, ArrowDownRight, ShieldCheck, Wallet, Coins, ChefHat, Bike, CreditCard, Download } from 'lucide-react';
 
@@ -15,6 +15,7 @@ const getPayrollPeriod = (dateValue = new Date()) => {
 
 export default function ShiftsTab() {
   const [shifts, setShifts] = useState([]);
+  const [staffMembers, setStaffMembers] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -98,6 +99,14 @@ export default function ShiftsTab() {
       setShifts(res.data.data.shifts || []);
       setSummary(res.data.data.summary || null);
 
+      try {
+        const staffRes = await getStaff();
+        setStaffMembers((staffRes.data.data || []).filter(member => member.role !== 'customer' && member.active !== false));
+      } catch (staffError) {
+        console.error('Failed to load staff roster:', staffError);
+        setStaffMembers([]);
+      }
+
       const period = getPayrollPeriod(startDate || endDate || new Date());
       try {
         const payrollRes = await getStaffPayroll({
@@ -139,19 +148,30 @@ export default function ShiftsTab() {
     return shiftDate >= payrollPeriod.start && shiftDate <= payrollPeriod.end;
   });
 
-  const payrollGroups = Object.values(payrollShifts.reduce((groups, shift) => {
-    const staffId = shift.userId || shift.user?.id || shift.cashierName;
-    if (!groups[staffId]) {
-      groups[staffId] = {
-        staffId: shift.userId || shift.user?.id,
-        name: shift.cashierName || shift.user?.name || 'Staff',
-        role: shift.role || shift.user?.role || 'staff',
+  const staffSearchMatches = (member) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return member.name?.toLowerCase().includes(q) || member.email?.toLowerCase().includes(q);
+  };
+
+  const payrollGroups = Object.values(staffMembers
+    .filter(member => (roleFilter === 'all' || member.role === roleFilter) && staffSearchMatches(member))
+    .reduce((groups, member) => {
+      groups[member.id] = {
+        staffId: member.id,
+        name: member.name || 'Staff',
+        role: member.role || 'staff',
         shifts: []
       };
-    }
-    groups[staffId].shifts.push(shift);
-    return groups;
-  }, {}));
+      return groups;
+    }, {}));
+
+  payrollShifts.forEach(shift => {
+    const staffId = shift.userId || shift.user?.id;
+    if (!staffId) return;
+    const group = payrollGroups.find(item => item.staffId === staffId);
+    if (group) group.shifts.push(shift);
+  });
 
   const exportCSV = () => {
     if (filteredShifts.length === 0) return alert('No shift records to export.');
@@ -237,6 +257,7 @@ export default function ShiftsTab() {
                 const isPaid = payrollPayment?.status === 'paid';
                 const paidTotal = isPaid ? Number(payrollPayment.amount || 0) : 0;
                 const hasUnpaidPayroll = !isPaid && completedShifts.length > 0;
+                const payrollStatus = isPaid ? 'Paid' : hasUnpaidPayroll ? 'Not Yet Paid' : 'No Shifts';
 
                 return (
                   <div key={`${group.name}-${group.role}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
@@ -252,10 +273,10 @@ export default function ShiftsTab() {
                         </div>
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payroll Status</p>
-                          <p className={`font-black ${hasUnpaidPayroll ? 'text-amber-600' : 'text-emerald-600'}`}>{hasUnpaidPayroll ? 'Not Yet Paid' : 'Paid'}</p>
+                          <p className={`font-black ${isPaid ? 'text-emerald-600' : hasUnpaidPayroll ? 'text-amber-600' : 'text-slate-400'}`}>{payrollStatus}</p>
                         </div>
                         <button type="button" onClick={() => markStaffPayrollPaid(group)} disabled={!hasUnpaidPayroll} className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                          {hasUnpaidPayroll ? 'Mark Total Paid' : 'Paid'}
+                          {isPaid ? 'Paid' : hasUnpaidPayroll ? 'Mark Total Paid' : 'No Salary'}
                         </button>
                       </div>
                     </div>
