@@ -941,8 +941,8 @@ router.get('/payroll', authenticate, authorize('admin', 'superadmin'), async (re
     if (req.query.status) where.status = req.query.status;
     const payments = await prisma.payrollPayment.findMany({
       where,
-      include: { staff: { select: { id: true, name: true, role: true } }, recordedBy: { select: { name: true } } }
-      , orderBy: { paymentDate: 'desc' }
+      include: { staff: { select: { id: true, name: true, role: true } }, recordedBy: { select: { name: true } } },
+      orderBy: { paymentDate: 'desc' }
     });
     res.json({ success: true, data: payments });
   } catch (error) {

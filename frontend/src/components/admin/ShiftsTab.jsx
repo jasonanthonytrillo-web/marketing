@@ -294,7 +294,7 @@ export default function ShiftsTab() {
           </div>
         </div>
       )}
-      {showPaidSalary && (
+      {false && showPaidSalary && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/65 backdrop-blur-sm p-4">
           <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-[2rem] bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-900 px-6 py-5 text-white sm:px-8">
@@ -334,18 +334,39 @@ export default function ShiftsTab() {
             <div className="flex items-start justify-between gap-4 p-6 sm:p-8 border-b border-slate-100">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Payroll Overview</p>
-                <h3 className="font-heading text-2xl sm:text-3xl font-black text-slate-900">Staff Salary Summary</h3>
-                <p className="text-sm text-slate-500 font-medium mt-1">Review each staff member's shifts and mark completed payroll payments.</p>
-                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-2">Pay period: {payrollPeriod.start.toLocaleDateString()} - {payrollPeriod.end.toLocaleDateString()}</p>
+                <h3 className="font-heading text-2xl sm:text-3xl font-black text-slate-900">{showPaidSalary ? 'Paid Salary History' : 'Staff Salary Summary'}</h3>
+                <p className="text-sm text-slate-500 font-medium mt-1">{showPaidSalary ? 'Review completed salary payments by staff member.' : 'Review each staff member\'s shifts and mark completed payroll payments.'}</p>
+                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-2">{showPaidSalary ? 'All completed payroll periods' : `Pay period: ${payrollPeriod.start.toLocaleDateString()} - ${payrollPeriod.end.toLocaleDateString()}`}</p>
               </div>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={openPaidSalary} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:bg-emerald-100">Paid Salary</button>
+                <div className="flex rounded-xl bg-slate-100 p-1">
+                  <button type="button" onClick={() => setShowPaidSalary(false)} className={`rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider ${!showPaidSalary ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>To Pay</button>
+                  <button type="button" onClick={openPaidSalary} className={`rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider ${showPaidSalary ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}>Paid Salary</button>
+                </div>
                 <button type="button" onClick={() => setShowPayrollSummary(false)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 text-xl leading-none">&times;</button>
               </div>
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-150px)] space-y-3">
-              {payrollGroups.map(group => {
+              {showPaidSalary && paidSalaryRecords.map(record => (
+                <div key={record.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h4 className="font-heading text-lg font-black text-slate-900">{record.staff?.name || 'Staff'}</h4>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{record.staff?.role || 'Staff'} Â· {new Date(record.periodStart).toLocaleDateString()} - {new Date(record.periodEnd).toLocaleDateString()}</p>
+                    </div>
+                    <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700">Paid</span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Gross</p><p className="mt-1 font-black text-slate-900">{formatCurrency(record.grossAmount ?? record.amount)}</p></div>
+                    <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Deduction</p><p className="mt-1 font-black text-rose-600">{formatCurrency(record.deductionAmount || 0)}</p></div>
+                    <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Paid</p><p className="mt-1 font-black text-emerald-600">{formatCurrency(record.amount)}</p></div>
+                    <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Payment Date</p><p className="mt-1 font-black text-slate-700">{record.paymentDate ? new Date(record.paymentDate).toLocaleDateString() : '-'}</p></div>
+                  </div>
+                </div>
+              ))}
+              {showPaidSalary && paidSalaryRecords.length === 0 && <p className="py-12 text-center font-medium text-slate-400">No paid salary records yet.</p>}
+              {!showPaidSalary && payrollGroups.map(group => {
                 const completedShifts = group.shifts.filter(shift => shift.status !== 'active');
                 const estimatedTotal = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
                 const shortage = completedShifts.reduce((total, shift) => total + Math.max(0, -(Number(shift.cashDifference) || 0)), 0);
@@ -405,7 +426,7 @@ export default function ShiftsTab() {
                   </div>
                 );
               })}
-              {payrollGroups.length === 0 && <p className="text-center text-slate-400 py-12 font-medium">No staff shifts found for this filter.</p>}
+              {!showPaidSalary && payrollGroups.length === 0 && <p className="text-center text-slate-400 py-12 font-medium">No staff shifts found for this filter.</p>}
             </div>
           </div>
         </div>
