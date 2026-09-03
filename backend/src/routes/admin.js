@@ -486,7 +486,14 @@ router.delete('/expenses/:id', authenticate, authorize('admin'), async (req, res
 router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => {
   try {
     const logs = await prisma.auditLog.findMany({
-      where: { tenantId: req.tenantId },
+      where: {
+        tenantId: req.tenantId,
+        // Tenant admins must not see activity performed by superadmins.
+        OR: [
+          { userId: null },
+          { user: { role: { not: 'superadmin' } } }
+        ]
+      },
       include: { user: { select: { name: true, role: true } } },
       orderBy: { createdAt: 'desc' },
       take: 100
@@ -634,7 +641,12 @@ router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => 
   try {
     const logs = await prisma.auditLog.findMany({
       where: {
-        tenantId: req.tenantId
+        tenantId: req.tenantId,
+        // Keep the restriction at the API boundary, not only in the UI.
+        OR: [
+          { userId: null },
+          { user: { role: { not: 'superadmin' } } }
+        ]
       },
       include: {
         user: {
@@ -914,4 +926,3 @@ router.get('/shifts', authenticate, authorize('admin', 'superadmin'), async (req
 });
 
 module.exports = router;
-
