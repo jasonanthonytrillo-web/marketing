@@ -291,27 +291,27 @@ export default function ShiftsTab() {
             Track all staff attendance, shift durations, and cashier cash register audit.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-          <button
-            onClick={exportCSV}
-            disabled={filteredShifts.length === 0}
-            className="flex-1 lg:flex-none justify-center px-3 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white rounded-2xl text-xs font-black shadow-sm transition-all flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-[390px]">
           <button
             onClick={() => setShowPayrollSummary(true)}
             disabled={filteredShifts.length === 0}
-            className="flex-1 lg:flex-none justify-center px-3 sm:px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white rounded-2xl text-xs font-black shadow-sm transition-all flex items-center gap-2"
+            className="w-full lg:w-auto justify-center px-3 sm:px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white rounded-2xl text-xs font-black shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
           >
             <Wallet className="w-4 h-4" />
             Payroll Summary
           </button>
           <button
+            onClick={exportCSV}
+            disabled={filteredShifts.length === 0}
+            className="w-full lg:w-auto justify-center px-3 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white rounded-2xl text-xs font-black shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button
             onClick={loadShifts}
             disabled={loading}
-            className="flex-1 lg:flex-none justify-center px-3 sm:px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-2xl text-xs font-black text-slate-700 shadow-sm transition-all flex items-center gap-2"
+            className="w-full lg:w-auto justify-center px-3 sm:px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-2xl text-xs font-black text-slate-700 shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
