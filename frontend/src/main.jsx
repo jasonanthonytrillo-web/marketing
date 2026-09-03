@@ -16,7 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
       .then(reg => console.log('🚀 PWA: Service Worker Registered!', reg.scope))
       .catch(err => console.log('❌ PWA: Registration Failed!', err));
   });
@@ -28,4 +28,3 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   window.deferredPrompt = e;
 });
-

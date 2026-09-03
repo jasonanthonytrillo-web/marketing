@@ -1,4 +1,4 @@
-const CACHE_NAME = 'elevate-pos-v4';
+const CACHE_NAME = 'elevate-pos-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html'
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
 
 // Install Event
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('📦 PWA: Caching critical assets');
@@ -35,7 +36,7 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.clients.claim();
+  event.waitUntil(self.clients.claim());
 });
 
 // Fetch Event - Cache app assets first so refresh works offline.
@@ -50,6 +51,25 @@ self.addEventListener('fetch', (event) => {
 
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin) return;
+
+  // Always refresh the app shell so a deployment cannot leave the browser
+  // pointing at a deleted hashed JavaScript bundle.
+  if (event.request.mode === 'navigate' || requestUrl.pathname === '/index.html') {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(event.request, { cache: 'no-store' });
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put('/index.html', response.clone());
+        }
+        return response;
+      } catch {
+        const cachedIndex = await caches.match('/index.html');
+        return cachedIndex || new Response('Offline app shell unavailable', { status: 503 });
+      }
+    })());
+    return;
+  }
 
   event.respondWith((async () => {
     const cachedResponse = await caches.match(event.request);
