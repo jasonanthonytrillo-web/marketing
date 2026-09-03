@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages } from '../services/api';
+import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages, getOrderHistory } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
-import { formatCurrency, unlockAudio } from '../utils/helpers';
+import { formatCurrency, formatDate, unlockAudio } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import { applyTheme, clearTheme } from '../utils/theme';
@@ -47,6 +47,10 @@ export default function Menu() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [orderHistory, setOrderHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
   const [eventPackages, setEventPackages] = useState([]);
   const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
   const [optionError, setOptionError] = useState(false);
@@ -244,6 +248,25 @@ export default function Menu() {
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+
+  useEffect(() => {
+    if (!showHistoryModal) return;
+
+    const loadHistory = async () => {
+      setHistoryLoading(true);
+      setHistoryError('');
+      try {
+        const res = await getOrderHistory();
+        setOrderHistory(res.data?.data || []);
+      } catch (error) {
+        setHistoryError(error.response?.data?.message || 'Failed to load order history.');
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    loadHistory();
+  }, [showHistoryModal]);
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -1118,6 +1141,74 @@ export default function Menu() {
                 <p className="text-surface-500 text-sm">Please talk to our counter staff or reach us via our social media pages to finalize your event booking.</p>
               </div>
 
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowHistoryModal(false)}></div>
+          <div className="bg-white rounded-[28px] w-full max-w-3xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up scrollbar-hide">
+            <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/95 backdrop-blur-md border-b border-surface-100">
+              <div>
+                <h2 className="text-xl md:text-2xl font-heading font-black text-surface-900 leading-tight">Order <span style={{ color: brandingColor }}>History</span></h2>
+                <p className="text-surface-500 font-medium mt-0.5 text-xs md:text-sm">Review your recent customer orders.</p>
+              </div>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="w-8 h-8 md:w-10 md:h-10 bg-surface-100 hover:bg-surface-200 rounded-full flex items-center justify-center text-surface-600 transition-all active:scale-95 flex-shrink-0"
+              >
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="p-4 md:p-6">
+              {historyLoading ? (
+                <div className="py-16 text-center text-surface-500 font-medium">Loading order history...</div>
+              ) : historyError ? (
+                <div className="py-16 text-center">
+                  <p className="text-red-600 font-bold">{historyError}</p>
+                </div>
+              ) : orderHistory.length === 0 ? (
+                <div className="py-16 text-center">
+                  <p className="text-surface-500 font-medium">No order history yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {orderHistory.map((order) => (
+                    <div key={order.id} className="rounded-2xl border border-surface-200 bg-surface-50/60 p-4 md:p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 mb-1">Order Number</p>
+                          <p className="font-black text-surface-900">{order.orderNumber}</p>
+                          <p className="text-xs text-surface-500 mt-1">{formatDate(order.createdAt)}</p>
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 mb-1">Total</p>
+                          <p className="font-black text-surface-900">{formatCurrency(order.total || 0)}</p>
+                          <p className="text-xs text-surface-500 mt-1 capitalize">{order.status || 'pending'}</p>
+                        </div>
+                      </div>
+
+                      {Array.isArray(order.items) && order.items.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-surface-200 space-y-2">
+                          {order.items.map((item, idx) => (
+                            <div key={item.id || idx} className="flex items-center justify-between gap-3 text-sm">
+                              <div className="min-w-0">
+                                <p className="font-bold text-surface-800 truncate">{item.productName || item.name || 'Item'}</p>
+                                <p className="text-xs text-surface-500">Qty {item.quantity || 1}</p>
+                              </div>
+                              <p className="font-bold text-surface-700 shrink-0">{formatCurrency(item.subtotal || item.total || 0)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
