@@ -5,9 +5,12 @@ import { useAuth } from '../../context/AuthContext';
 import { Palette, Smartphone, Gem, Upload, Plus, ArrowRight, X, CheckCircle, Loader2, MapPin, Store, Monitor, Tag, Trash2, ChevronDown } from 'lucide-react';
 import LocationPicker from '../LocationPicker';
 
+const serializeSetting = (value) => JSON.stringify(value ?? null);
+
 export default function SettingsTab() {
   const { user } = useAuth();
   const [settings, setSettings] = useState({ points_rate: '100', tenant_assets: [] });
+  const [savedSettings, setSavedSettings] = useState({ points_rate: '100', tenant_assets: [] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -49,7 +52,9 @@ export default function SettingsTab() {
           data.custom_badges = [];
         }
 
-        setSettings(prev => ({ ...prev, ...data }));
+        const nextSettings = { ...settings, ...data };
+        setSettings(nextSettings);
+        setSavedSettings(nextSettings);
       }
     } catch (error) {
       console.error(error);
@@ -60,14 +65,28 @@ export default function SettingsTab() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    const changedSettings = Object.keys(settings).reduce((changes, key) => {
+      if (serializeSetting(settings[key]) !== serializeSetting(savedSettings[key])) {
+        changes[key] = settings[key];
+      }
+      return changes;
+    }, {});
+
+    if (Object.keys(changedSettings).length === 0) {
+      setMessage('No changes to save.');
+      return;
+    }
+
     setSaving(true);
     setMessage('');
     try {
-      const payload = { ...settings };
+      const payload = { ...changedSettings };
       if (payload.custom_badges && Array.isArray(payload.custom_badges)) {
         payload.custom_badges = JSON.stringify(payload.custom_badges);
       }
       await updateSettings(payload);
+      setSavedSettings({ ...savedSettings, ...changedSettings });
       setMessage('Settings updated successfully!');
 
       setTimeout(() => setMessage(''), 3000);
