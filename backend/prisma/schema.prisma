@@ -473,6 +473,8 @@ model PayrollPayment {
   periodStart    DateTime
   periodEnd      DateTime
   amount         Float
+  grossAmount    Float    @default(0)
+  deductionAmount Float   @default(0)
   status         String   @default("unpaid") // unpaid, paid
   paymentDate    DateTime?
   paymentMethod  String?

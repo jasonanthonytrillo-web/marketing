@@ -947,7 +947,7 @@ router.get('/payroll', authenticate, authorize('admin', 'superadmin'), async (re
 router.put('/payroll/:userId', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
-    const { periodStart, periodEnd, amount, status = 'paid', paymentDate, paymentMethod, note } = req.body;
+    const { periodStart, periodEnd, amount, grossAmount, deductionAmount = 0, status = 'paid', paymentDate, paymentMethod, note } = req.body;
     const start = new Date(periodStart);
     const end = new Date(periodEnd);
     const paidAmount = Number(amount);
@@ -958,9 +958,14 @@ router.put('/payroll/:userId', authenticate, authorize('admin', 'superadmin'), a
     if (status === 'paid' && (!Number.isFinite(paidAmount) || paidAmount < 0)) {
       return res.status(400).json({ success: false, message: 'A valid total salary is required.' });
     }
+    const gross = Number(grossAmount ?? amount);
+    const deduction = Number(deductionAmount) || 0;
+    if (status === 'paid' && (!Number.isFinite(gross) || gross < 0 || !Number.isFinite(deduction) || deduction < 0 || deduction > gross)) {
+      return res.status(400).json({ success: false, message: 'Invalid salary deduction.' });
+    }
 
     const staff = await prisma.user.findFirst({
-      where: { id: userId, tenantId: req.tenantId, role: { not: 'customer' } },
+      where: { id: userId, tenantId: req.tenantId, role: { in: ['cashier', 'kitchen', 'rider'] } },
       select: { id: true, name: true }
     });
     if (!staff) return res.status(404).json({ success: false, message: 'Staff member not found.' });
@@ -977,6 +982,8 @@ router.put('/payroll/:userId', authenticate, authorize('admin', 'superadmin'), a
       },
       update: {
         amount: isPaid ? paidAmount : 0,
+        grossAmount: isPaid ? gross : 0,
+        deductionAmount: isPaid ? deduction : 0,
         status: isPaid ? 'paid' : 'unpaid',
         paymentDate: isPaid ? (paymentDate ? new Date(paymentDate) : new Date()) : null,
         paymentMethod: isPaid ? (paymentMethod || 'cash') : null,
@@ -989,6 +996,8 @@ router.put('/payroll/:userId', authenticate, authorize('admin', 'superadmin'), a
         periodStart: start,
         periodEnd: end,
         amount: isPaid ? paidAmount : 0,
+        grossAmount: isPaid ? gross : 0,
+        deductionAmount: isPaid ? deduction : 0,
         status: isPaid ? 'paid' : 'unpaid',
         paymentDate: isPaid ? (paymentDate ? new Date(paymentDate) : new Date()) : null,
         paymentMethod: isPaid ? (paymentMethod || 'cash') : null,
@@ -1005,7 +1014,7 @@ router.put('/payroll/:userId', authenticate, authorize('admin', 'superadmin'), a
         action: isPaid ? 'mark_payroll_period_paid' : 'mark_payroll_period_unpaid',
         entityType: 'payroll_payment',
         entityId: String(payroll.id),
-        details: `${isPaid ? 'Marked payroll paid' : 'Reset payroll to unpaid'} for ${staff.name}: ${isPaid ? `₱${paidAmount.toFixed(2)}` : 'no payment recorded'}`
+        details: `${isPaid ? 'Marked payroll paid' : 'Reset payroll to unpaid'} for ${staff.name}: ${isPaid ? `₱${paidAmount.toFixed(2)} net from ₱${gross.toFixed(2)} gross${deduction > 0 ? `, ₱${deduction.toFixed(2)} shortage deduction` : ''}` : 'no payment recorded'}`
       }
     });
 

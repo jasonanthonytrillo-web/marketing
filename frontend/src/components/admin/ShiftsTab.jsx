@@ -13,6 +13,8 @@ const getPayrollPeriod = (dateValue = new Date()) => {
   return { start: new Date(year, month, 16), end: new Date(year, month + 1, 0, 23, 59, 59, 999) };
 };
 
+const payrollRoles = ['cashier', 'kitchen', 'rider'];
+
 export default function ShiftsTab() {
   const [shifts, setShifts] = useState([]);
   const [staffMembers, setStaffMembers] = useState([]);
@@ -66,12 +68,20 @@ export default function ShiftsTab() {
     try {
       const latestShift = completedShifts.reduce((latest, shift) => new Date(shift.startTime) > new Date(latest.startTime) ? shift : latest, completedShifts[0]);
       const period = getPayrollPeriod(latestShift.startTime);
-      const totalSalary = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
+      const grossSalary = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
+      const shortage = completedShifts.reduce((total, shift) => total + Math.max(0, -(Number(shift.cashDifference) || 0)), 0);
+      const netSalary = Math.max(0, grossSalary - shortage);
+      const approvalMessage = shortage > 0
+        ? `Approve ${formatCurrency(shortage)} shortage deduction from ${group.name}'s ${formatCurrency(grossSalary)} salary and mark ${formatCurrency(netSalary)} as paid?`
+        : `Mark ${formatCurrency(grossSalary)} salary for ${group.name} as paid?`;
+      if (!window.confirm(approvalMessage)) return;
       await updateStaffPayroll(group.staffId, {
         periodStart: period.start.toISOString(),
         periodEnd: period.end.toISOString(),
         status: 'paid',
-        amount: totalSalary,
+        amount: netSalary,
+        grossAmount: grossSalary,
+        deductionAmount: shortage,
         paymentDate: new Date().toISOString(),
         paymentMethod: 'cash',
         note: 'Paid from Payroll Summary'
@@ -101,7 +111,7 @@ export default function ShiftsTab() {
 
       try {
         const staffRes = await getStaff();
-        setStaffMembers((staffRes.data.data || []).filter(member => member.role !== 'customer' && member.active !== false));
+        setStaffMembers((staffRes.data.data || []).filter(member => payrollRoles.includes(member.role) && member.active !== false));
       } catch (staffError) {
         console.error('Failed to load staff roster:', staffError);
         setStaffMembers([]);
@@ -253,6 +263,8 @@ export default function ShiftsTab() {
               {payrollGroups.map(group => {
                 const completedShifts = group.shifts.filter(shift => shift.status !== 'active');
                 const estimatedTotal = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
+                const shortage = completedShifts.reduce((total, shift) => total + Math.max(0, -(Number(shift.cashDifference) || 0)), 0);
+                const netTotal = Math.max(0, estimatedTotal - shortage);
                 const payrollPayment = payrollPayments.find(payment => payment.userId === group.staffId);
                 const isPaid = payrollPayment?.status === 'paid';
                 const paidTotal = isPaid ? Number(payrollPayment.amount || 0) : 0;
@@ -268,15 +280,23 @@ export default function ShiftsTab() {
                       </div>
                       <div className="flex items-center gap-4 sm:text-right">
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estimated</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gross Salary</p>
                           <p className="font-black text-slate-900">{formatCurrency(estimatedTotal)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Net Pay</p>
+                          <p className="font-black text-emerald-600">{formatCurrency(netTotal)}</p>
+                        </div>
+                        {shortage > 0 && <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shortage</p>
+                          <p className="font-black text-rose-600">-{formatCurrency(shortage)}</p>
                         </div>
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payroll Status</p>
                           <p className={`font-black ${isPaid ? 'text-emerald-600' : hasUnpaidPayroll ? 'text-amber-600' : 'text-slate-400'}`}>{payrollStatus}</p>
                         </div>
                         <button type="button" onClick={() => markStaffPayrollPaid(group)} disabled={!hasUnpaidPayroll} className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                          {isPaid ? 'Paid' : hasUnpaidPayroll ? 'Mark Total Paid' : 'No Salary'}
+                          {isPaid ? 'Paid' : hasUnpaidPayroll ? (shortage > 0 ? 'Approve & Pay' : 'Mark Salary Paid') : 'No Salary'}
                         </button>
                       </div>
                     </div>
