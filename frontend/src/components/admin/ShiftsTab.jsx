@@ -202,6 +202,44 @@ export default function ShiftsTab() {
     if (group) group.shifts.push(shift);
   });
 
+  const exportPayrollCSV = () => {
+    const escapeCSV = (value) => {
+      const text = value === null || value === undefined ? '' : String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+    const headers = ['Staff Name', 'Role', 'Pay Period', 'Gross Salary', 'Deduction', 'Net Pay', 'Status', 'Payment Date'];
+    const rows = showPaidSalary
+      ? paidSalaryRecords.map(record => [
+          record.staff?.name || 'Staff',
+          record.staff?.role || 'staff',
+          `${new Date(record.periodStart).toLocaleDateString()} - ${new Date(record.periodEnd).toLocaleDateString()}`,
+          Number(record.grossAmount ?? record.amount).toFixed(2),
+          Number(record.deductionAmount || 0).toFixed(2),
+          Number(record.amount || 0).toFixed(2),
+          'Paid',
+          record.paymentDate ? new Date(record.paymentDate).toLocaleDateString() : ''
+        ])
+      : payrollGroups.map(group => {
+          const completedShifts = group.shifts.filter(shift => shift.status !== 'active');
+          const gross = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
+          const deduction = completedShifts.reduce((total, shift) => total + Math.max(0, -(Number(shift.cashDifference) || 0)), 0);
+          const net = Math.max(0, gross - deduction);
+          const payment = payrollPayments.find(item => item.userId === group.staffId && item.status === 'paid');
+          const remaining = Math.max(0, net - Number(payment?.amount || 0));
+          return [group.name, group.role, `${payrollPeriod.start.toLocaleDateString()} - ${payrollPeriod.end.toLocaleDateString()}`, gross.toFixed(2), deduction.toFixed(2), net.toFixed(2), payment && remaining > 0 ? `Additional Due (${remaining.toFixed(2)})` : payment ? 'Paid' : completedShifts.length ? 'Not Yet Paid' : 'No Shifts', ''];
+        });
+    if (rows.length === 0) return alert('No payroll records to export.');
+    const csv = [headers, ...rows].map(row => row.map(escapeCSV).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `payroll-${showPaidSalary ? 'paid-history' : 'current-period'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const exportCSV = () => {
     if (filteredShifts.length === 0) return alert('No shift records to export.');
 
@@ -345,11 +383,12 @@ export default function ShiftsTab() {
                 <p className="text-sm text-slate-500 font-medium mt-1">{showPaidSalary ? 'Review completed salary payments by staff member.' : 'Review each staff member\'s shifts and mark completed payroll payments.'}</p>
                 <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-2">{showPaidSalary ? 'All completed payroll periods' : `Pay period: ${payrollPeriod.start.toLocaleDateString()} - ${payrollPeriod.end.toLocaleDateString()}`}</p>
               </div>
-              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                 <div className="flex rounded-xl bg-slate-100 p-1">
                   <button type="button" onClick={() => setShowPaidSalary(false)} className={`rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider ${!showPaidSalary ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>To Pay</button>
                   <button type="button" onClick={openPaidSalary} className={`rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider ${showPaidSalary ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}>Paid Salary</button>
                 </div>
+                <button type="button" onClick={exportPayrollCSV} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50">Export CSV</button>
                 <button type="button" onClick={() => setShowPayrollSummary(false)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 text-xl leading-none">&times;</button>
               </div>
             </div>
