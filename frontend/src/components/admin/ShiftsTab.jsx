@@ -273,7 +273,7 @@ export default function ShiftsTab() {
 
                 return (
                   <div key={`${group.name}-${group.role}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex flex-col gap-4">
                       <div className="min-w-0">
                         <h4 className="font-heading text-lg font-black text-slate-900 truncate">{group.name}</h4>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{group.role} · {completedShifts.length} timed-out shift{completedShifts.length === 1 ? '' : 's'}</p>
