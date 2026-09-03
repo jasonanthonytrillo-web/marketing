@@ -189,13 +189,13 @@ export default function SettingsTab() {
 
         {/* Brand Identity */}
         <div className="glass-card overflow-hidden">
-          <button type="button" onClick={() => setOpenSection(openSection === 'branding' ? null : 'branding')} aria-expanded={openSection === 'branding'} className="w-full text-left p-6 bg-primary-50 border-b border-primary-100 flex items-center gap-4 hover:bg-primary-100/70 transition-colors">
+          <button type="button" onClick={() => setOpenSection(openSection === 'branding' ? null : 'branding')} aria-expanded={openSection === 'branding'} className="w-full text-left p-6 bg-slate-50 border-b border-slate-200 flex items-center gap-4 hover:bg-slate-100 transition-colors">
             <div className="w-12 h-12 bg-primary-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary-500/20"><Palette className="w-6 h-6" /></div>
             <div>
-              <h3 className="font-heading font-bold text-primary-900">Brand Identity</h3>
-              <p className="text-primary-700 text-xs font-medium">Customize your store's name and logo.</p>
+              <h3 className="font-heading font-bold text-slate-900">Brand Identity</h3>
+              <p className="text-slate-600 text-xs font-medium">Customize your store's name and logo.</p>
             </div>
-            <ChevronDown className={`w-5 h-5 ml-auto text-primary-700 transition-transform ${openSection === 'branding' ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-5 h-5 ml-auto text-slate-500 transition-transform ${openSection === 'branding' ? 'rotate-180' : ''}`} />
           </button>
           <div className={`${openSection === 'branding' ? 'block' : 'hidden'} p-8 space-y-6`}>
             {isSuper && (
