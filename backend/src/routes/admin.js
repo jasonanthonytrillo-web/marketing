@@ -933,9 +933,16 @@ router.get('/payroll', authenticate, authorize('admin', 'superadmin'), async (re
     const defaultEnd = new Date(now.getFullYear(), now.getMonth() + (now.getDate() <= 15 ? 0 : 1), now.getDate() <= 15 ? 15 : 0, 23, 59, 59, 999);
     const periodStart = new Date(req.query.periodStart || defaultStart);
     const periodEnd = new Date(req.query.periodEnd || defaultEnd);
+    const where = { tenantId: req.tenantId };
+    if (req.query.all !== 'true') {
+      where.periodStart = periodStart;
+      where.periodEnd = periodEnd;
+    }
+    if (req.query.status) where.status = req.query.status;
     const payments = await prisma.payrollPayment.findMany({
-      where: { tenantId: req.tenantId, periodStart, periodEnd },
+      where,
       include: { staff: { select: { id: true, name: true, role: true } }, recordedBy: { select: { name: true } } }
+      , orderBy: { paymentDate: 'desc' }
     });
     res.json({ success: true, data: payments });
   } catch (error) {

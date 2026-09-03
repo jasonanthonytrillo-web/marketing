@@ -27,6 +27,8 @@ export default function ShiftsTab() {
   const [search, setSearch] = useState('');
   const [payrollPayments, setPayrollPayments] = useState([]);
   const [showPayrollSummary, setShowPayrollSummary] = useState(false);
+  const [showPaidSalary, setShowPaidSalary] = useState(false);
+  const [paidSalaryRecords, setPaidSalaryRecords] = useState([]);
   const [payrollConfirmation, setPayrollConfirmation] = useState(null);
 
   // Hourly Rate States
@@ -93,6 +95,16 @@ export default function ShiftsTab() {
       await loadShifts();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to mark staff payroll as paid.');
+    }
+  };
+
+  const openPaidSalary = async () => {
+    try {
+      const response = await getStaffPayroll({ all: 'true', status: 'paid' });
+      setPaidSalaryRecords(response.data.data || []);
+      setShowPaidSalary(true);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to load paid salary records.');
     }
   };
 
@@ -282,6 +294,40 @@ export default function ShiftsTab() {
           </div>
         </div>
       )}
+      {showPaidSalary && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/65 backdrop-blur-sm p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-900 px-6 py-5 text-white sm:px-8">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Payroll Records</p>
+                <h3 className="mt-1 font-heading text-2xl font-black">Paid Salary</h3>
+                <p className="mt-1 text-sm text-slate-300">Completed salary payments by staff member and pay period.</p>
+              </div>
+              <button type="button" onClick={() => setShowPaidSalary(false)} className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-xl text-slate-200 hover:bg-white/20">&times;</button>
+            </div>
+            <div className="max-h-[calc(90vh-130px)] space-y-3 overflow-y-auto p-4 sm:p-6">
+              {paidSalaryRecords.map(record => (
+                <div key={record.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h4 className="font-heading text-lg font-black text-slate-900">{record.staff?.name || 'Staff'}</h4>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{record.staff?.role || 'Staff'} Â· {new Date(record.periodStart).toLocaleDateString()} - {new Date(record.periodEnd).toLocaleDateString()}</p>
+                    </div>
+                    <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700">Paid</span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Gross</p><p className="mt-1 font-black text-slate-900">{formatCurrency(record.grossAmount ?? record.amount)}</p></div>
+                    <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Deduction</p><p className="mt-1 font-black text-rose-600">{formatCurrency(record.deductionAmount || 0)}</p></div>
+                    <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Paid</p><p className="mt-1 font-black text-emerald-600">{formatCurrency(record.amount)}</p></div>
+                    <div className="rounded-xl bg-white px-3 py-2.5"><p className="text-[9px] font-black uppercase tracking-wider text-slate-400">Payment Date</p><p className="mt-1 font-black text-slate-700">{record.paymentDate ? new Date(record.paymentDate).toLocaleDateString() : '-'}</p></div>
+                  </div>
+                </div>
+              ))}
+              {paidSalaryRecords.length === 0 && <p className="py-12 text-center font-medium text-slate-400">No paid salary records yet.</p>}
+            </div>
+          </div>
+        </div>
+      )}
       {showPayrollSummary && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[2rem] w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl animate-scale-in">
@@ -292,7 +338,10 @@ export default function ShiftsTab() {
                 <p className="text-sm text-slate-500 font-medium mt-1">Review each staff member's shifts and mark completed payroll payments.</p>
                 <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-2">Pay period: {payrollPeriod.start.toLocaleDateString()} - {payrollPeriod.end.toLocaleDateString()}</p>
               </div>
-              <button type="button" onClick={() => setShowPayrollSummary(false)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 text-xl leading-none">&times;</button>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={openPaidSalary} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:bg-emerald-100">Paid Salary</button>
+                <button type="button" onClick={() => setShowPayrollSummary(false)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 text-xl leading-none">&times;</button>
+              </div>
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-150px)] space-y-3">
@@ -303,9 +352,13 @@ export default function ShiftsTab() {
                 const netTotal = Math.max(0, estimatedTotal - shortage);
                 const payrollPayment = payrollPayments.find(payment => payment.userId === group.staffId);
                 const isPaid = payrollPayment?.status === 'paid';
+                const payrollMatches = isPaid
+                  && Math.abs(Number(payrollPayment.grossAmount || 0) - estimatedTotal) < 0.01
+                  && Math.abs(Number(payrollPayment.deductionAmount || 0) - shortage) < 0.01;
+                const hasPayrollAdjustment = isPaid && !payrollMatches;
                 const paidTotal = isPaid ? Number(payrollPayment.amount || 0) : 0;
-                const hasUnpaidPayroll = !isPaid && completedShifts.length > 0;
-                const payrollStatus = isPaid ? 'Paid' : hasUnpaidPayroll ? 'Not Yet Paid' : 'No Shifts';
+                const hasUnpaidPayroll = !payrollMatches && completedShifts.length > 0;
+                const payrollStatus = payrollMatches ? 'Paid' : hasPayrollAdjustment ? 'Additional Salary Due' : 'No Shifts';
 
                 return (
                   <div key={`${group.name}-${group.role}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
@@ -329,10 +382,10 @@ export default function ShiftsTab() {
                         </div>
                         <div className="rounded-xl bg-white border border-slate-100 px-3 py-2.5 sm:text-right">
                           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payroll Status</p>
-                          <p className={`font-black ${isPaid ? 'text-emerald-600' : hasUnpaidPayroll ? 'text-amber-600' : 'text-slate-400'}`}>{payrollStatus}</p>
+                          <p className={`font-black ${payrollMatches ? 'text-emerald-600' : hasPayrollAdjustment ? 'text-orange-600' : hasUnpaidPayroll ? 'text-amber-600' : 'text-slate-400'}`}>{payrollStatus}</p>
                         </div>
                         <button type="button" onClick={() => markStaffPayrollPaid(group)} disabled={!hasUnpaidPayroll} className="w-full min-h-[56px] sm:col-span-4 px-3 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
-                          {isPaid ? 'Paid' : hasUnpaidPayroll ? (shortage > 0 ? 'Approve & Pay' : 'Mark Salary Paid') : 'No Salary'}
+                          {payrollMatches ? 'Paid' : hasUnpaidPayroll ? (hasPayrollAdjustment ? 'Pay Updated Total' : shortage > 0 ? 'Approve & Pay' : 'Mark Salary Paid') : 'No Salary'}
                         </button>
                       </div>
                     </div>
@@ -342,13 +395,13 @@ export default function ShiftsTab() {
                         <div key={shift.id} className="flex items-center justify-between gap-3 rounded-xl bg-white border border-slate-100 px-3 py-2.5 text-xs">
                           <span className="text-slate-500">{formatDate(shift.startTime)} · {getShiftDuration(shift.startTime, shift.endTime)}</span>
                           <span className="font-bold text-slate-800">{formatCurrency(calculateSalary(shift))}</span>
-                          <span className={`text-[9px] font-black uppercase ${shift.status === 'active' ? 'text-blue-600' : isPaid ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {shift.status === 'active' ? 'Active' : isPaid ? 'Paid' : 'Unpaid'}
+                          <span className={`text-[9px] font-black uppercase ${shift.status === 'active' ? 'text-blue-600' : payrollMatches ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {shift.status === 'active' ? 'Active' : payrollMatches ? 'Paid' : 'Needs Payment'}
                           </span>
                         </div>
                       ))}
                     </div>
-                    {paidTotal > 0 && <p className="text-[10px] text-emerald-600 font-semibold mt-3">Total paid for this period: {formatCurrency(paidTotal)}</p>}
+                    {paidTotal > 0 && <p className="text-[10px] text-emerald-600 font-semibold mt-3">Previously paid for this period: {formatCurrency(paidTotal)}</p>}
                   </div>
                 );
               })}
