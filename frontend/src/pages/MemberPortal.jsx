@@ -45,6 +45,10 @@ export default function MemberPortal() {
 
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const actionParam = searchParams.get('action');
+  const redirectParam = searchParams.get('redirect');
+  const postLoginPath = redirectParam === 'checkout'
+    ? `/checkout?tenant=${tenantSlug}`
+    : '/menu';
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
   const getCustomerErrorMessage = (err, fallback) => {
@@ -150,7 +154,7 @@ export default function MemberPortal() {
       if (mode === 'login') {
         const res = await login({ email: formData.email, password: formData.password, tenantSlug, turnstileToken: captchaToken || undefined });
         loginUser(res.data.data.token, res.data.data.user);
-        navigate('/menu');
+        navigate(postLoginPath);
       } else if (mode === 'register') {
         if (formData.password !== confirmPassword) {
           setError('Passwords do not match.');
@@ -169,7 +173,7 @@ export default function MemberPortal() {
         loginUser(res.data.token, res.data.user);
         setSuccess(true);
         setTimeout(() => {
-          navigate('/menu');
+          navigate(postLoginPath);
         }, 2000);
       }
     } catch (err) {
@@ -197,7 +201,7 @@ export default function MemberPortal() {
     try {
       const res = await googleLogin({ token: credentialResponse.credential, tenantSlug });
       loginUser(res.data.data.token, res.data.data.user);
-      navigate('/menu');
+      navigate(postLoginPath);
     } catch (err) {
       console.error('Frontend Error:', err);
       setError(getCustomerErrorMessage(err, 'Unknown Error'));

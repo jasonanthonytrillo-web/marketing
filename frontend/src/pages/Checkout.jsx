@@ -537,7 +537,7 @@ export default function Checkout() {
                   </div>
                 </div>
                 <Link
-                  to={`/login?tenant=${tenantSlug || 'project-million'}&redirect=checkout`}
+                  to={`/member-portal?tenant=${tenantSlug || 'project-million'}&redirect=checkout`}
                   className="text-xs font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-4 py-2 rounded-xl uppercase tracking-wider transition-all whitespace-nowrap shadow-sm active:scale-95"
                 >
                   Log In
