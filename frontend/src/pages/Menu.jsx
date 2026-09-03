@@ -51,6 +51,8 @@ export default function Menu() {
   const [orderHistory, setOrderHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
+  const [usualOrder, setUsualOrder] = useState(null);
+  const [usualOrderDismissed, setUsualOrderDismissed] = useState(false);
   const [eventPackages, setEventPackages] = useState([]);
   const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
   const [optionError, setOptionError] = useState(false);
@@ -268,6 +270,100 @@ export default function Menu() {
     loadHistory();
   }, [showHistoryModal]);
 
+  // Suggest a repeated completed order once the current menu is available.
+  useEffect(() => {
+    if (!isCustomer || !user?.id || categories.length === 0) {
+      setUsualOrder(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loadUsualOrder = async () => {
+      try {
+        const res = await getOrderHistory();
+        const completedOrders = (res.data?.data || []).filter(order => order.status === 'completed' && order.items?.length);
+        const orderGroups = new Map();
+
+        completedOrders.forEach(order => {
+          const signature = order.items
+            .map(item => `${item.productId}:${item.quantity}:${item.size || ''}:${item.flavor || ''}:${item.addons || ''}:${item.comboChoices || ''}`)
+            .sort()
+            .join('|');
+          const group = orderGroups.get(signature) || { count: 0, latest: order, items: order.items };
+          group.count += 1;
+          if (new Date(order.createdAt) > new Date(group.latest.createdAt)) group.latest = order;
+          orderGroups.set(signature, group);
+        });
+
+        const repeatedOrder = [...orderGroups.values()]
+          .filter(group => group.count >= 2)
+          .sort((a, b) => {
+            if (b.count !== a.count) return b.count - a.count;
+            return new Date(b.latest.createdAt) - new Date(a.latest.createdAt);
+          })[0];
+
+        if (!cancelled && repeatedOrder) {
+          const menuProducts = categories.flatMap(category => category.products || []);
+          const items = repeatedOrder.items.map(item => {
+            const product = menuProducts.find(menuItem => menuItem.id === item.productId);
+            if (!product || product.available === false || product.stock <= 0) return null;
+
+            let addons = [];
+            try {
+              addons = item.addons ? JSON.parse(item.addons) : [];
+            } catch {
+              addons = [];
+            }
+
+            let comboChoices = null;
+            try {
+              comboChoices = item.comboChoices
+                ? (typeof item.comboChoices === 'string' ? JSON.parse(item.comboChoices) : item.comboChoices)
+                : null;
+            } catch {
+              comboChoices = null;
+            }
+
+            const sizePrice = product.sizes?.find(size => size.name === item.size)?.price;
+            return {
+              product,
+              quantity: item.quantity,
+              options: {
+                size: item.size || '',
+                flavor: item.flavor || '',
+                addons,
+                notes: item.notes || '',
+                comboChoices,
+                sizePrice
+              }
+            };
+          }).filter(Boolean);
+
+          setUsualOrder(items.length === repeatedOrder.items.length ? {
+            count: repeatedOrder.count,
+            items
+          } : null);
+        } else if (!cancelled) {
+          setUsualOrder(null);
+        }
+      } catch (error) {
+        if (!cancelled) setUsualOrder(null);
+      }
+    };
+
+    loadUsualOrder();
+    return () => { cancelled = true; };
+  }, [categories, isCustomer, user?.id]);
+
+  const addUsualOrderToCart = () => {
+    usualOrder?.items.forEach(({ product, quantity, options }) => {
+      for (let index = 0; index < quantity; index += 1) {
+        addToCart(product, options);
+      }
+    });
+    setUsualOrderDismissed(true);
+  };
+
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
@@ -435,6 +531,41 @@ export default function Menu() {
           </div>
         </div>
       </div>
+
+      {isCustomer && usualOrder && !usualOrderDismissed && !branding?.storeClosed && (
+        <div className="max-w-7xl mx-auto px-4 pt-4 md:px-8 animate-fade-in-up">
+          <div className="relative overflow-hidden rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-orange-50 p-4 shadow-sm md:flex md:items-center md:justify-between md:gap-6 md:p-5">
+            <button
+              type="button"
+              onClick={() => setUsualOrderDismissed(true)}
+              className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full text-surface-400 transition-colors hover:bg-white hover:text-surface-700"
+              aria-label="Dismiss usual order suggestion"
+            >
+              <span aria-hidden="true" className="text-xl leading-none">&times;</span>
+            </button>
+            <div className="flex items-center gap-3 pr-8">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-white shadow-lg shadow-amber-300/40">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Welcome back</p>
+                <p className="font-heading text-lg font-black text-surface-900">Want your usual order?</p>
+                <p className="text-xs font-medium text-surface-500">
+                  {usualOrder.items.map(item => `${item.quantity}x ${item.product.name}`).join(', ')}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={addUsualOrderToCart}
+              className="mt-4 w-full rounded-2xl px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] md:mt-0 md:w-auto md:shrink-0"
+              style={{ backgroundColor: brandingColor }}
+            >
+              Add Usual Order
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 pt-4 md:pt-6 flex flex-col md:flex-row gap-8 md:gap-12 lg:gap-16">
         {/* Left Sidebar: Categories */}
