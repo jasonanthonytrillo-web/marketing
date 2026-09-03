@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
-import { getAdminShifts } from '../../services/api';
+import { getAdminShifts, getStaffPayroll, updateStaffPayroll } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { Timer, Search, Calendar, User, DollarSign, Clock, AlertTriangle, CheckCircle, RefreshCw, ArrowUpRight, ArrowDownRight, ShieldCheck, Wallet, Coins, ChefHat, Bike, CreditCard, Download } from 'lucide-react';
+
+const getPayrollPeriod = (dateValue = new Date()) => {
+  const date = new Date(dateValue);
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  if (date.getDate() <= 15) {
+    return { start: new Date(year, month, 1), end: new Date(year, month, 15, 23, 59, 59, 999) };
+  }
+  return { start: new Date(year, month, 16), end: new Date(year, month + 1, 0, 23, 59, 59, 999) };
+};
 
 export default function ShiftsTab() {
   const [shifts, setShifts] = useState([]);
@@ -12,6 +22,8 @@ export default function ShiftsTab() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [search, setSearch] = useState('');
+  const [payrollPayments, setPayrollPayments] = useState([]);
+  const [showPayrollSummary, setShowPayrollSummary] = useState(false);
 
   // Hourly Rate States
   const [cashierRate, setCashierRate] = useState(() => parseFloat(localStorage.getItem('hourly_rate_cashier')) || 75);
@@ -47,6 +59,28 @@ export default function ShiftsTab() {
     return hours * rate;
   };
 
+  const markStaffPayrollPaid = async (group) => {
+    const completedShifts = group.shifts.filter(shift => shift.status !== 'active');
+    if (!group.staffId || completedShifts.length === 0) return;
+    try {
+      const latestShift = completedShifts.reduce((latest, shift) => new Date(shift.startTime) > new Date(latest.startTime) ? shift : latest, completedShifts[0]);
+      const period = getPayrollPeriod(latestShift.startTime);
+      const totalSalary = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
+      await updateStaffPayroll(group.staffId, {
+        periodStart: period.start.toISOString(),
+        periodEnd: period.end.toISOString(),
+        status: 'paid',
+        amount: totalSalary,
+        paymentDate: new Date().toISOString(),
+        paymentMethod: 'cash',
+        note: 'Paid from Payroll Summary'
+      });
+      await loadShifts();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to mark staff payroll as paid.');
+    }
+  };
+
   useEffect(() => {
     loadShifts();
   }, [statusFilter, roleFilter, startDate, endDate]);
@@ -63,6 +97,18 @@ export default function ShiftsTab() {
       const res = await getAdminShifts(params);
       setShifts(res.data.data.shifts || []);
       setSummary(res.data.data.summary || null);
+
+      const period = getPayrollPeriod(startDate || endDate || new Date());
+      try {
+        const payrollRes = await getStaffPayroll({
+          periodStart: period.start.toISOString(),
+          periodEnd: period.end.toISOString()
+        });
+        setPayrollPayments(payrollRes.data.data || []);
+      } catch (payrollError) {
+        console.error('Failed to load payroll records:', payrollError);
+        setPayrollPayments([]);
+      }
     } catch (error) {
       console.error('Failed to load shifts:', error);
     } finally {
@@ -86,6 +132,26 @@ export default function ShiftsTab() {
     const q = search.toLowerCase();
     return s.cashierName?.toLowerCase().includes(q) || s.user?.name?.toLowerCase().includes(q) || s.user?.email?.toLowerCase().includes(q);
   });
+
+  const payrollPeriod = getPayrollPeriod(startDate || endDate || new Date());
+  const payrollShifts = filteredShifts.filter(shift => {
+    const shiftDate = new Date(shift.startTime);
+    return shiftDate >= payrollPeriod.start && shiftDate <= payrollPeriod.end;
+  });
+
+  const payrollGroups = Object.values(payrollShifts.reduce((groups, shift) => {
+    const staffId = shift.userId || shift.user?.id || shift.cashierName;
+    if (!groups[staffId]) {
+      groups[staffId] = {
+        staffId: shift.userId || shift.user?.id,
+        name: shift.cashierName || shift.user?.name || 'Staff',
+        role: shift.role || shift.user?.role || 'staff',
+        shifts: []
+      };
+    }
+    groups[staffId].shifts.push(shift);
+    return groups;
+  }, {}));
 
   const exportCSV = () => {
     if (filteredShifts.length === 0) return alert('No shift records to export.');
@@ -150,6 +216,71 @@ export default function ShiftsTab() {
 
   return (
     <div className="space-y-5 lg:space-y-6 animate-fade-in min-w-0">
+      {showPayrollSummary && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-[2rem] w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl animate-scale-in">
+            <div className="flex items-start justify-between gap-4 p-6 sm:p-8 border-b border-slate-100">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Payroll Overview</p>
+                <h3 className="font-heading text-2xl sm:text-3xl font-black text-slate-900">Staff Salary Summary</h3>
+                <p className="text-sm text-slate-500 font-medium mt-1">Review each staff member's shifts and mark completed payroll payments.</p>
+                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-2">Pay period: {payrollPeriod.start.toLocaleDateString()} - {payrollPeriod.end.toLocaleDateString()}</p>
+              </div>
+              <button type="button" onClick={() => setShowPayrollSummary(false)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 text-xl leading-none">&times;</button>
+            </div>
+
+            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-150px)] space-y-3">
+              {payrollGroups.map(group => {
+                const completedShifts = group.shifts.filter(shift => shift.status !== 'active');
+                const estimatedTotal = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
+                const payrollPayment = payrollPayments.find(payment => payment.userId === group.staffId);
+                const isPaid = payrollPayment?.status === 'paid';
+                const paidTotal = isPaid ? Number(payrollPayment.amount || 0) : 0;
+                const hasUnpaidPayroll = !isPaid && completedShifts.length > 0;
+
+                return (
+                  <div key={`${group.name}-${group.role}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <h4 className="font-heading text-lg font-black text-slate-900 truncate">{group.name}</h4>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{group.role} · {completedShifts.length} timed-out shift{completedShifts.length === 1 ? '' : 's'}</p>
+                      </div>
+                      <div className="flex items-center gap-4 sm:text-right">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Estimated</p>
+                          <p className="font-black text-slate-900">{formatCurrency(estimatedTotal)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payroll Status</p>
+                          <p className={`font-black ${hasUnpaidPayroll ? 'text-amber-600' : 'text-emerald-600'}`}>{hasUnpaidPayroll ? 'Not Yet Paid' : 'Paid'}</p>
+                        </div>
+                        <button type="button" onClick={() => markStaffPayrollPaid(group)} disabled={!hasUnpaidPayroll} className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                          {hasUnpaidPayroll ? 'Mark Total Paid' : 'Paid'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                      {group.shifts.map(shift => (
+                        <div key={shift.id} className="flex items-center justify-between gap-3 rounded-xl bg-white border border-slate-100 px-3 py-2.5 text-xs">
+                          <span className="text-slate-500">{formatDate(shift.startTime)} · {getShiftDuration(shift.startTime, shift.endTime)}</span>
+                          <span className="font-bold text-slate-800">{formatCurrency(calculateSalary(shift))}</span>
+                          <span className={`text-[9px] font-black uppercase ${shift.status === 'active' ? 'text-blue-600' : isPaid ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {shift.status === 'active' ? 'Active' : isPaid ? 'Paid' : 'Unpaid'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {paidTotal > 0 && <p className="text-[10px] text-emerald-600 font-semibold mt-3">Total paid for this period: {formatCurrency(paidTotal)}</p>}
+                  </div>
+                );
+              })}
+              {payrollGroups.length === 0 && <p className="text-center text-slate-400 py-12 font-medium">No staff shifts found for this filter.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header & Title */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -168,6 +299,14 @@ export default function ShiftsTab() {
           >
             <Download className="w-4 h-4" />
             Export CSV
+          </button>
+          <button
+            onClick={() => setShowPayrollSummary(true)}
+            disabled={filteredShifts.length === 0}
+            className="flex-1 lg:flex-none justify-center px-3 sm:px-4 py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white rounded-2xl text-xs font-black shadow-sm transition-all flex items-center gap-2"
+          >
+            <Wallet className="w-4 h-4" />
+            Payroll Summary
           </button>
           <button
             onClick={loadShifts}
@@ -191,7 +330,7 @@ export default function ShiftsTab() {
             <div className="flex items-center gap-1.5 mt-1 text-[11px] font-semibold">
               <span className="text-emerald-600">{summary.activeShiftsCount} Active</span>
               <span className="text-slate-300">•</span>
-              <span className="text-slate-500">{summary.closedShiftsCount} Closed</span>
+              <span className="text-slate-500">{summary.closedShiftsCount} Timed Out</span>
             </div>
           </div>
 
@@ -216,7 +355,7 @@ export default function ShiftsTab() {
               <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Online Sales</span>
             </div>
             <p className="text-xl font-black text-blue-600 font-heading">{formatCurrency(summary.totalOnlineSales || 0)}</p>
-            <p className="text-[11px] text-slate-400 font-medium mt-1">GCash / Maya / Card</p>
+            <p className="text-[11px] text-slate-400 font-medium mt-1">GCash / Maya</p>
           </div>
 
           <div className="glass-card p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
@@ -398,11 +537,11 @@ export default function ShiftsTab() {
                   return (
                     <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-4 px-4 font-bold text-slate-900">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-[190px]">
                           <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs">
                             <User className="w-3.5 h-3.5" />
                           </div>
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <div>{s.cashierName || s.user?.name || 'Staff'}</div>
                             {s.user?.email && <div className="text-[10px] text-slate-400 font-normal">{s.user.email}</div>}
                           </div>

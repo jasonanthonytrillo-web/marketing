@@ -925,4 +925,95 @@ router.get('/shifts', authenticate, authorize('admin', 'superadmin'), async (req
   }
 });
 
+// Payroll records: one total salary payment per staff member and pay period.
+router.get('/payroll', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
+  try {
+    const now = new Date();
+    const defaultStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() <= 15 ? 1 : 16);
+    const defaultEnd = new Date(now.getFullYear(), now.getMonth() + (now.getDate() <= 15 ? 0 : 1), now.getDate() <= 15 ? 15 : 0, 23, 59, 59, 999);
+    const periodStart = new Date(req.query.periodStart || defaultStart);
+    const periodEnd = new Date(req.query.periodEnd || defaultEnd);
+    const payments = await prisma.payrollPayment.findMany({
+      where: { tenantId: req.tenantId, periodStart, periodEnd },
+      include: { staff: { select: { id: true, name: true, role: true } }, recordedBy: { select: { name: true } } }
+    });
+    res.json({ success: true, data: payments });
+  } catch (error) {
+    console.error('Payroll records error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load payroll records.' });
+  }
+});
+
+router.put('/payroll/:userId', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    const { periodStart, periodEnd, amount, status = 'paid', paymentDate, paymentMethod, note } = req.body;
+    const start = new Date(periodStart);
+    const end = new Date(periodEnd);
+    const paidAmount = Number(amount);
+
+    if (!Number.isFinite(userId) || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
+      return res.status(400).json({ success: false, message: 'A valid payroll period is required.' });
+    }
+    if (status === 'paid' && (!Number.isFinite(paidAmount) || paidAmount < 0)) {
+      return res.status(400).json({ success: false, message: 'A valid total salary is required.' });
+    }
+
+    const staff = await prisma.user.findFirst({
+      where: { id: userId, tenantId: req.tenantId, role: { not: 'customer' } },
+      select: { id: true, name: true }
+    });
+    if (!staff) return res.status(404).json({ success: false, message: 'Staff member not found.' });
+
+    const isPaid = status === 'paid';
+    const payroll = await prisma.payrollPayment.upsert({
+      where: {
+        tenantId_userId_periodStart_periodEnd: {
+          tenantId: req.tenantId,
+          userId,
+          periodStart: start,
+          periodEnd: end
+        }
+      },
+      update: {
+        amount: isPaid ? paidAmount : 0,
+        status: isPaid ? 'paid' : 'unpaid',
+        paymentDate: isPaid ? (paymentDate ? new Date(paymentDate) : new Date()) : null,
+        paymentMethod: isPaid ? (paymentMethod || 'cash') : null,
+        note: isPaid ? (note || null) : null,
+        recordedById: isPaid ? req.user.id : null
+      },
+      create: {
+        tenantId: req.tenantId,
+        userId,
+        periodStart: start,
+        periodEnd: end,
+        amount: isPaid ? paidAmount : 0,
+        status: isPaid ? 'paid' : 'unpaid',
+        paymentDate: isPaid ? (paymentDate ? new Date(paymentDate) : new Date()) : null,
+        paymentMethod: isPaid ? (paymentMethod || 'cash') : null,
+        note: isPaid ? (note || null) : null,
+        recordedById: isPaid ? req.user.id : null
+      },
+      include: { staff: { select: { id: true, name: true } } }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: isPaid ? 'mark_payroll_period_paid' : 'mark_payroll_period_unpaid',
+        entityType: 'payroll_payment',
+        entityId: String(payroll.id),
+        details: `${isPaid ? 'Marked payroll paid' : 'Reset payroll to unpaid'} for ${staff.name}: ${isPaid ? `₱${paidAmount.toFixed(2)}` : 'no payment recorded'}`
+      }
+    });
+
+    res.json({ success: true, data: payroll });
+  } catch (error) {
+    console.error('Payroll period update error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update payroll payment.' });
+  }
+});
+
 module.exports = router;

@@ -147,6 +147,8 @@ export const getKitchenTimes = () => api.get('/reports/kitchen-times');
 export const getForecasting = () => api.get('/reports/forecasting');
 export const getSalesByDate = (date) => api.get(`/reports/sales-by-date?date=${date}`);
 export const getAdminShifts = (params) => api.get('/admin/shifts', { params });
+export const updateStaffPayroll = (userId, data) => api.put(`/admin/payroll/${userId}`, data);
+export const getStaffPayroll = (params) => api.get('/admin/payroll', { params });
 
 // Suppliers
 export const getSuppliers = () => api.get('/suppliers');

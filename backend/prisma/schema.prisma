@@ -45,6 +45,7 @@ model Tenant {
   promoCodes    PromoCode[]
   authorizedDevices AuthorizedDevice[]
   cashierShifts CashierShift[]
+  payrollPayments PayrollPayment[]
 }
 
 model User {
@@ -72,6 +73,8 @@ model User {
   payments  Payment[]
   auditLogs AuditLog[]
   cashierShifts CashierShift[]
+  payrollPayments PayrollPayment[] @relation("PayrollStaff")
+  recordedPayrollPayments PayrollPayment[] @relation("PayrollRecordedBy")
 
   @@unique([email, tenantId])
 }
@@ -461,4 +464,26 @@ model CashierShift {
 
   tenant         Tenant    @relation(fields: [tenantId], references: [id])
   user           User      @relation(fields: [userId], references: [id])
+}
+
+model PayrollPayment {
+  id             Int      @id @default(autoincrement())
+  tenantId       Int
+  userId         Int
+  periodStart    DateTime
+  periodEnd      DateTime
+  amount         Float
+  status         String   @default("unpaid") // unpaid, paid
+  paymentDate    DateTime?
+  paymentMethod  String?
+  note           String?
+  recordedById   Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant         Tenant  @relation(fields: [tenantId], references: [id])
+  staff          User    @relation("PayrollStaff", fields: [userId], references: [id])
+  recordedBy     User?   @relation("PayrollRecordedBy", fields: [recordedById], references: [id])
+
+  @@unique([tenantId, userId, periodStart, periodEnd])
 }
