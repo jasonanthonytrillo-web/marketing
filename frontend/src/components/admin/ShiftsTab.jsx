@@ -27,6 +27,7 @@ export default function ShiftsTab() {
   const [search, setSearch] = useState('');
   const [payrollPayments, setPayrollPayments] = useState([]);
   const [showPayrollSummary, setShowPayrollSummary] = useState(false);
+  const [payrollConfirmation, setPayrollConfirmation] = useState(null);
 
   // Hourly Rate States
   const [cashierRate, setCashierRate] = useState(() => parseFloat(localStorage.getItem('hourly_rate_cashier')) || 75);
@@ -65,16 +66,18 @@ export default function ShiftsTab() {
   const markStaffPayrollPaid = async (group) => {
     const completedShifts = group.shifts.filter(shift => shift.status !== 'active');
     if (!group.staffId || completedShifts.length === 0) return;
+    const latestShift = completedShifts.reduce((latest, shift) => new Date(shift.startTime) > new Date(latest.startTime) ? shift : latest, completedShifts[0]);
+    const period = getPayrollPeriod(latestShift.startTime);
+    const grossSalary = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
+    const shortage = completedShifts.reduce((total, shift) => total + Math.max(0, -(Number(shift.cashDifference) || 0)), 0);
+    const netSalary = Math.max(0, grossSalary - shortage);
+    setPayrollConfirmation({ group, period, grossSalary, shortage, netSalary });
+  };
+
+  const confirmPayrollPayment = async () => {
+    if (!payrollConfirmation) return;
+    const { group, period, grossSalary, shortage, netSalary } = payrollConfirmation;
     try {
-      const latestShift = completedShifts.reduce((latest, shift) => new Date(shift.startTime) > new Date(latest.startTime) ? shift : latest, completedShifts[0]);
-      const period = getPayrollPeriod(latestShift.startTime);
-      const grossSalary = completedShifts.reduce((total, shift) => total + calculateSalary(shift), 0);
-      const shortage = completedShifts.reduce((total, shift) => total + Math.max(0, -(Number(shift.cashDifference) || 0)), 0);
-      const netSalary = Math.max(0, grossSalary - shortage);
-      const approvalMessage = shortage > 0
-        ? `Approve ${formatCurrency(shortage)} shortage deduction from ${group.name}'s ${formatCurrency(grossSalary)} salary and mark ${formatCurrency(netSalary)} as paid?`
-        : `Mark ${formatCurrency(grossSalary)} salary for ${group.name} as paid?`;
-      if (!window.confirm(approvalMessage)) return;
       await updateStaffPayroll(group.staffId, {
         periodStart: period.start.toISOString(),
         periodEnd: period.end.toISOString(),
@@ -86,6 +89,7 @@ export default function ShiftsTab() {
         paymentMethod: 'cash',
         note: 'Paid from Payroll Summary'
       });
+      setPayrollConfirmation(null);
       await loadShifts();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to mark staff payroll as paid.');
@@ -246,6 +250,38 @@ export default function ShiftsTab() {
 
   return (
     <div className="space-y-5 lg:space-y-6 animate-fade-in min-w-0">
+      {payrollConfirmation && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/65 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+            <div className="bg-slate-900 px-6 py-5 text-white">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Confirm Payroll</p>
+              <h3 className="mt-1 font-heading text-2xl font-black">Mark salary as paid?</h3>
+              <p className="mt-1 text-sm text-slate-300">This payment will be recorded for {payrollConfirmation.group.name}.</p>
+            </div>
+            <div className="space-y-3 p-6">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-slate-500">Gross salary</span>
+                  <span className="font-black text-slate-900">{formatCurrency(payrollConfirmation.grossSalary)}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="font-semibold text-slate-500">Shortage deduction</span>
+                  <span className="font-black text-rose-600">{formatCurrency(payrollConfirmation.shortage)}</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
+                  <span className="font-black text-slate-900">Final amount to pay</span>
+                  <span className="text-xl font-black text-emerald-600">{formatCurrency(payrollConfirmation.netSalary)}</span>
+                </div>
+              </div>
+              <p className="text-xs leading-relaxed text-slate-500">The salary and any shortage deduction will be saved for this pay period.</p>
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setPayrollConfirmation(null)} className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button type="button" onClick={confirmPayrollPayment} className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white hover:bg-emerald-700">Confirm Payment</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showPayrollSummary && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-[2rem] w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl animate-scale-in">
