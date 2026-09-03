@@ -81,15 +81,15 @@ export default function LogsTab() {
 
   return (
     <div className="animate-fade-in-up">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-6 sm:mb-8">
         <div>
-          <h2 className="font-heading text-3xl font-black text-slate-900 tracking-tight">Security Audit Logs</h2>
-          <p className="text-slate-500 font-medium">Track cashier payments, kitchen updates, rider deliveries, and logins in real-time.</p>
+          <h2 className="font-heading text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Security Audit Logs</h2>
+          <p className="text-slate-500 font-medium text-sm sm:text-base">Track cashier payments, kitchen updates, rider deliveries, and logins in real-time.</p>
         </div>
       </div>
 
       {/* Premium Interactive Filters Block */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6 bg-slate-50/50 p-6 rounded-[28px] border border-slate-100">
+      <div className="flex flex-col lg:flex-row gap-4 mb-6 bg-slate-50/50 p-4 sm:p-6 rounded-[28px] border border-slate-100">
         <div className="flex-1">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Search Logs</label>
           <div className="relative">
@@ -103,7 +103,7 @@ export default function LogsTab() {
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:w-96">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:w-96">
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Action Type</label>
             <select 
@@ -137,7 +137,7 @@ export default function LogsTab() {
         </div>
       </div>
 
-      <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="hidden lg:block bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -195,6 +195,44 @@ export default function LogsTab() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Stacked cards keep each event readable on tablets and phones. */}
+      <div className="lg:hidden space-y-3">
+        {filteredLogs.map(log => (
+          <article key={log.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-sm font-black text-slate-500 uppercase shrink-0">
+                  {(log.user?.name || 'S')[0]}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold text-slate-900 truncate">{log.user?.name || 'System'}</div>
+                  <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{log.user?.role || 'system'}</div>
+                </div>
+              </div>
+              <span className={`shrink-0 px-2.5 py-1 rounded-full text-[9px] font-black uppercase border ${getActionColor(log.action)}`}>
+                {log.action.replace(/_/g, ' ')}
+              </span>
+            </div>
+            <div className="border-t border-slate-100 pt-3">
+              <p className="text-slate-700 font-medium leading-relaxed text-sm">
+                {log.details || `Performed ${log.action} on ${log.entityType} (${log.entityId})`}
+              </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                <span>{formatDate(log.createdAt)}</span>
+                <span><span className="opacity-50">{log.entityType}:</span> {log.entityId || 'N/A'}</span>
+              </div>
+            </div>
+          </article>
+        ))}
+        {filteredLogs.length === 0 && (
+          <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center">
+            <SearchX className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-400 font-bold text-lg mb-1">No matching activity logs found.</p>
+            <p className="text-slate-400 text-xs">Try relaxing your search query or dropdown filters.</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { getSettings, updateSettings, uploadImage } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { Palette, Smartphone, Gem, Upload, Plus, ArrowRight, X, CheckCircle, Loader2, MapPin, Store, Monitor, Tag, Trash2 } from 'lucide-react';
+import { Palette, Smartphone, Gem, Upload, Plus, ArrowRight, X, CheckCircle, Loader2, MapPin, Store, Monitor, Tag, Trash2, ChevronDown } from 'lucide-react';
 import LocationPicker from '../LocationPicker';
 
 export default function SettingsTab() {
@@ -11,6 +11,7 @@ export default function SettingsTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [openSection, setOpenSection] = useState(null);
 
   const isSuper = user?.role === 'superadmin';
 
@@ -119,14 +120,15 @@ export default function SettingsTab() {
 
         {/* Store Operations */}
         <div className="glass-card overflow-hidden">
-          <div className="p-6 bg-orange-50 border-b border-orange-100 flex items-center gap-4">
+          <button type="button" onClick={() => setOpenSection(openSection === 'operations' ? null : 'operations')} aria-expanded={openSection === 'operations'} className="w-full text-left p-6 bg-orange-50 border-b border-orange-100 flex items-center gap-4 hover:bg-orange-100/70 transition-colors">
             <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-500/20"><Store className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-orange-900">Store Operations</h3>
               <p className="text-orange-700 text-xs font-medium">Manage your shop's open status and delivery.</p>
             </div>
-          </div>
-          <div className="p-8 space-y-6">
+            <ChevronDown className={`w-5 h-5 ml-auto text-orange-700 transition-transform ${openSection === 'operations' ? 'rotate-180' : ''}`} />
+          </button>
+          <div className={`${openSection === 'operations' ? 'block' : 'hidden'} p-8 space-y-6`}>
             <div className="pb-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Store Operation Status</label>
@@ -187,14 +189,15 @@ export default function SettingsTab() {
 
         {/* Brand Identity */}
         <div className="glass-card overflow-hidden">
-          <div className="p-6 bg-primary-50 border-b border-primary-100 flex items-center gap-4">
+          <button type="button" onClick={() => setOpenSection(openSection === 'branding' ? null : 'branding')} aria-expanded={openSection === 'branding'} className="w-full text-left p-6 bg-primary-50 border-b border-primary-100 flex items-center gap-4 hover:bg-primary-100/70 transition-colors">
             <div className="w-12 h-12 bg-primary-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary-500/20"><Palette className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-primary-900">Brand Identity</h3>
               <p className="text-primary-700 text-xs font-medium">Customize your store's name and logo.</p>
             </div>
-          </div>
-          <div className="p-8 space-y-6">
+            <ChevronDown className={`w-5 h-5 ml-auto text-primary-700 transition-transform ${openSection === 'branding' ? 'rotate-180' : ''}`} />
+          </button>
+          <div className={`${openSection === 'branding' ? 'block' : 'hidden'} p-8 space-y-6`}>
             {isSuper && (
                 <div>
                   <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Display Store Name</label>
@@ -255,14 +258,15 @@ export default function SettingsTab() {
 
         {/* Kiosk Experience */}
         <div className="glass-card overflow-hidden">
-          <div className="p-6 bg-violet-50 border-b border-violet-100 flex items-center gap-4">
+          <button type="button" onClick={() => setOpenSection(openSection === 'kiosk' ? null : 'kiosk')} aria-expanded={openSection === 'kiosk'} className="w-full text-left p-6 bg-violet-50 border-b border-violet-100 flex items-center gap-4 hover:bg-violet-100/70 transition-colors">
             <div className="w-12 h-12 bg-violet-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-violet-500/20"><Monitor className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-violet-900">Kiosk Experience</h3>
               <p className="text-violet-700 text-xs font-medium">Design how the self-checkout screen looks.</p>
             </div>
-          </div>
-          <div className="p-8 space-y-6">
+            <ChevronDown className={`w-5 h-5 ml-auto text-violet-700 transition-transform ${openSection === 'kiosk' ? 'rotate-180' : ''}`} />
+          </button>
+          <div className={`${openSection === 'kiosk' ? 'block' : 'hidden'} p-8 space-y-6`}>
             <div>
               <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Kiosk Ambient Visual Effect</label>
               <select 
@@ -374,14 +378,15 @@ export default function SettingsTab() {
 
         {/* Store Location Settings */}
         <div className="glass-card overflow-hidden">
-          <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex items-center gap-4">
+          <button type="button" onClick={() => setOpenSection(openSection === 'location' ? null : 'location')} aria-expanded={openSection === 'location'} className="w-full text-left p-6 bg-emerald-50 border-b border-emerald-100 flex items-center gap-4 hover:bg-emerald-100/70 transition-colors">
             <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20"><MapPin className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-emerald-900">Store Location</h3>
               <p className="text-emerald-700 text-xs font-medium">Set your shop coordinates for delivery calculations.</p>
             </div>
-          </div>
-          <div className="p-8 space-y-6">
+            <ChevronDown className={`w-5 h-5 ml-auto text-emerald-700 transition-transform ${openSection === 'location' ? 'rotate-180' : ''}`} />
+          </button>
+          <div className={`${openSection === 'location' ? 'block' : 'hidden'} p-8 space-y-6`}>
             <div className="bg-surface-50 rounded-2xl p-4 border border-surface-200">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[10px] font-black uppercase tracking-widest text-surface-500">Shop Pin (Coordinates)</p>
@@ -424,14 +429,15 @@ export default function SettingsTab() {
         </div>
 
         <div className="glass-card overflow-hidden">
-          <div className="p-6 bg-blue-50 border-b border-blue-100 flex items-center gap-4">
+          <button type="button" onClick={() => setOpenSection(openSection === 'payment' ? null : 'payment')} aria-expanded={openSection === 'payment'} className="w-full text-left p-6 bg-blue-50 border-b border-blue-100 flex items-center gap-4 hover:bg-blue-100/70 transition-colors">
             <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20"><Smartphone className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-blue-900">Payment Settings</h3>
               <p className="text-blue-700 text-xs font-medium">Manage your cashless payment details.</p>
             </div>
-          </div>
-          <div className="p-8 space-y-6">
+            <ChevronDown className={`w-5 h-5 ml-auto text-blue-700 transition-transform ${openSection === 'payment' ? 'rotate-180' : ''}`} />
+          </button>
+          <div className={`${openSection === 'payment' ? 'block' : 'hidden'} p-8 space-y-6`}>
             <div>
               <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">GCash QR Code</label>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -525,14 +531,15 @@ export default function SettingsTab() {
         </div>
 
         <div className="glass-card overflow-hidden">
-          <div className="p-6 bg-rose-50 border-b border-rose-100 flex items-center gap-4">
+          <button type="button" onClick={() => setOpenSection(openSection === 'badges' ? null : 'badges')} aria-expanded={openSection === 'badges'} className="w-full text-left p-6 bg-rose-50 border-b border-rose-100 flex items-center gap-4 hover:bg-rose-100/70 transition-colors">
             <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-500/20"><Tag className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-rose-900">Custom Badges</h3>
               <p className="text-rose-700 text-xs font-medium">Create custom dietary and allergen product badges.</p>
             </div>
-          </div>
-          <div className="p-8 space-y-6">
+            <ChevronDown className={`w-5 h-5 ml-auto text-rose-700 transition-transform ${openSection === 'badges' ? 'rotate-180' : ''}`} />
+          </button>
+          <div className={`${openSection === 'badges' ? 'block' : 'hidden'} p-8 space-y-6`}>
             <div>
               <div className="flex items-center justify-between mb-4">
                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Custom Dietary Badges</label>
@@ -623,14 +630,15 @@ export default function SettingsTab() {
         </div>
 
         <div className="glass-card overflow-hidden">
-          <div className="p-6 bg-emerald-50 border-b border-emerald-100 flex items-center gap-4">
+          <button type="button" onClick={() => setOpenSection(openSection === 'loyalty' ? null : 'loyalty')} aria-expanded={openSection === 'loyalty'} className="w-full text-left p-6 bg-emerald-50 border-b border-emerald-100 flex items-center gap-4 hover:bg-emerald-100/70 transition-colors">
             <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20"><Gem className="w-6 h-6" /></div>
             <div>
               <h3 className="font-heading font-bold text-emerald-900">Loyalty Program</h3>
               <p className="text-emerald-700 text-xs font-medium">Control how customers earn rewards.</p>
             </div>
-          </div>
-          <div className="p-8 space-y-6">
+            <ChevronDown className={`w-5 h-5 ml-auto text-emerald-700 transition-transform ${openSection === 'loyalty' ? 'rotate-180' : ''}`} />
+          </button>
+          <div className={`${openSection === 'loyalty' ? 'block' : 'hidden'} p-8 space-y-6`}>
             <div>
               <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center justify-between">
                 Points Accumulation Rate

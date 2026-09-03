@@ -158,9 +158,9 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="h-screen bg-surface-50 flex flex-col md:flex-row overflow-hidden">
-      {/* Sidebar - Desktop Only */}
-      <aside className="hidden md:flex w-64 bg-surface-900 text-white flex-col md:h-screen z-30 flex-shrink-0 border-r border-surface-800 pb-safe">
+    <div className="h-screen bg-surface-50 flex flex-col lg:flex-row overflow-hidden">
+      {/* Sidebar - Large Screens Only */}
+      <aside className="hidden lg:flex w-64 bg-surface-900 text-white flex-col lg:h-screen z-30 flex-shrink-0 border-r border-surface-800 pb-safe">
         {/* Desktop Only Header */}
         <div className="flex p-6 border-b border-surface-800 justify-between items-center">
           <h1 className="font-heading text-xl font-black tracking-tight text-white flex items-center gap-2">
@@ -192,13 +192,13 @@ export default function AdminDashboard() {
       {/* Mobile Drawer Overlay */}
       {showDrawer && (
         <div 
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setShowDrawer(false)}
         />
       )}
 
       {/* Mobile Navigation Drawer */}
-      <div className={`fixed left-0 top-0 h-full w-64 bg-surface-900 text-white flex flex-col z-50 md:hidden transform transition-transform duration-300 ease-in-out overflow-y-auto ${showDrawer ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed left-0 top-0 h-full w-64 bg-surface-900 text-white flex flex-col z-50 lg:hidden transform transition-transform duration-300 ease-in-out overflow-y-auto ${showDrawer ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Mobile Drawer Header */}
         <div className="flex p-6 border-b border-surface-800 justify-between items-center flex-shrink-0">
           <h1 className="font-heading text-xl font-black tracking-tight text-white flex items-center gap-2">
@@ -237,12 +237,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden md:h-screen">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden lg:h-screen">
         <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-surface-200 bg-white/80 backdrop-blur-xl flex-shrink-0">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setShowDrawer(!showDrawer)}
-              className="md:hidden p-2 hover:bg-surface-100 rounded-lg transition-colors text-surface-900"
+              className="lg:hidden p-2 hover:bg-surface-100 rounded-lg transition-colors text-surface-900"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -269,18 +269,18 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {activeTab === 'overview' && summary && (
-            <div className="animate-fade-in space-y-8">
+            <div className="animate-fade-in w-full max-w-[1400px] mx-auto space-y-6 sm:space-y-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-heading text-3xl font-black text-surface-900 tracking-tight">Business Intelligence</h2>
+                  <h2 className="font-heading text-2xl sm:text-3xl font-black text-surface-900 tracking-tight">Business Intelligence</h2>
                   <p className="text-surface-500 font-medium">Real-time performance metrics for your shop.</p>
                 </div>
               </div>
               
               {/* Main KPI Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <StatCard title="Today's Revenue" value={formatCurrency(summary.revenue)} icon={<CircleDollarSign className="w-6 h-6" />} color="blue" />
                 <StatCard title="Today's Expenses" value={formatCurrency(summary.totalExpenses || 0)} icon={<Coins className="w-6 h-6" />} color="red" />
                 <StatCard title="Net Profit" value={formatCurrency((summary.revenue || 0) - (summary.totalExpenses || 0))} icon={<LineChart className="w-6 h-6" />} color="emerald" />
@@ -288,7 +288,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Visitor Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-surface-200 hover:shadow-xl hover:shadow-primary-500/5 transition-all group">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-indigo-50 text-indigo-600 group-hover:scale-110 transition-transform">
@@ -316,10 +316,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Secondary Metrics */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
                   <h3 className="font-heading font-bold text-surface-900 mb-6">Sales Performance (Last 14 Days)</h3>
-                  <div className="h-[300px] w-full pt-4">
+                  <div className="h-[260px] sm:h-[300px] w-full pt-4">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={summary.dailySales || []} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                         <defs>
@@ -392,14 +392,14 @@ function StatCard({ title, value, icon, color }) {
   };
 
   return (
-    <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-surface-200 hover:shadow-xl hover:shadow-primary-500/5 transition-all group">
+    <div className="bg-white rounded-[1.5rem] sm:rounded-[2rem] p-5 sm:p-6 min-h-[176px] shadow-sm border border-surface-200 hover:shadow-xl hover:shadow-primary-500/5 transition-all group">
       <div className="flex items-center justify-between mb-4">
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${colors[color]} group-hover:scale-110 transition-transform`}>
           {icon}
         </div>
       </div>
-      <p className="text-surface-500 font-bold text-sm mb-1">{title}</p>
-      <p className="text-3xl font-black text-surface-900 tracking-tight">{value}</p>
+      <p className="text-surface-500 font-bold text-sm mb-1 leading-snug">{title}</p>
+      <p className="text-2xl sm:text-3xl font-black text-surface-900 tracking-tight break-words">{value}</p>
     </div>
   );
 }
