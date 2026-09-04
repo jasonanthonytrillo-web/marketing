@@ -8,6 +8,7 @@ import { applyTheme } from '../utils/theme';
 import { Utensils, ShoppingBag, Banknote, Smartphone, CreditCard, ShoppingCart, Gem, MapPin, Hash, Truck, Download, CheckCircle, Tag } from 'lucide-react';
 import LocationPicker from '../components/LocationPicker';
 import { useSocket } from '../context/SocketContext';
+import useStoreOperationRealtime from '../hooks/useStoreOperationRealtime';
 
 const TRANSLATIONS = {
   en: {
@@ -85,6 +86,7 @@ export default function Checkout() {
   const [searchParams] = useSearchParams();
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const [branding, setBranding] = useState(null);
+  useStoreOperationRealtime(branding, setBranding);
   
   const { joinRoom, leaveRoom, connected, emit } = useSocket();
   const [hasVisited, setHasVisited] = useState(false);

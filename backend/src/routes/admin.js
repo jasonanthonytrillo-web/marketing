@@ -426,7 +426,7 @@ router.get('/notifications', authenticate, authorize('admin'), async (req, res) 
       }),
       prisma.eventBooking.findMany({
         where: { tenantId: req.tenantId, status: 'pending' },
-        select: { id: true, customerName: true, package: { select: { name: true } }, eventDate: true, createdAt: true },
+        select: { id: true, customerName: true, paymentStatus: true, paymentReference: true, package: { select: { name: true } }, eventDate: true, createdAt: true, paymentSubmittedAt: true },
         orderBy: { createdAt: 'desc' },
         take: 50
       })
@@ -490,16 +490,18 @@ router.get('/notifications', authenticate, authorize('admin'), async (req, res) 
         return items;
       }),
       ...bookings.map(booking => ({
-        id: `package-booking-${booking.id}`,
+        id: booking.paymentStatus === 'submitted' ? `package-payment-${booking.id}` : `package-booking-${booking.id}`,
         type: 'package_booking',
-        title: 'New package booking',
-        message: `${booking.customerName} requested ${booking.package.name} for ${booking.eventDate.toLocaleDateString()}.`,
+        title: booking.paymentStatus === 'submitted' ? 'Payment reference submitted' : 'New package booking',
+        message: booking.paymentStatus === 'submitted'
+          ? `${booking.customerName} submitted GCash reference ${booking.paymentReference || ''} for ${booking.package.name}.`
+          : `${booking.customerName} requested ${booking.package.name} for ${booking.eventDate.toLocaleDateString()}.`,
         tab: 'bookings',
         timestamp: booking.createdAt
       }))
     ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-    res.json({ success: true, data: notifications });
+    res.json({ success: true, data: notifications, meta: { pendingBookingCount: bookings.length } });
   } catch (error) {
     console.error('Admin notifications error:', error);
     res.status(500).json({ success: false, message: 'Failed to load notifications.' });
@@ -733,10 +735,18 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
 
     // Update Tenant branding if needed
     if (Object.keys(brandingUpdate).length > 0) {
-      await prisma.tenant.update({
+    await prisma.tenant.update({
         where: { id: req.tenantId },
         data: brandingUpdate
       });
+    }
+
+    if (req.io && ['storeClosed', 'deliveryDisabled'].some(field => Object.prototype.hasOwnProperty.call(brandingUpdate, field))) {
+      const operationState = await prisma.tenant.findUnique({
+        where: { id: req.tenantId },
+        select: { storeClosed: true, deliveryDisabled: true }
+      });
+      req.io.to(`tenant-${req.tenantId}-store`).emit('store_operation_updated', operationState);
     }
 
     // Update regular system settings
@@ -903,6 +913,87 @@ router.get('/bookings', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
+// POST /api/admin/bookings/:id/payment-request — Send QR/payment instructions to customer
+router.post('/bookings/:id/payment-request', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { paymentMode, paymentAmount, paymentQr, paymentInstructions } = req.body;
+    const amount = Number(paymentAmount);
+    if (!['downpayment', 'full_payment'].includes(paymentMode) || !Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ success: false, message: 'Choose downpayment or full payment and enter a valid amount.' });
+    }
+
+    const booking = await prisma.eventBooking.findFirst({
+      where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId },
+      include: { package: { select: { name: true } } }
+    });
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking request not found.' });
+    if (booking.status !== 'pending') return res.status(400).json({ success: false, message: 'Only pending bookings can receive a payment request.' });
+
+    let qrCode = paymentQr?.trim() || null;
+    if (!qrCode) {
+      const tenant = await prisma.tenant.findUnique({ where: { id: req.tenantId }, select: { gcashQr: true } });
+      qrCode = tenant?.gcashQr || null;
+    }
+    if (!qrCode) return res.status(400).json({ success: false, message: 'Add a GCash QR code in Settings or provide a QR code for this request.' });
+
+    const updated = await prisma.eventBooking.update({
+      where: { id: booking.id },
+      data: {
+        paymentMode,
+        paymentAmount: amount,
+        paymentQr: qrCode,
+        paymentInstructions: paymentInstructions?.trim() || 'Scan the QR code, pay the requested amount, then submit the last 4 digits of your GCash reference ID.',
+        paymentStatus: 'awaiting_payment',
+        paymentReference: null,
+        paymentSubmittedAt: null,
+        paymentVerifiedAt: null
+      },
+      include: { package: { select: { name: true } } }
+    });
+
+    await prisma.auditLog.create({
+      data: { tenantId: req.tenantId, userId: req.user.id, action: 'request_package_payment', entityType: 'package_booking', entityId: String(booking.id), details: `Requested ${paymentMode} of ₱${amount.toFixed(2)} for ${booking.package.name}` }
+    });
+    if (req.io) req.io.to(`tenant-${req.tenantId}-user-${booking.customerId}`).emit('package_payment_requested', updated);
+    res.json({ success: true, data: updated, message: 'Payment instructions sent to the customer.' });
+  } catch (error) {
+    console.error('Package payment request error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send payment instructions.' });
+  }
+});
+
+// PATCH /api/admin/bookings/:id/payment-status — Verify or reject customer payment
+router.patch('/bookings/:id/payment-status', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { paymentStatus } = req.body;
+    if (!['verified', 'rejected'].includes(paymentStatus)) {
+      return res.status(400).json({ success: false, message: 'Payment status must be verified or rejected.' });
+    }
+    const booking = await prisma.eventBooking.findFirst({
+      where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId },
+      include: { package: { select: { name: true } } }
+    });
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking request not found.' });
+    if (paymentStatus === 'verified' && booking.paymentStatus !== 'submitted') {
+      return res.status(400).json({ success: false, message: 'The customer must submit a payment reference first.' });
+    }
+
+    const updated = await prisma.eventBooking.update({
+      where: { id: booking.id },
+      data: { paymentStatus, paymentVerifiedAt: paymentStatus === 'verified' ? new Date() : null },
+      include: { package: { select: { name: true } } }
+    });
+    await prisma.auditLog.create({
+      data: { tenantId: req.tenantId, userId: req.user.id, action: `${paymentStatus}_package_payment`, entityType: 'package_booking', entityId: String(booking.id), details: `${paymentStatus === 'verified' ? 'Verified' : 'Rejected'} payment reference ${booking.paymentReference || 'N/A'} for ${booking.package.name}` }
+    });
+    if (req.io) req.io.to(`tenant-${req.tenantId}-user-${booking.customerId}`).emit('package_payment_status_updated', updated);
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Package payment verification error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update payment status.' });
+  }
+});
+
 // PATCH /api/admin/bookings/:id/status — Accept or reject a package booking
 router.patch('/bookings/:id/status', authenticate, authorize('admin'), async (req, res) => {
   try {
@@ -915,6 +1006,9 @@ router.patch('/bookings/:id/status', authenticate, authorize('admin'), async (re
       where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId }
     });
     if (!booking) return res.status(404).json({ success: false, message: 'Booking request not found.' });
+    if (status === 'accepted' && booking.paymentStatus !== 'verified') {
+      return res.status(400).json({ success: false, message: 'Verify the customer payment before accepting this booking.' });
+    }
 
     const updated = await prisma.eventBooking.update({
       where: { id: booking.id },

@@ -6,7 +6,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 // POST /api/bookings — Submit a package booking request from a logged-in customer
 router.post('/', authenticate, authorize('customer'), async (req, res) => {
   try {
-    const { packageId, customerName, customerEmail, customerPhone, eventType, venue, eventDate, guestCount, notes } = req.body;
+    const { packageId, customerName, customerEmail, customerPhone, eventType, venue, venueLat, venueLng, eventDate, guestCount, notes } = req.body;
     const parsedPackageId = parseInt(packageId, 10);
     const parsedDate = new Date(eventDate);
     const parsedGuestCount = guestCount ? parseInt(guestCount, 10) : null;
@@ -36,6 +36,8 @@ router.post('/', authenticate, authorize('customer'), async (req, res) => {
         customerPhone: customerPhone?.trim() || null,
         eventType: eventType.trim(),
         venue: venue.trim(),
+        venueLat: Number.isFinite(Number(venueLat)) ? Number(venueLat) : null,
+        venueLng: Number.isFinite(Number(venueLng)) ? Number(venueLng) : null,
         eventDate: parsedDate,
         guestCount: parsedGuestCount,
         notes: notes?.trim() || null
@@ -77,6 +79,37 @@ router.get('/mine', authenticate, authorize('customer'), async (req, res) => {
   } catch (error) {
     console.error('Customer bookings error:', error);
     res.status(500).json({ success: false, message: 'Failed to load booking requests.' });
+  }
+});
+
+// POST /api/bookings/:id/payment — Customer submits the last 4 GCash reference digits
+router.post('/:id/payment', authenticate, authorize('customer'), async (req, res) => {
+  try {
+    const reference = String(req.body.reference || '').trim();
+    if (!/^\d{4}$/.test(reference)) {
+      return res.status(400).json({ success: false, message: 'Enter the 4-digit GCash reference ID.' });
+    }
+
+    const booking = await prisma.eventBooking.findFirst({
+      where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId, customerId: req.user.id },
+      include: { package: { select: { name: true } } }
+    });
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking request not found.' });
+    if (booking.paymentStatus !== 'awaiting_payment' && booking.paymentStatus !== 'rejected') {
+      return res.status(400).json({ success: false, message: 'This booking is not waiting for a payment reference.' });
+    }
+
+    const updated = await prisma.eventBooking.update({
+      where: { id: booking.id },
+      data: { paymentReference: reference, paymentStatus: 'submitted', paymentSubmittedAt: new Date() },
+      include: { package: { select: { name: true } } }
+    });
+
+    if (req.io) req.io.to(`tenant-${req.tenantId}-admin`).emit('admin_notification_update');
+    res.json({ success: true, data: updated, message: 'Payment reference sent to the admin for verification.' });
+  } catch (error) {
+    console.error('Package payment submission error:', error);
+    res.status(500).json({ success: false, message: 'Failed to submit payment reference.' });
   }
 });
 

@@ -12,7 +12,7 @@ const formatTime = (value) => {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
-export default function AdminNotifications({ userId, onNavigate }) {
+export default function AdminNotifications({ userId, onNavigate, onPendingBookingCountChange }) {
   const [notifications, setNotifications] = useState([]);
   const [readIds, setReadIds] = useState(() => {
     try {
@@ -28,6 +28,7 @@ export default function AdminNotifications({ userId, onNavigate }) {
     try {
       const response = await getAdminNotifications();
       setNotifications(response.data.data || []);
+      onPendingBookingCountChange?.(response.data.meta?.pendingBookingCount || 0);
     } catch (error) {
       console.error('Failed to load admin notifications:', error);
     }
@@ -37,7 +38,7 @@ export default function AdminNotifications({ userId, onNavigate }) {
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
-  }, [loadNotifications]);
+  }, [loadNotifications, onPendingBookingCountChange]);
 
   useEffect(() => {
     const unsubscribeUpdate = onEvent('admin_notification_update', loadNotifications);

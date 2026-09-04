@@ -6,11 +6,14 @@ import { useSocket } from '../context/SocketContext';
 import { formatCurrency, formatDate, unlockAudio } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
+import useStoreOperationRealtime from '../hooks/useStoreOperationRealtime';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
+import LocationPicker from '../components/LocationPicker';
 import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles } from 'lucide-react';
 
 const DEFAULT_MENU_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
+const COMMON_EVENT_TYPES = ['Birthday', 'Wedding', 'Corporate event', 'School event', 'Festival or market', 'Private gathering', 'Other'];
 
 const getOptimizedImageUrl = (imageUrl) => {
   if (!imageUrl) return DEFAULT_MENU_IMAGE;
@@ -42,15 +45,17 @@ export default function Menu() {
   const [categories, setCategories] = useState([]);
   const [tenantName, setTenantName] = useState('Our Menu');
   const [branding, setBranding] = useState(null);
+  useStoreOperationRealtime(branding, setBranding);
   const [activeCategory, setActiveCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
   const [bookingPackage, setBookingPackage] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ eventType: '', venue: '', eventDate: '', customerPhone: '', guestCount: '', notes: '' });
+  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
+  const [showBookingMap, setShowBookingMap] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [orderHistory, setOrderHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -166,7 +171,8 @@ export default function Menu() {
   const handleBookNow = (pkg) => {
     setBookingPackage(pkg);
     setBookingMessage('');
-    setBookingForm({ eventType: '', venue: '', eventDate: '', customerPhone: '', guestCount: '', notes: '' });
+    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '' });
+    setShowBookingMap(false);
     setShowPackages(false);
   };
 
@@ -179,7 +185,8 @@ export default function Menu() {
         packageId: bookingPackage.id,
         customerName: user.name,
         customerEmail: user.email,
-        ...bookingForm
+        ...bookingForm,
+        eventType: bookingForm.eventType === 'Other' ? bookingForm.otherEventType : bookingForm.eventType
       });
       setBookingMessage('Your booking request was sent. The admin will review it and contact you.');
       setTimeout(() => setBookingPackage(null), 2200);
@@ -1304,7 +1311,10 @@ export default function Menu() {
               <div className="bg-surface-100 rounded-2xl p-6 text-center border border-surface-200">
                 <Info className="w-6 h-6 text-surface-400 mx-auto mb-2" />
                 <h5 className="font-bold text-surface-800 mb-1">Need a custom quotation?</h5>
-                <p className="text-surface-500 text-sm">Please talk to our counter staff or reach us via our social media pages to finalize your event booking.</p>
+                <p className="text-surface-500 text-sm mb-4">If you want a custom package, please inquire through our Facebook page and our team will help create one for your event.</p>
+                <a href="https://www.facebook.com/hometownbrew24" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-[#1877F2] px-4 py-2.5 text-sm font-black text-white shadow-sm transition-all hover:bg-[#166fe5] hover:scale-105">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 21v-8h2.75l.4-3h-3.15V8.08c0-.87.24-1.46 1.5-1.46h1.75V3.94c-.3-.04-1.34-.13-2.55-.13-2.52 0-4.25 1.54-4.25 4.37V10H7v3h2.95v8h3.55Z" /></svg> Inquire on Facebook
+                </a>
               </div>
 
             </div>
@@ -1321,7 +1331,7 @@ export default function Menu() {
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-surface-400">Booking request</p>
                 <h2 className="mt-1 text-2xl font-black text-surface-900">{bookingPackage.name}</h2>
-                <p className="mt-1 text-sm font-medium text-surface-500">Tell us what, where, and when. The admin will confirm your request.</p>
+                <p className="mt-1 text-sm font-medium text-surface-500">Tell us what, where, and when.</p>
               </div>
               <button type="button" disabled={bookingSubmitting} onClick={() => setBookingPackage(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-100 text-surface-600 hover:bg-surface-200">×</button>
             </div>
@@ -1333,10 +1343,16 @@ export default function Menu() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-bold text-surface-700">What is the event?
-                <input required value={bookingForm.eventType} onChange={e => setBookingForm({ ...bookingForm, eventType: e.target.value })} placeholder="Birthday, wedding, corporate..." className="input-field mt-1 w-full" />
+                <select required value={bookingForm.eventType} onChange={e => setBookingForm({ ...bookingForm, eventType: e.target.value, otherEventType: '' })} className="input-field mt-1 w-full">
+                  <option value="">Select an event type</option>
+                  {COMMON_EVENT_TYPES.map(eventType => <option key={eventType} value={eventType}>{eventType}</option>)}
+                </select>
+                {bookingForm.eventType === 'Other' && <input required value={bookingForm.otherEventType} onChange={e => setBookingForm({ ...bookingForm, otherEventType: e.target.value })} placeholder="Type your event" className="input-field mt-2 w-full" />}
               </label>
-              <label className="text-sm font-bold text-surface-700">Where is it?
-                <input required value={bookingForm.venue} onChange={e => setBookingForm({ ...bookingForm, venue: e.target.value })} placeholder="Venue or address" className="input-field mt-1 w-full" />
+              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Where is it?
+                <input required value={bookingForm.venue} onChange={e => setBookingForm({ ...bookingForm, venue: e.target.value, venueLat: null, venueLng: null })} placeholder={bookingForm.venue || 'Venue or address'} className="input-field mt-1 w-full" />
+                <button type="button" onClick={() => setShowBookingMap(current => !current)} className="mt-2 text-xs font-black text-primary-600 hover:text-primary-700">{showBookingMap ? 'Hide map' : 'Pin location (optional)'}</button>
+                {showBookingMap && <div className="mt-3 sm:col-span-2"><LocationPicker onLocationSelect={({ address, lat, lng }) => setBookingForm(current => ({ ...current, venue: address || current.venue, venueLat: lat, venueLng: lng }))} initialAddress={bookingForm.venue} /></div>}
               </label>
               <label className="text-sm font-bold text-surface-700">When?
                 <input required type="datetime-local" min={new Date().toISOString().slice(0, 16)} value={bookingForm.eventDate} onChange={e => setBookingForm({ ...bookingForm, eventDate: e.target.value })} className="input-field mt-1 w-full" />

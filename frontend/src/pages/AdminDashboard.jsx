@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [liveVisitors, setLiveVisitors] = useState(0);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [pendingBookingCount, setPendingBookingCount] = useState(0);
   const { joinRoom, leaveRoom, connected, onEvent } = useSocket();
 
   // Dynamic favicon & title
@@ -132,7 +133,7 @@ export default function AdminDashboard() {
         { id: 'shifts', label: 'Shifts & Drawer', icon: <Timer className="w-5 h-5" /> },
         { id: 'feedback', label: 'Feedback', icon: <MessageSquare className="w-5 h-5" /> },
         { id: 'promos', label: 'Promos', icon: <Tag className="w-5 h-5" /> },
-        { id: 'bookings', label: 'Bookings', icon: <CalendarDays className="w-5 h-5" /> },
+        { id: 'bookings', label: 'Bookings', badge: pendingBookingCount, icon: <CalendarDays className="w-5 h-5" /> },
         { id: 'devices', label: 'Devices', icon: <Monitor className="w-5 h-5" /> },
       ]
     },
@@ -185,6 +186,7 @@ export default function AdminDashboard() {
                 >
                   <span className="text-lg leading-none">{item.icon}</span>
                   <span className="text-sm">{item.label}</span>
+                  {item.badge > 0 && <span className="ml-auto min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-black leading-none text-white">{item.badge > 99 ? '99+' : item.badge}</span>}
                 </button>
               ))}
             </div>
@@ -232,6 +234,7 @@ export default function AdminDashboard() {
                 >
                   <span className="text-lg leading-none">{item.icon}</span>
                   <span className="text-sm">{item.label}</span>
+                  {item.badge > 0 && <span className="ml-auto min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-black leading-none text-white">{item.badge > 99 ? '99+' : item.badge}</span>}
                 </button>
               ))}
             </div>
@@ -262,7 +265,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-bold text-surface-900">{user?.name}</p>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-500">{user?.role}</p>
             </div>
-            <AdminNotifications userId={user?.id} onNavigate={setActiveTab} />
+            <AdminNotifications userId={user?.id} onNavigate={setActiveTab} onPendingBookingCountChange={setPendingBookingCount} />
             <button
               onClick={logoutUser}
               aria-label="Log out"

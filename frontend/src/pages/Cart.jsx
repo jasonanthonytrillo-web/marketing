@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { getPublicTenant, getProducts } from '../services/api';
 import { applyTheme } from '../utils/theme';
+import useStoreOperationRealtime from '../hooks/useStoreOperationRealtime';
 import { ShoppingCart, Gem, CheckCircle, Flame, AlertCircle } from 'lucide-react';
 
 const TRANSLATIONS = {
@@ -50,6 +51,7 @@ export default function Cart() {
   const [searchParams] = useSearchParams();
   const tenantSlug = searchParams.get('tenant') || 'project-million';
   const [branding, setBranding] = useState(null);
+  useStoreOperationRealtime(branding, setBranding);
   
   const isCustomer = user && user.role === 'customer';
   const subtotal = getSubtotal();

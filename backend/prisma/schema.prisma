@@ -413,12 +413,22 @@ model EventBooking {
   customerPhone String?
   eventType     String
   venue         String
+  venueLat      Float?
+  venueLng      Float?
   eventDate     DateTime
   guestCount    Int?
   notes         String?
   status        String   @default("pending") // pending, accepted, rejected
   adminNotes    String?
   reviewedAt    DateTime?
+  paymentMode   String?  // downpayment or full_payment
+  paymentAmount Float?
+  paymentQr     String?
+  paymentInstructions String?
+  paymentStatus String   @default("not_requested") // not_requested, awaiting_payment, submitted, verified, rejected
+  paymentReference String?
+  paymentSubmittedAt DateTime?
+  paymentVerifiedAt DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

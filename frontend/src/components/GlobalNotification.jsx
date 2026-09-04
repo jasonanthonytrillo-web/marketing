@@ -2,13 +2,18 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { playNotificationSound, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
-import { getOrder } from '../services/api';
+import { getOrder, submitPackagePayment } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Bell, AlertTriangle } from 'lucide-react';
 
 export default function GlobalNotification() {
   const [readyOrderNumbers, setReadyOrderNumbers] = useState([]);
   const [cancelledOrderNumbers, setCancelledOrderNumbers] = useState([]);
+  const [packageBookingUpdate, setPackageBookingUpdate] = useState(null);
+  const [packagePaymentRequest, setPackagePaymentRequest] = useState(null);
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState('');
   const alertIntervalRef = useRef(null);
   const alertFlowTimerRef = useRef(null);
   const alertActiveRef = useRef(false);
@@ -76,6 +81,69 @@ export default function GlobalNotification() {
     });
     return unsub;
   }, [onEvent, tenantSlug, user]);
+
+  // Notify a logged-in customer when an admin accepts or rejects a package booking.
+  useEffect(() => {
+    if (!onEvent || user?.role !== 'customer') return undefined;
+    const unsubscribe = onEvent('package_booking_update', (booking) => {
+      const packageName = booking.package?.name || 'your package booking';
+      const accepted = booking.status === 'accepted';
+      const message = accepted
+        ? `${packageName} for ${new Date(booking.eventDate).toLocaleDateString()} was accepted.`
+        : `${packageName} request was rejected. Please contact the store for details.`;
+      setPackageBookingUpdate({ accepted, message });
+      showSystemNotification(accepted ? 'Booking Accepted' : 'Booking Update', message);
+    });
+    return unsubscribe;
+  }, [onEvent, user]);
+
+  useEffect(() => {
+    if (!onEvent || user?.role !== 'customer') return undefined;
+    const unsubscribeRequest = onEvent('package_payment_requested', (booking) => {
+      setPackagePaymentRequest(booking);
+      setPaymentReference('');
+      setPaymentMessage('');
+      showSystemNotification('Payment Required', `Payment instructions are ready for ${booking.package?.name || 'your booking'}.`);
+    });
+    const unsubscribeStatus = onEvent('package_payment_status_updated', (booking) => {
+      setPackagePaymentRequest(null);
+      setPackageBookingUpdate({
+        accepted: booking.paymentStatus === 'verified',
+        message: booking.paymentStatus === 'verified'
+          ? 'Your payment was verified. The admin can now confirm your booking.'
+          : 'The payment reference could not be verified. Please check it and wait for new instructions.'
+      });
+    });
+    return () => {
+      unsubscribeRequest();
+      unsubscribeStatus();
+    };
+  }, [onEvent, user]);
+
+  const copyPaymentAmount = async () => {
+    if (!packagePaymentRequest?.paymentAmount) return;
+    try {
+      await navigator.clipboard.writeText(String(packagePaymentRequest.paymentAmount));
+      setPaymentMessage('Payment amount copied.');
+    } catch {
+      setPaymentMessage('Copy failed. Please copy the amount manually.');
+    }
+  };
+
+  const submitPaymentReference = async (event) => {
+    event.preventDefault();
+    setPaymentSubmitting(true);
+    setPaymentMessage('');
+    try {
+      await submitPackagePayment(packagePaymentRequest.id, paymentReference);
+      setPaymentMessage('Reference sent. The admin will verify your payment.');
+      setPackagePaymentRequest(null);
+    } catch (error) {
+      setPaymentMessage(error.response?.data?.message || 'Could not submit the payment reference.');
+    } finally {
+      setPaymentSubmitting(false);
+    }
+  };
 
   // Polling fallback
   useEffect(() => {
@@ -253,10 +321,45 @@ export default function GlobalNotification() {
     setCancelledOrderNumbers([]);
   };
 
-  if (readyOrderNumbers.length === 0 && cancelledOrderNumbers.length === 0) return null;
+  if (readyOrderNumbers.length === 0 && cancelledOrderNumbers.length === 0 && !packageBookingUpdate && !packagePaymentRequest) return null;
 
   return (
     <>
+      {packagePaymentRequest && (
+        <div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+          <form onSubmit={submitPaymentReference} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
+            <p className="text-[10px] font-black uppercase tracking-widest text-surface-400">Booking payment</p>
+            <h2 className="mt-1 text-2xl font-black text-surface-900">{packagePaymentRequest.package?.name || 'Package booking'}</h2>
+            <p className="mt-2 text-sm font-medium leading-relaxed text-surface-600">{packagePaymentRequest.paymentInstructions}</p>
+            <div className="mt-5 rounded-2xl bg-surface-50 p-4 text-center">
+              {packagePaymentRequest.paymentQr && <img src={packagePaymentRequest.paymentQr} alt="GCash payment QR code" className="mx-auto h-56 w-56 rounded-xl object-contain" />}
+              <p className="mt-3 text-xs font-bold uppercase tracking-widest text-surface-400">Amount to pay</p>
+              <p className="text-3xl font-black text-surface-900">₱{Number(packagePaymentRequest.paymentAmount).toFixed(2)}</p>
+              <button type="button" onClick={copyPaymentAmount} className="mt-2 text-xs font-black text-primary-600 hover:text-primary-700">Copy payment amount</button>
+              {packagePaymentRequest.paymentQr && <a href={packagePaymentRequest.paymentQr} download={`gcash-qr-${packagePaymentRequest.id}.png`} target="_blank" rel="noreferrer" onClick={copyPaymentAmount} className="ml-4 text-xs font-black text-primary-600 hover:text-primary-700">Save QR + copy amount</a>}
+            </div>
+            <label className="mt-5 block text-sm font-bold text-surface-700">Last 4 digits of GCash reference ID
+              <input required inputMode="numeric" pattern="[0-9]{4}" maxLength="4" value={paymentReference} onChange={event => setPaymentReference(event.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="1234" className="input-field mt-1 w-full text-center text-lg tracking-[0.4em]" />
+            </label>
+            {paymentMessage && <p className="mt-3 rounded-xl bg-surface-50 p-3 text-sm font-bold text-surface-600">{paymentMessage}</p>}
+            <button type="submit" disabled={paymentSubmitting} className="mt-5 w-full rounded-xl bg-primary-600 py-3 font-black text-white transition-opacity disabled:opacity-50">{paymentSubmitting ? 'Sending...' : 'Submit Payment Reference'}</button>
+          </form>
+        </div>
+      )}
+
+      {packageBookingUpdate && (
+        <div className={`fixed right-4 top-4 z-[120] w-[min(92vw,420px)] rounded-2xl border p-4 shadow-2xl ${packageBookingUpdate.accepted ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-900'}`}>
+          <div className="flex items-start gap-3">
+            <Bell className={`mt-0.5 h-5 w-5 flex-shrink-0 ${packageBookingUpdate.accepted ? 'text-emerald-600' : 'text-red-600'}`} />
+            <div className="flex-1">
+              <p className="font-black">{packageBookingUpdate.accepted ? 'Booking Accepted' : 'Booking Update'}</p>
+              <p className="mt-1 text-sm font-medium">{packageBookingUpdate.message}</p>
+            </div>
+            <button type="button" onClick={() => setPackageBookingUpdate(null)} className="text-lg font-bold opacity-60 hover:opacity-100" aria-label="Dismiss booking notification">×</button>
+          </div>
+        </div>
+      )}
+
       {/* READY ALERT */}
       {readyOrderNumbers.length > 0 && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-900/90 backdrop-blur-md p-6" onClick={dismissReadyAlert}>
