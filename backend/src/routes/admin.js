@@ -916,25 +916,25 @@ router.get('/bookings', authenticate, authorize('admin'), async (req, res) => {
 // POST /api/admin/bookings/:id/payment-request — Send QR/payment instructions to customer
 router.post('/bookings/:id/payment-request', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { paymentMode, paymentAmount, paymentQr, paymentInstructions } = req.body;
-    const amount = Number(paymentAmount);
-    if (!['downpayment', 'full_payment'].includes(paymentMode) || !Number.isFinite(amount) || amount <= 0) {
-      return res.status(400).json({ success: false, message: 'Choose downpayment or full payment and enter a valid amount.' });
-    }
-
     const booking = await prisma.eventBooking.findFirst({
       where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId },
-      include: { package: { select: { name: true } } }
+      include: { package: { select: { name: true, priceText: true } } }
     });
     if (!booking) return res.status(404).json({ success: false, message: 'Booking request not found.' });
     if (booking.status !== 'pending') return res.status(400).json({ success: false, message: 'Only pending bookings can receive a payment request.' });
+    const selectedPaymentMethod = booking.paymentMethod || 'gcash';
+    if (!['gcash', 'maya'].includes(selectedPaymentMethod)) return res.status(400).json({ success: false, message: 'Cash bookings do not need a payment request.' });
 
-    let qrCode = paymentQr?.trim() || null;
-    if (!qrCode) {
-      const tenant = await prisma.tenant.findUnique({ where: { id: req.tenantId }, select: { gcashQr: true } });
-      qrCode = tenant?.gcashQr || null;
+    const { paymentMode, paymentAmount } = req.body;
+    const packageAmount = Number(String(booking.package.priceText || '').replace(/[^0-9.]/g, ''));
+    const amount = Number(paymentAmount || packageAmount);
+    if (!['downpayment', 'full_payment'].includes(paymentMode) || !Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ success: false, message: 'Enter a valid payment amount.' });
     }
-    if (!qrCode) return res.status(400).json({ success: false, message: 'Add a GCash QR code in Settings or provide a QR code for this request.' });
+
+    const tenant = await prisma.tenant.findUnique({ where: { id: req.tenantId }, select: { gcashQr: true, mayaQr: true } });
+    const qrCode = selectedPaymentMethod === 'maya' ? tenant?.mayaQr : tenant?.gcashQr;
+    if (!qrCode) return res.status(400).json({ success: false, message: `Add a ${selectedPaymentMethod === 'maya' ? 'Maya' : 'GCash'} QR code in Settings first.` });
 
     const updated = await prisma.eventBooking.update({
       where: { id: booking.id },
@@ -942,13 +942,13 @@ router.post('/bookings/:id/payment-request', authenticate, authorize('admin'), a
         paymentMode,
         paymentAmount: amount,
         paymentQr: qrCode,
-        paymentInstructions: paymentInstructions?.trim() || 'Scan the QR code, pay the requested amount, then submit the last 4 digits of your GCash reference ID.',
+        paymentInstructions: `Scan the ${selectedPaymentMethod === 'maya' ? 'Maya' : 'GCash'} QR code, pay the requested amount, then submit the last 4 digits of your ${selectedPaymentMethod === 'maya' ? 'Maya' : 'GCash'} reference ID.`,
         paymentStatus: 'awaiting_payment',
         paymentReference: null,
         paymentSubmittedAt: null,
         paymentVerifiedAt: null
       },
-      include: { package: { select: { name: true } } }
+      include: { package: { select: { name: true, priceText: true } } }
     });
 
     await prisma.auditLog.create({
@@ -1006,13 +1006,13 @@ router.patch('/bookings/:id/status', authenticate, authorize('admin'), async (re
       where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId }
     });
     if (!booking) return res.status(404).json({ success: false, message: 'Booking request not found.' });
-    if (status === 'accepted' && booking.paymentStatus !== 'verified') {
+    if (status === 'accepted' && booking.paymentMethod !== 'cash' && booking.paymentStatus !== 'verified') {
       return res.status(400).json({ success: false, message: 'Verify the customer payment before accepting this booking.' });
     }
 
     const updated = await prisma.eventBooking.update({
       where: { id: booking.id },
-      data: { status, adminNotes: adminNotes?.trim() || null, reviewedAt: new Date() },
+      data: { status, paymentStatus: status === 'accepted' && booking.paymentMethod === 'cash' ? 'verified' : booking.paymentStatus, adminNotes: adminNotes?.trim() || null, reviewedAt: new Date() },
       include: { package: { select: { name: true } } }
     });
 

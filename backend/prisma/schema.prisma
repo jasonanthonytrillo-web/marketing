@@ -421,6 +421,7 @@ model EventBooking {
   status        String   @default("pending") // pending, accepted, rejected
   adminNotes    String?
   reviewedAt    DateTime?
+  paymentMethod String?  @default("cash") // cash, gcash, maya
   paymentMode   String?  // downpayment or full_payment
   paymentAmount Float?
   paymentQr     String?

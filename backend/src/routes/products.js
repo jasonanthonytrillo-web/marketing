@@ -123,6 +123,8 @@ router.get('/', async (req, res) => {
         favicon: tenant?.favicon,
         primaryColor: tenant?.primaryColor,
         secondaryColor: tenant?.secondaryColor,
+        gcashQr: tenant?.gcashQr,
+        mayaQr: tenant?.mayaQr,
         bannerImage: tenant?.bannerImage,
         storeClosed: tenant?.storeClosed || false,
         deliveryDisabled: tenant?.deliveryDisabled || false,

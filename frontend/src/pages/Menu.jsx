@@ -52,7 +52,7 @@ export default function Menu() {
   const [showRewards, setShowRewards] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
   const [bookingPackage, setBookingPackage] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '' });
+  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '', paymentMethod: 'cash' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
   const [showBookingMap, setShowBookingMap] = useState(false);
@@ -191,7 +191,7 @@ export default function Menu() {
     setBookingPackage(pkg);
     setBookingMessage('');
     setBookingEventOpen(false);
-    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '' });
+    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '', paymentMethod: 'cash' });
     setShowBookingMap(false);
     closePackages();
   };
@@ -206,7 +206,8 @@ export default function Menu() {
         customerName: user.name,
         customerEmail: user.email,
         ...bookingForm,
-        eventType: bookingForm.eventType === 'Other' ? bookingForm.otherEventType : bookingForm.eventType
+        eventType: bookingForm.eventType === 'Other' ? bookingForm.otherEventType : bookingForm.eventType,
+        paymentMethod: bookingForm.paymentMethod
       });
       setBookingMessage('Your booking request was sent. The admin will review it and contact you.');
       setTimeout(() => setBookingPackage(null), 2200);
@@ -1385,6 +1386,15 @@ export default function Menu() {
               <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-primary-600" />Contact number</span>
                 <input type="tel" value={bookingForm.customerPhone} onChange={e => setBookingForm({ ...bookingForm, customerPhone: e.target.value })} placeholder="09XX XXX XXXX" className="input-field mt-1 w-full" />
               </label>
+              <div className="sm:col-span-2">
+                <p className="text-sm font-bold text-surface-700">How would you like to pay?</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  {[{ id: 'cash', label: 'Cash', hint: 'Pay at the store' }, { id: 'gcash', label: 'GCash', hint: branding?.gcashQr ? 'QR available' : 'Currently unavailable' }, { id: 'maya', label: 'Maya', hint: branding?.mayaQr ? 'QR available' : 'QR not uploaded' }].map(method => {
+                    const unavailable = method.id !== 'cash' && !branding?.[method.id === 'gcash' ? 'gcashQr' : 'mayaQr'];
+                    return <button key={method.id} type="button" disabled={unavailable} onClick={() => setBookingForm({ ...bookingForm, paymentMethod: method.id })} className={`rounded-2xl border-2 p-3 text-left transition ${bookingForm.paymentMethod === method.id ? 'border-primary-500 bg-primary-50' : 'border-surface-200 bg-white hover:border-surface-300'} ${unavailable ? 'cursor-not-allowed opacity-45' : ''}`}><span className="block text-sm font-black text-surface-900">{method.label}</span><span className="mt-0.5 block text-[11px] font-medium text-surface-500">{method.hint}</span></button>;
+                  })}
+                </div>
+              </div>
               <label className="text-sm font-bold text-surface-700 sm:col-span-2"><span className="flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary-600" />Additional details <span className="font-medium text-surface-400">(optional)</span></span>
                 <textarea rows="3" value={bookingForm.notes} onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })} placeholder="Tell us anything else we should know" className="input-field mt-1 w-full resize-none" />
               </label>

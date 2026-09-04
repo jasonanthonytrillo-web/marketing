@@ -122,8 +122,9 @@ export default function GlobalNotification() {
 
   const copyPaymentAmount = async () => {
     if (!packagePaymentRequest?.paymentAmount) return;
+    const amount = Number(packagePaymentRequest.paymentAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     try {
-      await navigator.clipboard.writeText(String(packagePaymentRequest.paymentAmount));
+      await navigator.clipboard.writeText(`PHP ${amount}`);
       setPaymentMessage('Payment amount copied.');
     } catch {
       setPaymentMessage('Copy failed. Please copy the amount manually.');
@@ -142,6 +143,30 @@ export default function GlobalNotification() {
       setPaymentMessage(error.response?.data?.message || 'Could not submit the payment reference.');
     } finally {
       setPaymentSubmitting(false);
+    }
+  };
+
+  const paymentMethodLabel = packagePaymentRequest?.paymentMethod === 'maya' ? 'Maya' : 'GCash';
+  const formattedPaymentAmount = Number(packagePaymentRequest?.paymentAmount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const savePaymentQr = async () => {
+    if (!packagePaymentRequest?.paymentQr) return;
+    await copyPaymentAmount();
+    try {
+      const response = await fetch(packagePaymentRequest.paymentQr);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${paymentMethodLabel.toLowerCase()}-qr-${packagePaymentRequest.id}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl);
+      setPaymentMessage(`QR saved and PHP ${formattedPaymentAmount} copied.`);
+    } catch {
+      window.open(packagePaymentRequest.paymentQr, '_blank', 'noopener,noreferrer');
+      setPaymentMessage(`QR opened and PHP ${formattedPaymentAmount} copied.`);
     }
   };
 
@@ -328,17 +353,19 @@ export default function GlobalNotification() {
       {packagePaymentRequest && (
         <div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
           <form onSubmit={submitPaymentReference} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
-            <p className="text-[10px] font-black uppercase tracking-widest text-surface-400">Booking payment</p>
-            <h2 className="mt-1 text-2xl font-black text-surface-900">{packagePaymentRequest.package?.name || 'Package booking'}</h2>
+            <div className="flex items-center gap-3">
+              <img src={paymentMethodLabel === 'Maya' ? '/logos/maya-logo.jpg' : '/logos/GCash-Logo.png'} alt={paymentMethodLabel} className="h-10 w-10 rounded-xl object-contain" />
+              <div><p className="text-[10px] font-black uppercase tracking-widest text-surface-400">{paymentMethodLabel} booking payment</p><h2 className="mt-1 text-2xl font-black text-surface-900">{packagePaymentRequest.package?.name || 'Package booking'}</h2></div>
+            </div>
             <p className="mt-2 text-sm font-medium leading-relaxed text-surface-600">{packagePaymentRequest.paymentInstructions}</p>
             <div className="mt-5 rounded-2xl bg-surface-50 p-4 text-center">
-              {packagePaymentRequest.paymentQr && <img src={packagePaymentRequest.paymentQr} alt="GCash payment QR code" className="mx-auto h-56 w-56 rounded-xl object-contain" />}
+              {packagePaymentRequest.paymentQr && <img src={packagePaymentRequest.paymentQr} alt={`${paymentMethodLabel} payment QR code`} className="mx-auto h-56 w-56 rounded-xl object-contain" />}
               <p className="mt-3 text-xs font-bold uppercase tracking-widest text-surface-400">Amount to pay</p>
-              <p className="text-3xl font-black text-surface-900">₱{Number(packagePaymentRequest.paymentAmount).toFixed(2)}</p>
+              <p className="text-3xl font-black text-surface-900">₱{formattedPaymentAmount}</p>
               <button type="button" onClick={copyPaymentAmount} className="mt-2 text-xs font-black text-primary-600 hover:text-primary-700">Copy payment amount</button>
-              {packagePaymentRequest.paymentQr && <a href={packagePaymentRequest.paymentQr} download={`gcash-qr-${packagePaymentRequest.id}.png`} target="_blank" rel="noreferrer" onClick={copyPaymentAmount} className="ml-4 text-xs font-black text-primary-600 hover:text-primary-700">Save QR + copy amount</a>}
+              {packagePaymentRequest.paymentQr && <button type="button" onClick={savePaymentQr} className="ml-4 text-xs font-black text-primary-600 hover:text-primary-700">Save QR</button>}
             </div>
-            <label className="mt-5 block text-sm font-bold text-surface-700">Last 4 digits of GCash reference ID
+            <label className="mt-5 block text-sm font-bold text-surface-700">Last 4 digits of {paymentMethodLabel} reference ID
               <input required inputMode="numeric" pattern="[0-9]{4}" maxLength="4" value={paymentReference} onChange={event => setPaymentReference(event.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="1234" className="input-field mt-1 w-full text-center text-lg tracking-[0.4em]" />
             </label>
             {paymentMessage && <p className="mt-3 rounded-xl bg-surface-50 p-3 text-sm font-bold text-surface-600">{paymentMessage}</p>}

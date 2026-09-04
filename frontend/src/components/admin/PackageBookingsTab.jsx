@@ -3,12 +3,14 @@ import { Check, Clock3, ExternalLink, Mail, MapPin, Phone, X } from 'lucide-reac
 import { getAdminBookings, updateAdminBookingStatus, requestAdminBookingPayment, updateAdminBookingPaymentStatus } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
 
+const bookingPaymentMethodLabel = (method) => ({ cash: 'Cash', gcash: 'GCash', maya: 'Maya' }[method] || 'GCash');
+
 export default function PackageBookingsTab() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [paymentBooking, setPaymentBooking] = useState(null);
-  const [paymentForm, setPaymentForm] = useState({ paymentMode: 'downpayment', paymentAmount: '', paymentQr: '', paymentInstructions: '' });
+  const [paymentForm, setPaymentForm] = useState({ paymentMode: 'downpayment', paymentAmount: '' });
 
   const loadBookings = async () => {
     try {
@@ -41,7 +43,8 @@ export default function PackageBookingsTab() {
 
   const openPaymentRequest = (booking) => {
     setPaymentBooking(booking);
-    setPaymentForm({ paymentMode: booking.paymentMode || 'downpayment', paymentAmount: booking.paymentAmount || '', paymentQr: booking.paymentQr || '', paymentInstructions: booking.paymentInstructions || '' });
+    const packageAmount = Number(String(booking.package?.priceText || '').replace(/[^0-9.]/g, ''));
+    setPaymentForm({ paymentMode: booking.paymentMode || 'full_payment', paymentAmount: booking.paymentAmount || (Number.isFinite(packageAmount) ? packageAmount : '') });
   };
 
   const sendPaymentRequest = async (event) => {
@@ -92,12 +95,8 @@ export default function PackageBookingsTab() {
             <label className="mt-4 block text-sm font-bold text-surface-700">Amount to pay
               <input required type="number" min="0.01" step="0.01" value={paymentForm.paymentAmount} onChange={e => setPaymentForm({ ...paymentForm, paymentAmount: e.target.value })} className="input-field mt-1 w-full" />
             </label>
-            <label className="mt-4 block text-sm font-bold text-surface-700">GCash QR URL <span className="font-normal text-surface-400">(optional if configured in Settings)</span>
-              <input value={paymentForm.paymentQr} onChange={e => setPaymentForm({ ...paymentForm, paymentQr: e.target.value })} placeholder="https://..." className="input-field mt-1 w-full" />
-            </label>
-            <label className="mt-4 block text-sm font-bold text-surface-700">Instructions
-              <textarea rows="3" value={paymentForm.paymentInstructions} onChange={e => setPaymentForm({ ...paymentForm, paymentInstructions: e.target.value })} placeholder="Scan the QR, pay, then send the last 4 reference digits." className="input-field mt-1 w-full resize-none" />
-            </label>
+            <div className="mt-4 rounded-2xl bg-surface-50 p-4 text-sm"><span className="font-bold text-surface-700">Payment method</span><p className="mt-1 font-black uppercase tracking-wider text-primary-600">{bookingPaymentMethodLabel(paymentBooking.paymentMethod)}</p><p className="mt-1 text-xs text-surface-500">The QR code configured for this method will be sent automatically.</p></div>
+            <div className="mt-4 rounded-2xl border border-surface-200 bg-surface-50 p-4 text-sm"><p className="font-bold text-surface-700">Customer instruction</p><p className="mt-1 leading-relaxed text-surface-600">Scan the {paymentBooking.paymentMethod === 'maya' ? 'Maya' : 'GCash'} QR code, pay the requested amount, then submit the last 4 digits of your {paymentBooking.paymentMethod === 'maya' ? 'Maya' : 'GCash'} reference ID.</p></div>
             <button disabled={processingId === paymentBooking.id} className="mt-5 w-full rounded-xl bg-primary-600 py-3 font-black text-white disabled:opacity-50">{processingId === paymentBooking.id ? 'Sending...' : 'Send Payment Instructions'}</button>
           </form>
         </div>
@@ -129,6 +128,7 @@ export default function PackageBookingsTab() {
                   <span className="min-w-0 break-words">{booking.venue}</span>
                 </div>
                 <p><strong className="text-surface-900">What:</strong> {booking.eventType}</p>
+                <p><strong className="text-surface-900">Payment:</strong> {bookingPaymentMethodLabel(booking.paymentMethod)}</p>
                 {booking.guestCount && <p><strong className="text-surface-900">Guests:</strong> {booking.guestCount}</p>}
                 <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary-500" />{booking.customerEmail}</p>
                 {booking.customerPhone && <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary-500" />{booking.customerPhone}</p>}
@@ -154,6 +154,8 @@ export default function PackageBookingsTab() {
                     </>
                   ) : booking.paymentStatus === 'verified' ? (
                     <button disabled={processingId === booking.id} onClick={() => updateStatus(booking, 'accepted')} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"><Check className="h-4 w-4" /> Accept Booking</button>
+                  ) : booking.paymentMethod === 'cash' ? (
+                    <button disabled={processingId === booking.id} onClick={() => updateStatus(booking, 'accepted')} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"><Check className="h-4 w-4" /> Accept Cash Booking</button>
                   ) : (
                     <button disabled={processingId === booking.id} onClick={() => openPaymentRequest(booking)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-amber-600 disabled:opacity-50">Send Payment Request</button>
                   )}
