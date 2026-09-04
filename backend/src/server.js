@@ -169,6 +169,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/orders', require('./routes/orders'));
+app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/cashier', require('./routes/cashier'));
 app.use('/api/kitchen', require('./routes/kitchen'));
 app.use('/api/admin', require('./routes/admin'));

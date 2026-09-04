@@ -42,6 +42,7 @@ model Tenant {
   suppliers     Supplier[]
   rawIngredients RawIngredient[]
   eventPackages EventPackage[]
+  eventBookings EventBooking[]
   promoCodes    PromoCode[]
   authorizedDevices AuthorizedDevice[]
   cashierShifts CashierShift[]
@@ -75,6 +76,7 @@ model User {
   cashierShifts CashierShift[]
   payrollPayments PayrollPayment[] @relation("PayrollStaff")
   recordedPayrollPayments PayrollPayment[] @relation("PayrollRecordedBy")
+  packageBookings EventBooking[] @relation("CustomerPackageBookings")
 
   @@unique([email, tenantId])
 }
@@ -398,6 +400,34 @@ model EventPackage {
   updatedAt   DateTime @updatedAt
 
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  bookings    EventBooking[]
+}
+
+model EventBooking {
+  id            Int      @id @default(autoincrement())
+  tenantId      Int
+  packageId     Int
+  customerId    Int
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  eventType     String
+  venue         String
+  eventDate     DateTime
+  guestCount    Int?
+  notes         String?
+  status        String   @default("pending") // pending, accepted, rejected
+  adminNotes    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant   Tenant      @relation(fields: [tenantId], references: [id])
+  package  EventPackage @relation(fields: [packageId], references: [id])
+  customer User        @relation("CustomerPackageBookings", fields: [customerId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([customerId, createdAt])
 }
 
 model PromoCode {

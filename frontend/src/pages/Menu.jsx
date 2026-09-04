@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages, getOrderHistory } from '../services/api';
+import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages, getOrderHistory, createPackageBooking } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
 import { formatCurrency, formatDate, unlockAudio } from '../utils/helpers';
@@ -47,6 +47,10 @@ export default function Menu() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
+  const [bookingPackage, setBookingPackage] = useState(null);
+  const [bookingForm, setBookingForm] = useState({ eventType: '', venue: '', eventDate: '', customerPhone: '', guestCount: '', notes: '' });
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [bookingMessage, setBookingMessage] = useState('');
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [orderHistory, setOrderHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -157,6 +161,33 @@ export default function Menu() {
     setOptionError(false);
     setSelectedProduct(product);
     window.history.pushState({ modalOpen: 'product' }, '');
+  };
+
+  const handleBookNow = (pkg) => {
+    setBookingPackage(pkg);
+    setBookingMessage('');
+    setBookingForm({ eventType: '', venue: '', eventDate: '', customerPhone: '', guestCount: '', notes: '' });
+    setShowPackages(false);
+  };
+
+  const handleBookingSubmit = async (event) => {
+    event.preventDefault();
+    setBookingSubmitting(true);
+    setBookingMessage('');
+    try {
+      await createPackageBooking({
+        packageId: bookingPackage.id,
+        customerName: user.name,
+        customerEmail: user.email,
+        ...bookingForm
+      });
+      setBookingMessage('Your booking request was sent. The admin will review it and contact you.');
+      setTimeout(() => setBookingPackage(null), 2200);
+    } catch (error) {
+      setBookingMessage(error.response?.data?.message || 'We could not send your booking request. Please try again.');
+    } finally {
+      setBookingSubmitting(false);
+    }
   };
 
   const closeProductModal = () => {
@@ -1257,9 +1288,13 @@ export default function Menu() {
                         </ul>
                       )}
 
-                      <a href="https://www.facebook.com/hometownbrew24" target="_blank" rel="noopener noreferrer" className={`block text-center w-full py-2.5 md:py-3 rounded-lg font-bold text-sm transition-transform hover:scale-105 ${pkg.isPopular ? 'text-white shadow-md' : 'bg-white border border-surface-200 text-surface-900 hover:bg-surface-100'}`} style={pkg.isPopular ? { backgroundColor: brandingColor } : {}}>
-                        Inquire Now
-                      </a>
+                      {isCustomer ? (
+                        <button onClick={() => handleBookNow(pkg)} className={`block text-center w-full py-2.5 md:py-3 rounded-lg font-bold text-sm transition-transform hover:scale-105 ${pkg.isPopular ? 'text-white shadow-md' : 'bg-white border border-surface-200 text-surface-900 hover:bg-surface-100'}`} style={pkg.isPopular ? { backgroundColor: brandingColor } : {}}>
+                          Book Now
+                        </button>
+                      ) : (
+                        <p className="border-t border-surface-200 pt-3 text-xs font-bold text-surface-400">Log in to book this package</p>
+                      )}
                     </div>
                   ))
                 )}
@@ -1274,6 +1309,54 @@ export default function Menu() {
 
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Package Booking Modal */}
+      {bookingPackage && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto p-4">
+          <div className="absolute inset-0 bg-surface-900/70 backdrop-blur-sm" onClick={() => !bookingSubmitting && setBookingPackage(null)}></div>
+          <form onSubmit={handleBookingSubmit} className="relative z-10 my-8 w-full max-w-xl rounded-[28px] bg-white p-6 shadow-2xl md:p-8">
+            <div className="mb-6 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-surface-400">Booking request</p>
+                <h2 className="mt-1 text-2xl font-black text-surface-900">{bookingPackage.name}</h2>
+                <p className="mt-1 text-sm font-medium text-surface-500">Tell us what, where, and when. The admin will confirm your request.</p>
+              </div>
+              <button type="button" disabled={bookingSubmitting} onClick={() => setBookingPackage(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-100 text-surface-600 hover:bg-surface-200">×</button>
+            </div>
+
+            <div className="mb-5 rounded-2xl bg-surface-50 p-4 text-sm text-surface-600">
+              <p className="font-bold text-surface-900">Customer details</p>
+              <p className="mt-1">{user?.name} · {user?.email}</p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="text-sm font-bold text-surface-700">What is the event?
+                <input required value={bookingForm.eventType} onChange={e => setBookingForm({ ...bookingForm, eventType: e.target.value })} placeholder="Birthday, wedding, corporate..." className="input-field mt-1 w-full" />
+              </label>
+              <label className="text-sm font-bold text-surface-700">Where is it?
+                <input required value={bookingForm.venue} onChange={e => setBookingForm({ ...bookingForm, venue: e.target.value })} placeholder="Venue or address" className="input-field mt-1 w-full" />
+              </label>
+              <label className="text-sm font-bold text-surface-700">When?
+                <input required type="datetime-local" min={new Date().toISOString().slice(0, 16)} value={bookingForm.eventDate} onChange={e => setBookingForm({ ...bookingForm, eventDate: e.target.value })} className="input-field mt-1 w-full" />
+              </label>
+              <label className="text-sm font-bold text-surface-700">Number of guests
+                <input type="number" min="1" value={bookingForm.guestCount} onChange={e => setBookingForm({ ...bookingForm, guestCount: e.target.value })} placeholder="Optional" className="input-field mt-1 w-full" />
+              </label>
+              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Contact number
+                <input type="tel" value={bookingForm.customerPhone} onChange={e => setBookingForm({ ...bookingForm, customerPhone: e.target.value })} placeholder="09XX XXX XXXX" className="input-field mt-1 w-full" />
+              </label>
+              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Additional details
+                <textarea rows="3" value={bookingForm.notes} onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })} placeholder="Tell us anything else we should know" className="input-field mt-1 w-full resize-none" />
+              </label>
+            </div>
+
+            {bookingMessage && <p className={`mt-4 rounded-xl p-3 text-sm font-bold ${bookingMessage.includes('sent') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{bookingMessage}</p>}
+            <button type="submit" disabled={bookingSubmitting} className="mt-6 w-full rounded-xl py-3 font-black text-white shadow-lg transition-opacity disabled:opacity-50" style={{ backgroundColor: brandingColor }}>
+              {bookingSubmitting ? 'Sending request...' : 'Confirm Booking Request'}
+            </button>
+          </form>
         </div>
       )}
 

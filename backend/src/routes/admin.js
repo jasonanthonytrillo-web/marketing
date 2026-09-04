@@ -386,7 +386,7 @@ router.get('/notifications', authenticate, authorize('admin'), async (req, res) 
     const recentDevice = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const promoEndingSoon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-    const [lowStockProducts, staffShifts, devices, feedback, promos] = await Promise.all([
+    const [lowStockProducts, staffShifts, devices, feedback, promos, bookings] = await Promise.all([
       prisma.product.findMany({
         where: { tenantId: req.tenantId, available: true, stock: { lte: 10 } },
         select: { id: true, name: true, stock: true, updatedAt: true },
@@ -422,6 +422,12 @@ router.get('/notifications', authenticate, authorize('admin'), async (req, res) 
         },
         select: { id: true, code: true, endDate: true, maxUses: true, currentUses: true, updatedAt: true },
         orderBy: { updatedAt: 'desc' },
+        take: 50
+      }),
+      prisma.eventBooking.findMany({
+        where: { tenantId: req.tenantId, status: 'pending' },
+        select: { id: true, customerName: true, package: { select: { name: true } }, eventDate: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
         take: 50
       })
     ]);
@@ -482,7 +488,15 @@ router.get('/notifications', authenticate, authorize('admin'), async (req, res) 
           });
         }
         return items;
-      })
+      }),
+      ...bookings.map(booking => ({
+        id: `package-booking-${booking.id}`,
+        type: 'package_booking',
+        title: 'New package booking',
+        message: `${booking.customerName} requested ${booking.package.name} for ${booking.eventDate.toLocaleDateString()}.`,
+        tab: 'bookings',
+        timestamp: booking.createdAt
+      }))
     ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     res.json({ success: true, data: notifications });
@@ -871,6 +885,63 @@ router.delete('/packages/:id', authenticate, authorize('admin', 'manager'), asyn
   } catch (error) {
     console.error('Delete Package Error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete package.' });
+  }
+});
+
+// GET /api/admin/bookings — Package booking requests for admin review
+router.get('/bookings', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const bookings = await prisma.eventBooking.findMany({
+      where: { tenantId: req.tenantId },
+      include: { package: { select: { name: true, priceText: true } } },
+      orderBy: [{ status: 'asc' }, { createdAt: 'desc' }]
+    });
+    res.json({ success: true, data: bookings });
+  } catch (error) {
+    console.error('Admin package bookings error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load package bookings.' });
+  }
+});
+
+// PATCH /api/admin/bookings/:id/status — Accept or reject a package booking
+router.patch('/bookings/:id/status', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { status, adminNotes } = req.body;
+    if (!['accepted', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Booking status must be accepted or rejected.' });
+    }
+
+    const booking = await prisma.eventBooking.findFirst({
+      where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId }
+    });
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking request not found.' });
+
+    const updated = await prisma.eventBooking.update({
+      where: { id: booking.id },
+      data: { status, adminNotes: adminNotes?.trim() || null, reviewedAt: new Date() },
+      include: { package: { select: { name: true } } }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: `${status}_package_booking`,
+        entityType: 'package_booking',
+        entityId: String(updated.id),
+        details: `${status === 'accepted' ? 'Accepted' : 'Rejected'} ${updated.package.name} booking for ${updated.customerName}`
+      }
+    });
+
+    if (req.io) {
+      req.io.to(`tenant-${req.tenantId}-user-${updated.customerId}`).emit('package_booking_update', updated);
+      req.io.to(`tenant-${req.tenantId}-admin`).emit('admin_notification_update');
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Update package booking error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update package booking.' });
   }
 });
 
