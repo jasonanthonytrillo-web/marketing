@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Archive, Check, Clock3, Download, ExternalLink, Mail, MapPin, Phone, Trash2, X } from 'lucide-react';
+import { Archive, Check, ChevronLeft, ChevronRight, Clock3, Download, ExternalLink, Mail, MapPin, Phone, Trash2, X } from 'lucide-react';
 import { deleteAdminBooking, getAdminBookings, updateAdminBookingStatus, requestAdminBookingPayment, updateAdminBookingPaymentStatus } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
 import { useSocket } from '../../context/SocketContext';
@@ -15,18 +15,21 @@ export default function PackageBookingsTab() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [paymentForm, setPaymentForm] = useState({ paymentMode: 'downpayment', paymentAmount: '' });
   const [view, setView] = useState('active');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 });
   const { onEvent } = useSocket();
 
   const loadBookings = useCallback(async () => {
     try {
-      const response = await getAdminBookings(view === 'archives');
+      const response = await getAdminBookings(view === 'archives', page, 10);
       setBookings(response.data.data || []);
+      setPagination(response.data.meta || { page, total: 0, totalPages: 1 });
     } catch (error) {
       console.error('Failed to load package bookings:', error);
     } finally {
       setLoading(false);
     }
-  }, [view]);
+  }, [view, page]);
 
   useEffect(() => {
     setLoading(true);
@@ -109,8 +112,9 @@ export default function PackageBookingsTab() {
     }
   };
 
-  const exportAcceptedBookings = () => {
-    const acceptedBookings = bookings.filter(booking => ['accepted', 'confirmed'].includes(booking.status));
+  const exportAcceptedBookings = async () => {
+    const response = await getAdminBookings(false, 1, 100);
+    const acceptedBookings = (response.data.data || []).filter(booking => ['accepted', 'confirmed'].includes(booking.status));
     if (acceptedBookings.length === 0) {
       alert('There are no accepted bookings to export.');
       return;
@@ -163,8 +167,8 @@ export default function PackageBookingsTab() {
           <div className="flex flex-wrap items-center justify-start gap-2">
             <button type="button" onClick={exportAcceptedBookings} disabled={view !== 'active'} title={view !== 'active' ? 'Switch to Active requests to export accepted bookings' : 'Export accepted bookings'} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-45"><Download className="h-4 w-4" /> Export CSV</button>
             <div className="flex rounded-2xl border border-surface-200 bg-white p-1 shadow-sm">
-            <button type="button" onClick={() => setView('active')} className={`rounded-xl px-4 py-2.5 text-sm font-black transition-colors ${view === 'active' ? 'bg-primary-600 text-white' : 'text-surface-500 hover:bg-surface-50'}`}>Active requests</button>
-            <button type="button" onClick={() => setView('archives')} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition-colors ${view === 'archives' ? 'bg-surface-900 text-white' : 'text-surface-500 hover:bg-surface-50'}`}><Archive className="h-4 w-4" /> Archives</button>
+            <button type="button" onClick={() => { setPage(1); setView('active'); }} className={`rounded-xl px-4 py-2.5 text-sm font-black transition-colors ${view === 'active' ? 'bg-primary-600 text-white' : 'text-surface-500 hover:bg-surface-50'}`}>Active requests</button>
+            <button type="button" onClick={() => { setPage(1); setView('archives'); }} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition-colors ${view === 'archives' ? 'bg-surface-900 text-white' : 'text-surface-500 hover:bg-surface-50'}`}><Archive className="h-4 w-4" /> Archives</button>
             </div>
           </div>
         </div>
@@ -185,6 +189,16 @@ export default function PackageBookingsTab() {
             <div className="mt-4 rounded-2xl border border-surface-200 bg-surface-50 p-4 text-sm"><p className="font-bold text-surface-700">Customer instruction</p><p className="mt-1 leading-relaxed text-surface-600">Scan the {paymentBooking.paymentMethod === 'maya' ? 'Maya' : 'GCash'} QR code, pay the requested amount, then submit the last 4 digits of your {paymentBooking.paymentMethod === 'maya' ? 'Maya' : 'GCash'} reference ID.</p></div>
             <button disabled={processingId === paymentBooking.id} className="mt-5 w-full rounded-xl bg-primary-600 py-3 font-black text-white disabled:opacity-50">{processingId === paymentBooking.id ? 'Sending...' : 'Send Payment Instructions'}</button>
           </form>
+        </div>
+      )}
+
+      {bookings.length > 0 && pagination.totalPages > 1 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-surface-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-xs font-bold text-surface-500">Showing page {pagination.page} of {pagination.totalPages} · {pagination.total} bookings</p>
+          <div className="flex items-center gap-2">
+            <button type="button" disabled={page <= 1} onClick={() => setPage(current => current - 1)} className="inline-flex items-center gap-1 rounded-xl border border-surface-200 px-3 py-2 text-xs font-black text-surface-600 hover:bg-surface-50 disabled:cursor-not-allowed disabled:opacity-40"><ChevronLeft className="h-4 w-4" /> Previous</button>
+            <button type="button" disabled={page >= pagination.totalPages} onClick={() => setPage(current => current + 1)} className="inline-flex items-center gap-1 rounded-xl border border-surface-200 px-3 py-2 text-xs font-black text-surface-600 hover:bg-surface-50 disabled:cursor-not-allowed disabled:opacity-40">Next <ChevronRight className="h-4 w-4" /></button>
+          </div>
         </div>
       )}
 
@@ -253,7 +267,7 @@ export default function PackageBookingsTab() {
                   {booking.paymentStatus === 'submitted' ? (
                     <>
                       <button disabled={processingId === booking.id} onClick={() => updatePaymentStatus(booking, 'verified')} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-blue-700 disabled:opacity-50"><Check className="h-4 w-4" /> Verify ₱{Number(booking.paymentAmount).toFixed(2)} / Ref {booking.paymentReference}</button>
-                      <button disabled={processingId === booking.id} onClick={() => updatePaymentStatus(booking, 'rejected')} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-black text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50">Reject Payment</button>
+                      <button disabled={processingId === booking.id} onClick={() => updatePaymentStatus(booking, 'rejected')} className="flex items-center justify-center gap-2 rounded-xl border border-amber-200 px-4 py-3 text-sm font-black text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-50">Request Payment Again</button>
                     </>
                   ) : booking.paymentStatus === 'verified' ? (
                     <button disabled={processingId === booking.id} onClick={() => updateStatus(booking, 'accepted')} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"><Check className="h-4 w-4" /> Accept Booking</button>
@@ -262,7 +276,7 @@ export default function PackageBookingsTab() {
                   ) : (
                     <button disabled={processingId === booking.id} onClick={() => openPaymentRequest(booking)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-amber-600 disabled:opacity-50">Send Payment Request</button>
                   )}
-                  <button disabled={processingId === booking.id} onClick={() => openRejectionModal(booking)} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-black text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"><X className="h-4 w-4" /> Reject</button>
+                  <button disabled={processingId === booking.id} onClick={() => openRejectionModal(booking)} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-black text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"><X className="h-4 w-4" /> Reject Booking</button>
                 </div>
               )}
             </article>

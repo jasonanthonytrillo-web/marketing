@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { playNotificationSound } from '../utils/helpers';
 import { CheckCircle } from 'lucide-react';
 
 export default function GlobalThankYou() {
   const [showThankYou, setShowThankYou] = useState(false);
+  const [completedOrderNumber, setCompletedOrderNumber] = useState('');
   const { onEvent, joinRoom } = useSocket();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tenantSlug = searchParams.get('tenant') || 'project-million';
 
@@ -59,20 +59,14 @@ export default function GlobalThankYou() {
           }
 
           // Show the global thank you screen
+          setCompletedOrderNumber(order.orderNumber);
           setShowThankYou(true);
-
-          // After 5 seconds, hide the screen and navigate home
-          setTimeout(() => {
-            setShowThankYou(false);
-            const homePath = '/';
-            navigate(homePath);
-          }, 5000);
         }
       }
     });
 
     return () => unsub();
-  }, [onEvent, joinRoom, navigate, tenantSlug]);
+  }, [onEvent, joinRoom, tenantSlug]);
 
   if (!showThankYou) return null;
 
@@ -84,7 +78,7 @@ export default function GlobalThankYou() {
           Thank You!
         </h1>
         <p className="text-slate-300 text-lg sm:text-xl font-medium mb-10">
-          We hope you enjoy your meal.<br/>See you again soon!
+          We hope you enjoy your meal.<br/>You can leave feedback on your order page.
         </p>
         
         <div className="w-24 h-1.5 bg-emerald-500 mx-auto rounded-full mb-10 shadow-[0_0_20px_rgba(16,185,129,0.5)]"></div>
@@ -92,12 +86,10 @@ export default function GlobalThankYou() {
         <button 
           onClick={() => {
             setShowThankYou(false);
-            const homePath = '/';
-            navigate(homePath);
           }}
           className="bg-white text-slate-900 font-bold text-lg sm:text-xl px-12 py-5 rounded-2xl shadow-2xl hover:bg-slate-50 transition-all active:scale-95"
         >
-          Return to Menu
+          {completedOrderNumber ? 'Continue to Order' : 'Continue'}
         </button>
       </div>
     </div>

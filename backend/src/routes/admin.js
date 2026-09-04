@@ -536,34 +536,47 @@ router.post('/inventory/:id/restock', authenticate, authorize('admin'), async (r
 
 router.get('/inventory/logs', authenticate, authorize('admin'), async (req, res) => {
   try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const skip = (page - 1) * limit;
+
     // Fetch product inventory logs
-    const productLogs = await prisma.inventoryLog.findMany({
-      where: { product: { tenantId: req.tenantId } },
+    const productWhere = { product: { tenantId: req.tenantId } };
+    const rawWhere = { rawIngredient: { tenantId: req.tenantId } };
+    const [productLogs, rawLogs, productTotal, rawTotal] = await Promise.all([
+      prisma.inventoryLog.findMany({
+      where: productWhere,
       include: {
         product: { select: { name: true } },
         supplier: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' },
-      take: 200
-    });
-
-    // Fetch raw ingredient logs
-    const rawLogs = await prisma.rawIngredientLog.findMany({
-      where: { rawIngredient: { tenantId: req.tenantId } },
+      // Fetch enough from each stream to produce the requested globally sorted page.
+      take: skip + limit
+    }),
+      prisma.rawIngredientLog.findMany({
+      where: rawWhere,
       include: {
         rawIngredient: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' },
-      take: 200
-    });
+      take: skip + limit
+    }),
+      prisma.inventoryLog.count({ where: productWhere }),
+      prisma.rawIngredientLog.count({ where: rawWhere })
+    ]);
 
     // Combine and sort both lists by date
     const mergedLogs = [...productLogs, ...rawLogs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    // Take exactly 200 of the merged results
-    const finalLogs = mergedLogs.slice(0, 200);
+    const total = productTotal + rawTotal;
+    const finalLogs = mergedLogs.slice(skip, skip + limit);
 
-    res.json({ success: true, data: finalLogs });
+    res.json({
+      success: true,
+      data: finalLogs,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) }
+    });
   } catch (error) {
     console.error('Inventory Logs Error:', error);
     res.status(500).json({ success: false, message: 'Failed to load inventory logs.' });
@@ -614,7 +627,7 @@ router.delete('/expenses/:id', authenticate, authorize('admin'), async (req, res
 });
 
 // Audit logs
-router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => {
+router.get('/audit-logs-legacy', authenticate, authorize('admin'), async (req, res) => {
   try {
     const logs = await prisma.auditLog.findMany({
       where: {
@@ -778,24 +791,57 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
 // GET /api/admin/audit-logs
 router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const logs = await prisma.auditLog.findMany({
-      where: {
-        tenantId: req.tenantId,
-        // Keep the restriction at the API boundary, not only in the UI.
-        OR: [
-          { userId: null },
-          { user: { role: { not: 'superadmin' } } }
-        ]
-      },
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const skip = (page - 1) * limit;
+    const { search, action = 'all', role = 'all' } = req.query;
+    const visibleToTenant = [
+      { userId: null },
+      { user: { role: { not: 'superadmin' } } }
+    ];
+    const where = {
+      tenantId: req.tenantId,
+      OR: visibleToTenant
+    };
+    const and = [];
+    if (search) {
+      and.push({ OR: [
+        { action: { contains: search, mode: 'insensitive' } },
+        { details: { contains: search, mode: 'insensitive' } },
+        { entityType: { contains: search, mode: 'insensitive' } },
+        { entityId: { contains: search, mode: 'insensitive' } },
+        { user: { name: { contains: search, mode: 'insensitive' } } }
+      ] });
+    }
+    if (role && role !== 'all') and.push({ user: { role } });
+    if (action && action !== 'all') {
+      const actionPatterns = {
+        orders: ['order', 'confirm', 'cancel'],
+        kitchen: ['kitchen', 'served'],
+        security: ['login', 'password'],
+        catalog: ['product', 'category'],
+        delivery: ['rider', 'delivery']
+      };
+      const patterns = actionPatterns[action];
+      if (patterns) and.push({ OR: patterns.map(pattern => ({ action: { contains: pattern, mode: 'insensitive' } })) });
+    }
+    if (and.length) where.AND = and;
+
+    const [logs, total] = await Promise.all([
+      prisma.auditLog.findMany({
+      where,
       include: {
         user: {
           select: { name: true, role: true }
         }
       },
       orderBy: { createdAt: 'desc' },
-      take: 100
-    });
-    res.json({ success: true, data: logs });
+      skip,
+      take: limit
+    }),
+      prisma.auditLog.count({ where })
+    ]);
+    res.json({ success: true, data: logs, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
     console.error('Audit Log Error:', error);
     res.status(500).json({ success: false, message: 'Failed to load audit logs.' });
@@ -902,15 +948,25 @@ router.delete('/packages/:id', authenticate, authorize('admin', 'manager'), asyn
 router.get('/bookings', authenticate, authorize('admin'), async (req, res) => {
   try {
     const archived = req.query.archived === 'true';
-    const bookings = await prisma.eventBooking.findMany({
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const where = {
+      tenantId: req.tenantId,
+      status: archived ? { in: ['rejected', 'cancelled'] } : { notIn: ['rejected', 'cancelled'] }
+    };
+    const [bookings, total] = await Promise.all([
+      prisma.eventBooking.findMany({
       where: {
-        tenantId: req.tenantId,
-        status: archived ? { in: ['rejected', 'cancelled'] } : { notIn: ['rejected', 'cancelled'] }
+        ...where
       },
       include: { package: { select: { name: true, priceText: true } } },
+      skip: (page - 1) * limit,
+      take: limit,
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }]
-    });
-    res.json({ success: true, data: bookings });
+      }),
+      prisma.eventBooking.count({ where })
+    ]);
+    res.json({ success: true, data: bookings, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
     console.error('Admin package bookings error:', error);
     res.status(500).json({ success: false, message: 'Failed to load package bookings.' });

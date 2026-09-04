@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getAdminOrders } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { AlertTriangle, MoreVertical, Trash2 } from 'lucide-react';
+import PaginationControls from './PaginationControls';
 
 export default function OrdersTab() {
   const [orders, setOrders] = useState([]);
@@ -9,6 +10,7 @@ export default function OrdersTab() {
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
 
@@ -35,6 +37,7 @@ export default function OrdersTab() {
     try {
       const res = await getAdminOrders(status, page, searchQuery);
       setOrders(res.data.data);
+      setPagination({ total: res.data.total || 0, totalPages: Math.ceil((res.data.total || 0) / (res.data.limit || 50)) || 1 });
     } catch (error) {
       console.error(error);
     } finally {
@@ -194,6 +197,7 @@ export default function OrdersTab() {
             </tbody>
           </table>
         </div>
+        <PaginationControls page={page} totalPages={pagination.totalPages} total={pagination.total} itemCount={orders.length} onPageChange={setPage} />
       </div>
 
       {/* Stacked order cards keep tablet layouts readable without horizontal scrolling. */}
@@ -256,6 +260,7 @@ export default function OrdersTab() {
             No orders found for this filter.
           </div>
         )}
+        <PaginationControls page={page} totalPages={pagination.totalPages} total={pagination.total} itemCount={orders.length} onPageChange={setPage} />
       </div>
     </div>
   );

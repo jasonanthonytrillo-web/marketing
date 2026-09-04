@@ -104,7 +104,7 @@ export const markServed = (id) => api.post(`/kitchen/orders/${id}/served`);
 
 // Admin
 export const getAdminOrders = (status, page, search = '') => {
-  let url = `/admin/orders?status=${status || 'all'}&page=${page || 1}`;
+  let url = `/admin/orders?status=${status || 'all'}&page=${page || 1}&limit=10`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
   return api.get(url);
 };
@@ -129,7 +129,8 @@ export const addRecipeItem = (data) => api.post('/inventory/ingredients/recipes'
 export const removeRecipeItem = (id) => api.delete(`/inventory/ingredients/recipes/${id}`);
 
 export const restockProduct = (id, data) => api.post(`/admin/inventory/${id}/restock`, data);
-export const getAuditLogs = () => api.get('/admin/audit-logs');
+export const getAuditLogs = (params = {}) => api.get('/admin/audit-logs', { params });
+export const getInventoryLogs = (page = 1, limit = 10) => api.get('/admin/inventory/logs', { params: { page, limit } });
 export const getSettings = () => api.get('/admin/settings');
 export const updateSettings = (settings) => api.post('/admin/settings', { settings });
 export const uploadImage = (data) => api.post('/admin/upload-image', data);
@@ -198,7 +199,7 @@ export const createPackageBooking = (data) => api.post('/bookings', data);
 export const getBookingAvailability = () => api.get('/bookings/availability');
 export const getMyPackageBookings = () => api.get('/bookings/mine');
 export const submitPackagePayment = (id, reference) => api.post(`/bookings/${id}/payment`, { reference });
-  export const getAdminBookings = (archived = false) => api.get('/admin/bookings', { params: { archived } });
+  export const getAdminBookings = (archived = false, page = 1, limit = 10) => api.get('/admin/bookings', { params: { archived, page, limit } });
   export const deleteAdminBooking = (id) => api.delete(`/admin/bookings/${id}`);
 export const updateAdminBookingStatus = (id, data) => api.patch(`/admin/bookings/${id}/status`, data);
 export const requestAdminBookingPayment = (id, data) => api.post(`/admin/bookings/${id}/payment-request`, data);

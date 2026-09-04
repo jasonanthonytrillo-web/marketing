@@ -1419,10 +1419,10 @@ export default function Menu() {
 
       {/* Package Booking Modal */}
       {bookingPackage && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-surface-900/10 p-3 sm:p-6">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-surface-900/10 p-0 sm:p-6">
           <div className="absolute inset-0 bg-surface-900/70 backdrop-blur-sm" onClick={() => !bookingSubmitting && setBookingPackage(null)}></div>
-          <form noValidate onSubmit={handleBookingSubmit} className="relative z-10 my-6 max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto rounded-[30px] border border-white/70 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:my-8 sm:p-8">
-            <div className="mb-6 flex items-start justify-between gap-4 border-b border-surface-100 pb-6">
+          <form noValidate onSubmit={handleBookingSubmit} className="relative z-10 my-0 flex min-h-[100dvh] max-h-[100dvh] w-full max-w-2xl flex-col overflow-y-auto rounded-none border-white/70 bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:my-6 sm:min-h-0 sm:max-h-[calc(100dvh-3rem)] sm:rounded-[30px] sm:border sm:p-8">
+            <div className="mb-6 flex flex-shrink-0 items-start justify-between gap-4 border-b border-surface-100 pb-6">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary-600">Booking request</p>
                 <h2 className="mt-2 font-heading text-2xl font-black tracking-tight text-surface-900 sm:text-3xl">{bookingPackage.name}</h2>
@@ -1431,13 +1431,13 @@ export default function Menu() {
               <button type="button" disabled={bookingSubmitting} onClick={() => setBookingPackage(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-100 text-surface-600 hover:bg-surface-200">×</button>
             </div>
 
-            <div className="mb-5 rounded-2xl bg-surface-50 p-4 text-sm text-surface-600">
+            <div className="mb-6 rounded-2xl border border-surface-200 bg-surface-50 p-4 text-sm text-surface-600 shadow-sm">
               <p className="font-bold text-surface-900">Customer details</p>
               <p className="mt-1">{user?.name} · {user?.email}</p>
             </div>
 
             <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-surface-400"><span className="h-px flex-1 bg-surface-100" />Event details<span className="h-px flex-1 bg-surface-100" /></div>
-            <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-6 lg:grid-cols-2">
               <label className="text-sm font-bold text-surface-700" data-booking-error={bookingErrors.eventType ? 'true' : undefined}>What is the event? <span className="text-red-500">*</span>
                 <div className="relative">
                   <button type="button" aria-haspopup="listbox" aria-expanded={bookingEventOpen} onClick={() => setBookingEventOpen(current => !current)} className={`input-field mt-1 flex w-full items-center justify-between text-left font-medium ${bookingErrors.eventType ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100 shadow-[0_0_14px_rgba(239,68,68,0.22)]' : ''}`}><span className={bookingForm.eventType ? 'text-surface-900' : 'text-surface-400'}>{bookingForm.eventType || 'Select an event type'}</span><ChevronDown className={`h-4 w-4 text-surface-400 transition-transform ${bookingEventOpen ? 'rotate-180' : ''}`} /></button>
@@ -1446,12 +1446,12 @@ export default function Menu() {
                 <input required tabIndex={-1} value={bookingForm.eventType === 'Other' ? bookingForm.otherEventType : bookingForm.eventType} onChange={() => {}} className="pointer-events-none absolute h-0 w-0 opacity-0" aria-hidden="true" />
                 {bookingForm.eventType === 'Other' && <input value={bookingForm.otherEventType} onChange={e => { setBookingForm({ ...bookingForm, otherEventType: e.target.value }); clearBookingError('otherEventType'); }} placeholder="Type your event" className={`input-field mt-2 w-full ${bookingErrors.otherEventType ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100 shadow-[0_0_14px_rgba(239,68,68,0.22)]' : ''}`} />}
               </label>
-              <label className="text-sm font-bold text-surface-700 sm:col-span-2" data-booking-error={bookingErrors.venue ? 'true' : undefined}><span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary-600" />Where is it? <span className="text-red-500">*</span></span>
+              <label className="text-sm font-bold text-surface-700 lg:col-span-2" data-booking-error={bookingErrors.venue ? 'true' : undefined}><span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary-600" />Where is it? <span className="text-red-500">*</span></span>
                 <div className="relative mt-1">
                   <input required value={bookingForm.venue} onChange={e => { setBookingForm({ ...bookingForm, venue: e.target.value, venueLat: null, venueLng: null }); clearBookingError('venue'); }} placeholder="Venue or address" className={`input-field w-full pr-12 ${bookingErrors.venue ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100 shadow-[0_0_14px_rgba(239,68,68,0.22)]' : ''}`} />
                   <button type="button" onClick={() => setShowBookingMap(current => !current)} aria-label={showBookingMap ? 'Hide location map' : 'Pin location on map'} title={showBookingMap ? 'Hide location map' : 'Pin location on map'} className={`absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl border bg-white shadow-sm transition hover:bg-surface-50 ${showBookingMap ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-surface-200'}`} style={{ color: '#15803d' }}><MapPin className="h-4 w-4" strokeWidth={2.5} /></button>
                 </div>
-                {showBookingMap && <div className="mt-3 sm:col-span-2"><LocationPicker onLocationSelect={({ address, lat, lng }) => setBookingForm(current => ({ ...current, venue: address || current.venue, venueLat: lat, venueLng: lng }))} initialAddress={bookingForm.venue} /></div>}
+                {showBookingMap && <div className="mt-3 lg:col-span-2"><LocationPicker onLocationSelect={({ address, lat, lng }) => setBookingForm(current => ({ ...current, venue: address || current.venue, venueLat: lat, venueLng: lng }))} initialAddress={bookingForm.venue} /></div>}
               </label>
               <label className="text-sm font-bold text-surface-700" data-booking-error={bookingErrors.eventDate ? 'true' : undefined}><span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-primary-600" />When is it? <span className="text-red-500">*</span></span>
                 <div className="mt-1 grid grid-cols-2 gap-2">
@@ -1465,7 +1465,7 @@ export default function Menu() {
               <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-primary-600" />Contact number</span>
                 <input type="tel" value={bookingForm.customerPhone} onChange={e => setBookingForm({ ...bookingForm, customerPhone: e.target.value })} placeholder="09XX XXX XXXX" className="input-field mt-1 w-full" />
               </label>
-              <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 p-4 sm:col-span-2">
+              <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 p-4 lg:col-span-2">
                 <p className="flex items-center gap-2 text-sm font-black text-emerald-900">Payment choice <span className="text-red-500">*</span><span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">Required</span></p>
                 <p className="mt-1 text-xs font-medium text-emerald-700">Choose how much you want to pay for this package.</p>
                 <div data-booking-error={bookingErrors.paymentMode ? 'true' : undefined} className={`mt-2 grid gap-2 rounded-2xl ${bookingErrors.paymentMode ? 'ring-2 ring-red-300 shadow-[0_0_14px_rgba(239,68,68,0.22)]' : ''} sm:grid-cols-2`}>
@@ -1475,7 +1475,7 @@ export default function Menu() {
                   })}
                 </div>
               </div>
-              <div className="sm:col-span-2">
+              <div className="lg:col-span-2">
                 <p className="text-sm font-bold text-surface-700">How would you like to pay?</p>
                 <div className={`mt-2 grid gap-2 rounded-2xl ${bookingErrors.paymentMethod ? 'ring-2 ring-red-100' : ''} sm:grid-cols-3`}>
                   {[{ id: 'cash', label: 'Cash', hint: 'Pay at the store' }, { id: 'gcash', label: 'GCash', hint: branding?.gcashQr ? 'QR available' : 'Currently unavailable' }, { id: 'maya', label: 'Maya', hint: branding?.mayaQr ? 'QR available' : 'QR not uploaded' }].map(method => {
@@ -1485,16 +1485,16 @@ export default function Menu() {
                   })}
                 </div>
               </div>
-              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Location landmark or directions <span className="font-medium text-surface-400">(optional)</span>
+              <label className="text-sm font-bold text-surface-700 lg:col-span-2">Location landmark or directions <span className="font-medium text-surface-400">(optional)</span>
                 <input value={bookingForm.locationGuide} onChange={e => setBookingForm({ ...bookingForm, locationGuide: e.target.value })} placeholder="e.g. Near the church, use the side gate" className="input-field mt-1 w-full" />
               </label>
-              <label className="text-sm font-bold text-surface-700 sm:col-span-2"><span className="flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary-600" />Additional details <span className="font-medium text-surface-400">(optional)</span></span>
+              <label className="text-sm font-bold text-surface-700 lg:col-span-2"><span className="flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary-600" />Additional details <span className="font-medium text-surface-400">(optional)</span></span>
                 <textarea rows="3" value={bookingForm.notes} onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })} placeholder="Tell us anything else we should know" className="input-field mt-1 w-full resize-none" />
               </label>
             </div>
 
             {bookingMessage && <p className={`mt-4 rounded-xl p-3 text-sm font-bold ${bookingMessage.includes('sent') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{bookingMessage}</p>}
-            <button type="submit" disabled={bookingSubmitting} className="mt-7 flex w-full items-center justify-center rounded-2xl py-3.5 font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:translate-y-0 disabled:opacity-50" style={{ backgroundColor: brandingColor }}>
+            <button type="submit" disabled={bookingSubmitting} className="sticky bottom-0 z-20 mt-7 flex w-full items-center justify-center rounded-2xl border-t-8 border-white py-3.5 font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:translate-y-0 disabled:opacity-50" style={{ backgroundColor: brandingColor }}>
               {bookingSubmitting ? 'Sending request...' : 'Confirm Booking Request'}
             </button>
           </form>

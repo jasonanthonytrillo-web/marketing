@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
-import api from '../../services/api';
 import { formatDate } from '../../utils/helpers';
+import { getInventoryLogs } from '../../services/api';
+import PaginationControls from './PaginationControls';
 
 export default function InventoryLogsTab() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
 
   useEffect(() => {
     loadLogs();
-  }, []);
+  }, [page]);
 
   const loadLogs = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/inventory/logs');
+      const res = await getInventoryLogs(page, 10);
       setLogs(res.data.data);
+      setPagination(res.data.meta || { total: res.data.data.length, totalPages: 1 });
     } catch (error) {
       console.error(error);
     } finally {
@@ -90,6 +94,7 @@ export default function InventoryLogsTab() {
             </tbody>
           </table>
         </div>
+        <PaginationControls page={page} totalPages={pagination.totalPages} total={pagination.total} itemCount={logs.length} onPageChange={setPage} />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getAuditLogs } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
 import { Search, SearchX } from 'lucide-react';
+import PaginationControls from './PaginationControls';
 
 const settingLabels = {
   points_rate: 'Points rate',
@@ -50,16 +51,19 @@ export default function LogsTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [page, searchQuery, actionFilter, roleFilter]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await getAuditLogs();
+      const res = await getAuditLogs({ page, limit: 10, search: searchQuery, action: actionFilter, role: roleFilter });
       setLogs(res.data.data);
+      setPagination(res.data.meta || { total: res.data.data.length, totalPages: 1 });
     } catch (error) {
       console.error(error);
     } finally {
@@ -79,7 +83,7 @@ export default function LogsTab() {
     return 'bg-slate-50 text-slate-600 border-slate-100';
   };
 
-  // Live Filtering Logic
+  // Server-side filters are authoritative; this keeps the view safe with older API responses too.
   const filteredLogs = logs.filter(log => {
     // 1. Search Query Match
     const searchLower = searchQuery.toLowerCase();
@@ -137,7 +141,7 @@ export default function LogsTab() {
               type="text" 
               placeholder="Search by staff name, order details, action name..." 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white font-bold text-sm shadow-sm transition-all"
             />
           </div>
@@ -147,7 +151,7 @@ export default function LogsTab() {
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Action Type</label>
             <select 
               value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
+              onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
               className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white font-bold text-sm shadow-sm transition-all cursor-pointer"
             >
               <option value="all">All Events</option>
@@ -162,7 +166,7 @@ export default function LogsTab() {
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Staff Role</label>
             <select 
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
               className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white font-bold text-sm shadow-sm transition-all cursor-pointer"
             >
               <option value="all">All Roles</option>
@@ -234,6 +238,7 @@ export default function LogsTab() {
             </tbody>
           </table>
         </div>
+        <PaginationControls page={page} totalPages={pagination.totalPages} total={pagination.total} itemCount={filteredLogs.length} onPageChange={setPage} />
       </div>
 
       {/* Stacked cards keep each event readable on tablets and phones. */}
@@ -272,6 +277,7 @@ export default function LogsTab() {
             <p className="text-slate-400 text-xs">Try relaxing your search query or dropdown filters.</p>
           </div>
         )}
+        <PaginationControls page={page} totalPages={pagination.totalPages} total={pagination.total} itemCount={filteredLogs.length} onPageChange={setPage} />
       </div>
     </div>
   );
