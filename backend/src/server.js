@@ -22,6 +22,9 @@ function isOriginAllowed(origin) {
 }
 
 const app = express();
+// Render forwards client IPs through one reverse-proxy hop. This allows
+// express-rate-limit to identify users correctly from X-Forwarded-For.
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
