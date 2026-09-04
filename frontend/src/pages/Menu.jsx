@@ -190,7 +190,7 @@ export default function Menu() {
         let tenantSlug = searchParams.get('tenant');
         if (!tenantSlug) {
           const hostname = window.location.hostname;
-          const isPlatformDomain = hostname.includes('vercel.app') || hostname.includes('onrender.com');
+          const isPlatformDomain = hostname.includes('vercel.app') || hostname.includes('onrender.com') || hostname.includes('workers.dev');
           if (!isPlatformDomain && hostname !== 'localhost' && hostname !== '127.0.0.1') {
             tenantSlug = hostname.split('.')[0];
           } else {
