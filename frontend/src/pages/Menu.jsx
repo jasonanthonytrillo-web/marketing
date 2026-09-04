@@ -10,7 +10,7 @@ import useStoreOperationRealtime from '../hooks/useStoreOperationRealtime';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
 import LocationPicker from '../components/LocationPicker';
-import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles } from 'lucide-react';
+import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles, ChevronDown, CalendarDays, MapPin, Users, Phone, FileText } from 'lucide-react';
 
 const DEFAULT_MENU_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
 const COMMON_EVENT_TYPES = ['Birthday', 'Wedding', 'Corporate event', 'School event', 'Festival or market', 'Private gathering', 'Other'];
@@ -56,6 +56,7 @@ export default function Menu() {
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
   const [showBookingMap, setShowBookingMap] = useState(false);
+  const [bookingEventOpen, setBookingEventOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [orderHistory, setOrderHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -171,6 +172,7 @@ export default function Menu() {
   const handleBookNow = (pkg) => {
     setBookingPackage(pkg);
     setBookingMessage('');
+    setBookingEventOpen(false);
     setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '' });
     setShowBookingMap(false);
     setShowPackages(false);
@@ -1324,13 +1326,13 @@ export default function Menu() {
 
       {/* Package Booking Modal */}
       {bookingPackage && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto p-4">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-surface-900/10 p-3 sm:p-6">
           <div className="absolute inset-0 bg-surface-900/70 backdrop-blur-sm" onClick={() => !bookingSubmitting && setBookingPackage(null)}></div>
-          <form onSubmit={handleBookingSubmit} className="relative z-10 my-8 w-full max-w-xl rounded-[28px] bg-white p-6 shadow-2xl md:p-8">
-            <div className="mb-6 flex items-start justify-between gap-4">
+          <form onSubmit={handleBookingSubmit} className="relative z-10 my-6 max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto rounded-[30px] border border-white/70 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:my-8 sm:p-8">
+            <div className="mb-6 flex items-start justify-between gap-4 border-b border-surface-100 pb-6">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-surface-400">Booking request</p>
-                <h2 className="mt-1 text-2xl font-black text-surface-900">{bookingPackage.name}</h2>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary-600">Booking request</p>
+                <h2 className="mt-2 font-heading text-2xl font-black tracking-tight text-surface-900 sm:text-3xl">{bookingPackage.name}</h2>
                 <p className="mt-1 text-sm font-medium text-surface-500">Tell us what, where, and when.</p>
               </div>
               <button type="button" disabled={bookingSubmitting} onClick={() => setBookingPackage(null)} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-100 text-surface-600 hover:bg-surface-200">×</button>
@@ -1341,35 +1343,37 @@ export default function Menu() {
               <p className="mt-1">{user?.name} · {user?.email}</p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="mb-3 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-surface-400"><span className="h-px flex-1 bg-surface-100" />Event details<span className="h-px flex-1 bg-surface-100" /></div>
+            <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
               <label className="text-sm font-bold text-surface-700">What is the event?
-                <select required value={bookingForm.eventType} onChange={e => setBookingForm({ ...bookingForm, eventType: e.target.value, otherEventType: '' })} className="input-field mt-1 w-full">
-                  <option value="">Select an event type</option>
-                  {COMMON_EVENT_TYPES.map(eventType => <option key={eventType} value={eventType}>{eventType}</option>)}
-                </select>
+                <div className="relative">
+                  <button type="button" aria-haspopup="listbox" aria-expanded={bookingEventOpen} onClick={() => setBookingEventOpen(current => !current)} className="input-field mt-1 flex w-full items-center justify-between text-left font-medium"><span className={bookingForm.eventType ? 'text-surface-900' : 'text-surface-400'}>{bookingForm.eventType || 'Select an event type'}</span><ChevronDown className={`h-4 w-4 text-surface-400 transition-transform ${bookingEventOpen ? 'rotate-180' : ''}`} /></button>
+                  {bookingEventOpen && <div role="listbox" className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-30 overflow-hidden rounded-2xl border border-surface-200 bg-white p-1.5 shadow-xl"><button type="button" onClick={() => { setBookingForm({ ...bookingForm, eventType: '', otherEventType: '' }); setBookingEventOpen(false); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-surface-400 hover:bg-surface-50">Select an event type</button>{COMMON_EVENT_TYPES.map(eventType => <button type="button" role="option" aria-selected={bookingForm.eventType === eventType} key={eventType} onClick={() => { setBookingForm({ ...bookingForm, eventType, otherEventType: '' }); setBookingEventOpen(false); }} className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${bookingForm.eventType === eventType ? 'bg-primary-50 text-primary-700' : 'text-surface-700 hover:bg-surface-50'}`}>{eventType}</button>)}</div>}
+                </div>
+                <input required tabIndex={-1} value={bookingForm.eventType === 'Other' ? bookingForm.otherEventType : bookingForm.eventType} onChange={() => {}} className="pointer-events-none absolute h-0 w-0 opacity-0" aria-hidden="true" />
                 {bookingForm.eventType === 'Other' && <input required value={bookingForm.otherEventType} onChange={e => setBookingForm({ ...bookingForm, otherEventType: e.target.value })} placeholder="Type your event" className="input-field mt-2 w-full" />}
               </label>
-              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Where is it?
+              <label className="text-sm font-bold text-surface-700 sm:col-span-2"><span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary-600" />Where is it?</span>
                 <input required value={bookingForm.venue} onChange={e => setBookingForm({ ...bookingForm, venue: e.target.value, venueLat: null, venueLng: null })} placeholder={bookingForm.venue || 'Venue or address'} className="input-field mt-1 w-full" />
                 <button type="button" onClick={() => setShowBookingMap(current => !current)} className="mt-2 text-xs font-black text-primary-600 hover:text-primary-700">{showBookingMap ? 'Hide map' : 'Pin location (optional)'}</button>
                 {showBookingMap && <div className="mt-3 sm:col-span-2"><LocationPicker onLocationSelect={({ address, lat, lng }) => setBookingForm(current => ({ ...current, venue: address || current.venue, venueLat: lat, venueLng: lng }))} initialAddress={bookingForm.venue} /></div>}
               </label>
-              <label className="text-sm font-bold text-surface-700">When?
+              <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-primary-600" />When?</span>
                 <input required type="datetime-local" min={new Date().toISOString().slice(0, 16)} value={bookingForm.eventDate} onChange={e => setBookingForm({ ...bookingForm, eventDate: e.target.value })} className="input-field mt-1 w-full" />
               </label>
-              <label className="text-sm font-bold text-surface-700">Number of guests
+              <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary-600" />Number of guests</span>
                 <input type="number" min="1" value={bookingForm.guestCount} onChange={e => setBookingForm({ ...bookingForm, guestCount: e.target.value })} placeholder="Optional" className="input-field mt-1 w-full" />
               </label>
-              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Contact number
+              <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-primary-600" />Contact number</span>
                 <input type="tel" value={bookingForm.customerPhone} onChange={e => setBookingForm({ ...bookingForm, customerPhone: e.target.value })} placeholder="09XX XXX XXXX" className="input-field mt-1 w-full" />
               </label>
-              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Additional details
+              <label className="text-sm font-bold text-surface-700 sm:col-span-2"><span className="flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary-600" />Additional details <span className="font-medium text-surface-400">(optional)</span></span>
                 <textarea rows="3" value={bookingForm.notes} onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })} placeholder="Tell us anything else we should know" className="input-field mt-1 w-full resize-none" />
               </label>
             </div>
 
             {bookingMessage && <p className={`mt-4 rounded-xl p-3 text-sm font-bold ${bookingMessage.includes('sent') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{bookingMessage}</p>}
-            <button type="submit" disabled={bookingSubmitting} className="mt-6 w-full rounded-xl py-3 font-black text-white shadow-lg transition-opacity disabled:opacity-50" style={{ backgroundColor: brandingColor }}>
+            <button type="submit" disabled={bookingSubmitting} className="mt-7 flex w-full items-center justify-center rounded-2xl py-3.5 font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:translate-y-0 disabled:opacity-50" style={{ backgroundColor: brandingColor }}>
               {bookingSubmitting ? 'Sending request...' : 'Confirm Booking Request'}
             </button>
           </form>
