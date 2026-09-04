@@ -220,6 +220,21 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// Lightweight memory monitoring for Render's free instance.
+// RSS is the closest indicator of the process memory counted against the container limit.
+const logMemoryUsage = () => {
+  const memory = process.memoryUsage();
+  console.log(
+    `[Memory] RSS: ${(memory.rss / 1024 / 1024).toFixed(1)} MB | ` +
+    `Heap: ${(memory.heapUsed / 1024 / 1024).toFixed(1)} MB | ` +
+    `External: ${(memory.external / 1024 / 1024).toFixed(1)} MB`
+  );
+};
+const memoryLogInterval = setInterval(logMemoryUsage, 60 * 1000);
+memoryLogInterval.unref?.();
+logMemoryUsage();
+
 server.listen(PORT, () => {
   console.log(`🚀 POS Server running on http://localhost:${PORT}`);
   console.log(`📡 WebSocket ready`);
