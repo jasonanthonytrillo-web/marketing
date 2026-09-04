@@ -1,17 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, Clock3, MessageSquare, MonitorCheck, PackageX, Tag, ArrowUpRight } from 'lucide-react';
+import { Bell, ArrowUpRight } from 'lucide-react';
 import { getAdminNotifications } from '../../services/api';
 import { useSocket } from '../../context/SocketContext';
-
-const notificationIcons = {
-  low_stock: PackageX,
-  staff_time_in: Clock3,
-  staff_time_out: Clock3,
-  authorized_device: MonitorCheck,
-  feedback: MessageSquare,
-  promo_ending: Tag,
-  promo_limit: Tag
-};
 
 const formatTime = (value) => {
   const date = new Date(value);
@@ -117,7 +107,6 @@ export default function AdminNotifications({ userId, onNavigate }) {
                   <p className="mt-1 text-xs text-surface-400">New admin alerts will appear here.</p>
                 </div>
               ) : notifications.map(notification => {
-                const Icon = notificationIcons[notification.type] || Bell;
                 const isRead = readIds.includes(notification.id);
                 return (
                   <button
@@ -126,8 +115,13 @@ export default function AdminNotifications({ userId, onNavigate }) {
                     onClick={() => handleNotificationClick(notification)}
                     className={`flex w-full items-start gap-3 border-b border-surface-50 px-4 py-3 text-left transition-colors hover:bg-surface-50 ${isRead ? 'opacity-60' : ''}`}
                   >
-                    <span className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${isRead ? 'bg-surface-100 text-surface-500' : 'bg-primary-50 text-primary-600'}`}>
-                      <Icon className="h-4 w-4" />
+                    <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-100">
+                      <img
+                        src="/hb_logo.jpg"
+                        alt="Hometown Brew"
+                        className={`h-full w-full object-cover ${isRead ? 'grayscale opacity-70' : ''}`}
+                        onError={(event) => { event.currentTarget.src = '/favicon.png'; }}
+                      />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
