@@ -418,6 +418,7 @@ model EventBooking {
   eventDate     DateTime
   guestCount    Int?
   trademark     String?
+  locationGuide String?
   notes         String?
   status        String   @default("pending") // pending, accepted, rejected
   adminNotes    String?

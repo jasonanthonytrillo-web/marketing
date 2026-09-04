@@ -4,7 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { playNotificationSound, updateAppBadge, requestNotificationPermission, showSystemNotification } from '../utils/helpers';
 import { getOrder, submitPackagePayment } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Bell, AlertTriangle } from 'lucide-react';
+import { Bell, AlertTriangle, X, Download } from 'lucide-react';
 
 export default function GlobalNotification() {
   const [readyOrderNumbers, setReadyOrderNumbers] = useState([]);
@@ -351,19 +351,21 @@ export default function GlobalNotification() {
   return (
     <>
       {packagePaymentRequest && (
-        <div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
-          <form onSubmit={submitPaymentReference} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl sm:p-8">
-            <div className="flex items-center gap-3">
-              <img src={paymentMethodLabel === 'Maya' ? '/logos/maya-logo.jpg' : '/logos/GCash-Logo.png'} alt={paymentMethodLabel} className="h-10 w-10 rounded-xl object-contain" />
+        <div className="fixed inset-0 z-[115] flex items-start justify-center overflow-y-auto bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+          <form onSubmit={submitPaymentReference} className="my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-[2rem] bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-7">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border border-surface-200 bg-white p-1.5 shadow-sm"><img src={paymentMethodLabel === 'Maya' ? '/logos/maya-logo.jpg' : '/logos/GCash-Logo.png'} alt={paymentMethodLabel} className="h-full w-full rounded-xl object-contain" /></div>
               <div><p className="text-[10px] font-black uppercase tracking-widest text-surface-400">{paymentMethodLabel} booking payment</p><h2 className="mt-1 text-2xl font-black text-surface-900">{packagePaymentRequest.package?.name || 'Package booking'}</h2></div>
+              </div>
+              <button type="button" onClick={() => setPackagePaymentRequest(null)} aria-label="Close payment request" className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-100 text-surface-500 transition hover:bg-surface-200 hover:text-surface-900"><X className="h-5 w-5" /></button>
             </div>
             <p className="mt-2 text-sm font-medium leading-relaxed text-surface-600">{packagePaymentRequest.paymentInstructions}</p>
             <div className="mt-5 rounded-2xl bg-surface-50 p-4 text-center">
-              {packagePaymentRequest.paymentQr && <img src={packagePaymentRequest.paymentQr} alt={`${paymentMethodLabel} payment QR code`} className="mx-auto h-56 w-56 rounded-xl object-contain" />}
+              {packagePaymentRequest.paymentQr && <img src={packagePaymentRequest.paymentQr} alt={`${paymentMethodLabel} payment QR code`} className="mx-auto h-48 w-48 rounded-xl object-contain sm:h-56 sm:w-56" />}
               <p className="mt-3 text-xs font-bold uppercase tracking-widest text-surface-400">Amount to pay</p>
               <p className="text-3xl font-black text-surface-900">₱{formattedPaymentAmount}</p>
-              <button type="button" onClick={copyPaymentAmount} className="mt-2 text-xs font-black text-primary-600 hover:text-primary-700">Copy payment amount</button>
-              {packagePaymentRequest.paymentQr && <button type="button" onClick={savePaymentQr} className="ml-4 text-xs font-black text-primary-600 hover:text-primary-700">Save QR</button>}
+              {packagePaymentRequest.paymentQr && <button type="button" onClick={savePaymentQr} className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary-600/20 transition hover:-translate-y-0.5 hover:bg-primary-700 hover:shadow-xl active:translate-y-0"><Download className="h-4 w-4" />Save QR</button>}
             </div>
             <label className="mt-5 block text-sm font-bold text-surface-700">Last 4 digits of {paymentMethodLabel} reference ID
               <input required inputMode="numeric" pattern="[0-9]{4}" maxLength="4" value={paymentReference} onChange={event => setPaymentReference(event.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="1234" className="input-field mt-1 w-full text-center text-lg tracking-[0.4em]" />

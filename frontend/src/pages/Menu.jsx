@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages, getOrderHistory, createPackageBooking } from '../services/api';
+import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages, getOrderHistory, getMyPackageBookings, createPackageBooking } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
 import { formatCurrency, formatDate, unlockAudio } from '../utils/helpers';
@@ -52,9 +52,10 @@ export default function Menu() {
   const [showRewards, setShowRewards] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
   const [bookingPackage, setBookingPackage] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', trademark: '', notes: '', paymentMethod: 'cash' });
+  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', paymentMethod: 'cash' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
+  const [bookingSuccess, setBookingSuccess] = useState(null);
   const [showBookingMap, setShowBookingMap] = useState(false);
   const [bookingEventOpen, setBookingEventOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -191,7 +192,7 @@ export default function Menu() {
     setBookingPackage(pkg);
     setBookingMessage('');
     setBookingEventOpen(false);
-    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', trademark: '', notes: '', paymentMethod: 'cash' });
+    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', paymentMethod: 'cash' });
     setShowBookingMap(false);
     closePackages();
   };
@@ -209,8 +210,9 @@ export default function Menu() {
         eventType: bookingForm.eventType === 'Other' ? bookingForm.otherEventType : bookingForm.eventType,
         paymentMethod: bookingForm.paymentMethod
       });
-      setBookingMessage('Your booking request was sent. The admin will review it and contact you.');
-      setTimeout(() => setBookingPackage(null), 2200);
+      setBookingPackage(null);
+      setBookingSuccess({ packageName: bookingPackage.name, paymentMethod: bookingForm.paymentMethod });
+      setTimeout(() => setBookingSuccess(null), 3600);
     } catch (error) {
       setBookingMessage(error.response?.data?.message || 'We could not send your booking request. Please try again.');
     } finally {
@@ -317,8 +319,12 @@ export default function Menu() {
       setHistoryLoading(true);
       setHistoryError('');
       try {
-        const res = await getOrderHistory();
-        setOrderHistory(res.data?.data || []);
+        const [ordersRes, bookingsRes] = await Promise.all([getOrderHistory(), getMyPackageBookings()]);
+        const orders = ordersRes.data?.data || [];
+        const confirmedBookings = (bookingsRes.data?.data || [])
+          .filter(booking => booking.status === 'accepted')
+          .map(booking => ({ ...booking, historyType: 'booking' }));
+        setOrderHistory([...orders, ...confirmedBookings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (error) {
         setHistoryError(error.response?.data?.message || 'Failed to load order history.');
       } finally {
@@ -476,6 +482,20 @@ export default function Menu() {
   return (
     <div className="min-h-screen bg-surface-50 pb-24 relative overflow-hidden" style={{ '--primary-custom': brandingColor }}>
       <SeasonalEffects brandingColor={brandingColor} forcedEffect={branding?.seasonal_effect} />
+      {bookingSuccess && (
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm animate-fade-in-up">
+          <div className="w-full max-w-sm rounded-[2rem] bg-white p-8 text-center shadow-2xl">
+            <div className="mx-auto flex h-20 w-20 animate-bounce items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <CheckCircle className="h-12 w-12" />
+            </div>
+            <p className="mt-6 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-600">Booking request sent</p>
+            <h2 className="mt-2 font-heading text-2xl font-black tracking-tight text-surface-900">We received your request!</h2>
+            <p className="mt-3 text-sm font-medium leading-relaxed text-surface-500">Your request for <span className="font-bold text-surface-700">{bookingSuccess.packageName}</span> is now being reviewed.</p>
+            <div className="mt-5 rounded-2xl bg-surface-50 p-3 text-sm"><span className="font-bold text-surface-500">Payment method:</span> <span className="font-black text-emerald-700">{bookingSuccess.paymentMethod === 'gcash' ? 'GCash' : bookingSuccess.paymentMethod === 'maya' ? 'Maya' : 'Cash'}</span></div>
+            <p className="mt-4 text-xs font-medium text-surface-400">The admin will contact you with the next steps.</p>
+          </div>
+        </div>
+      )}
       {branding?.storeClosed && (
         <div className="bg-red-50 border-b border-red-200 text-red-750 py-3.5 px-4 text-center font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 z-50 sticky top-0 animate-fade-in" style={{ color: '#b91c1c', borderColor: '#fee2e2' }}>
           <AlertCircle className="w-4 h-4 text-red-650 shrink-0" style={{ color: '#ef4444' }} />
@@ -1393,12 +1413,13 @@ export default function Menu() {
                 <div className="mt-2 grid gap-2 sm:grid-cols-3">
                   {[{ id: 'cash', label: 'Cash', hint: 'Pay at the store' }, { id: 'gcash', label: 'GCash', hint: branding?.gcashQr ? 'QR available' : 'Currently unavailable' }, { id: 'maya', label: 'Maya', hint: branding?.mayaQr ? 'QR available' : 'QR not uploaded' }].map(method => {
                     const unavailable = method.id !== 'cash' && !branding?.[method.id === 'gcash' ? 'gcashQr' : 'mayaQr'];
-                    return <button key={method.id} type="button" disabled={unavailable} onClick={() => setBookingForm({ ...bookingForm, paymentMethod: method.id })} className={`rounded-2xl border-2 p-3 text-left transition ${bookingForm.paymentMethod === method.id ? 'border-primary-500 bg-primary-50' : 'border-surface-200 bg-white hover:border-surface-300'} ${unavailable ? 'cursor-not-allowed opacity-45' : ''}`}><span className="block text-sm font-black text-surface-900">{method.label}</span><span className="mt-0.5 block text-[11px] font-medium text-surface-500">{method.hint}</span></button>;
+                    const selected = bookingForm.paymentMethod === method.id;
+                    return <button key={method.id} type="button" aria-pressed={selected} disabled={unavailable} onClick={() => setBookingForm({ ...bookingForm, paymentMethod: method.id })} className={`rounded-2xl border-2 p-3 text-left transition ${selected ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-surface-200 bg-white hover:border-surface-300'} ${unavailable ? 'cursor-not-allowed opacity-45' : ''}`}><span className={`flex items-center justify-between text-sm font-black ${selected ? 'text-emerald-800' : 'text-surface-900'}`}>{method.label}{selected && <CheckCircle className="h-4 w-4 text-emerald-600" />}</span><span className={`mt-0.5 block text-[11px] font-medium ${selected ? 'text-emerald-700' : 'text-surface-500'}`}>{method.hint}</span></button>;
                   })}
                 </div>
               </div>
-              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Trademark / brand name <span className="font-medium text-surface-400">(optional)</span>
-                <input value={bookingForm.trademark} onChange={e => setBookingForm({ ...bookingForm, trademark: e.target.value })} placeholder="e.g. Your company or brand name" className="input-field mt-1 w-full" />
+              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Location landmark or directions <span className="font-medium text-surface-400">(optional)</span>
+                <input value={bookingForm.locationGuide} onChange={e => setBookingForm({ ...bookingForm, locationGuide: e.target.value })} placeholder="e.g. Near the church, use the side gate" className="input-field mt-1 w-full" />
               </label>
               <label className="text-sm font-bold text-surface-700 sm:col-span-2"><span className="flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary-600" />Additional details <span className="font-medium text-surface-400">(optional)</span></span>
                 <textarea rows="3" value={bookingForm.notes} onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })} placeholder="Tell us anything else we should know" className="input-field mt-1 w-full resize-none" />
@@ -1445,7 +1466,17 @@ export default function Menu() {
               ) : (
                 <div className="space-y-4">
                   {orderHistory.map((order) => (
-                    <div key={order.id} className="rounded-2xl border border-surface-200 bg-surface-50/60 p-4 md:p-5">
+                    <div key={order.id} className={`rounded-2xl border p-4 md:p-5 ${order.historyType === 'booking' ? 'border-emerald-200 bg-emerald-50/50' : 'border-surface-200 bg-surface-50/60'}`}>
+                      {order.historyType === 'booking' ? (
+                        <>
+                          <div className="flex items-start justify-between gap-3">
+                            <div><p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Confirmed booking</p><p className="font-black text-surface-900">{order.package?.name || 'Event package'}</p><p className="text-xs text-surface-500 mt-1">Requested {formatDate(order.createdAt)}</p></div>
+                            <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">Accepted</span>
+                          </div>
+                          <div className="mt-4 grid gap-2 border-t border-emerald-100 pt-4 text-sm text-surface-600 sm:grid-cols-2"><p><strong className="text-surface-900">Event:</strong> {order.eventType}</p><p><strong className="text-surface-900">Date:</strong> {formatDate(order.eventDate)}</p><p className="sm:col-span-2"><strong className="text-surface-900">Venue:</strong> {order.venue}</p>{order.locationGuide && <p className="sm:col-span-2"><strong className="text-surface-900">Location guide:</strong> {order.locationGuide}</p>}<p><strong className="text-surface-900">Payment:</strong> {order.paymentMethod === 'gcash' ? 'GCash' : order.paymentMethod === 'maya' ? 'Maya' : 'Cash'}</p>{order.guestCount && <p><strong className="text-surface-900">Guests:</strong> {order.guestCount}</p>}</div>
+                        </>
+                      ) : (
+                        <>
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 mb-1">Order Number</p>
@@ -1471,6 +1502,8 @@ export default function Menu() {
                             </div>
                           ))}
                         </div>
+                      )}
+                        </>
                       )}
                     </div>
                   ))}
