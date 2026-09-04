@@ -627,7 +627,7 @@ router.delete('/expenses/:id', authenticate, authorize('admin'), async (req, res
 });
 
 // Audit logs
-router.get('/audit-logs-legacy', authenticate, authorize('admin'), async (req, res) => {
+router.get('/audit-logs-disabled', authenticate, authorize('admin'), async (req, res) => {
   try {
     const logs = await prisma.auditLog.findMany({
       where: {
@@ -789,7 +789,7 @@ router.post('/settings', authenticate, authorize('admin'), async (req, res) => {
 });
 
 // GET /api/admin/audit-logs
-router.get('/audit-logs', authenticate, authorize('admin'), async (req, res) => {
+router.get('/audit-logs-disabled', authenticate, authorize('admin'), async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
