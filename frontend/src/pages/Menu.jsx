@@ -52,7 +52,7 @@ export default function Menu() {
   const [showRewards, setShowRewards] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
   const [bookingPackage, setBookingPackage] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '', paymentMethod: 'cash' });
+  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', trademark: '', notes: '', paymentMethod: 'cash' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
   const [showBookingMap, setShowBookingMap] = useState(false);
@@ -191,7 +191,7 @@ export default function Menu() {
     setBookingPackage(pkg);
     setBookingMessage('');
     setBookingEventOpen(false);
-    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '', paymentMethod: 'cash' });
+    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', trademark: '', notes: '', paymentMethod: 'cash' });
     setShowBookingMap(false);
     closePackages();
   };
@@ -1373,8 +1373,10 @@ export default function Menu() {
                 {bookingForm.eventType === 'Other' && <input required value={bookingForm.otherEventType} onChange={e => setBookingForm({ ...bookingForm, otherEventType: e.target.value })} placeholder="Type your event" className="input-field mt-2 w-full" />}
               </label>
               <label className="text-sm font-bold text-surface-700 sm:col-span-2"><span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary-600" />Where is it?</span>
-                <input required value={bookingForm.venue} onChange={e => setBookingForm({ ...bookingForm, venue: e.target.value, venueLat: null, venueLng: null })} placeholder={bookingForm.venue || 'Venue or address'} className="input-field mt-1 w-full" />
-                <button type="button" onClick={() => setShowBookingMap(current => !current)} className="mt-2 text-xs font-black text-primary-600 hover:text-primary-700">{showBookingMap ? 'Hide map' : 'Pin location (optional)'}</button>
+                <div className="relative mt-1">
+                  <input required value={bookingForm.venue} onChange={e => setBookingForm({ ...bookingForm, venue: e.target.value, venueLat: null, venueLng: null })} placeholder="Venue or address" className="input-field w-full pr-12" />
+                  <button type="button" onClick={() => setShowBookingMap(current => !current)} aria-label={showBookingMap ? 'Hide location map' : 'Pin location on map'} title={showBookingMap ? 'Hide location map' : 'Pin location on map'} className={`absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl transition ${showBookingMap ? 'bg-primary-100 text-primary-700' : 'text-primary-600 hover:bg-primary-50'}`}><MapPin className="h-4 w-4" /></button>
+                </div>
                 {showBookingMap && <div className="mt-3 sm:col-span-2"><LocationPicker onLocationSelect={({ address, lat, lng }) => setBookingForm(current => ({ ...current, venue: address || current.venue, venueLat: lat, venueLng: lng }))} initialAddress={bookingForm.venue} /></div>}
               </label>
               <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-primary-600" />When?</span>
@@ -1395,6 +1397,9 @@ export default function Menu() {
                   })}
                 </div>
               </div>
+              <label className="text-sm font-bold text-surface-700 sm:col-span-2">Trademark / brand name <span className="font-medium text-surface-400">(optional)</span>
+                <input value={bookingForm.trademark} onChange={e => setBookingForm({ ...bookingForm, trademark: e.target.value })} placeholder="e.g. Your company or brand name" className="input-field mt-1 w-full" />
+              </label>
               <label className="text-sm font-bold text-surface-700 sm:col-span-2"><span className="flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary-600" />Additional details <span className="font-medium text-surface-400">(optional)</span></span>
                 <textarea rows="3" value={bookingForm.notes} onChange={e => setBookingForm({ ...bookingForm, notes: e.target.value })} placeholder="Tell us anything else we should know" className="input-field mt-1 w-full resize-none" />
               </label>

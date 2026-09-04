@@ -6,7 +6,7 @@ const { authenticate, authorize } = require('../middleware/auth');
 // POST /api/bookings — Submit a package booking request from a logged-in customer
 router.post('/', authenticate, authorize('customer'), async (req, res) => {
   try {
-    const { packageId, customerName, customerEmail, customerPhone, eventType, venue, venueLat, venueLng, eventDate, guestCount, notes, paymentMethod } = req.body;
+    const { packageId, customerName, customerEmail, customerPhone, eventType, venue, venueLat, venueLng, eventDate, guestCount, trademark, notes, paymentMethod } = req.body;
     const parsedPackageId = parseInt(packageId, 10);
     const parsedDate = new Date(eventDate);
     const parsedGuestCount = guestCount ? parseInt(guestCount, 10) : null;
@@ -43,6 +43,7 @@ router.post('/', authenticate, authorize('customer'), async (req, res) => {
         venueLng: Number.isFinite(Number(venueLng)) ? Number(venueLng) : null,
         eventDate: parsedDate,
         guestCount: parsedGuestCount,
+        trademark: trademark?.trim() || null,
         notes: notes?.trim() || null,
         paymentMethod
       },

@@ -129,6 +129,7 @@ export default function PackageBookingsTab() {
                 </div>
                 <p><strong className="text-surface-900">What:</strong> {booking.eventType}</p>
                 <p><strong className="text-surface-900">Payment:</strong> {bookingPaymentMethodLabel(booking.paymentMethod)}</p>
+                {booking.trademark && <p className="sm:col-span-2"><strong className="text-surface-900">Trademark:</strong> {booking.trademark}</p>}
                 {booking.guestCount && <p><strong className="text-surface-900">Guests:</strong> {booking.guestCount}</p>}
                 <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary-500" />{booking.customerEmail}</p>
                 {booking.customerPhone && <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary-500" />{booking.customerPhone}</p>}

@@ -417,6 +417,7 @@ model EventBooking {
   venueLng      Float?
   eventDate     DateTime
   guestCount    Int?
+  trademark     String?
   notes         String?
   status        String   @default("pending") // pending, accepted, rejected
   adminNotes    String?
