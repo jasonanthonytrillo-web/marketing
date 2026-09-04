@@ -44,6 +44,14 @@ export default function AdminDashboard() {
   const [pendingBookingCount, setPendingBookingCount] = useState(0);
   const { joinRoom, leaveRoom, connected, onEvent } = useSocket();
 
+  useEffect(() => {
+    if (activeTab === 'bookings') setPendingBookingCount(0);
+  }, [activeTab]);
+
+  const handlePendingBookingCountChange = (count) => {
+    setPendingBookingCount(activeTab === 'bookings' ? 0 : count);
+  };
+
   // Dynamic favicon & title
   useDynamicBranding('Hometown Brew Admin Dashboard', user?.tenantFavicon || '/favicon.png');
 
@@ -265,7 +273,7 @@ export default function AdminDashboard() {
               <p className="text-sm font-bold text-surface-900">{user?.name}</p>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-500">{user?.role}</p>
             </div>
-            <AdminNotifications userId={user?.id} onNavigate={setActiveTab} onPendingBookingCountChange={setPendingBookingCount} />
+            <AdminNotifications userId={user?.id} onNavigate={setActiveTab} onPendingBookingCountChange={handlePendingBookingCountChange} />
             <button
               onClick={logoutUser}
               aria-label="Log out"

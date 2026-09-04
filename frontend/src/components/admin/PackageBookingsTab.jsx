@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Check, Clock3, ExternalLink, Mail, MapPin, Phone, X } from 'lucide-react';
-import { getAdminBookings, updateAdminBookingStatus, requestAdminBookingPayment, updateAdminBookingPaymentStatus } from '../../services/api';
+import { useCallback, useEffect, useState } from 'react';
+import { Archive, Check, Clock3, Download, ExternalLink, Mail, MapPin, Phone, Trash2, X } from 'lucide-react';
+import { deleteAdminBooking, getAdminBookings, updateAdminBookingStatus, requestAdminBookingPayment, updateAdminBookingPaymentStatus } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
+import { useSocket } from '../../context/SocketContext';
 
 const bookingPaymentMethodLabel = (method) => ({ cash: 'Cash', gcash: 'GCash', maya: 'Maya' }[method] || 'GCash');
 
@@ -13,23 +14,44 @@ export default function PackageBookingsTab() {
   const [rejectionBooking, setRejectionBooking] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [paymentForm, setPaymentForm] = useState({ paymentMode: 'downpayment', paymentAmount: '' });
+  const [view, setView] = useState('active');
+  const { onEvent } = useSocket();
 
-  const loadBookings = async () => {
+  const loadBookings = useCallback(async () => {
     try {
-      const response = await getAdminBookings();
+      const response = await getAdminBookings(view === 'archives');
       setBookings(response.data.data || []);
     } catch (error) {
       console.error('Failed to load package bookings:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [view]);
 
   useEffect(() => {
+    setLoading(true);
     loadBookings();
     const interval = setInterval(loadBookings, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loadBookings]);
+
+  useEffect(() => {
+    const unsubscribe = onEvent('admin_notification_update', loadBookings);
+    return unsubscribe;
+  }, [onEvent, loadBookings]);
+
+  const permanentlyDeleteBooking = async (booking) => {
+    if (!window.confirm(`Permanently delete ${booking.customerName}'s archived booking? This cannot be undone.`)) return;
+    setProcessingId(booking.id);
+    try {
+      await deleteAdminBooking(booking.id);
+      await loadBookings();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete archived booking.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const updateStatus = async (booking, status, adminNotes = '') => {
     setProcessingId(booking.id);
@@ -87,13 +109,67 @@ export default function PackageBookingsTab() {
     }
   };
 
+  const exportAcceptedBookings = () => {
+    const acceptedBookings = bookings.filter(booking => ['accepted', 'confirmed'].includes(booking.status));
+    if (acceptedBookings.length === 0) {
+      alert('There are no accepted bookings to export.');
+      return;
+    }
+
+    const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const headers = [
+      'Booking ID', 'Customer', 'Email', 'Phone', 'Package', 'Event Type',
+      'Event Date and Time', 'Venue', 'Location Guide', 'Guests',
+      'Payment Method', 'Payment Mode', 'Amount Paid', 'Booking Status', 'Approved At'
+    ];
+    const rows = acceptedBookings.map(booking => [
+      booking.id,
+      booking.customerName,
+      booking.customerEmail,
+      booking.customerPhone,
+      booking.package?.name,
+      booking.eventType,
+      formatDate(booking.eventDate),
+      booking.venue,
+      booking.locationGuide,
+      booking.guestCount,
+      bookingPaymentMethodLabel(booking.paymentMethod),
+      booking.paymentMode === 'downpayment' ? 'Downpayment (50%)' : 'Full payment',
+      booking.paymentAmount,
+      booking.status,
+      booking.reviewedAt ? formatDate(booking.reviewedAt) : ''
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(escapeCsv).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `accepted-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <div className="p-8 text-center text-surface-500">Loading booking requests...</div>;
 
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h2 className="font-heading text-2xl sm:text-3xl font-black text-surface-900">Package Bookings</h2>
-        <p className="mt-1 font-medium text-surface-500">Review customer event requests before confirming them.</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="font-heading text-2xl sm:text-3xl font-black text-surface-900">Package Bookings</h2>
+            <p className="mt-1 font-medium text-surface-500">Review customer event requests before confirming them.</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {view === 'active' && (
+              <button type="button" onClick={exportAcceptedBookings} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-100"><Download className="h-4 w-4" /> Export accepted CSV</button>
+            )}
+            <div className="flex rounded-2xl border border-surface-200 bg-white p-1 shadow-sm">
+            <button type="button" onClick={() => setView('active')} className={`rounded-xl px-4 py-2.5 text-sm font-black transition-colors ${view === 'active' ? 'bg-primary-600 text-white' : 'text-surface-500 hover:bg-surface-50'}`}>Active requests</button>
+            <button type="button" onClick={() => setView('archives')} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition-colors ${view === 'archives' ? 'bg-surface-900 text-white' : 'text-surface-500 hover:bg-surface-50'}`}><Archive className="h-4 w-4" /> Archives</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {paymentBooking && (
@@ -128,7 +204,7 @@ export default function PackageBookingsTab() {
       {bookings.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-surface-200 bg-white px-6 py-16 text-center">
           <Clock3 className="mx-auto mb-3 h-10 w-10 text-surface-300" />
-          <p className="font-bold text-surface-500">No package booking requests yet.</p>
+          <p className="font-bold text-surface-500">{view === 'archives' ? 'No rejected or cancelled bookings in the archives.' : 'No active package booking requests yet.'}</p>
         </div>
       ) : (
         <div className="grid gap-5 xl:grid-cols-2">
@@ -169,7 +245,12 @@ export default function PackageBookingsTab() {
               )}
               {booking.notes && <p className="mt-4 rounded-xl bg-surface-50 p-3 text-sm text-surface-600"><strong className="text-surface-900">Notes:</strong> {booking.notes}</p>}
 
-              {booking.status === 'pending' && (
+              {view === 'archives' ? (
+                <div className="mt-5 flex items-center justify-between gap-3 border-t border-surface-100 pt-4">
+                  <p className="text-xs font-medium text-surface-500">This booking is archived and no longer active.</p>
+                  <button disabled={processingId === booking.id} onClick={() => permanentlyDeleteBooking(booking)} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-black text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"><Trash2 className="h-4 w-4" /> Delete permanently</button>
+                </div>
+              ) : booking.status === 'pending' && (
                 <div className="mt-5 flex gap-3 border-t border-surface-100 pt-4">
                   {booking.paymentStatus === 'submitted' ? (
                     <>

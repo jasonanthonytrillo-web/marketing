@@ -901,8 +901,12 @@ router.delete('/packages/:id', authenticate, authorize('admin', 'manager'), asyn
 // GET /api/admin/bookings — Package booking requests for admin review
 router.get('/bookings', authenticate, authorize('admin'), async (req, res) => {
   try {
+    const archived = req.query.archived === 'true';
     const bookings = await prisma.eventBooking.findMany({
-      where: { tenantId: req.tenantId },
+      where: {
+        tenantId: req.tenantId,
+        status: archived ? { in: ['rejected', 'cancelled'] } : { notIn: ['rejected', 'cancelled'] }
+      },
       include: { package: { select: { name: true, priceText: true } } },
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }]
     });
@@ -910,6 +914,37 @@ router.get('/bookings', authenticate, authorize('admin'), async (req, res) => {
   } catch (error) {
     console.error('Admin package bookings error:', error);
     res.status(500).json({ success: false, message: 'Failed to load package bookings.' });
+  }
+});
+
+// DELETE /api/admin/bookings/:id — Permanently delete an archived booking
+router.delete('/bookings/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const booking = await prisma.eventBooking.findFirst({
+      where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId },
+      include: { package: { select: { name: true } } }
+    });
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
+    if (!['rejected', 'cancelled'].includes(booking.status)) {
+      return res.status(400).json({ success: false, message: 'Only archived bookings can be permanently deleted.' });
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        action: 'hard_delete_package_booking',
+        entityType: 'package_booking',
+        entityId: String(booking.id),
+        details: `Permanently deleted ${booking.package.name} booking for ${booking.customerName}`
+      }
+    });
+    await prisma.eventBooking.delete({ where: { id: booking.id } });
+    if (req.io) req.io.to(`tenant-${req.tenantId}-admin`).emit('admin_notification_update');
+    res.json({ success: true, message: 'Archived booking permanently deleted.' });
+  } catch (error) {
+    console.error('Hard delete package booking error:', error);
+    res.status(500).json({ success: false, message: 'Failed to permanently delete booking.' });
   }
 });
 
