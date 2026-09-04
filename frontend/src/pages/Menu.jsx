@@ -71,6 +71,24 @@ export default function Menu() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const openPackages = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('packages', '1');
+    setSearchParams(nextParams);
+    setShowPackages(true);
+  };
+
+  const closePackages = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('packages');
+    setSearchParams(nextParams, { replace: true });
+    setShowPackages(false);
+  };
+
+  useEffect(() => {
+    setShowPackages(searchParams.get('packages') === '1');
+  }, [searchParams]);
+
   useEffect(() => { loadProducts(); }, [searchParams.get('tenant')]);
 
   useEffect(() => {
@@ -175,7 +193,7 @@ export default function Menu() {
     setBookingEventOpen(false);
     setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', notes: '' });
     setShowBookingMap(false);
-    setShowPackages(false);
+    closePackages();
   };
 
   const handleBookingSubmit = async (event) => {
@@ -484,7 +502,7 @@ export default function Menu() {
               />
 
               <button
-                onClick={() => setShowPackages(true)}
+                onClick={openPackages}
                 className="relative flex items-center justify-center gap-1.5 md:gap-2 px-3.5 py-1.5 md:px-5 md:py-2.5 rounded-full text-xs md:text-sm font-black text-white shadow-xl overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/40 animate-epic-pulse"
                 style={{
                   background: `linear-gradient(135deg, ${brandingColor}, ${brandingColor}dd, ${brandingColor})`,
@@ -1241,7 +1259,7 @@ export default function Menu() {
       {/* Event Packages Modal */}
       {showPackages && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
-          <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={() => setShowPackages(false)}></div>
+          <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={closePackages}></div>
           <div className="bg-white rounded-[28px] w-full max-w-4xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up scrollbar-hide">
 
             <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/95 backdrop-blur-md border-b border-surface-100">
@@ -1250,7 +1268,7 @@ export default function Menu() {
                 <p className="text-surface-500 font-medium mt-0.5 text-xs md:text-sm">Bring the premium coffee experience to your next event!</p>
               </div>
               <button
-                onClick={() => setShowPackages(false)}
+                onClick={closePackages}
                 className="w-8 h-8 md:w-10 md:h-10 bg-surface-100 hover:bg-surface-200 rounded-full flex items-center justify-center text-surface-600 transition-all active:scale-95 flex-shrink-0"
               >
                 <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
