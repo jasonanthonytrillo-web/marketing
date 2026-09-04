@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages, getOrderHistory, getMyPackageBookings, createPackageBooking } from '../services/api';
+import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages, getOrderHistory, getMyPackageBookings, getBookingAvailability, createPackageBooking } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
 import { formatCurrency, formatDate, unlockAudio } from '../utils/helpers';
@@ -52,9 +52,10 @@ export default function Menu() {
   const [showRewards, setShowRewards] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
   const [bookingPackage, setBookingPackage] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', paymentMethod: 'cash' });
+  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', paymentMethod: 'cash', paymentMode: 'full_payment' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
+  const [bookingErrors, setBookingErrors] = useState({});
   const [bookingSuccess, setBookingSuccess] = useState(null);
   const [showBookingMap, setShowBookingMap] = useState(false);
   const [bookingEventOpen, setBookingEventOpen] = useState(false);
@@ -65,6 +66,7 @@ export default function Menu() {
   const [usualOrder, setUsualOrder] = useState(null);
   const [usualOrderDismissed, setUsualOrderDismissed] = useState(false);
   const [eventPackages, setEventPackages] = useState([]);
+  const [bookedEventSlots, setBookedEventSlots] = useState([]);
   const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
   const [optionError, setOptionError] = useState(false);
   const [comboStep, setComboStep] = useState(1); // 1 or 2
@@ -86,11 +88,47 @@ export default function Menu() {
     setShowPackages(false);
   };
 
+  const clearBookingError = (field) => setBookingErrors(current => ({ ...current, [field]: false }));
+
   useEffect(() => {
     setShowPackages(searchParams.get('packages') === '1');
   }, [searchParams]);
 
   useEffect(() => { loadProducts(); }, [searchParams.get('tenant')]);
+
+  useEffect(() => {
+    if (!isCustomer) return;
+    getBookingAvailability()
+      .then(response => setBookedEventSlots(response.data?.data || []))
+      .catch(error => console.error('Failed to load booking availability:', error));
+  }, [isCustomer]);
+
+  const isBookedEventSlot = (value) => {
+    if (!value) return false;
+    const selected = new Date(value);
+    selected.setSeconds(0, 0);
+    return bookedEventSlots.some(slot => {
+      const booked = new Date(slot);
+      booked.setSeconds(0, 0);
+      return booked.getTime() === selected.getTime();
+    });
+  };
+
+  const updateBookingDateTime = (part, value) => {
+    const [currentDate = '', currentTime = ''] = bookingForm.eventDate.split('T');
+    const date = part === 'date' ? value : currentDate;
+    const time = part === 'time' ? value : currentTime;
+    const nextValue = date && time ? `${date}T${time}` : `${date}${date && time === '' ? 'T' : ''}${time}`;
+    if (date && time && isBookedEventSlot(nextValue)) {
+      setBookingForm({ ...bookingForm, eventDate: `${date}T` });
+      setBookingErrors(current => ({ ...current, eventDate: true }));
+      setBookingMessage('That date and time is already booked. Please choose another schedule.');
+      return;
+    }
+    setBookingForm({ ...bookingForm, eventDate: nextValue });
+    clearBookingError('eventDate');
+    if (date && time) setBookingMessage('');
+  };
 
   useEffect(() => {
     const reorderNumber = searchParams.get('reorder');
@@ -191,14 +229,27 @@ export default function Menu() {
   const handleBookNow = (pkg) => {
     setBookingPackage(pkg);
     setBookingMessage('');
+    setBookingErrors({});
     setBookingEventOpen(false);
-    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', paymentMethod: 'cash' });
+    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', paymentMethod: 'cash', paymentMode: 'full_payment' });
     setShowBookingMap(false);
     closePackages();
   };
 
   const handleBookingSubmit = async (event) => {
     event.preventDefault();
+    const errors = {};
+    if (!bookingForm.eventType) errors.eventType = true;
+    if (bookingForm.eventType === 'Other' && !bookingForm.otherEventType.trim()) errors.otherEventType = true;
+    if (!bookingForm.venue.trim()) errors.venue = true;
+    if (!bookingForm.eventDate || !/T\d{2}:\d{2}$/.test(bookingForm.eventDate)) errors.eventDate = true;
+    if (!bookingForm.paymentMethod) errors.paymentMethod = true;
+    if (!bookingForm.paymentMode) errors.paymentMode = true;
+    if (Object.keys(errors).length > 0) {
+      setBookingErrors(errors);
+      setBookingMessage('Please complete the highlighted fields before submitting.');
+      return;
+    }
     setBookingSubmitting(true);
     setBookingMessage('');
     try {
@@ -212,9 +263,10 @@ export default function Menu() {
       });
       setBookingPackage(null);
       setBookingSuccess({ packageName: bookingPackage.name, paymentMethod: bookingForm.paymentMethod });
-      setTimeout(() => setBookingSuccess(null), 3600);
     } catch (error) {
-      setBookingMessage(error.response?.data?.message || 'We could not send your booking request. Please try again.');
+      const message = error.response?.data?.message || 'We could not send your booking request. Please try again.';
+      if (message.toLowerCase().includes('already booked')) setBookingErrors(current => ({ ...current, eventDate: true }));
+      setBookingMessage(message);
     } finally {
       setBookingSubmitting(false);
     }
@@ -493,6 +545,7 @@ export default function Menu() {
             <p className="mt-3 text-sm font-medium leading-relaxed text-surface-500">Your request for <span className="font-bold text-surface-700">{bookingSuccess.packageName}</span> is now being reviewed.</p>
             <div className="mt-5 rounded-2xl bg-surface-50 p-3 text-sm"><span className="font-bold text-surface-500">Payment method:</span> <span className="font-black text-emerald-700">{bookingSuccess.paymentMethod === 'gcash' ? 'GCash' : bookingSuccess.paymentMethod === 'maya' ? 'Maya' : 'Cash'}</span></div>
             <p className="mt-4 text-xs font-medium text-surface-400">The admin will contact you with the next steps.</p>
+            <button type="button" onClick={() => setBookingSuccess(null)} className="mt-6 w-full rounded-2xl bg-emerald-600 py-3.5 text-sm font-black text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 active:scale-[0.98]">OK</button>
           </div>
         </div>
       )}
@@ -1367,7 +1420,7 @@ export default function Menu() {
       {bookingPackage && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center overflow-y-auto bg-surface-900/10 p-3 sm:p-6">
           <div className="absolute inset-0 bg-surface-900/70 backdrop-blur-sm" onClick={() => !bookingSubmitting && setBookingPackage(null)}></div>
-          <form onSubmit={handleBookingSubmit} className="relative z-10 my-6 max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto rounded-[30px] border border-white/70 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:my-8 sm:p-8">
+          <form noValidate onSubmit={handleBookingSubmit} className="relative z-10 my-6 max-h-[calc(100vh-3rem)] w-full max-w-2xl overflow-y-auto rounded-[30px] border border-white/70 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:my-8 sm:p-8">
             <div className="mb-6 flex items-start justify-between gap-4 border-b border-surface-100 pb-6">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary-600">Booking request</p>
@@ -1386,21 +1439,24 @@ export default function Menu() {
             <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
               <label className="text-sm font-bold text-surface-700">What is the event?
                 <div className="relative">
-                  <button type="button" aria-haspopup="listbox" aria-expanded={bookingEventOpen} onClick={() => setBookingEventOpen(current => !current)} className="input-field mt-1 flex w-full items-center justify-between text-left font-medium"><span className={bookingForm.eventType ? 'text-surface-900' : 'text-surface-400'}>{bookingForm.eventType || 'Select an event type'}</span><ChevronDown className={`h-4 w-4 text-surface-400 transition-transform ${bookingEventOpen ? 'rotate-180' : ''}`} /></button>
+                  <button type="button" aria-haspopup="listbox" aria-expanded={bookingEventOpen} onClick={() => setBookingEventOpen(current => !current)} className={`input-field mt-1 flex w-full items-center justify-between text-left font-medium ${bookingErrors.eventType ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100' : ''}`}><span className={bookingForm.eventType ? 'text-surface-900' : 'text-surface-400'}>{bookingForm.eventType || 'Select an event type'}</span><ChevronDown className={`h-4 w-4 text-surface-400 transition-transform ${bookingEventOpen ? 'rotate-180' : ''}`} /></button>
                   {bookingEventOpen && <div role="listbox" className="absolute left-0 right-0 top-[calc(100%+0.35rem)] z-30 overflow-hidden rounded-2xl border border-surface-200 bg-white p-1.5 shadow-xl"><button type="button" onClick={() => { setBookingForm({ ...bookingForm, eventType: '', otherEventType: '' }); setBookingEventOpen(false); }} className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-surface-400 hover:bg-surface-50">Select an event type</button>{COMMON_EVENT_TYPES.map(eventType => <button type="button" role="option" aria-selected={bookingForm.eventType === eventType} key={eventType} onClick={() => { setBookingForm({ ...bookingForm, eventType, otherEventType: '' }); setBookingEventOpen(false); }} className={`w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition ${bookingForm.eventType === eventType ? 'bg-primary-50 text-primary-700' : 'text-surface-700 hover:bg-surface-50'}`}>{eventType}</button>)}</div>}
                 </div>
                 <input required tabIndex={-1} value={bookingForm.eventType === 'Other' ? bookingForm.otherEventType : bookingForm.eventType} onChange={() => {}} className="pointer-events-none absolute h-0 w-0 opacity-0" aria-hidden="true" />
-                {bookingForm.eventType === 'Other' && <input required value={bookingForm.otherEventType} onChange={e => setBookingForm({ ...bookingForm, otherEventType: e.target.value })} placeholder="Type your event" className="input-field mt-2 w-full" />}
+                {bookingForm.eventType === 'Other' && <input value={bookingForm.otherEventType} onChange={e => { setBookingForm({ ...bookingForm, otherEventType: e.target.value }); clearBookingError('otherEventType'); }} placeholder="Type your event" className={`input-field mt-2 w-full ${bookingErrors.otherEventType ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100' : ''}`} />}
               </label>
               <label className="text-sm font-bold text-surface-700 sm:col-span-2"><span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary-600" />Where is it?</span>
                 <div className="relative mt-1">
-                  <input required value={bookingForm.venue} onChange={e => setBookingForm({ ...bookingForm, venue: e.target.value, venueLat: null, venueLng: null })} placeholder="Venue or address" className="input-field w-full pr-12" />
-                  <button type="button" onClick={() => setShowBookingMap(current => !current)} aria-label={showBookingMap ? 'Hide location map' : 'Pin location on map'} title={showBookingMap ? 'Hide location map' : 'Pin location on map'} className={`absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl transition ${showBookingMap ? 'bg-primary-100 text-primary-700' : 'text-primary-600 hover:bg-primary-50'}`}><MapPin className="h-4 w-4" /></button>
+                  <input required value={bookingForm.venue} onChange={e => { setBookingForm({ ...bookingForm, venue: e.target.value, venueLat: null, venueLng: null }); clearBookingError('venue'); }} placeholder="Venue or address" className={`input-field w-full pr-12 ${bookingErrors.venue ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100' : ''}`} />
+                  <button type="button" onClick={() => setShowBookingMap(current => !current)} aria-label={showBookingMap ? 'Hide location map' : 'Pin location on map'} title={showBookingMap ? 'Hide location map' : 'Pin location on map'} className={`absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl border bg-white shadow-sm transition hover:bg-surface-50 ${showBookingMap ? 'border-emerald-500 ring-2 ring-emerald-100' : 'border-surface-200'}`} style={{ color: '#15803d' }}><MapPin className="h-4 w-4" strokeWidth={2.5} /></button>
                 </div>
                 {showBookingMap && <div className="mt-3 sm:col-span-2"><LocationPicker onLocationSelect={({ address, lat, lng }) => setBookingForm(current => ({ ...current, venue: address || current.venue, venueLat: lat, venueLng: lng }))} initialAddress={bookingForm.venue} /></div>}
               </label>
-              <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-primary-600" />When?</span>
-                <input required type="datetime-local" min={new Date().toISOString().slice(0, 16)} value={bookingForm.eventDate} onChange={e => setBookingForm({ ...bookingForm, eventDate: e.target.value })} className="input-field mt-1 w-full" />
+              <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-primary-600" />When is it?</span>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  <div><span className="mb-1 block text-[11px] font-semibold text-surface-400">Date</span><input required type="date" min={new Date().toISOString().slice(0, 10)} value={bookingForm.eventDate.split('T')[0] || ''} onChange={e => updateBookingDateTime('date', e.target.value)} className={`input-field w-full ${bookingErrors.eventDate ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100' : ''}`} /></div>
+                  <div><span className="mb-1 block text-[11px] font-semibold text-surface-400">Time</span><input required type="time" value={bookingForm.eventDate.split('T')[1] || ''} onChange={e => updateBookingDateTime('time', e.target.value)} className={`input-field w-full ${bookingErrors.eventDate ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100' : ''}`} /></div>
+                </div>
               </label>
               <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary-600" />Number of guests</span>
                 <input type="number" min="1" value={bookingForm.guestCount} onChange={e => setBookingForm({ ...bookingForm, guestCount: e.target.value })} placeholder="Optional" className="input-field mt-1 w-full" />
@@ -1409,12 +1465,21 @@ export default function Menu() {
                 <input type="tel" value={bookingForm.customerPhone} onChange={e => setBookingForm({ ...bookingForm, customerPhone: e.target.value })} placeholder="09XX XXX XXXX" className="input-field mt-1 w-full" />
               </label>
               <div className="sm:col-span-2">
+                <p className="text-sm font-bold text-surface-700">How much would you like to pay?</p>
+                <div className={`mt-2 grid gap-2 rounded-2xl ${bookingErrors.paymentMode ? 'ring-2 ring-red-100' : ''} sm:grid-cols-2`}>
+                  {[{ id: 'full_payment', label: 'Full payment', hint: bookingPackage.priceText || 'Full package amount' }, { id: 'downpayment', label: 'Downpayment', hint: '50% of the full package amount' }].map(option => {
+                    const selected = bookingForm.paymentMode === option.id;
+                    return <button key={option.id} type="button" aria-pressed={selected} onClick={() => { setBookingForm({ ...bookingForm, paymentMode: option.id }); clearBookingError('paymentMode'); }} className={`rounded-2xl border-2 p-3 text-left transition ${selected ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-surface-200 bg-white hover:border-surface-300'}`}><span className={`flex items-center justify-between text-sm font-black ${selected ? 'text-emerald-800' : 'text-surface-900'}`}>{option.label}{selected && <CheckCircle className="h-4 w-4 text-emerald-600" />}</span><span className={`mt-0.5 block text-[11px] font-medium ${selected ? 'text-emerald-700' : 'text-surface-500'}`}>{option.hint}</span></button>;
+                  })}
+                </div>
+              </div>
+              <div className="sm:col-span-2">
                 <p className="text-sm font-bold text-surface-700">How would you like to pay?</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <div className={`mt-2 grid gap-2 rounded-2xl ${bookingErrors.paymentMethod ? 'ring-2 ring-red-100' : ''} sm:grid-cols-3`}>
                   {[{ id: 'cash', label: 'Cash', hint: 'Pay at the store' }, { id: 'gcash', label: 'GCash', hint: branding?.gcashQr ? 'QR available' : 'Currently unavailable' }, { id: 'maya', label: 'Maya', hint: branding?.mayaQr ? 'QR available' : 'QR not uploaded' }].map(method => {
                     const unavailable = method.id !== 'cash' && !branding?.[method.id === 'gcash' ? 'gcashQr' : 'mayaQr'];
                     const selected = bookingForm.paymentMethod === method.id;
-                    return <button key={method.id} type="button" aria-pressed={selected} disabled={unavailable} onClick={() => setBookingForm({ ...bookingForm, paymentMethod: method.id })} className={`rounded-2xl border-2 p-3 text-left transition ${selected ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-surface-200 bg-white hover:border-surface-300'} ${unavailable ? 'cursor-not-allowed opacity-45' : ''}`}><span className={`flex items-center justify-between text-sm font-black ${selected ? 'text-emerald-800' : 'text-surface-900'}`}>{method.label}{selected && <CheckCircle className="h-4 w-4 text-emerald-600" />}</span><span className={`mt-0.5 block text-[11px] font-medium ${selected ? 'text-emerald-700' : 'text-surface-500'}`}>{method.hint}</span></button>;
+                    return <button key={method.id} type="button" aria-pressed={selected} disabled={unavailable} onClick={() => { setBookingForm({ ...bookingForm, paymentMethod: method.id }); clearBookingError('paymentMethod'); }} className={`rounded-2xl border-2 p-3 text-left transition ${selected ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100' : 'border-surface-200 bg-white hover:border-surface-300'} ${unavailable ? 'cursor-not-allowed opacity-45' : ''}`}><span className={`flex items-center justify-between text-sm font-black ${selected ? 'text-emerald-800' : 'text-surface-900'}`}>{method.label}{selected && <CheckCircle className="h-4 w-4 text-emerald-600" />}</span><span className={`mt-0.5 block text-[11px] font-medium ${selected ? 'text-emerald-700' : 'text-surface-500'}`}>{method.hint}</span></button>;
                   })}
                 </div>
               </div>

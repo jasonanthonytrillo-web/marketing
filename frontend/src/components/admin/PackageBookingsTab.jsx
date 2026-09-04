@@ -10,6 +10,8 @@ export default function PackageBookingsTab() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [paymentBooking, setPaymentBooking] = useState(null);
+  const [rejectionBooking, setRejectionBooking] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   const [paymentForm, setPaymentForm] = useState({ paymentMode: 'downpayment', paymentAmount: '' });
 
   const loadBookings = async () => {
@@ -29,16 +31,28 @@ export default function PackageBookingsTab() {
     return () => clearInterval(interval);
   }, []);
 
-  const updateStatus = async (booking, status) => {
+  const updateStatus = async (booking, status, adminNotes = '') => {
     setProcessingId(booking.id);
     try {
-      await updateAdminBookingStatus(booking.id, { status });
+      await updateAdminBookingStatus(booking.id, { status, adminNotes });
       await loadBookings();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update booking.');
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const openRejectionModal = (booking) => {
+    setRejectionBooking(booking);
+    setRejectionReason('');
+  };
+
+  const submitRejection = async (event) => {
+    event.preventDefault();
+    if (!rejectionReason.trim()) return;
+    await updateStatus(rejectionBooking, 'rejected', rejectionReason.trim());
+    setRejectionBooking(null);
   };
 
   const openPaymentRequest = (booking) => {
@@ -89,15 +103,24 @@ export default function PackageBookingsTab() {
               <div><p className="text-[10px] font-black uppercase tracking-widest text-surface-400">Payment request</p><h3 className="mt-1 text-xl font-black text-surface-900">{paymentBooking.customerName}</h3></div>
               <button type="button" onClick={() => setPaymentBooking(null)} className="text-2xl text-surface-400">×</button>
             </div>
-            <label className="mt-5 block text-sm font-bold text-surface-700">Payment type
-              <select value={paymentForm.paymentMode} onChange={e => setPaymentForm({ ...paymentForm, paymentMode: e.target.value })} className="input-field mt-1 w-full"><option value="downpayment">Downpayment</option><option value="full_payment">Full payment</option></select>
-            </label>
+            <div className="mt-5 rounded-2xl border border-surface-200 bg-surface-50 p-4 text-sm"><p className="font-bold text-surface-700">Customer payment choice</p><p className="mt-1 font-black text-primary-600">{paymentForm.paymentMode === 'downpayment' ? 'Downpayment (50%)' : 'Full payment'}</p></div>
             <label className="mt-4 block text-sm font-bold text-surface-700">Amount to pay
-              <input required type="number" min="0.01" step="0.01" value={paymentForm.paymentAmount} onChange={e => setPaymentForm({ ...paymentForm, paymentAmount: e.target.value })} className="input-field mt-1 w-full" />
+              <input required readOnly type="number" min="0.01" step="0.01" value={paymentForm.paymentAmount} onChange={e => setPaymentForm({ ...paymentForm, paymentAmount: e.target.value })} className="input-field mt-1 w-full bg-surface-50 font-black" />
             </label>
             <div className="mt-4 rounded-2xl bg-surface-50 p-4 text-sm"><span className="font-bold text-surface-700">Payment method</span><p className="mt-1 font-black uppercase tracking-wider text-primary-600">{bookingPaymentMethodLabel(paymentBooking.paymentMethod)}</p><p className="mt-1 text-xs text-surface-500">The QR code configured for this method will be sent automatically.</p></div>
             <div className="mt-4 rounded-2xl border border-surface-200 bg-surface-50 p-4 text-sm"><p className="font-bold text-surface-700">Customer instruction</p><p className="mt-1 leading-relaxed text-surface-600">Scan the {paymentBooking.paymentMethod === 'maya' ? 'Maya' : 'GCash'} QR code, pay the requested amount, then submit the last 4 digits of your {paymentBooking.paymentMethod === 'maya' ? 'Maya' : 'GCash'} reference ID.</p></div>
             <button disabled={processingId === paymentBooking.id} className="mt-5 w-full rounded-xl bg-primary-600 py-3 font-black text-white disabled:opacity-50">{processingId === paymentBooking.id ? 'Sending...' : 'Send Payment Instructions'}</button>
+          </form>
+        </div>
+      )}
+
+      {rejectionBooking && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+          <form onSubmit={submitRejection} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-widest text-red-500">Reject booking</p><h3 className="mt-1 text-xl font-black text-surface-900">Why is this booking being rejected?</h3></div><button type="button" onClick={() => setRejectionBooking(null)} className="text-2xl text-surface-400">×</button></div>
+            <p className="mt-2 text-sm text-surface-500">This reason will be sent to {rejectionBooking.customerName}.</p>
+            <textarea required autoFocus rows="4" value={rejectionReason} onChange={event => setRejectionReason(event.target.value)} placeholder="Example: The requested date is unavailable." className="input-field mt-4 w-full resize-none" />
+            <div className="mt-5 flex gap-3"><button type="button" onClick={() => setRejectionBooking(null)} className="flex-1 rounded-xl border border-surface-200 py-3 text-sm font-black text-surface-600 hover:bg-surface-50">Cancel</button><button type="submit" disabled={processingId === rejectionBooking.id || !rejectionReason.trim()} className="flex-1 rounded-xl bg-red-600 py-3 text-sm font-black text-white hover:bg-red-700 disabled:opacity-50">{processingId === rejectionBooking.id ? 'Rejecting...' : 'Reject Booking'}</button></div>
           </form>
         </div>
       )}
@@ -160,7 +183,7 @@ export default function PackageBookingsTab() {
                   ) : (
                     <button disabled={processingId === booking.id} onClick={() => openPaymentRequest(booking)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-amber-600 disabled:opacity-50">Send Payment Request</button>
                   )}
-                  <button disabled={processingId === booking.id} onClick={() => updateStatus(booking, 'rejected')} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-black text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"><X className="h-4 w-4" /> Reject</button>
+                  <button disabled={processingId === booking.id} onClick={() => openRejectionModal(booking)} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-black text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"><X className="h-4 w-4" /> Reject</button>
                 </div>
               )}
             </article>

@@ -195,6 +195,7 @@ export const updateAdminPackage = (id, data) => api.put(`/admin/packages/${id}`,
 export const deleteAdminPackage = (id) => api.delete(`/admin/packages/${id}`);
 export const getPublicPackages = (slug) => api.get(`/public/tenant/${slug}/packages`);
 export const createPackageBooking = (data) => api.post('/bookings', data);
+export const getBookingAvailability = () => api.get('/bookings/availability');
 export const getMyPackageBookings = () => api.get('/bookings/mine');
 export const submitPackagePayment = (id, reference) => api.post(`/bookings/${id}/payment`, { reference });
 export const getAdminBookings = () => api.get('/admin/bookings');

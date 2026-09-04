@@ -6,13 +6,13 @@ const { authenticate, authorize } = require('../middleware/auth');
 // POST /api/bookings — Submit a package booking request from a logged-in customer
 router.post('/', authenticate, authorize('customer'), async (req, res) => {
   try {
-    const { packageId, customerName, customerEmail, customerPhone, eventType, venue, venueLat, venueLng, eventDate, guestCount, locationGuide, notes, paymentMethod } = req.body;
+    const { packageId, customerName, customerEmail, customerPhone, eventType, venue, venueLat, venueLng, eventDate, guestCount, locationGuide, notes, paymentMethod, paymentMode } = req.body;
     const parsedPackageId = parseInt(packageId, 10);
     const parsedDate = new Date(eventDate);
     const parsedGuestCount = guestCount ? parseInt(guestCount, 10) : null;
 
-    if (!Number.isInteger(parsedPackageId) || !customerName?.trim() || !customerEmail?.trim() || !eventType?.trim() || !venue?.trim() || Number.isNaN(parsedDate.getTime())) {
-      return res.status(400).json({ success: false, message: 'Package, customer details, event type, venue, and event date are required.' });
+    if (!Number.isInteger(parsedPackageId) || !customerName?.trim() || !customerEmail?.trim() || !eventType?.trim() || !venue?.trim() || !/T\d{2}:\d{2}/.test(eventDate || '') || Number.isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ success: false, message: 'Package, customer details, event type, venue, and both event date and time are required.' });
     }
     if (parsedDate < new Date()) {
       return res.status(400).json({ success: false, message: 'The event date must be in the future.' });
@@ -23,11 +23,35 @@ router.post('/', authenticate, authorize('customer'), async (req, res) => {
     if (!['cash', 'gcash', 'maya'].includes(paymentMethod)) {
       return res.status(400).json({ success: false, message: 'Choose cash, GCash, or Maya as your payment method.' });
     }
+    if (!['downpayment', 'full_payment'].includes(paymentMode)) {
+      return res.status(400).json({ success: false, message: 'Choose full payment or downpayment.' });
+    }
 
     const eventPackage = await prisma.eventPackage.findFirst({
       where: { id: parsedPackageId, tenantId: req.tenantId, isActive: true }
     });
     if (!eventPackage) return res.status(404).json({ success: false, message: 'That package is no longer available.' });
+
+    const slotStart = new Date(parsedDate);
+    slotStart.setSeconds(0, 0);
+    const slotEnd = new Date(slotStart);
+    slotEnd.setMinutes(slotEnd.getMinutes() + 1);
+    const existingBooking = await prisma.eventBooking.findFirst({
+      where: {
+        tenantId: req.tenantId,
+        status: { in: ['pending', 'accepted'] },
+        eventDate: { gte: slotStart, lt: slotEnd }
+      },
+      select: { id: true }
+    });
+    if (existingBooking) {
+      return res.status(409).json({ success: false, message: 'That date and time is already booked. Please choose another schedule.' });
+    }
+
+    const packageAmount = Number(String(eventPackage.priceText || '').replace(/[^0-9.]/g, ''));
+    const paymentAmount = Number.isFinite(packageAmount) && packageAmount > 0
+      ? paymentMode === 'downpayment' ? packageAmount / 2 : packageAmount
+      : null;
 
     const booking = await prisma.eventBooking.create({
       data: {
@@ -45,7 +69,9 @@ router.post('/', authenticate, authorize('customer'), async (req, res) => {
         guestCount: parsedGuestCount,
         locationGuide: locationGuide?.trim() || null,
         notes: notes?.trim() || null,
-        paymentMethod
+        paymentMethod,
+        paymentMode,
+        paymentAmount
       },
       include: { package: { select: { name: true } } }
     });
@@ -69,6 +95,20 @@ router.post('/', authenticate, authorize('customer'), async (req, res) => {
   } catch (error) {
     console.error('Package booking error:', error);
     res.status(500).json({ success: false, message: 'Failed to submit booking request.' });
+  }
+});
+
+// GET /api/bookings/availability — Reserved event date/time slots for the current tenant
+router.get('/availability', authenticate, authorize('customer'), async (req, res) => {
+  try {
+    const bookings = await prisma.eventBooking.findMany({
+      where: { tenantId: req.tenantId, status: { in: ['pending', 'accepted'] }, eventDate: { gte: new Date() } },
+      select: { eventDate: true }
+    });
+    res.json({ success: true, data: bookings.map(booking => booking.eventDate) });
+  } catch (error) {
+    console.error('Booking availability error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load booking availability.' });
   }
 });
 

@@ -90,7 +90,7 @@ export default function GlobalNotification() {
       const accepted = booking.status === 'accepted';
       const message = accepted
         ? `${packageName} for ${new Date(booking.eventDate).toLocaleDateString()} was accepted.`
-        : `${packageName} request was rejected. Please contact the store for details.`;
+        : `${packageName} request was rejected.${booking.adminNotes ? ` Reason: ${booking.adminNotes}` : ' Please contact the store for details.'}`;
       setPackageBookingUpdate({ accepted, message });
       showSystemNotification(accepted ? 'Booking Accepted' : 'Booking Update', message);
     });

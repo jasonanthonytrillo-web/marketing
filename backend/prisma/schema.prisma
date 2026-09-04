@@ -440,6 +440,7 @@ model EventBooking {
   customer User        @relation("CustomerPackageBookings", fields: [customerId], references: [id])
 
   @@index([tenantId, status])
+  @@index([tenantId, eventDate, status])
   @@index([customerId, createdAt])
 }
 
