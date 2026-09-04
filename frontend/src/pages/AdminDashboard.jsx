@@ -19,6 +19,7 @@ import FeedbackTab from '../components/admin/FeedbackTab';
 import PromosTab from '../components/admin/PromosTab';
 import DevicesTab from '../components/admin/DevicesTab';
 import ShiftsTab from '../components/admin/ShiftsTab';
+import AdminNotifications from '../components/admin/AdminNotifications';
 import { formatCurrency } from '../utils/helpers';
 import { applyTheme, clearTheme } from '../utils/theme';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
@@ -259,12 +260,13 @@ export default function AdminDashboard() {
               <p className="text-sm font-bold text-surface-900">{user?.name}</p>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-500">{user?.role}</p>
             </div>
+            <AdminNotifications userId={user?.id} onNavigate={setActiveTab} />
             <button
               onClick={logoutUser}
+              aria-label="Log out"
               className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition-all hover:bg-red-100 hover:text-red-700"
             >
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Log Out</span>
             </button>
           </div>
         </header>

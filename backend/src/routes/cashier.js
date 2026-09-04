@@ -669,6 +669,10 @@ router.post('/shift/time-in', authenticate, authorize('cashier', 'kitchen', 'rid
       }
     });
 
+    if (req.io) {
+      req.io.to(`tenant-${req.tenantId}-admin`).emit('admin_notification_update');
+    }
+
     res.json({
       success: true,
       data: shift,
@@ -741,6 +745,10 @@ router.post('/shift/time-out', authenticate, authorize('cashier', 'kitchen', 'ri
       }
     });
 
+    if (req.io) {
+      req.io.to(`tenant-${req.tenantId}-admin`).emit('admin_notification_update');
+    }
+
     res.json({
       success: true,
       data: closedShift,
@@ -772,5 +780,4 @@ router.get('/shift/history', authenticate, authorize('cashier', 'kitchen', 'ride
 });
 
 module.exports = router;
-
 

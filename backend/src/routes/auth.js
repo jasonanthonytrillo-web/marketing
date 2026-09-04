@@ -953,6 +953,10 @@ router.post('/devices/register', authenticate, authorize('admin'), async (req, r
       }
     });
 
+    if (req.io) {
+      req.io.to(`tenant-${req.tenantId}-admin`).emit('admin_notification_update');
+    }
+
     res.status(201).json({
       success: true,
       data: {

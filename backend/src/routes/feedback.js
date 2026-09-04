@@ -32,11 +32,12 @@ router.post('/submit', async (req, res) => {
 
     // Emit real-time update to admin
     if (req.io) {
-      req.io.to(`tenant_${order.tenantId}_admin`).emit('new_feedback', {
+      req.io.to(`tenant-${order.tenantId}-admin`).emit('new_feedback', {
         orderNumber: updatedOrder.orderNumber,
         rating: updatedOrder.feedbackRating,
         comment: updatedOrder.feedbackComment
       });
+      req.io.to(`tenant-${order.tenantId}-admin`).emit('admin_notification_update');
     }
 
     res.json({ 

@@ -282,7 +282,6 @@ export default function ReportsTab() {
             <h3 className="font-heading font-bold text-surface-900 flex items-center gap-2">
               <LineChart className="w-5 h-5 text-surface-900" /> Profit & Loss Analysis (Last 7 Days)
             </h3>
-            <span className="text-[10px] font-black uppercase tracking-widest text-surface-400 bg-surface-50 px-3 py-1 rounded-full border border-surface-100">Live Financials</span>
           </div>
 
           <div className="overflow-x-auto">

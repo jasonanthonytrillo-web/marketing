@@ -377,6 +377,121 @@ router.get('/inventory', authenticate, authorize('admin'), async (req, res) => {
   }
 });
 
+// GET /api/admin/notifications — Notifications for the admin dashboard
+router.get('/notifications', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const now = new Date();
+    const recentStaffActivity = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const recentFeedback = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const recentDevice = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const promoEndingSoon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+    const [lowStockProducts, staffShifts, devices, feedback, promos] = await Promise.all([
+      prisma.product.findMany({
+        where: { tenantId: req.tenantId, available: true, stock: { lte: 10 } },
+        select: { id: true, name: true, stock: true, updatedAt: true },
+        orderBy: { stock: 'asc' },
+        take: 50
+      }),
+      prisma.cashierShift.findMany({
+        where: { tenantId: req.tenantId, updatedAt: { gte: recentStaffActivity } },
+        select: { id: true, cashierName: true, role: true, status: true, startTime: true, endTime: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 50
+      }),
+      prisma.authorizedDevice.findMany({
+        where: { tenantId: req.tenantId, createdAt: { gte: recentDevice } },
+        select: { id: true, deviceName: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 50
+      }),
+      prisma.order.findMany({
+        where: { tenantId: req.tenantId, feedbackRating: { not: null }, updatedAt: { gte: recentFeedback } },
+        select: { id: true, orderNumber: true, customerName: true, feedbackRating: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 50
+      }),
+      prisma.promoCode.findMany({
+        where: {
+          tenantId: req.tenantId,
+          isActive: true,
+          OR: [
+            { endDate: { gte: now, lte: promoEndingSoon } },
+            { maxUses: { not: null } }
+          ]
+        },
+        select: { id: true, code: true, endDate: true, maxUses: true, currentUses: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 50
+      })
+    ]);
+
+    const notifications = [
+      ...lowStockProducts.map(product => ({
+        id: `low-stock-${product.id}`,
+        type: 'low_stock',
+        title: 'Low stock',
+        message: `${product.name} has ${product.stock} unit${product.stock === 1 ? '' : 's'} left.`,
+        tab: 'inventory',
+        timestamp: product.updatedAt
+      })),
+      ...staffShifts.map(shift => ({
+        id: `shift-${shift.id}-${shift.status}`,
+        type: shift.status === 'active' ? 'staff_time_in' : 'staff_time_out',
+        title: shift.status === 'active' ? 'Staff timed in' : 'Staff timed out',
+        message: `${shift.cashierName || 'A staff member'} (${shift.role}) ${shift.status === 'active' ? 'started a shift' : 'ended a shift'}.`,
+        tab: 'shifts',
+        timestamp: shift.status === 'active' ? shift.startTime : (shift.endTime || shift.updatedAt)
+      })),
+      ...devices.map(device => ({
+        id: `device-${device.id}`,
+        type: 'authorized_device',
+        title: 'New authorized device',
+        message: `${device.deviceName} was added to the authorized devices.`,
+        tab: 'devices',
+        timestamp: device.createdAt
+      })),
+      ...feedback.map(review => ({
+        id: `feedback-${review.id}`,
+        type: 'feedback',
+        title: 'New customer feedback',
+        message: `${review.customerName || 'A customer'} left a ${review.feedbackRating}/5 review for order ${review.orderNumber}.`,
+        tab: 'feedback',
+        timestamp: review.updatedAt
+      })),
+      ...promos.flatMap(promo => {
+        const items = [];
+        if (promo.endDate && promo.endDate >= now && promo.endDate <= promoEndingSoon) {
+          items.push({
+            id: `promo-ending-${promo.id}`,
+            type: 'promo_ending',
+            title: 'Promo ending soon',
+            message: `${promo.code} ends on ${promo.endDate.toLocaleDateString()}.`,
+            tab: 'promos',
+            timestamp: promo.endDate
+          });
+        }
+        if (promo.maxUses && promo.currentUses / promo.maxUses >= 0.8 && promo.currentUses < promo.maxUses) {
+          items.push({
+            id: `promo-limit-${promo.id}`,
+            type: 'promo_limit',
+            title: 'Promo nearly at its limit',
+            message: `${promo.code} has been used ${promo.currentUses} of ${promo.maxUses} times.`,
+            tab: 'promos',
+            timestamp: promo.updatedAt
+          });
+        }
+        return items;
+      })
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({ success: true, data: notifications });
+  } catch (error) {
+    console.error('Admin notifications error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load notifications.' });
+  }
+});
+
 router.post('/inventory/:id/restock', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { quantity, supplierId } = req.body;
