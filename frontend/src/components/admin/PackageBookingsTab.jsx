@@ -160,10 +160,8 @@ export default function PackageBookingsTab() {
             <h2 className="font-heading text-2xl sm:text-3xl font-black text-surface-900">Package Bookings</h2>
             <p className="mt-1 font-medium text-surface-500">Review customer event requests before confirming them.</p>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {view === 'active' && (
-              <button type="button" onClick={exportAcceptedBookings} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-100"><Download className="h-4 w-4" /> Export accepted CSV</button>
-            )}
+          <div className="flex flex-wrap items-center justify-start gap-2">
+            <button type="button" onClick={exportAcceptedBookings} disabled={view !== 'active'} title={view !== 'active' ? 'Switch to Active requests to export accepted bookings' : 'Export accepted bookings'} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-45"><Download className="h-4 w-4" /> Export CSV</button>
             <div className="flex rounded-2xl border border-surface-200 bg-white p-1 shadow-sm">
             <button type="button" onClick={() => setView('active')} className={`rounded-xl px-4 py-2.5 text-sm font-black transition-colors ${view === 'active' ? 'bg-primary-600 text-white' : 'text-surface-500 hover:bg-surface-50'}`}>Active requests</button>
             <button type="button" onClick={() => setView('archives')} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition-colors ${view === 'archives' ? 'bg-surface-900 text-white' : 'text-surface-500 hover:bg-surface-50'}`}><Archive className="h-4 w-4" /> Archives</button>
