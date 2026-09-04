@@ -86,6 +86,13 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const expandMap = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setIsFullscreen(true);
+  };
+
   useEffect(() => {
     if (position) {
       onLocationSelect({
@@ -237,7 +244,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
         <div className="h-64 rounded-3xl overflow-hidden border-2 border-surface-100 shadow-inner relative z-10">
           <div
             className="relative h-full w-full cursor-pointer"
-            onClick={() => setIsFullscreen(true)}
+            onClick={expandMap}
           >
             <MapContainer
               center={[14.5995, 120.9842]}
