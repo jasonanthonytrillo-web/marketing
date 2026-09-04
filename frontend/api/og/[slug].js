@@ -1,8 +1,8 @@
 export default function handler(req, res) {
   const title = 'HOMETOWN BREW POS';
   const description = 'Professional Point of Sale System';
-  const image = 'https://hometownbrew.vercel.app/favicon.png';
-  const siteUrl = 'https://hometownbrew.vercel.app/';
+  const image = 'https://hometownbrew.jasonanthonytrillo.workers.dev/favicon.png';
+  const siteUrl = 'https://hometownbrew.jasonanthonytrillo.workers.dev/';
 
   // Return HTML with OG tags + instant redirect for regular users
   res.setHeader('Content-Type', 'text/html; charset=utf-8');

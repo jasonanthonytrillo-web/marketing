@@ -5,7 +5,7 @@ const sendOTPEmail = async (email, otp, tenant = {}) => {
 
   let absoluteLogo = logo;
   if (logo && logo.startsWith('/')) {
-    absoluteLogo = `https://hometownbrew.vercel.app${logo}`;
+    absoluteLogo = `https://hometownbrew.jasonanthonytrillo.workers.dev${logo}`;
   }
 
   if (!process.env.EMAIL_PASS) {
