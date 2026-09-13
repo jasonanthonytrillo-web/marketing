@@ -89,15 +89,16 @@ async function uploadBackup(prefix) {
   const now = new Date();
   const stamp = now.toISOString().replace(/[.:]/g, '-');
   const key = `postgres/${prefix}/${now.toISOString().slice(0, 7)}/project-million-${stamp}.sql.gz`;
-  const contentLength = fs.statSync(tempFile).size;
+  // Use a Buffer so the S3-compatible request has a fixed body and does not
+  // use aws-chunked streaming, which B2 may reject as malformed framing.
+  const backupBody = fs.readFileSync(tempFile);
 
   await s3.send(new PutObjectCommand({
     Bucket: process.env.B2_BUCKET_NAME,
     Key: key,
-    Body: fs.createReadStream(tempFile),
-    ContentLength: contentLength,
+    Body: backupBody,
+    ContentLength: backupBody.length,
     ContentType: 'application/gzip',
-    ServerSideEncryption: 'AES256',
     Metadata: {
       backupType: 'postgresql',
       createdAt: now.toISOString()
