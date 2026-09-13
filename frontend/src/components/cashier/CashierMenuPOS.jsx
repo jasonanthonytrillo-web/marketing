@@ -674,7 +674,7 @@ export default function CashierMenuPOS({
         </div>
 
         {/* Scrollable Cart Items List (Maximized Vertical Space) */}
-        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2.5">
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2.5 md:flex-none md:overflow-visible">
           {cartItems.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-surface-400 p-4 text-center">
               <Coffee className="w-10 h-10 text-surface-300 mb-1.5" />
