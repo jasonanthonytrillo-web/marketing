@@ -609,7 +609,7 @@ export default function CashierMenuPOS({
       </div>
 
       {/* RIGHT PANEL: Live Order & Fast Cashier Checkout */}
-      <div className="fixed inset-x-0 bottom-0 z-40 flex h-[60vh] max-h-[560px] w-full flex-col overflow-hidden rounded-t-2xl border border-surface-200 bg-white shadow-[0_-10px_30px_rgba(15,23,42,0.18)] no-print md:static md:z-10 md:h-auto md:max-h-none md:w-[330px] md:rounded-none md:border-l md:border-t-0 md:shadow-lg lg:w-[370px] xl:w-[410px]">
+      <div className="fixed inset-x-0 bottom-0 z-40 flex h-[60vh] max-h-[560px] w-full flex-col overflow-hidden rounded-t-2xl border border-surface-200 bg-white shadow-[0_-10px_30px_rgba(15,23,42,0.18)] no-print md:static md:z-10 md:h-full md:min-h-0 md:max-h-none md:w-[330px] md:overflow-x-hidden md:overflow-y-auto md:rounded-none md:border-l md:border-t-0 md:shadow-lg lg:w-[370px] xl:w-[410px]">
         
         {/* Cart Header */}
         <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-r from-primary-600 to-primary-700 px-3.5 py-2.5 text-white">
@@ -674,7 +674,7 @@ export default function CashierMenuPOS({
         </div>
 
         {/* Scrollable Cart Items List (Maximized Vertical Space) */}
-        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 min-h-[140px]">
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2.5">
           {cartItems.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-surface-400 p-4 text-center">
               <Coffee className="w-10 h-10 text-surface-300 mb-1.5" />
