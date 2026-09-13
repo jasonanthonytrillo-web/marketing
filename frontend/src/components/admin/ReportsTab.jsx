@@ -64,7 +64,7 @@ export default function ReportsTab() {
     <div className="animate-fade-in-up space-y-8">
 
       {/* ── Sales by Date ─────────────────────────────────────── */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
+      <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-surface-200">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h2 className="font-heading text-xl font-bold text-surface-900 flex items-center gap-2">
@@ -150,12 +150,12 @@ export default function ReportsTab() {
       </div>
 
       {/* ── Header for rest of analytics ──────────────────────── */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h2 className="font-heading text-2xl font-bold text-surface-900">Advanced Analytics</h2>
           <p className="text-surface-500 text-sm">Deep insights into your business performance.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 sm:flex gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={async () => {
               try {
@@ -175,7 +175,7 @@ export default function ReportsTab() {
                 alert('Failed to export sales. Please try again.');
               }
             }}
-            className="px-6 py-2.5 bg-white border border-surface-200 hover:border-primary-500 hover:text-primary-600 text-surface-600 font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-sm group"
+            className="w-full sm:w-auto justify-center px-4 sm:px-6 py-2.5 bg-white border border-surface-200 hover:border-primary-500 hover:text-primary-600 text-surface-600 font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-sm group"
           >
             Export Sales (CSV)
           </button>
@@ -197,7 +197,7 @@ export default function ReportsTab() {
                 alert('Failed to export the formatted Excel report. Please try again.');
               }
             }}
-            className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-sm"
+            className="w-full sm:w-auto justify-center px-4 sm:px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-sm"
           >
             Export Sales (Excel)
           </button>

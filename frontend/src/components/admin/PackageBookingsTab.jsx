@@ -112,6 +112,13 @@ export default function PackageBookingsTab() {
     }
   };
 
+  const completeDownpayment = async (booking) => {
+    const packageAmount = Number(String(booking.package?.priceText || '').replace(/[^0-9.]/g, ''));
+    const remainingAmount = Number.isFinite(packageAmount) ? packageAmount - Number(booking.paymentAmount || 0) : 0;
+    if (!window.confirm(`Mark the remaining ₱${remainingAmount.toFixed(2)} as paid and complete this booking payment?`)) return;
+    await updatePaymentStatus(booking, 'paid');
+  };
+
   const exportAcceptedBookings = async () => {
     const response = await getAdminBookings(false, 1, 100);
     const acceptedBookings = (response.data.data || []).filter(booking => ['accepted', 'confirmed'].includes(booking.status));
@@ -138,7 +145,7 @@ export default function PackageBookingsTab() {
       booking.locationGuide,
       booking.guestCount,
       bookingPaymentMethodLabel(booking.paymentMethod),
-      booking.paymentMode === 'downpayment' ? 'Downpayment (50%)' : 'Full payment',
+      booking.paymentMode === 'downpayment' ? (booking.paymentStatus === 'paid' ? 'Downpayment + balance paid' : 'Downpayment (50%)') : 'Full payment',
       booking.paymentAmount,
       booking.status,
       booking.reviewedAt ? formatDate(booking.reviewedAt) : ''
@@ -261,6 +268,10 @@ export default function PackageBookingsTab() {
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-surface-100 pt-4">
                   <p className="text-xs font-medium text-surface-500">This booking is archived and no longer active.</p>
                   <button disabled={processingId === booking.id} onClick={() => permanentlyDeleteBooking(booking)} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-black text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"><Trash2 className="h-4 w-4" /> Delete permanently</button>
+                </div>
+              ) : booking.status === 'accepted' && booking.paymentMode === 'downpayment' && booking.paymentStatus === 'verified' ? (
+                <div className="mt-5 flex gap-3 border-t border-surface-100 pt-4">
+                  <button disabled={processingId === booking.id} onClick={() => completeDownpayment(booking)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"><Check className="h-4 w-4" /> Payment Completed</button>
                 </div>
               ) : booking.status === 'pending' && (
                 <div className="mt-5 flex gap-3 border-t border-surface-100 pt-4">

@@ -108,10 +108,12 @@ export default function GlobalNotification() {
     const unsubscribeStatus = onEvent('package_payment_status_updated', (booking) => {
       setPackagePaymentRequest(null);
       setPackageBookingUpdate({
-        accepted: booking.paymentStatus === 'verified',
-        message: booking.paymentStatus === 'verified'
-          ? 'Your payment was verified. The admin can now confirm your booking.'
-          : 'The payment reference could not be verified. Please check it and wait for new instructions.'
+        accepted: ['verified', 'paid'].includes(booking.paymentStatus),
+        message: booking.paymentStatus === 'paid'
+          ? 'Your package booking is fully paid.'
+          : booking.paymentStatus === 'verified'
+            ? 'Your payment was verified. The admin can now confirm your booking.'
+            : 'The payment reference could not be verified. Please check it and wait for new instructions.'
       });
     });
     return () => {

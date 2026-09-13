@@ -315,28 +315,28 @@ export default function ProductsTab() {
 
   return (
     <div className="">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <h2 className="font-heading text-2xl font-bold text-surface-900">Products & Menu</h2>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-1 sm:flex gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all border-2 bg-white text-surface-600 border-surface-200 hover:border-primary-300 hover:text-primary-600 shadow-sm"
+            className="w-full sm:w-auto justify-center flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all border-2 bg-white text-surface-600 border-surface-200 hover:border-primary-300 hover:text-primary-600 shadow-sm"
           >
             <Download className="w-4 h-4" /> Export CSV
           </button>
           <button
             onClick={() => setStatusFilter(statusFilter === 'archived' ? 'active' : 'archived')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all border-2 ${statusFilter === 'archived' ? 'bg-primary-600 text-white border-primary-600 shadow-lg' : 'bg-white text-surface-600 border-surface-200 hover:border-primary-300'}`}
+            className={`w-full sm:w-auto justify-center flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all border-2 ${statusFilter === 'archived' ? 'bg-primary-600 text-white border-primary-600 shadow-lg' : 'bg-white text-surface-600 border-surface-200 hover:border-primary-300'}`}
           >
             {statusFilter === 'archived' ? <><ClipboardList className="w-4 h-4" /> View Active</> : <><FolderArchive className="w-4 h-4" /> View Archives</>}
           </button>
-          <button onClick={handleAdd} className="btn-primary py-2 px-4 shadow-md">
+          <button onClick={handleAdd} className="w-full sm:w-auto btn-primary py-2 px-4 shadow-md">
             + Add Product
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 mb-8 bg-surface-50/50 p-6 rounded-3xl border border-surface-100">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 mb-8 bg-surface-50/50 p-4 sm:p-6 rounded-3xl border border-surface-100">
         <div className="flex-1">
           <label className="block text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2 ml-1">Search Menu</label>
           <input
@@ -348,7 +348,7 @@ export default function ProductsTab() {
           />
         </div>
         <div className="flex flex-wrap gap-4">
-          <div className="w-48 sm:w-64">
+          <div className="w-full sm:w-64">
             <label className="block text-[10px] font-black text-surface-400 uppercase tracking-widest mb-2 ml-1">Category Filter</label>
             <select
               value={selectedCategory}
@@ -862,7 +862,7 @@ export default function ProductsTab() {
 
                   <div className="space-y-3">
                     {productRecipes.map((recipe, index) => (
-                      <div key={recipe.id || index} className="flex gap-3 items-center animate-fade-in">
+                      <div key={recipe.id || index} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center p-3 sm:p-0 bg-white sm:bg-transparent rounded-xl border border-surface-200 sm:border-0 animate-fade-in">
                         <select
                           value={recipe.rawIngredientId}
                           onChange={e => {
@@ -870,7 +870,7 @@ export default function ProductsTab() {
                             newRecipes[index].rawIngredientId = e.target.value;
                             setProductRecipes(newRecipes);
                           }}
-                          className="input-field flex-[2] py-2 text-xs bg-white"
+                          className="input-field w-full sm:flex-[2] py-2 text-xs bg-white"
                         >
                           <option value="">Select Ingredient</option>
                           {rawIngredients.map(ing => (
@@ -878,7 +878,7 @@ export default function ProductsTab() {
                           ))}
                         </select>
 
-                        <div className="flex-[1.5]">
+                        <div className="w-full sm:flex-[1.5]">
                           <input
                             type="number"
                             step="0.01"

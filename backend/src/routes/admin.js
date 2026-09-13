@@ -978,7 +978,7 @@ router.delete('/bookings/:id', authenticate, authorize('admin'), async (req, res
   try {
     const booking = await prisma.eventBooking.findFirst({
       where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId },
-      include: { package: { select: { name: true } } }
+      include: { package: { select: { name: true, priceText: true } } }
     });
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
     if (!['rejected', 'cancelled'].includes(booking.status)) {
@@ -1062,25 +1062,38 @@ router.post('/bookings/:id/payment-request', authenticate, authorize('admin'), a
 router.patch('/bookings/:id/payment-status', authenticate, authorize('admin'), async (req, res) => {
   try {
     const { paymentStatus } = req.body;
-    if (!['verified', 'rejected'].includes(paymentStatus)) {
-      return res.status(400).json({ success: false, message: 'Payment status must be verified or rejected.' });
+    if (!['verified', 'rejected', 'paid'].includes(paymentStatus)) {
+      return res.status(400).json({ success: false, message: 'Payment status must be verified, rejected, or paid.' });
     }
     const booking = await prisma.eventBooking.findFirst({
       where: { id: parseInt(req.params.id, 10), tenantId: req.tenantId },
-      include: { package: { select: { name: true } } }
+      include: { package: { select: { name: true, priceText: true } } }
     });
     if (!booking) return res.status(404).json({ success: false, message: 'Booking request not found.' });
     if (paymentStatus === 'verified' && booking.paymentStatus !== 'submitted') {
       return res.status(400).json({ success: false, message: 'The customer must submit a payment reference first.' });
     }
 
+    let paymentAmount = booking.paymentAmount;
+    if (paymentStatus === 'paid') {
+      const packageAmount = Number(String(booking.package.priceText || '').replace(/[^0-9.]/g, ''));
+      if (booking.status !== 'accepted' || booking.paymentMode !== 'downpayment' || booking.paymentStatus !== 'verified' || !Number.isFinite(packageAmount) || packageAmount <= 0) {
+        return res.status(400).json({ success: false, message: 'Only an accepted booking with a verified downpayment can be marked as fully paid.' });
+      }
+      paymentAmount = packageAmount;
+    }
+
     const updated = await prisma.eventBooking.update({
       where: { id: booking.id },
-      data: { paymentStatus, paymentVerifiedAt: paymentStatus === 'verified' ? new Date() : null },
+      data: {
+        paymentStatus,
+        paymentAmount,
+        paymentVerifiedAt: ['verified', 'paid'].includes(paymentStatus) ? new Date() : null
+      },
       include: { package: { select: { name: true } } }
     });
     await prisma.auditLog.create({
-      data: { tenantId: req.tenantId, userId: req.user.id, action: `${paymentStatus}_package_payment`, entityType: 'package_booking', entityId: String(booking.id), details: `${paymentStatus === 'verified' ? 'Verified' : 'Rejected'} payment reference ${booking.paymentReference || 'N/A'} for ${booking.package.name}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: `${paymentStatus}_package_payment`, entityType: 'package_booking', entityId: String(booking.id), details: `${paymentStatus === 'paid' ? 'Marked fully paid' : paymentStatus === 'verified' ? 'Verified' : 'Rejected'} payment for ${booking.package.name}` }
     });
     if (req.io) req.io.to(`tenant-${req.tenantId}-user-${booking.customerId}`).emit('package_payment_status_updated', updated);
     res.json({ success: true, data: updated });
