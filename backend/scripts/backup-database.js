@@ -37,6 +37,10 @@ const s3 = new S3Client({
   region: process.env.B2_REGION,
   endpoint: process.env.B2_ENDPOINT,
   forcePathStyle: true,
+  // Backblaze B2 does not support the AWS SDK's optional trailing
+  // checksum on streamed PutObject requests.
+  requestChecksumCalculation: 'WHEN_REQUIRED',
+  responseChecksumValidation: 'WHEN_REQUIRED',
   credentials: {
     accessKeyId: process.env.B2_KEY_ID,
     secretAccessKey: process.env.B2_APPLICATION_KEY
@@ -85,11 +89,13 @@ async function uploadBackup(prefix) {
   const now = new Date();
   const stamp = now.toISOString().replace(/[.:]/g, '-');
   const key = `postgres/${prefix}/${now.toISOString().slice(0, 7)}/project-million-${stamp}.sql.gz`;
+  const contentLength = fs.statSync(tempFile).size;
 
   await s3.send(new PutObjectCommand({
     Bucket: process.env.B2_BUCKET_NAME,
     Key: key,
     Body: fs.createReadStream(tempFile),
+    ContentLength: contentLength,
     ContentType: 'application/gzip',
     ServerSideEncryption: 'AES256',
     Metadata: {
