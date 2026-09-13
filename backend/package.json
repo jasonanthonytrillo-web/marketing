@@ -9,9 +9,11 @@
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:seed": "node src/seed.js",
-    "db:setup": "npx prisma db push && node src/seed.js"
+    "db:setup": "npx prisma db push && node src/seed.js",
+    "backup:database": "node scripts/backup-database.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1131.0",
     "@prisma/client": "^6.8.2",
     "@supabase/supabase-js": "^2.105.3",
     "axios": "^1.16.0",
