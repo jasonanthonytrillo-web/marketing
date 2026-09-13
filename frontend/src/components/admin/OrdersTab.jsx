@@ -14,6 +14,16 @@ export default function OrdersTab() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
 
+  const getOrderTypeLabel = (orderType) => {
+    const labels = {
+      dine_in: 'Dine In',
+      take_out: 'Take Out',
+      delivery: 'Delivery'
+    };
+
+    return labels[orderType] || 'Dine In';
+  };
+
   useEffect(() => {
     // Add simple debounce for search to prevent flashing on every keystroke
     const timer = setTimeout(() => {
@@ -155,7 +165,7 @@ export default function OrdersTab() {
                   <td className="p-4 text-surface-500 whitespace-nowrap">{formatDate(order.createdAt)}</td>
                   <td className="p-4">
                     <div className="font-bold text-surface-900">{order.customerName || 'Guest'}</div>
-                    <div className="text-[10px] text-surface-400 uppercase font-black">{order.orderType || 'Dine-in'}</div>
+                    <div className="text-[10px] text-surface-400 uppercase font-black">{getOrderTypeLabel(order.orderType)}</div>
                   </td>
                   <td className="p-4 font-black text-surface-900">{formatCurrency(order.total)}</td>
                   <td className="p-4 text-center">
@@ -218,7 +228,7 @@ export default function OrdersTab() {
               <div className="min-w-0">
                 <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 mb-1">Customer</p>
                 <p className="font-bold text-surface-900 truncate">{order.customerName || 'Guest'}</p>
-                <p className="text-[10px] text-surface-400 uppercase font-black mt-1">{order.orderType || 'Dine-in'}</p>
+                <p className="text-[10px] text-surface-400 uppercase font-black mt-1">{getOrderTypeLabel(order.orderType)}</p>
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-surface-400 mb-1">Total</p>

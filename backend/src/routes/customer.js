@@ -7,14 +7,28 @@ const prisma = require('../lib/prisma');
 router.get('/activity', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+    const where = { customerId: userId };
 
     // 1. Get Orders (Activity)
-    const orders = await prisma.order.findMany({
-      where: { customerId: userId },
-      include: { items: true },
-      orderBy: { createdAt: 'desc' },
-      take: 20
-    });
+    const [orders, totalOrders, favoriteRows] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: { items: true },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.order.count({ where }),
+      prisma.orderItem.groupBy({
+        by: ['productName'],
+        where: { order: where },
+        _sum: { quantity: true },
+        orderBy: { _sum: { quantity: 'desc' } },
+        take: 3
+      })
+    ]);
 
     // 2. Format Activity Feed
     const feed = [
@@ -42,17 +56,7 @@ router.get('/activity', authenticate, async (req, res) => {
     const sortedFeed = feed.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     // 3. Calculate "Favorite" items
-    const productCounts = {};
-    orders.forEach(o => {
-      o.items.forEach(i => {
-        productCounts[i.productName] = (productCounts[i.productName] || 0) + i.quantity;
-      });
-    });
-    
-    const favorites = Object.entries(productCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3);
+    const favorites = favoriteRows.map(row => ({ name: row.productName, count: row._sum.quantity || 0 }));
 
     res.json({
       success: true,
@@ -60,10 +64,11 @@ router.get('/activity', authenticate, async (req, res) => {
         timeline: sortedFeed,
         favorites,
         stats: {
-          totalOrders: orders.length,
+          totalOrders,
           totalPoints: req.user.points || 0,
           memberSince: req.user.createdAt
-        }
+        },
+        pagination: { page, limit, total: totalOrders, totalPages: Math.ceil(totalOrders / limit) }
       }
     });
   } catch (error) {

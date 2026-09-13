@@ -77,7 +77,7 @@ export const createOrder = (data) => api.post('/orders', data);
 export const getOrder = (orderNumber) => api.get(`/orders/${orderNumber}`);
 export const getQueue = () => api.get('/orders/queue/active');
 export const cancelOrder = (orderNumber) => api.post(`/orders/${orderNumber}/cancel`);
-export const getOrderHistory = () => api.get('/orders/history');
+export const getOrderHistory = ({ page = 1, limit = 10 } = {}) => api.get('/orders/history', { params: { page, limit } });
 export const confirmDeliveryReceived = (orderNumber) => api.post(`/orders/${orderNumber}/received`);
 
 // Cashier
@@ -215,5 +215,7 @@ export const validatePromo = (data) => api.post('/promos/validate', data);
 // Reports Export
 export const exportSalesCSV = () => api.get('/reports/export/sales', { responseType: 'blob' });
 export const exportInventoryCSV = () => api.get('/reports/export/inventory', { responseType: 'blob' });
+export const exportSalesExcel = () => api.get('/reports/export/sales.xlsx', { responseType: 'blob' });
+export const exportInventoryExcel = () => api.get('/reports/export/inventory.xlsx', { responseType: 'blob' });
 
 export default api;

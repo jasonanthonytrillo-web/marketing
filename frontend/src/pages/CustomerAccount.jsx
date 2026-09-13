@@ -12,6 +12,9 @@ export default function CustomerAccount() {
   const { joinRoom, onEvent, connected } = useSocket();
   const [activity, setActivity] = useState([]);
   const [favorites, setFavorites] = useState([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyMeta, setHistoryMeta] = useState({ page: 1, total: 0, totalPages: 0 });
+  const [historyStats, setHistoryStats] = useState({ totalOrders: 0 });
   const [loading, setLoading] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -25,12 +28,12 @@ export default function CustomerAccount() {
     if (!authLoading && !user) {
       navigate('/member-portal');
     } else if (user) {
-      loadActivity();
+      loadActivity(historyPage);
       if (searchParams.get('action') === 'change-password') {
         setShowPasswordModal(true);
       }
     }
-  }, [user, authLoading, navigate, searchParams]);
+  }, [user, authLoading, navigate, searchParams, historyPage]);
 
   // Real-time Points Listener
   useEffect(() => {
@@ -40,22 +43,25 @@ export default function CustomerAccount() {
       
       const cleanup = onEvent('loyalty_updated', (data) => {
         refreshUser(); // Refresh AuthContext user (points)
-        loadActivity(); // Refresh activity timeline
+        loadActivity(historyPage); // Refresh activity timeline
       });
 
       return cleanup;
     }
-  }, [user, connected, joinRoom, onEvent, refreshUser]);
+  }, [user, connected, joinRoom, onEvent, refreshUser, historyPage]);
 
-  const loadActivity = async () => {
+  const loadActivity = async (page = 1) => {
     try {
       const token = localStorage.getItem('pos_token');
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
       const res = await axios.get(`${API_URL}/customer/activity`, {
         headers: { Authorization: `Bearer ${token}` }
+        , params: { page, limit: 10 }
       });
       setActivity(res.data.data.timeline);
       setFavorites(res.data.data.favorites);
+      setHistoryMeta(res.data.data.pagination || { page, total: 0, totalPages: 0 });
+      setHistoryStats(res.data.data.stats || { totalOrders: 0 });
     } catch (error) {
       console.error(error);
     } finally {
@@ -148,7 +154,7 @@ export default function CustomerAccount() {
               </div>
               <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl">
                 <p className="text-[9px] font-black uppercase tracking-widest text-primary-100 mb-1">Orders Placed</p>
-                <p className="text-2xl font-black text-white">{activity.filter(a => a.type === 'order').length}</p>
+                <p className="text-2xl font-black text-white">{historyStats.totalOrders || 0}</p>
               </div>
             </div>
           </div>
@@ -229,6 +235,30 @@ export default function CustomerAccount() {
             <div className="py-20 text-center">
               <p className="text-slate-400 font-bold mb-6">No activity recorded yet.</p>
               <Link to="/menu" className="bg-primary-500 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px]">Start Your Journey</Link>
+            </div>
+          )}
+
+          {historyMeta.totalPages > 1 && (
+            <div className="relative z-10 flex items-center justify-between gap-3 pt-2">
+              <button
+                type="button"
+                disabled={historyPage === 1 || loading}
+                onClick={() => setHistoryPage(page => Math.max(1, page - 1))}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="text-xs font-bold text-slate-400">
+                Page {historyMeta.page} of {historyMeta.totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={historyPage >= historyMeta.totalPages || loading}
+                onClick={() => setHistoryPage(page => Math.min(historyMeta.totalPages, page + 1))}
+                className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-black text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
             </div>
           )}
         </div>

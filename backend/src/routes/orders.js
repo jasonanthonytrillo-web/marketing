@@ -13,12 +13,24 @@ function generateOrderNumber() {
 const { authenticate } = require('../middleware/auth');
 router.get('/history', authenticate, async (req, res) => {
   try {
-    const orders = await prisma.order.findMany({
-      where: { customerId: req.user.id },
-      include: { items: true },
-      orderBy: { createdAt: 'desc' }
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+    const where = { customerId: req.user.id };
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: { items: true },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * limit,
+        take: limit
+      }),
+      prisma.order.count({ where })
+    ]);
+    res.json({
+      success: true,
+      data: orders,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) }
     });
-    res.json({ success: true, data: orders });
   } catch (error) {
     console.error('History error:', error);
     res.status(500).json({ success: false, message: 'Failed to load order history.' });

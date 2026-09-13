@@ -179,6 +179,28 @@ export default function ReportsTab() {
           >
             Export Sales (CSV)
           </button>
+          <button
+            onClick={async () => {
+              try {
+                const { exportSalesExcel } = await import('../../services/api');
+                const res = await exportSalesExcel();
+                const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+              } catch (e) {
+                console.error('Excel export failed:', e);
+                alert('Failed to export the formatted Excel report. Please try again.');
+              }
+            }}
+            className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-sm"
+          >
+            Export Sales (Excel)
+          </button>
         </div>
       </div>
 

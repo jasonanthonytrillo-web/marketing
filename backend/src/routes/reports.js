@@ -2,6 +2,58 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
+const ExcelJS = require('exceljs');
+
+const EXCEL_GREEN = '075B12';
+const EXCEL_LIGHT_GREEN = 'E8F5E9';
+
+function styleExcelSheet(sheet, title, subtitle, columns) {
+  sheet.mergeCells(1, 1, 1, columns.length);
+  const titleCell = sheet.getCell(1, 1);
+  titleCell.value = title;
+  titleCell.font = { name: 'Aptos Display', size: 18, bold: true, color: { argb: 'FFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_GREEN } };
+  titleCell.alignment = { vertical: 'middle' };
+  sheet.getRow(1).height = 32;
+
+  sheet.mergeCells(2, 1, 2, columns.length);
+  const subtitleCell = sheet.getCell(2, 1);
+  subtitleCell.value = subtitle;
+  subtitleCell.font = { name: 'Aptos', size: 10, italic: true, color: { argb: '64748B' } };
+  sheet.getRow(2).height = 22;
+
+  sheet.addRow([]);
+  const headerRow = sheet.addRow(columns.map(column => column.header));
+  headerRow.height = 24;
+  headerRow.eachCell(cell => {
+    cell.font = { name: 'Aptos', bold: true, color: { argb: 'FFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_GREEN } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = { bottom: { style: 'thin', color: { argb: 'B7D8BD' } } };
+  });
+
+  columns.forEach((column, index) => {
+    sheet.getColumn(index + 1).width = column.width || 18;
+  });
+  sheet.views = [{ state: 'frozen', ySplit: 4 }];
+  return headerRow.number;
+}
+
+function styleExcelDataRows(sheet, firstDataRow, lastDataRow, columns) {
+  for (let rowNumber = firstDataRow; rowNumber <= lastDataRow; rowNumber += 1) {
+    const row = sheet.getRow(rowNumber);
+    row.eachCell((cell, columnNumber) => {
+      cell.font = { name: 'Aptos', size: 10, color: { argb: '1E293B' } };
+      cell.alignment = { vertical: 'middle', wrapText: true };
+      if (rowNumber % 2 === 0) {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
+      }
+      const column = columns[columnNumber - 1];
+      if (column?.format) cell.numFmt = column.format;
+    });
+    row.height = 22;
+  }
+}
 
 // GET /api/reports/daily
 router.get('/daily', authenticate, authorize('admin'), async (req, res) => {
@@ -476,6 +528,121 @@ router.get('/export/suppliers', authenticate, authorize('admin'), async (req, re
   }
 });
 
+// GET /api/reports/export/sales.xlsx — Formatted Excel sales report
+router.get('/export/sales.xlsx', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      where: { tenantId: req.tenantId, status: 'completed' },
+      include: { items: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Hometown Brew POS';
+    workbook.created = new Date();
+    const sheet = workbook.addWorksheet('Sales Report');
+    const columns = [
+      { header: 'Order #', width: 18 },
+      { header: 'Date', width: 22 },
+      { header: 'Customer', width: 24 },
+      { header: 'Total (₱)', width: 16, format: '₱#,##0.00' },
+      { header: 'Items', width: 52 }
+    ];
+    const headerRow = styleExcelSheet(
+      sheet,
+      'Hometown Brew — Sales Report',
+      `Generated ${new Date().toLocaleString('en-PH')} • Completed orders only`,
+      columns
+    );
+
+    orders.forEach(order => {
+      sheet.addRow([
+        order.orderNumber,
+        new Date(order.createdAt),
+        order.customerName || 'Walk-in',
+        Number(order.total || 0),
+        order.items.map(item => `${item.productName} (x${item.quantity})`).join('; ')
+      ]);
+    });
+    styleExcelDataRows(sheet, headerRow + 1, sheet.rowCount, columns);
+    sheet.getColumn(2).numFmt = 'mmm d, yyyy h:mm AM/PM';
+    sheet.autoFilter = { from: { row: headerRow, column: 1 }, to: { row: headerRow, column: columns.length } };
+    if (orders.length) {
+      const totalRow = sheet.addRow(['', '', 'TOTAL SALES', { formula: `SUM(D${headerRow + 1}:D${headerRow + orders.length})` }, '']);
+      totalRow.font = { name: 'Aptos', bold: true, color: { argb: EXCEL_GREEN } };
+      totalRow.getCell(3).alignment = { horizontal: 'right' };
+      totalRow.getCell(4).numFmt = '₱#,##0.00';
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.attachment(`Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Excel export failed' });
+  }
+});
+
+// GET /api/reports/export/inventory.xlsx — Formatted Excel inventory report
+router.get('/export/inventory.xlsx', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const [products, rawIngredients] = await Promise.all([
+      prisma.product.findMany({ where: { tenantId: req.tenantId }, include: { category: true }, orderBy: { name: 'asc' } }),
+      prisma.rawIngredient.findMany({ where: { tenantId: req.tenantId }, orderBy: { name: 'asc' } })
+    ]);
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Hometown Brew POS';
+    workbook.created = new Date();
+
+    const productSheet = workbook.addWorksheet('Product Stock');
+    const productColumns = [
+      { header: 'Product', width: 30 },
+      { header: 'Category', width: 22 },
+      { header: 'Current Stock', width: 18, format: '#,##0' },
+      { header: 'Cost Price (₱)', width: 18, format: '₱#,##0.00' },
+      { header: 'Selling Price (₱)', width: 20, format: '₱#,##0.00' }
+    ];
+    const productHeader = styleExcelSheet(productSheet, 'Hometown Brew — Product Stock', `Generated ${new Date().toLocaleString('en-PH')}`, productColumns);
+    products.forEach(product => productSheet.addRow([
+      product.name,
+      product.category?.name || 'N/A',
+      Number(product.stock || 0),
+      Number(product.costPrice || 0),
+      Number(product.price || 0)
+    ]));
+    styleExcelDataRows(productSheet, productHeader + 1, productSheet.rowCount, productColumns);
+    productSheet.autoFilter = { from: { row: productHeader, column: 1 }, to: { row: productHeader, column: productColumns.length } };
+
+    const ingredientSheet = workbook.addWorksheet('Raw Ingredients');
+    const ingredientColumns = [
+      { header: 'Ingredient', width: 30 },
+      { header: 'Unit', width: 15 },
+      { header: 'Stock', width: 15, format: '#,##0.00' },
+      { header: 'Servings Yield', width: 18, format: '#,##0.00' },
+      { header: 'Cost Per Unit (₱)', width: 20, format: '₱#,##0.00' },
+      { header: 'Total Cost (₱)', width: 18, format: '₱#,##0.00' }
+    ];
+    const ingredientHeader = styleExcelSheet(ingredientSheet, 'Hometown Brew — Raw Ingredients', `Generated ${new Date().toLocaleString('en-PH')}`, ingredientColumns);
+    rawIngredients.forEach(ingredient => {
+      const stock = Number(ingredient.stock || 0);
+      const cost = Number(ingredient.costPrice || 0);
+      ingredientSheet.addRow([ingredient.name, ingredient.unit, stock, Number(ingredient.yield || 1), cost, stock * cost]);
+    });
+    styleExcelDataRows(ingredientSheet, ingredientHeader + 1, ingredientSheet.rowCount, ingredientColumns);
+    ingredientSheet.autoFilter = { from: { row: ingredientHeader, column: 1 }, to: { row: ingredientHeader, column: ingredientColumns.length } };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.attachment(`Inventory_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Excel export failed' });
+  }
+});
+
 // GET /api/reports/sales-by-date?date=YYYY-MM-DD
 router.get('/sales-by-date', authenticate, authorize('admin'), async (req, res) => {
   try {
@@ -532,4 +699,3 @@ router.get('/sales-by-date', authenticate, authorize('admin'), async (req, res) 
 });
 
 module.exports = router;
-

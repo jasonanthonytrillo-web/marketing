@@ -61,6 +61,8 @@ export default function Menu() {
   const [bookingEventOpen, setBookingEventOpen] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [orderHistory, setOrderHistory] = useState([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyMeta, setHistoryMeta] = useState({ page: 1, total: 0, totalPages: 0 });
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState('');
   const [usualOrder, setUsualOrder] = useState(null);
@@ -372,8 +374,12 @@ export default function Menu() {
       setHistoryLoading(true);
       setHistoryError('');
       try {
-        const [ordersRes, bookingsRes] = await Promise.all([getOrderHistory(), getMyPackageBookings()]);
+        const [ordersRes, bookingsRes] = await Promise.all([
+          getOrderHistory({ page: historyPage, limit: 10 }),
+          getMyPackageBookings()
+        ]);
         const orders = ordersRes.data?.data || [];
+        setHistoryMeta(ordersRes.data?.meta || { page: historyPage, total: 0, totalPages: 0 });
         const confirmedBookings = (bookingsRes.data?.data || [])
           .filter(booking => booking.status === 'accepted')
           .map(booking => ({ ...booking, historyType: 'booking' }));
@@ -386,7 +392,7 @@ export default function Menu() {
     };
 
     loadHistory();
-  }, [showHistoryModal]);
+  }, [showHistoryModal, historyPage]);
 
   // Suggest a repeated completed order once the current menu is available.
   useEffect(() => {
@@ -398,7 +404,7 @@ export default function Menu() {
     let cancelled = false;
     const loadUsualOrder = async () => {
       try {
-        const res = await getOrderHistory();
+        const res = await getOrderHistory({ page: 1, limit: 50 });
         const completedOrders = (res.data?.data || []).filter(order => order.status === 'completed' && order.items?.length);
         const orderGroups = new Map();
 
@@ -1530,6 +1536,7 @@ export default function Menu() {
                   <p className="text-surface-500 font-medium">No order history yet.</p>
                 </div>
               ) : (
+                <>
                 <div className="space-y-4">
                   {orderHistory.map((order) => (
                     <div key={order.id} className={`rounded-2xl border p-4 md:p-5 ${order.historyType === 'booking' ? 'border-emerald-200 bg-emerald-50/50' : 'border-surface-200 bg-surface-50/60'}`}>
@@ -1574,6 +1581,30 @@ export default function Menu() {
                     </div>
                   ))}
                 </div>
+                {historyMeta.totalPages > 1 && (
+                  <div className="mt-6 flex items-center justify-between gap-3 border-t border-surface-200 pt-4">
+                    <button
+                      type="button"
+                      disabled={historyPage === 1 || historyLoading}
+                      onClick={() => setHistoryPage(page => Math.max(1, page - 1))}
+                      className="rounded-xl border border-surface-200 px-3 py-2 text-xs font-black text-surface-600 transition hover:bg-surface-100 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs font-bold text-surface-400">
+                      Page {historyMeta.page} of {historyMeta.totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={historyPage >= historyMeta.totalPages || historyLoading}
+                      onClick={() => setHistoryPage(page => Math.min(historyMeta.totalPages, page + 1))}
+                      className="rounded-xl bg-surface-900 px-3 py-2 text-xs font-black text-white transition hover:bg-surface-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+                </>
               )}
             </div>
           </div>
