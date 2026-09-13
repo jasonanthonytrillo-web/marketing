@@ -581,7 +581,7 @@ export default function CashierDashboard() {
   if (loading) return null;
 
   return (
-    <div className="h-screen flex flex-col bg-surface-100 overflow-hidden relative">
+    <div className="relative flex h-screen min-w-0 flex-col overflow-hidden bg-surface-100">
 
       {/* Prep Time Modal */}
       {showPrepModal && (
@@ -997,11 +997,11 @@ export default function CashierDashboard() {
       )}
 
       {/* Header */}
-      <header className="bg-white border-b border-surface-200 px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center justify-between flex-shrink-0 z-10 no-print gap-2">
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+      <header className="z-10 flex min-w-0 flex-shrink-0 items-center justify-between gap-2 border-b border-surface-200 bg-white px-2.5 py-2.5 sm:px-5 sm:py-3.5 no-print">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <img src="/hb_logo.jpg" className="w-8 h-8 rounded-lg object-cover shadow-sm flex-shrink-0" alt="Hometown Brew" onError={(e) => { e.currentTarget.src = '/favicon.png'; }} />
-          <div className="flex flex-col">
-            <h2 className="font-heading font-black text-sm sm:text-base lg:text-lg text-primary-600 tracking-tight uppercase leading-tight whitespace-nowrap">Hometown Brew</h2>
+          <div className="min-w-0 flex flex-col">
+            <h2 className="max-w-[112px] truncate font-heading font-black text-sm sm:max-w-none sm:text-base lg:text-lg text-primary-600 tracking-tight uppercase leading-tight">Hometown Brew</h2>
             <span className="text-[9px] sm:text-[10px] font-bold text-surface-400 uppercase tracking-widest leading-none">Cashier Dashboard</span>
           </div>
         </div>
@@ -1040,7 +1040,7 @@ export default function CashierDashboard() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-1.5 sm:gap-2.5">
           {activeShift ? (
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -1056,18 +1056,18 @@ export default function CashierDashboard() {
           {activeShift ? (
             <button
               onClick={handleOpenTimeOut}
-              className="px-2.5 sm:px-3.5 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
+              className="px-2 py-1.5 sm:px-3.5 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 active:scale-95 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm whitespace-nowrap"
             >
               <Timer className="w-3.5 h-3.5 text-rose-600" />
-              <span>Time Out</span>
+              <span className="hidden sm:inline">Time Out</span>
             </button>
           ) : (
             <button
               onClick={handleOpenTimeIn}
-              className="px-2.5 sm:px-3.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-orange-500/20 whitespace-nowrap"
+              className="px-2 py-1.5 sm:px-3.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md shadow-orange-500/20 whitespace-nowrap"
             >
               <Timer className="w-3.5 h-3.5" />
-              <span>Time In</span>
+              <span className="hidden sm:inline">Time In</span>
             </button>
           )}
 
@@ -1141,7 +1141,7 @@ export default function CashierDashboard() {
           onOrderCreated={loadOrders}
         />
       ) : (
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden md:flex-row">
           {/* Left Panel: Order List */}
         <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none min-w-0 no-print`}>
           <div className="p-2 sm:p-4 border-b border-surface-200 flex gap-1.5 sm:gap-2 overflow-x-auto bg-white flex-shrink-0 scrollbar-hide">
@@ -1164,12 +1164,12 @@ export default function CashierDashboard() {
                 <button key={order.id} onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
                   className={`w-full text-left glass-card p-3 sm:p-4 transition-all animate-fade-in-up hover:-translate-y-1 ${selectedOrder?.id === order.id ? 'border-primary-500 shadow-md shadow-primary-500/10 ring-1 ring-primary-500/50' : ''}`}
                   style={{ animationDelay: `${idx * 0.05}s` }}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
+                  <div className="flex min-w-0 justify-between items-start gap-2 mb-2">
+                    <div className="min-w-0">
                       <h3 className="font-heading font-bold text-base sm:text-lg text-surface-900">{order.orderNumber}</h3>
-                      <p className="text-xs sm:text-sm text-surface-500">{order.customerName}</p>
+                      <p className="truncate text-xs sm:text-sm text-surface-500">{order.customerName}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="max-w-[55%] flex-shrink-0 text-right">
                       <div className="flex items-center gap-1 justify-end flex-wrap mb-1">
                         <span className={`badge text-[10px] sm:text-xs ${order.orderType === 'dine_in' ? 'bg-emerald-100 text-emerald-700' : order.orderType === 'delivery' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
                           {order.orderType === 'dine_in' ? 'Dine In' : order.orderType === 'delivery' ? (order.status === 'on_the_way' ? 'Out for Delivery' : 'Delivery') : 'Take Out'}
@@ -1214,8 +1214,8 @@ export default function CashierDashboard() {
           ) : (
             <div className="flex-1 flex flex-col overflow-hidden animate-slide-in">
               {/* Order Header */}
-              <div className="p-6 border-b border-surface-200 bg-surface-50 flex-shrink-0 flex justify-between items-start no-print">
-                <div>
+              <div className="flex flex-shrink-0 items-start justify-between gap-3 border-b border-surface-200 bg-surface-50 p-4 sm:p-6 no-print">
+                <div className="min-w-0">
                   <h2 className="font-heading text-2xl font-bold text-surface-900 mb-1">{selectedOrder.orderNumber}</h2>
                   <p className="text-surface-500">{selectedOrder.customerName} • {formatDate(selectedOrder.createdAt)}</p>
                 </div>
@@ -1228,7 +1228,7 @@ export default function CashierDashboard() {
               <div className="flex-1 overflow-y-auto flex flex-col no-print">
                 {/* Delivery Info Banner */}
                 {selectedOrder.orderType === 'delivery' && (
-                  <div className="mx-6 mt-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl flex flex-col gap-3 flex-shrink-0 animate-fade-in shadow-sm">
+                  <div className="mx-3 mt-4 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 sm:mx-6 animate-fade-in shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0"><MapPin className="w-5 h-5 text-blue-600" /></div>
                       <div>
@@ -1251,12 +1251,12 @@ export default function CashierDashboard() {
 
                 {/* Payment Reference Banner */}
                 {selectedOrder.paymentReference && (
-                  <div className="mx-6 mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-between flex-shrink-0 animate-fade-in shadow-sm">
+                  <div className="mx-3 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-100 bg-blue-50 p-3 sm:mx-6 animate-fade-in shadow-sm">
                     <div className="flex items-center gap-2">
                        <Smartphone className="w-4 h-4 text-blue-600" />
                        <span className="text-[10px] font-black uppercase tracking-widest text-blue-500">Customer Payment Ref</span>
                     </div>
-                    <span className="text-sm font-mono font-black text-blue-700 bg-white px-3 py-1 rounded-lg border border-blue-200">{selectedOrder.paymentReference}</span>
+                    <span className="max-w-full break-all rounded-lg border border-blue-200 bg-white px-3 py-1 text-sm font-mono font-black text-blue-700">{selectedOrder.paymentReference}</span>
                   </div>
                 )}
                 {/* Promo detection (notes may include "(Promo: CODE)") */}
@@ -1268,18 +1268,18 @@ export default function CashierDashboard() {
                     <>
                       {/* Promo Code Banner (separate from global notes) */}
                       {promoMatch && (
-                        <div className="mx-6 mt-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-between flex-shrink-0 animate-fade-in shadow-sm">
+                        <div className="mx-3 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-100 bg-emerald-50 p-3 sm:mx-6 animate-fade-in shadow-sm">
                           <div className="flex items-center gap-2">
                             <Tag className="w-4 h-4 text-emerald-600" />
                             <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Promo Code</span>
                           </div>
-                          <span className="text-sm font-mono font-black text-emerald-800 bg-white px-3 py-1 rounded-lg border border-emerald-200">{promoMatch[1].trim()}</span>
+                          <span className="max-w-full break-all rounded-lg border border-emerald-200 bg-white px-3 py-1 text-sm font-mono font-black text-emerald-800">{promoMatch[1].trim()}</span>
                         </div>
                       )}
 
                       {/* Only show global order note when it's not just a promo marker */}
                       {!promoOnly && selectedOrder.notes && (
-                        <div className="mx-6 mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 flex-shrink-0 animate-fade-in shadow-sm">
+                        <div className="mx-3 mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:mx-6 animate-fade-in shadow-sm">
                           <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0"><AlertTriangle className="w-5 h-5 text-amber-600" /></div>
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 leading-none mb-1">Global Order Note</p>
@@ -1303,7 +1303,7 @@ export default function CashierDashboard() {
                 )}
 
                 {/* Order Items Area */}
-                <div className="p-6 border-b border-surface-200 bg-white flex-shrink-0">
+                <div className="flex-shrink-0 border-b border-surface-200 bg-white p-4 sm:p-6">
                   <h3 className="font-semibold text-surface-700 mb-4">Order Items</h3>
                   <div className="space-y-3">
                     {selectedOrder.items?.map(item => (
@@ -1331,7 +1331,7 @@ export default function CashierDashboard() {
                 </div>
 
                 {/* Cash Register / Payment Section */}
-                <div className="p-6 bg-surface-50 flex-1">
+                <div className="flex-1 bg-surface-50 p-4 sm:p-6">
                   {selectedOrder.status === 'pending' || selectedOrder.paymentStatus === 'unpaid' ? (
                     <div className="space-y-4">
                       {/* Payment Calculator */}
@@ -1429,7 +1429,7 @@ export default function CashierDashboard() {
                         <>
                           <div className="space-y-3">
                             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Payment Method</label>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
                               <button
                                 type="button"
                                 onClick={() => setPaymentData(p => ({ ...p, method: 'cash' }))}

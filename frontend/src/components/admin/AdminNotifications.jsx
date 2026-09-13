@@ -87,8 +87,8 @@ export default function AdminNotifications({ userId, onNavigate, onPendingBookin
       {open && (
         <>
           <button type="button" aria-label="Close notifications" className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-12 z-50 w-[min(90vw,380px)] overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-surface-100 px-4 py-3">
+          <div className="fixed inset-x-2 top-16 z-50 w-auto overflow-hidden rounded-2xl border border-surface-200 bg-white shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[min(90vw,380px)]">
+            <div className="flex items-start justify-between gap-3 border-b border-surface-100 px-4 py-3">
               <div>
                 <h3 className="font-heading font-black text-surface-900">Notifications</h3>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-surface-400">Admin alerts</p>
@@ -114,7 +114,7 @@ export default function AdminNotifications({ userId, onNavigate, onPendingBookin
                     type="button"
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`flex w-full items-start gap-3 border-b border-surface-50 px-4 py-3 text-left transition-colors hover:bg-surface-50 ${isRead ? 'opacity-60' : ''}`}
+                    className={`flex w-full min-w-0 items-start gap-3 border-b border-surface-50 px-4 py-3 text-left transition-colors hover:bg-surface-50 ${isRead ? 'opacity-60' : ''}`}
                   >
                     <span className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-100">
                       <img
@@ -126,10 +126,10 @@ export default function AdminNotifications({ userId, onNavigate, onPendingBookin
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-black text-surface-900">{notification.title}</span>
+                        <span className="min-w-0 break-words text-sm font-black text-surface-900">{notification.title}</span>
                         {!isRead && <span className="h-2 w-2 flex-shrink-0 rounded-full bg-primary-500" />}
                       </span>
-                      <span className="mt-0.5 block text-xs leading-relaxed text-surface-600">{notification.message}</span>
+                      <span className="mt-0.5 block break-words text-xs leading-relaxed text-surface-600">{notification.message}</span>
                       <span className="mt-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-surface-400">
                         {formatTime(notification.timestamp)} <ArrowUpRight className="h-3 w-3" />
                       </span>

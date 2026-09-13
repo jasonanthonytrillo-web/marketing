@@ -249,24 +249,24 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <main className="relative z-40 flex-1 flex flex-col min-h-0 overflow-hidden lg:h-screen">
-        <header className="relative z-50 flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-surface-200 bg-white/80 backdrop-blur-xl flex-shrink-0">
-          <div className="flex items-center gap-4">
+      <main className="relative z-40 flex min-w-0 flex-1 flex-col min-h-0 overflow-hidden lg:h-screen">
+        <header className="relative z-50 flex min-w-0 items-center justify-between gap-2 px-3 py-3 md:px-6 md:py-4 border-b border-surface-200 bg-white/80 backdrop-blur-xl flex-shrink-0">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
             <button
               onClick={() => setShowDrawer(!showDrawer)}
               className="lg:hidden p-2 hover:bg-surface-100 rounded-lg transition-colors text-surface-900"
             >
               <Menu className="w-6 h-6" />
             </button>
-            <div>
-              <h2 className="font-heading text-lg md:text-xl font-black text-surface-900 leading-tight">Admin Dashboard</h2>
-              <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.25em] text-surface-500 mt-1">
+            <div className="min-w-0">
+              <h2 className="truncate font-heading text-lg md:text-xl font-black text-surface-900 leading-tight">Admin Dashboard</h2>
+              <p className="truncate text-[9px] sm:text-[10px] md:text-[11px] font-bold uppercase tracking-[0.18em] sm:tracking-[0.25em] text-surface-500 mt-1">
                 Hometown Brew Control Center
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-bold text-surface-900">{user?.name}</p>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-surface-500">{user?.role}</p>
@@ -282,7 +282,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <div className="relative z-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <div className="relative z-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
           {activeTab === 'overview' && summary && (
             <div className="animate-fade-in w-full max-w-[1400px] mx-auto space-y-6 sm:space-y-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
