@@ -473,7 +473,7 @@ export default function CashierMenuPOS({
   };
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-surface-100 relative">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-100 md:flex-row">
       {(isOffline || pendingSyncCount > 0 || syncing) && (
         <div className={`absolute top-2 left-1/2 -translate-x-1/2 z-30 px-3 py-1.5 rounded-full text-[11px] font-black shadow-lg ${isOffline ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'}`}>
           {isOffline ? 'Offline mode: sales are saved on this device' : syncing ? 'Syncing offline sales...' : `${pendingSyncCount} sale${pendingSyncCount === 1 ? '' : 's'} waiting to sync`}
@@ -481,7 +481,7 @@ export default function CashierMenuPOS({
       )}
       
       {/* LEFT PANEL: Fast Cashier Menu Grid */}
-      <div className="flex-1 flex flex-col min-w-0 bg-surface-50 border-r border-surface-200 overflow-hidden no-print">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r border-surface-200 bg-surface-50 no-print">
         
         {/* Streamlined Single-Row Toolbar with Categories & Search */}
         <div className="px-3 sm:px-4 py-2.5 bg-white border-b border-surface-200 flex items-center justify-between gap-3 flex-shrink-0 shadow-xs">
@@ -535,7 +535,7 @@ export default function CashierMenuPOS({
         </div>
 
         {/* Product Grid */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-[62vh] sm:p-4 sm:pb-4">
           {loading ? (
             <div className="h-64 flex flex-col items-center justify-center text-surface-400 gap-3">
               <RefreshCw className="w-8 h-8 animate-spin text-primary-600" />
@@ -609,10 +609,10 @@ export default function CashierMenuPOS({
       </div>
 
       {/* RIGHT PANEL: Live Order & Fast Cashier Checkout */}
-      <div className="w-full md:w-[330px] lg:w-[370px] xl:w-[410px] flex flex-col bg-white border-l border-surface-200 flex-shrink-0 z-10 shadow-lg overflow-hidden no-print">
+      <div className="fixed inset-x-0 bottom-0 z-40 flex h-[60vh] max-h-[560px] w-full flex-col overflow-hidden rounded-t-2xl border border-surface-200 bg-white shadow-[0_-10px_30px_rgba(15,23,42,0.18)] no-print md:static md:z-10 md:h-auto md:max-h-none md:w-[330px] md:rounded-none md:border-l md:border-t-0 md:shadow-lg lg:w-[370px] xl:w-[410px]">
         
         {/* Cart Header */}
-        <div className="px-3.5 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white flex items-center justify-between flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-r from-primary-600 to-primary-700 px-3.5 py-2.5 text-white">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-white/90" />
             <h3 className="font-heading font-black text-sm text-white">Counter Order</h3>
