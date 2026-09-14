@@ -697,7 +697,7 @@ export default function SettingsTab() {
           <button 
             type="submit" 
             disabled={saving}
-            className="btn-primary px-12 py-5 text-lg font-black uppercase tracking-widest rounded-[24px] shadow-2xl shadow-primary-500/30"
+            className="btn-primary px-6 sm:px-10 py-3 sm:py-4 text-sm sm:text-base font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary-500/30"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getFeedbackStats } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
 import { useSocket } from '../../context/SocketContext';
-import { Star, MessageSquare, SmilePlus, Smile, Frown, Inbox } from 'lucide-react';
+import { Star, SmilePlus, Smile, Frown, Inbox } from 'lucide-react';
 
 export default function FeedbackTab() {
   const [data, setData] = useState(null);
@@ -50,7 +50,7 @@ export default function FeedbackTab() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-surface-200 text-center flex flex-col items-center">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-surface-400 mb-2">Average Rating</p>
           <p className="text-6xl font-black text-surface-900 mb-2">{Number(data?.averageRating || 0).toFixed(1)}</p>
@@ -66,11 +66,6 @@ export default function FeedbackTab() {
           <p className="text-5xl font-black text-surface-900">{data?.totalReviews || 0}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-primary-500 to-indigo-600 rounded-[2rem] p-8 shadow-xl text-white flex flex-col items-center justify-center text-center">
-          <div className="mb-3"><MessageSquare className="w-10 h-10" /></div>
-          <h4 className="font-black text-lg mb-1 uppercase tracking-tight">Customer Voice</h4>
-          <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Real-time Satisfaction</p>
-        </div>
       </div>
 
       {/* Recent Reviews List */}

@@ -79,21 +79,21 @@ export default function ExpensesTab() {
   return (
     <>
       <div className="animate-fade-in-up">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
           <div>
             <h2 className="font-heading text-2xl font-bold text-surface-900">Expense Tracking</h2>
             <p className="text-surface-500 text-sm">Monitor your operational costs and overheads.</p>
           </div>
           <button 
             onClick={() => setShowModal(true)}
-            className="btn-primary py-2.5 px-6 shadow-lg shadow-primary-500/20"
+            className="btn-primary w-full sm:w-auto py-2.5 px-6 shadow-lg shadow-primary-500/20"
           >
             + Add Expense
           </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-surface-200 overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-surface-50 border-b border-surface-200 text-xs font-bold text-surface-400 uppercase tracking-widest">
@@ -146,6 +146,39 @@ export default function ExpensesTab() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="sm:hidden divide-y divide-surface-100">
+            {expenses.length === 0 ? (
+              <div className="px-5 py-10 text-center text-sm font-bold text-surface-400">No expenses logged yet.</div>
+            ) : (
+              expenses.map(exp => (
+                <div key={exp.id} className="p-5 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-base font-black text-surface-900 break-words">{exp.name}</p>
+                      <p className="mt-1 text-xs font-medium text-surface-500">{formatDate(exp.date)}</p>
+                    </div>
+                    <p className="flex-shrink-0 text-base font-black text-red-600">{formatCurrency(exp.amount)}</p>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="max-w-[75%] truncate rounded-lg bg-surface-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-surface-600">
+                      {exp.categoryRelation?.name || exp.category || 'General'}
+                    </span>
+                    <div className="relative flex-shrink-0" ref={openMenuId === exp.id ? menuRef : null}>
+                      <button onClick={() => setOpenMenuId(openMenuId === exp.id ? null : exp.id)} className="rounded-xl border border-surface-200 p-2 text-surface-400 hover:bg-surface-50 hover:text-surface-700">
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      {openMenuId === exp.id && (
+                        <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-surface-200 bg-white shadow-xl">
+                          <button onClick={() => { setOpenMenuId(null); handleDelete(exp.id); }} className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /> Delete</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {exp.notes && <p className="break-words rounded-xl bg-surface-50 p-3 text-xs italic text-surface-500">{exp.notes}</p>}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
