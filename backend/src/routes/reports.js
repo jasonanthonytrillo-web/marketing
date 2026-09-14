@@ -773,8 +773,15 @@ router.get('/export/bookings.xlsx', authenticate, authorize('admin'), async (req
 // GET /api/reports/export/sales.xlsx — Formatted Excel sales report
 router.get('/export/sales.xlsx', authenticate, authorize('admin'), async (req, res) => {
   try {
+    const { date } = req.query;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) {
+      return res.status(400).json({ success: false, message: 'date query param required (YYYY-MM-DD)' });
+    }
+
+    const start = new Date(`${date}T00:00:00.000Z`);
+    const end = new Date(`${date}T23:59:59.999Z`);
     const orders = await prisma.order.findMany({
-      where: { tenantId: req.tenantId, status: 'completed' },
+      where: { tenantId: req.tenantId, status: 'completed', createdAt: { gte: start, lte: end } },
       include: { items: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -818,7 +825,7 @@ router.get('/export/sales.xlsx', authenticate, authorize('admin'), async (req, r
 
     const buffer = await workbook.xlsx.writeBuffer();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.attachment(`Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    res.attachment(`Sales_Report_${date}.xlsx`);
     res.send(Buffer.from(buffer));
   } catch (error) {
     console.error(error);

@@ -216,7 +216,7 @@ export const validatePromo = (data) => api.post('/promos/validate', data);
 // Reports Export
 export const exportSalesCSV = () => api.get('/reports/export/sales', { responseType: 'blob' });
 export const exportInventoryCSV = () => api.get('/reports/export/inventory', { responseType: 'blob' });
-export const exportSalesExcel = () => api.get('/reports/export/sales.xlsx', { responseType: 'blob' });
+export const exportSalesExcel = (date) => api.get('/reports/export/sales.xlsx', { params: { date }, responseType: 'blob' });
 export const exportInventoryExcel = (type = 'products') => api.get('/reports/export/inventory.xlsx', { params: { type }, responseType: 'blob' });
 export const exportSuppliersExcel = () => api.get('/reports/export/suppliers.xlsx', { responseType: 'blob' });
 export const exportShiftsExcel = () => api.get('/reports/export/shifts.xlsx', { responseType: 'blob' });

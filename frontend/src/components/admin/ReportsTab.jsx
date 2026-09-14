@@ -215,9 +215,13 @@ export default function ReportsTab() {
                     <td className="py-4 text-right font-bold text-blue-600">{formatCurrency(category.sales)}</td>
                     <td className="py-4 text-right font-bold text-red-500">-{formatCurrency(category.expenses)}</td>
                     <td className="py-4 pl-4">
-                      <div className="space-y-1.5">
-                        <div className="h-2 rounded-full bg-blue-100 overflow-hidden" title={`Sales: ${formatCurrency(category.sales)}`}><div className="h-full rounded-full bg-blue-500" style={{ width: `${(category.sales / maxValue) * 100}%` }} /></div>
-                        <div className="h-2 rounded-full bg-red-100 overflow-hidden" title={`Expenses: ${formatCurrency(category.expenses)}`}><div className="h-full rounded-full bg-red-400" style={{ width: `${(category.expenses / maxValue) * 100}%` }} /></div>
+                      <div className="space-y-2 min-w-[180px]">
+                        <div className="h-2.5 rounded-full border border-blue-200 bg-surface-100 overflow-hidden" title={`Sales: ${formatCurrency(category.sales)}`}>
+                          <div className="h-full rounded-full bg-blue-500" style={{ width: `${(category.sales / maxValue) * 100}%` }} />
+                        </div>
+                        <div className="h-2.5 rounded-full border border-red-200 bg-surface-100 overflow-hidden" title={`Expenses: ${formatCurrency(category.expenses)}`}>
+                          <div className="h-full rounded-full bg-red-400" style={{ width: `${(category.expenses / maxValue) * 100}%` }} />
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -243,11 +247,11 @@ export default function ReportsTab() {
             onClick={async () => {
               try {
                 const { exportSalesExcel } = await import('../../services/api');
-                const res = await exportSalesExcel();
+                const res = await exportSalesExcel(selectedDate);
                 const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+                a.download = `Sales_Report_${selectedDate}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
