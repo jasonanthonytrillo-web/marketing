@@ -19,3 +19,30 @@ export const downloadCsv = (filename, sections) => {
   link.remove();
   URL.revokeObjectURL(url);
 };
+
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;');
+
+export const downloadStyledExcel = (filename, sections) => {
+  const tables = sections.map(section => `
+    <h2>${escapeHtml(section.title || 'Report')}</h2>
+    <table>
+      <thead><tr>${(section.headers || []).map(header => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead>
+      <tbody>${(section.rows || []).map(row => `<tr>${row.map(value => `<td>${escapeHtml(value)}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>
+  `).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{font-family:Arial,sans-serif;color:#1e293b;padding:24px}h1{color:#075b12;margin:0 0 4px}h2{background:#075b12;color:#fff;padding:10px 12px;margin:22px 0 0;font-size:16px}table{border-collapse:collapse;width:100%;margin-bottom:20px}th{background:#e8f5e9;color:#075b12;font-weight:bold;text-align:left}th,td{border:1px solid #cbd5e1;padding:8px 10px}tr:nth-child(even) td{background:#f8fafc}
+  </style></head><body><h1>${escapeHtml(filename.replace(/\.xls$/i, ''))}</h1>${tables}</body></html>`;
+  const url = URL.createObjectURL(new Blob([html], { type: 'application/vnd.ms-excel' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};

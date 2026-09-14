@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../../services/api';
 import { Plus, Edit, Trash2, MoreVertical, Pencil } from 'lucide-react';
-import { downloadCsv } from '../../utils/csvExport';
+import { downloadStyledExcel } from '../../utils/csvExport';
 
 export default function SuppliersTab() {
   const [suppliers, setSuppliers] = useState([]);
@@ -95,14 +95,14 @@ export default function SuppliersTab() {
         </div>
         <div className="flex gap-3">
           <button 
-            onClick={() => downloadCsv(`Suppliers_List_${new Date().toISOString().split('T')[0]}.csv`, [{
+            onClick={() => downloadStyledExcel(`Suppliers_List_${new Date().toISOString().split('T')[0]}.xls`, [{
               title: 'Supplier Directory',
               headers: ['Supplier Name', 'Contact Person', 'Email', 'Phone', 'Address'],
               rows: suppliers.map(s => [s.name, s.contactPerson || '', s.email || '', s.phone || '', s.address || ''])
             }])}
             className="px-4 py-2 bg-white border border-surface-200 hover:border-primary-500 hover:text-primary-600 text-surface-600 font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-xs group"
           >
-            Export List
+            Export Excel
           </button>
           <button 
             onClick={() => handleOpenModal()}

@@ -182,7 +182,7 @@ export default function ReportsTab() {
                 const maxValue = Math.max(category.sales, category.expenses, 1);
                 return (
                   <tr key={category.categoryId} className="hover:bg-surface-50/60 transition-colors">
-                    <td className="py-4 font-bold text-surface-900"><span className="mr-2">{category.icon || '•'}</span>{category.name}</td>
+                    <td className="py-4 font-bold text-surface-900">{category.name}</td>
                     <td className="py-4 text-right text-sm font-bold text-surface-500">{category.unitsSold.toLocaleString()}</td>
                     <td className="py-4 text-right font-bold text-blue-600">{formatCurrency(category.sales)}</td>
                     <td className="py-4 text-right font-bold text-red-500">-{formatCurrency(category.expenses)}</td>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAdminShifts, getStaff, getStaffPayroll, updateStaffPayroll } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
-import { downloadCsv } from '../../utils/csvExport';
+import { downloadStyledExcel } from '../../utils/csvExport';
 import { Timer, Search, Calendar, User, DollarSign, Clock, AlertTriangle, CheckCircle, RefreshCw, ArrowUpRight, ArrowDownRight, ShieldCheck, Wallet, Coins, ChefHat, Bike, CreditCard, Download } from 'lucide-react';
 
 const getPayrollPeriod = (dateValue = new Date()) => {
@@ -226,7 +226,7 @@ export default function ShiftsTab() {
           return [group.name, group.role, `${payrollPeriod.start.toLocaleDateString()} - ${payrollPeriod.end.toLocaleDateString()}`, gross.toFixed(2), deduction.toFixed(2), net.toFixed(2), payment && remaining > 0 ? `Additional Due (${remaining.toFixed(2)})` : payment ? 'Paid' : completedShifts.length ? 'Not Yet Paid' : 'No Shifts', ''];
         });
     if (rows.length === 0) return alert('No payroll records to export.');
-    downloadCsv(`Payroll_${showPaidSalary ? 'Paid_History' : 'Current_Period'}_${new Date().toISOString().slice(0, 10)}.csv`, [{
+    downloadStyledExcel(`Payroll_${showPaidSalary ? 'Paid_History' : 'Current_Period'}_${new Date().toISOString().slice(0, 10)}.xls`, [{
       title: showPaidSalary ? 'Paid Salary History' : 'Staff Salary Summary',
       headers,
       rows
@@ -269,7 +269,7 @@ export default function ShiftsTab() {
       ];
     });
 
-    downloadCsv(`Staff_Shifts_${new Date().toISOString().slice(0, 10)}.csv`, [{
+    downloadStyledExcel(`Staff_Shifts_${new Date().toISOString().slice(0, 10)}.xls`, [{
       title: 'Staff Shifts & Drawer',
       headers,
       rows
@@ -366,7 +366,7 @@ export default function ShiftsTab() {
                   <button type="button" onClick={() => setShowPaidSalary(false)} className={`rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider ${!showPaidSalary ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>To Pay</button>
                   <button type="button" onClick={openPaidSalary} className={`rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-wider ${showPaidSalary ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}>Paid Salary</button>
                 </div>
-                <button type="button" onClick={exportPayrollCSV} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50">Export CSV</button>
+                <button type="button" onClick={exportPayrollCSV} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50">Export Excel</button>
                 <button type="button" onClick={() => setShowPayrollSummary(false)} className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 text-xl leading-none">&times;</button>
               </div>
             </div>
@@ -491,7 +491,7 @@ export default function ShiftsTab() {
             className="w-full lg:w-auto justify-center px-3 sm:px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 disabled:opacity-40 disabled:pointer-events-none text-white rounded-2xl text-xs font-black shadow-sm transition-all flex items-center gap-2 whitespace-nowrap"
           >
             <Download className="w-4 h-4" />
-            Export CSV
+            Export Excel
           </button>
           <button
             onClick={loadShifts}

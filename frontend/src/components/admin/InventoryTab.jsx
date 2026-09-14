@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getInventory, restockProduct, getRawIngredients, createRawIngredient, updateRawIngredient, deleteRawIngredient } from '../../services/api';
 import { X, AlertTriangle, MoreVertical, Pencil, Trash2, Plus, CheckCircle } from 'lucide-react';
-import { downloadCsv } from '../../utils/csvExport';
+import { downloadStyledExcel } from '../../utils/csvExport';
 
 export default function InventoryTab() {
   const [inventory, setInventory] = useState([]);
@@ -145,7 +145,7 @@ export default function InventoryTab() {
               </button>
             )}
             <button
-              onClick={() => downloadCsv(`Inventory_Report_${new Date().toISOString().split('T')[0]}.csv`, [
+              onClick={() => downloadStyledExcel(`Inventory_Report_${new Date().toISOString().split('T')[0]}.xls`, [
                 {
                   title: 'Product Stock',
                   headers: ['Product', 'Category', 'Current Stock', 'Cost Price', 'Selling Price', 'Status'],
@@ -159,7 +159,7 @@ export default function InventoryTab() {
               ])}
               className="w-full justify-center px-4 py-2 bg-white border border-surface-200 hover:border-emerald-500 hover:text-emerald-600 text-surface-600 font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 text-xs group"
             >
-              Export CSV
+              Export Excel
             </button>
           </div>
         </div>
