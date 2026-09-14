@@ -110,8 +110,8 @@ export default function ReportsTab() {
               </div>
             </div>
 
-            {/* Product breakdown table */}
-            <div className="overflow-x-auto">
+            {/* Product breakdown table (desktop) */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="text-[10px] font-black text-surface-400 uppercase tracking-widest border-b border-surface-100">
@@ -143,6 +143,37 @@ export default function ReportsTab() {
                 </tbody>
               </table>
             </div>
+
+            {/* Product breakdown cards (mobile) */}
+            <div className="sm:hidden space-y-3">
+              {dateReport.products.map((p, i) => (
+                <div key={i} className="rounded-2xl border border-surface-100 bg-surface-50/50 p-3">
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className="w-7 h-7 shrink-0 bg-white rounded-lg flex items-center justify-center text-xs font-black text-surface-600 shadow-sm">
+                      {i + 1}
+                    </span>
+                    <p className="min-w-0 flex-1 font-bold text-surface-900 text-sm leading-5">{p.name}</p>
+                    <span className="shrink-0 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-black">
+                      {p.quantity} sold
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 pl-10">
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-wide text-surface-400">Revenue</p>
+                      <p className="text-xs font-bold text-surface-500">{formatCurrency(p.revenue)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-wide text-surface-400">Cost</p>
+                      <p className="text-xs font-bold text-red-400">{formatCurrency(p.cost)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-wide text-surface-400">Net profit</p>
+                      <p className="text-xs font-black text-emerald-600">{formatCurrency(p.profit)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-40 gap-3 text-surface-300">
@@ -170,10 +201,8 @@ export default function ReportsTab() {
             <thead>
               <tr className="text-[10px] font-black text-surface-400 uppercase tracking-widest border-b border-surface-100">
                 <th className="pb-3">Category</th>
-                <th className="pb-3 text-right">Units Sold</th>
                 <th className="pb-3 text-right">Sales</th>
                 <th className="pb-3 text-right">Expenses</th>
-                <th className="pb-3 text-right">Net</th>
                 <th className="pb-3 w-1/4">Sales / Expense</th>
               </tr>
             </thead>
@@ -183,12 +212,8 @@ export default function ReportsTab() {
                 return (
                   <tr key={category.categoryId} className="hover:bg-surface-50/60 transition-colors">
                     <td className="py-4 font-bold text-surface-900">{category.name}</td>
-                    <td className="py-4 text-right text-sm font-bold text-surface-500">{category.unitsSold.toLocaleString()}</td>
                     <td className="py-4 text-right font-bold text-blue-600">{formatCurrency(category.sales)}</td>
                     <td className="py-4 text-right font-bold text-red-500">-{formatCurrency(category.expenses)}</td>
-                    <td className={`py-4 text-right font-black ${category.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {category.profit < 0 ? '-' : ''}{formatCurrency(Math.abs(category.profit))}
-                    </td>
                     <td className="py-4 pl-4">
                       <div className="space-y-1.5">
                         <div className="h-2 rounded-full bg-blue-100 overflow-hidden" title={`Sales: ${formatCurrency(category.sales)}`}><div className="h-full rounded-full bg-blue-500" style={{ width: `${(category.sales / maxValue) * 100}%` }} /></div>

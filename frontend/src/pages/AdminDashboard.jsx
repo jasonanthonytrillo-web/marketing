@@ -365,12 +365,10 @@ export default function AdminDashboard() {
                           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-sm font-bold shadow-sm">{i+1}</div>
                           <div>
                             <span className="font-bold text-surface-700">{cat.name}</span>
-                            <p className="text-[10px] font-bold text-red-400 mt-0.5">Expenses: {formatCurrency(cat.expenses || 0)}</p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-primary-600 font-black">{formatCurrency(cat.sales || 0)}</p>
-                          <p className={`text-[10px] font-black ${cat.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>Net {formatCurrency(Math.abs(cat.profit || 0))}</p>
                         </div>
                       </div>
                     ))}
