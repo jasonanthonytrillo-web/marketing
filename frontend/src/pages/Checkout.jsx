@@ -515,8 +515,17 @@ export default function Checkout() {
 
 
         <div className="glass-card p-5 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-          <label className="block text-sm font-semibold text-surface-700 mb-2">{t('orderNotes')}</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} className="input-field h-20 resize-none text-sm" placeholder={t('notesPlaceholder')} />
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <label className="block text-sm font-semibold text-surface-700">{t('orderNotes')}</label>
+            <span className={`text-[10px] font-bold ${notes.length >= 150 ? 'text-red-600' : 'text-surface-400'}`}>{notes.length}/150</span>
+          </div>
+          <textarea
+            value={notes}
+            maxLength={150}
+            onChange={e => setNotes(e.target.value.slice(0, 150))}
+            className="input-field h-20 resize-none text-sm"
+            placeholder={t('notesPlaceholder')}
+          />
         </div>
 
         {/* Promo Code System */}

@@ -42,6 +42,10 @@ router.post('/', async (req, res) => {
   try {
     const { customerId, customerName, orderType, paymentMethod, items, notes, deliveryAddress, deliveryLat, deliveryLng, deliveryFee, paymentReference, promoCode, clientOrderId } = req.body;
 
+    if (typeof notes === 'string' && notes.length > 150) {
+      return res.status(400).json({ success: false, message: 'Order notes must be 150 characters or fewer.' });
+    }
+
     // RESTRICTION: Delivery orders must be paid first (no cash)
     if (orderType === 'delivery' && paymentMethod === 'cash') {
       return res.status(400).json({ success: false, message: 'Cash on Delivery is not allowed. Please choose an online payment method.' });
