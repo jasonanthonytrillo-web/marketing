@@ -3,6 +3,7 @@ import { Archive, Check, ChevronLeft, ChevronRight, Clock3, Download, ExternalLi
 import { deleteAdminBooking, getAdminBookings, updateAdminBookingStatus, requestAdminBookingPayment, updateAdminBookingPaymentStatus } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
 import { useSocket } from '../../context/SocketContext';
+import { downloadCsv } from '../../utils/csvExport';
 
 const bookingPaymentMethodLabel = (method) => ({ cash: 'Cash', gcash: 'GCash', maya: 'Maya' }[method] || 'GCash');
 
@@ -127,7 +128,6 @@ export default function PackageBookingsTab() {
       return;
     }
 
-    const escapeCsv = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
     const headers = [
       'Booking ID', 'Customer', 'Email', 'Phone', 'Package', 'Event Type',
       'Event Date and Time', 'Venue', 'Location Guide', 'Guests',
@@ -150,15 +150,11 @@ export default function PackageBookingsTab() {
       booking.status,
       booking.reviewedAt ? formatDate(booking.reviewedAt) : ''
     ]);
-    const csv = [headers, ...rows].map(row => row.map(escapeCsv).join(',')).join('\n');
-    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `accepted-bookings-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    downloadCsv(`Accepted_Bookings_${new Date().toISOString().slice(0, 10)}.csv`, [{
+      title: 'Accepted Package Bookings',
+      headers,
+      rows
+    }]);
   };
 
   if (loading) return <div className="p-8 text-center text-surface-500">Loading booking requests...</div>;

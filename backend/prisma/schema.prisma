@@ -94,6 +94,7 @@ model Category {
 
   tenant   Tenant?    @relation(fields: [tenantId], references: [id])
   products Product[]
+  expenses Expense[]
 }
 
 model Product {
@@ -322,6 +323,7 @@ model SystemSetting {
 model Expense {
   id          Int      @id @default(autoincrement())
   tenantId    Int      @default(1)
+  categoryId  Int?
   name        String
   amount      Float
   category    String   // e.g. Supplies, Utilities, Salary, Rent
@@ -330,6 +332,7 @@ model Expense {
   createdAt   DateTime @default(now())
 
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  categoryRelation Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 }
 
 model BetaApplication {

@@ -161,6 +161,72 @@ router.get('/bestsellers', authenticate, authorize('admin'), async (req, res) =>
   }
 });
 
+// GET /api/reports/category-profitability — Sales and expenses grouped by product category
+router.get('/category-profitability', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const days = Math.max(1, parseInt(req.query.days, 10) || 30);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    startDate.setHours(0, 0, 0, 0);
+
+    const [categories, salesItems, expenses] = await Promise.all([
+      prisma.category.findMany({
+        where: { tenantId: req.tenantId, active: true },
+        select: { id: true, name: true, icon: true },
+        orderBy: { sortOrder: 'asc' }
+      }),
+      prisma.orderItem.findMany({
+        where: {
+          order: { tenantId: req.tenantId, status: 'completed', createdAt: { gte: startDate } }
+        },
+        select: {
+          subtotal: true,
+          quantity: true,
+          product: { select: { categoryId: true } }
+        }
+      }),
+      prisma.expense.findMany({
+        where: { tenantId: req.tenantId, date: { gte: startDate }, categoryId: { not: null } },
+        select: { amount: true, categoryId: true }
+      })
+    ]);
+
+    const grouped = {};
+    categories.forEach(category => {
+      grouped[category.id] = {
+        categoryId: category.id,
+        name: category.name,
+        icon: category.icon,
+        unitsSold: 0,
+        sales: 0,
+        expenses: 0,
+        profit: 0
+      };
+    });
+
+    salesItems.forEach(item => {
+      const categoryId = item.product?.categoryId;
+      if (!grouped[categoryId]) return;
+      grouped[categoryId].unitsSold += item.quantity;
+      grouped[categoryId].sales += item.subtotal;
+    });
+
+    expenses.forEach(expense => {
+      if (grouped[expense.categoryId]) grouped[expense.categoryId].expenses += expense.amount;
+    });
+
+    const data = Object.values(grouped).map(row => ({
+      ...row,
+      profit: row.sales - row.expenses
+    }));
+
+    res.json({ success: true, data: { days, categories: data } });
+  } catch (error) {
+    console.error('Category profitability error:', error);
+    res.status(500).json({ success: false, message: 'Failed to load category profitability.' });
+  }
+});
+
 // GET /api/reports/summary
 router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
   try {

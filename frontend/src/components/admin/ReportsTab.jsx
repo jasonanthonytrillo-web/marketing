@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { getDailyReport, getBestsellers, getKitchenTimes, getForecasting, getSalesByDate } from '../../services/api';
+import { getDailyReport, getBestsellers, getKitchenTimes, getForecasting, getSalesByDate, getCategoryProfitability } from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
-import { Sparkles, AlertTriangle, LineChart, CalendarDays, Trophy, ChefHat, Search, ShoppingBag, Package } from 'lucide-react';
+import { Sparkles, AlertTriangle, LineChart, CalendarDays, Trophy, ChefHat, Search, ShoppingBag, Package, BarChart3 } from 'lucide-react';
 
 export default function ReportsTab() {
   const [dailyData, setDailyData] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
   const [kitchenData, setKitchenData] = useState(null);
   const [forecast, setForecast] = useState(null);
+  const [categoryReport, setCategoryReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Daily Sales by Date state
@@ -27,16 +28,18 @@ export default function ReportsTab() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [dailyRes, bestRes, kitchenRes, forecastRes] = await Promise.all([
+      const [dailyRes, bestRes, kitchenRes, forecastRes, categoryRes] = await Promise.all([
         getDailyReport(7),
         getBestsellers(),
         getKitchenTimes(),
-        getForecasting()
+        getForecasting(),
+        getCategoryProfitability(30)
       ]);
       setDailyData(dailyRes.data.data);
       setBestsellers(bestRes.data.data);
       setKitchenData(kitchenRes.data.data);
       setForecast(forecastRes.data.data);
+      setCategoryReport(categoryRes.data.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -150,6 +153,61 @@ export default function ReportsTab() {
       </div>
 
       {/* ── Header for rest of analytics ──────────────────────── */}
+      {/* Category profitability */}
+      <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-surface-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div>
+            <h2 className="font-heading text-xl font-bold text-surface-900 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary-500" /> Category Sales vs Expenses
+            </h2>
+            <p className="text-surface-400 text-sm mt-0.5">Compare revenue and assigned expenses for the last {categoryReport?.days || 30} days.</p>
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-surface-400">Profit = Sales − Expenses</span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[680px] text-left border-collapse">
+            <thead>
+              <tr className="text-[10px] font-black text-surface-400 uppercase tracking-widest border-b border-surface-100">
+                <th className="pb-3">Category</th>
+                <th className="pb-3 text-right">Units Sold</th>
+                <th className="pb-3 text-right">Sales</th>
+                <th className="pb-3 text-right">Expenses</th>
+                <th className="pb-3 text-right">Net</th>
+                <th className="pb-3 w-1/4">Sales / Expense</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-50">
+              {(categoryReport?.categories || []).map(category => {
+                const maxValue = Math.max(category.sales, category.expenses, 1);
+                return (
+                  <tr key={category.categoryId} className="hover:bg-surface-50/60 transition-colors">
+                    <td className="py-4 font-bold text-surface-900"><span className="mr-2">{category.icon || '•'}</span>{category.name}</td>
+                    <td className="py-4 text-right text-sm font-bold text-surface-500">{category.unitsSold.toLocaleString()}</td>
+                    <td className="py-4 text-right font-bold text-blue-600">{formatCurrency(category.sales)}</td>
+                    <td className="py-4 text-right font-bold text-red-500">-{formatCurrency(category.expenses)}</td>
+                    <td className={`py-4 text-right font-black ${category.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {category.profit < 0 ? '-' : ''}{formatCurrency(Math.abs(category.profit))}
+                    </td>
+                    <td className="py-4 pl-4">
+                      <div className="space-y-1.5">
+                        <div className="h-2 rounded-full bg-blue-100 overflow-hidden" title={`Sales: ${formatCurrency(category.sales)}`}><div className="h-full rounded-full bg-blue-500" style={{ width: `${(category.sales / maxValue) * 100}%` }} /></div>
+                        <div className="h-2 rounded-full bg-red-100 overflow-hidden" title={`Expenses: ${formatCurrency(category.expenses)}`}><div className="h-full rounded-full bg-red-400" style={{ width: `${(category.expenses / maxValue) * 100}%` }} /></div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {(!categoryReport || categoryReport.categories.length === 0) && <p className="py-8 text-center text-sm font-bold text-surface-400">No category data available yet.</p>}
+        <div className="flex items-center justify-end gap-4 mt-4 text-[10px] font-black uppercase tracking-widest text-surface-400">
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Sales</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-400" /> Expenses</span>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h2 className="font-heading text-2xl font-bold text-surface-900">Advanced Analytics</h2>

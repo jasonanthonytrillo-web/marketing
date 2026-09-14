@@ -1,19 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../../services/api';
+import api, { getCategories } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { Trash2, X, MoreVertical } from 'lucide-react';
 
 export default function ExpensesTab() {
   const [expenses, setExpenses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ name: '', amount: '', category: 'Supplies', date: new Date().toISOString().split('T')[0], notes: '' });
+  const [formData, setFormData] = useState({ name: '', amount: '', category: 'General', categoryId: '', date: new Date().toISOString().split('T')[0], notes: '' });
   const [saving, setSaving] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
     loadExpenses();
+    loadCategories();
   }, []);
 
   useEffect(() => {
@@ -38,13 +40,22 @@ export default function ExpensesTab() {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const res = await getCategories();
+      setCategories(res.data.data || []);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       await api.post('/admin/expenses', formData);
       setShowModal(false);
-      setFormData({ name: '', amount: '', category: 'Supplies', date: new Date().toISOString().split('T')[0], notes: '' });
+      setFormData({ name: '', amount: '', category: 'General', categoryId: '', date: new Date().toISOString().split('T')[0], notes: '' });
       loadExpenses();
     } catch (error) {
       alert('Failed to add expense');
@@ -99,7 +110,7 @@ export default function ExpensesTab() {
                     <td className="p-4 text-surface-500">{formatDate(exp.date)}</td>
                     <td className="p-4">
                       <span className="px-2 py-1 bg-surface-100 text-surface-600 rounded-lg text-[10px] font-bold uppercase tracking-widest">
-                        {exp.category}
+                        {exp.categoryRelation?.name || exp.category || 'General'}
                       </span>
                     </td>
                     <td className="p-4">
@@ -162,16 +173,18 @@ export default function ExpensesTab() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-black text-surface-400 uppercase tracking-widest mb-1.5">Category</label>
-                <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="input-field w-full">
-                  <option>Supplies</option>
-                  <option>Utilities</option>
-                  <option>Rent</option>
-                  <option>Salary</option>
-                  <option>Marketing</option>
-                  <option>Maintenance</option>
-                  <option>Other</option>
+                <label className="block text-xs font-black text-surface-400 uppercase tracking-widest mb-1.5">Sales Category</label>
+                <select
+                  value={formData.categoryId}
+                  onChange={e => setFormData({ ...formData, categoryId: e.target.value, category: e.target.value ? (categories.find(c => String(c.id) === e.target.value)?.name || 'General') : 'General' })}
+                  className="input-field w-full"
+                >
+                  <option value="">General / Overhead (not tied to sales)</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>{category.icon ? `${category.icon} ` : ''}{category.name}</option>
+                  ))}
                 </select>
+                <p className="text-[11px] text-surface-400 mt-1.5">Choose the product category this expense supports so it appears in category profitability.</p>
               </div>
               <div>
                 <label className="block text-xs font-black text-surface-400 uppercase tracking-widest mb-1.5">Notes (Optional)</label>

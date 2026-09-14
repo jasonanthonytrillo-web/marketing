@@ -588,6 +588,7 @@ router.get('/expenses', authenticate, authorize('admin'), async (req, res) => {
   try {
     const expenses = await prisma.expense.findMany({
       where: { tenantId: req.tenantId },
+      include: { categoryRelation: { select: { id: true, name: true, icon: true } } },
       orderBy: { date: 'desc' }
     });
     res.json({ success: true, data: expenses });
@@ -598,10 +599,12 @@ router.get('/expenses', authenticate, authorize('admin'), async (req, res) => {
 
 router.post('/expenses', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { name, amount, category, date, notes } = req.body;
+    const { name, amount, category, categoryId, date, notes } = req.body;
+    const parsedCategoryId = categoryId ? parseInt(categoryId, 10) : null;
     const expense = await prisma.expense.create({
       data: {
         tenantId: req.tenantId,
+        categoryId: parsedCategoryId,
         name,
         amount: parseFloat(amount),
         category,

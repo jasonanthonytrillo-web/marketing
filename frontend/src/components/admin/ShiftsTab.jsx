@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAdminShifts, getStaff, getStaffPayroll, updateStaffPayroll } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import { downloadCsv } from '../../utils/csvExport';
 import { Timer, Search, Calendar, User, DollarSign, Clock, AlertTriangle, CheckCircle, RefreshCw, ArrowUpRight, ArrowDownRight, ShieldCheck, Wallet, Coins, ChefHat, Bike, CreditCard, Download } from 'lucide-react';
 
 const getPayrollPeriod = (dateValue = new Date()) => {
@@ -203,10 +204,6 @@ export default function ShiftsTab() {
   });
 
   const exportPayrollCSV = () => {
-    const escapeCSV = (value) => {
-      const text = value === null || value === undefined ? '' : String(value);
-      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-    };
     const headers = ['Staff Name', 'Role', 'Pay Period', 'Gross Salary', 'Deduction', 'Net Pay', 'Status', 'Payment Date'];
     const rows = showPaidSalary
       ? paidSalaryRecords.map(record => [
@@ -229,28 +226,15 @@ export default function ShiftsTab() {
           return [group.name, group.role, `${payrollPeriod.start.toLocaleDateString()} - ${payrollPeriod.end.toLocaleDateString()}`, gross.toFixed(2), deduction.toFixed(2), net.toFixed(2), payment && remaining > 0 ? `Additional Due (${remaining.toFixed(2)})` : payment ? 'Paid' : completedShifts.length ? 'Not Yet Paid' : 'No Shifts', ''];
         });
     if (rows.length === 0) return alert('No payroll records to export.');
-    const csv = [headers, ...rows].map(row => row.map(escapeCSV).join(',')).join('\n');
-    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `payroll-${showPaidSalary ? 'paid-history' : 'current-period'}-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadCsv(`Payroll_${showPaidSalary ? 'Paid_History' : 'Current_Period'}_${new Date().toISOString().slice(0, 10)}.csv`, [{
+      title: showPaidSalary ? 'Paid Salary History' : 'Staff Salary Summary',
+      headers,
+      rows
+    }]);
   };
 
   const exportCSV = () => {
     if (filteredShifts.length === 0) return alert('No shift records to export.');
-
-    const escapeCSV = (val) => {
-      if (val === null || val === undefined) return '';
-      const str = String(val);
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
 
     const headers = ['Staff Name', 'Email', 'Role', 'Status', 'Time In', 'Time Out', 'Duration', 'Hours Worked', 'Hourly Rate', 'Est. Salary', 'Opening Float', 'Cash Sales', 'Online Sales', 'Total Sales', 'Orders', 'Expected Drawer', 'Counted Ending', 'Variance', 'Notes'];
 
@@ -282,20 +266,14 @@ export default function ShiftsTab() {
         s.endingCash ?? '',
         s.cashDifference ?? '',
         s.notes || ''
-      ].map(escapeCSV).join(',');
+      ];
     });
 
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const dateStr = new Date().toISOString().slice(0, 10);
-    link.download = `staff-shifts-${dateStr}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadCsv(`Staff_Shifts_${new Date().toISOString().slice(0, 10)}.csv`, [{
+      title: 'Staff Shifts & Drawer',
+      headers,
+      rows
+    }]);
   };
 
   // Calculate total salary payout
