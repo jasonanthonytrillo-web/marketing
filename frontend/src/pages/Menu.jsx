@@ -862,7 +862,7 @@ export default function Menu() {
           <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
 
             {/* Modal Header Image */}
-            <div className="w-full h-48 sm:h-72 md:h-80 bg-surface-50 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
+            <div className="w-full h-64 sm:h-72 md:h-80 bg-surface-50 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
               <img
                 src={getOptimizedImageUrl((selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image)}
                 className="w-full h-full object-cover relative z-10 transition-all duration-700"
@@ -889,7 +889,7 @@ export default function Menu() {
               </button>
             </div>
 
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 scrollbar-hide">
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 scrollbar-hide">
               {/* Product Title */}
               <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-black text-surface-900 mb-2 leading-tight" style={{ color: brandingColor }}>
                 {selectedProduct.name}
@@ -1025,8 +1025,8 @@ export default function Menu() {
                 </div>
               ) : (
                 <>
-                  <p className="text-surface-500 text-xs sm:text-sm mb-4 sm:mb-6">{selectedProduct.description}</p>
-                  <div className="flex items-center gap-4 mb-6 sm:mb-8">
+                  <p className="text-surface-500 text-xs sm:text-sm mb-5 sm:mb-6">{selectedProduct.description}</p>
+                  <div className="flex items-center gap-4 mb-8 sm:mb-8">
                     <p className="font-heading text-2xl sm:text-3xl font-bold" style={{ color: brandingColor }}>
                       ₱{(() => {
                         if (addOpts.size && selectedProduct.sizes && Array.isArray(selectedProduct.sizes)) {
@@ -1111,7 +1111,7 @@ export default function Menu() {
                   <div className="flex gap-4">
                     <button
                       onClick={() => handleAddToCart(selectedProduct)}
-                      className="flex-1 py-3 sm:py-4 rounded-2xl text-sm sm:text-base font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 py-4 sm:py-4 rounded-2xl text-sm sm:text-base font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: brandingColor }}
                       disabled={!selectedProduct.available || branding?.storeClosed}
                     >
