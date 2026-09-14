@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getAdminShifts, getStaff, getStaffPayroll, updateStaffPayroll } from '../../services/api';
+import { getAdminShifts, getStaff, getStaffPayroll, updateStaffPayroll, exportShiftsExcel, exportPayrollExcel } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/helpers';
-import { downloadStyledExcel } from '../../utils/csvExport';
+import { downloadBlob } from '../../utils/csvExport';
 import { Timer, Search, Calendar, User, DollarSign, Clock, AlertTriangle, CheckCircle, RefreshCw, ArrowUpRight, ArrowDownRight, ShieldCheck, Wallet, Coins, ChefHat, Bike, CreditCard, Download } from 'lucide-react';
 
 const getPayrollPeriod = (dateValue = new Date()) => {
@@ -226,11 +226,10 @@ export default function ShiftsTab() {
           return [group.name, group.role, `${payrollPeriod.start.toLocaleDateString()} - ${payrollPeriod.end.toLocaleDateString()}`, gross.toFixed(2), deduction.toFixed(2), net.toFixed(2), payment && remaining > 0 ? `Additional Due (${remaining.toFixed(2)})` : payment ? 'Paid' : completedShifts.length ? 'Not Yet Paid' : 'No Shifts', ''];
         });
     if (rows.length === 0) return alert('No payroll records to export.');
-    downloadStyledExcel(`Payroll_${showPaidSalary ? 'Paid_History' : 'Current_Period'}_${new Date().toISOString().slice(0, 10)}.xls`, [{
-      title: showPaidSalary ? 'Paid Salary History' : 'Staff Salary Summary',
-      headers,
-      rows
-    }]);
+    exportPayrollExcel().then(response => downloadBlob(`Payroll_History_${new Date().toISOString().slice(0, 10)}.xlsx`, response)).catch(error => {
+      console.error(error);
+      alert('Failed to export payroll. Please try again.');
+    });
   };
 
   const exportCSV = () => {
@@ -269,11 +268,10 @@ export default function ShiftsTab() {
       ];
     });
 
-    downloadStyledExcel(`Staff_Shifts_${new Date().toISOString().slice(0, 10)}.xls`, [{
-      title: 'Staff Shifts & Drawer',
-      headers,
-      rows
-    }]);
+    exportShiftsExcel().then(response => downloadBlob(`Staff_Shifts_${new Date().toISOString().slice(0, 10)}.xlsx`, response)).catch(error => {
+      console.error(error);
+      alert('Failed to export shifts. Please try again.');
+    });
   };
 
   // Calculate total salary payout

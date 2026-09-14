@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { getInventory, restockProduct, getRawIngredients, createRawIngredient, updateRawIngredient, deleteRawIngredient } from '../../services/api';
+import { getInventory, restockProduct, getRawIngredients, createRawIngredient, updateRawIngredient, deleteRawIngredient, exportInventoryExcel } from '../../services/api';
 import { X, AlertTriangle, MoreVertical, Pencil, Trash2, Plus, CheckCircle } from 'lucide-react';
-import { downloadStyledExcel } from '../../utils/csvExport';
+import { downloadBlob } from '../../utils/csvExport';
 
 export default function InventoryTab() {
   const [inventory, setInventory] = useState([]);
@@ -145,18 +145,17 @@ export default function InventoryTab() {
               </button>
             )}
             <button
-              onClick={() => downloadStyledExcel(`Inventory_Report_${new Date().toISOString().split('T')[0]}.xls`, [
-                {
-                  title: 'Product Stock',
-                  headers: ['Product', 'Category', 'Current Stock', 'Cost Price', 'Selling Price', 'Status'],
-                  rows: inventory.map(item => [item.name, item.category?.name || 'N/A', item.stock, Number(item.costPrice || 0).toFixed(2), Number(item.price || 0).toFixed(2), item.stock < 10 ? 'Low Stock' : 'In Stock'])
-                },
-                {
-                  title: 'Raw Ingredients',
-                  headers: ['Ingredient', 'Unit', 'Stock', 'Servings Yield', 'Cost Per Unit', 'Total Cost'],
-                  rows: ingredients.map(item => [item.name, item.unit, Number(item.stock || 0).toFixed(2), item.yield || 1, Number(item.costPrice || 0).toFixed(2), (Number(item.stock || 0) * Number(item.costPrice || 0)).toFixed(2)])
+              onClick={async () => {
+                try {
+                  const exportType = activeTab === 'ingredients' ? 'ingredients' : 'products';
+                  const response = await exportInventoryExcel(exportType);
+                  const filename = exportType === 'products' ? 'Product_Stock' : 'Raw_Ingredients';
+                  downloadBlob(`${filename}_${new Date().toISOString().split('T')[0]}.xlsx`, response);
+                } catch (error) {
+                  console.error(error);
+                  alert('Failed to export inventory. Please try again.');
                 }
-              ])}
+              }}
               className="w-full justify-center px-4 py-2 bg-white border border-surface-200 hover:border-emerald-500 hover:text-emerald-600 text-surface-600 font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 text-xs group"
             >
               Export Excel

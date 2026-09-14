@@ -46,3 +46,14 @@ export const downloadStyledExcel = (filename, sections) => {
   link.remove();
   URL.revokeObjectURL(url);
 };
+
+export const downloadBlob = (filename, response) => {
+  const url = URL.createObjectURL(new Blob([response.data], { type: response.headers?.['content-type'] || 'application/octet-stream' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};

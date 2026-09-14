@@ -55,6 +55,13 @@ function styleExcelDataRows(sheet, firstDataRow, lastDataRow, columns) {
   }
 }
 
+async function sendExcelWorkbook(res, workbook, filename) {
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.attachment(filename);
+  await workbook.xlsx.write(res);
+  res.end();
+}
+
 // GET /api/reports/daily
 router.get('/daily', authenticate, authorize('admin'), async (req, res) => {
   try {
@@ -307,19 +314,34 @@ router.get('/summary', authenticate, authorize('admin'), async (req, res) => {
       .sort() // Keys are YYYY-MM-DD, so simple sort works perfectly
       .map(dateKey => dailyMap[dateKey]);
 
-    const topCategories = await prisma.category.findMany({
-      where: { active: true, tenantId: req.tenantId },
-      take: 5,
-      include: { 
-        _count: { 
-          select: { 
-            products: {
-              where: { available: true }
-            } 
-          } 
-        } 
-      }
+    const categoryStart = new Date();
+    categoryStart.setDate(categoryStart.getDate() - 30);
+    categoryStart.setHours(0, 0, 0, 0);
+    const [categoryRows, categorySales, categoryExpenses] = await Promise.all([
+      prisma.category.findMany({ where: { active: true, tenantId: req.tenantId }, select: { id: true, name: true } }),
+      prisma.orderItem.findMany({
+        where: { order: { tenantId: req.tenantId, status: 'completed', createdAt: { gte: categoryStart } } },
+        select: { subtotal: true, product: { select: { categoryId: true } } }
+      }),
+      prisma.expense.findMany({
+        where: { tenantId: req.tenantId, date: { gte: categoryStart }, categoryId: { not: null } },
+        select: { amount: true, categoryId: true }
+      })
+    ]);
+    const categoryTotals = categoryRows.reduce((result, category) => {
+      result[category.id] = { id: category.id, name: category.name, sales: 0, expenses: 0, profit: 0 };
+      return result;
+    }, {});
+    categorySales.forEach(item => {
+      if (categoryTotals[item.product?.categoryId]) categoryTotals[item.product.categoryId].sales += item.subtotal;
     });
+    categoryExpenses.forEach(expense => {
+      if (categoryTotals[expense.categoryId]) categoryTotals[expense.categoryId].expenses += expense.amount;
+    });
+    const topCategories = Object.values(categoryTotals)
+      .map(category => ({ ...category, profit: category.sales - category.expenses }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 5);
 
     const totalVisits = parseInt(totalVisitsSetting?.value || '0');
 
@@ -573,6 +595,48 @@ router.get('/export/inventory', authenticate, authorize('admin'), async (req, re
   }
 });
 
+// GET /api/reports/export/inventory.xlsx — Formatted inventory workbook
+router.get('/export/inventory.xlsx', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const exportType = req.query.type === 'ingredients' ? 'ingredients' : 'products';
+    const [products, rawIngredients] = await Promise.all([
+      exportType === 'products' ? prisma.product.findMany({ where: { tenantId: req.tenantId }, include: { category: true }, orderBy: { name: 'asc' } }) : [],
+      exportType === 'ingredients' ? prisma.rawIngredient.findMany({ where: { tenantId: req.tenantId }, orderBy: { name: 'asc' } }) : []
+    ]);
+    const workbook = new ExcelJS.Workbook();
+    const productColumns = [
+      { header: 'Product', width: 28 }, { header: 'Category', width: 22 }, { header: 'Current Stock', width: 16 },
+      { header: 'Cost Price', width: 16, format: '₱#,##0.00' }, { header: 'Selling Price', width: 16, format: '₱#,##0.00' }, { header: 'Status', width: 16 }
+    ];
+    if (exportType === 'products') {
+      const productSheet = workbook.addWorksheet('Product Stock');
+      const productHeader = styleExcelSheet(productSheet, 'Hometown Brew — Product Stock', `Generated ${new Date().toLocaleString('en-PH')}`, productColumns);
+      products.forEach(product => productSheet.addRow([
+        product.name, product.category?.name || 'N/A', product.stock, product.costPrice || 0, product.price || 0, product.stock < 10 ? 'Low Stock' : 'In Stock'
+      ]));
+      styleExcelDataRows(productSheet, productHeader + 1, productSheet.rowCount, productColumns);
+    }
+
+    const ingredientColumns = [
+      { header: 'Ingredient', width: 28 }, { header: 'Unit', width: 16 }, { header: 'Stock', width: 14 },
+      { header: 'Servings Yield', width: 16 }, { header: 'Cost Per Unit', width: 18, format: '₱#,##0.00' }, { header: 'Total Cost', width: 18, format: '₱#,##0.00' }
+    ];
+    if (exportType === 'ingredients') {
+      const ingredientSheet = workbook.addWorksheet('Raw Ingredients');
+      const ingredientHeader = styleExcelSheet(ingredientSheet, 'Hometown Brew — Raw Ingredients', `Generated ${new Date().toLocaleString('en-PH')}`, ingredientColumns);
+      rawIngredients.forEach(ingredient => ingredientSheet.addRow([
+        ingredient.name, ingredient.unit, ingredient.stock, ingredient.yield || 1, ingredient.costPrice || 0, (ingredient.stock || 0) * (ingredient.costPrice || 0)
+      ]));
+      styleExcelDataRows(ingredientSheet, ingredientHeader + 1, ingredientSheet.rowCount, ingredientColumns);
+    }
+    const filename = exportType === 'products' ? 'Product_Stock' : 'Raw_Ingredients';
+    await sendExcelWorkbook(res, workbook, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Inventory Excel export error:', error);
+    res.status(500).json({ success: false, message: 'Excel export failed' });
+  }
+});
+
 // GET /api/reports/export/suppliers — Export suppliers to CSV
 router.get('/export/suppliers', authenticate, authorize('admin'), async (req, res) => {
   try {
@@ -591,6 +655,118 @@ router.get('/export/suppliers', authenticate, authorize('admin'), async (req, re
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Export failed' });
+  }
+});
+
+// GET /api/reports/export/suppliers.xlsx — Formatted supplier workbook
+router.get('/export/suppliers.xlsx', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const suppliers = await prisma.supplier.findMany({ where: { tenantId: req.tenantId }, orderBy: { name: 'asc' } });
+    const workbook = new ExcelJS.Workbook();
+    const columns = [
+      { header: 'Supplier Name', width: 28 }, { header: 'Contact Person', width: 24 }, { header: 'Email', width: 32 },
+      { header: 'Phone', width: 18 }, { header: 'Address', width: 42 }
+    ];
+    const sheet = workbook.addWorksheet('Suppliers');
+    const headerRow = styleExcelSheet(sheet, 'Hometown Brew — Supplier Directory', `Generated ${new Date().toLocaleString('en-PH')}`, columns);
+    suppliers.forEach(supplier => sheet.addRow([supplier.name, supplier.contactPerson || '', supplier.email || '', supplier.phone || '', supplier.address || '']));
+    styleExcelDataRows(sheet, headerRow + 1, sheet.rowCount, columns);
+    await sendExcelWorkbook(res, workbook, `Suppliers_List_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Supplier Excel export error:', error);
+    res.status(500).json({ success: false, message: 'Excel export failed' });
+  }
+});
+
+// GET /api/reports/export/shifts.xlsx — Formatted staff shifts and drawer workbook
+router.get('/export/shifts.xlsx', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const shifts = await prisma.cashierShift.findMany({
+      where: { tenantId: req.tenantId },
+      include: { user: { select: { name: true, email: true } } },
+      orderBy: { startTime: 'desc' }
+    });
+    const workbook = new ExcelJS.Workbook();
+    const columns = [
+      { header: 'Staff Name', width: 24 }, { header: 'Email', width: 30 }, { header: 'Role', width: 14 }, { header: 'Status', width: 14 },
+      { header: 'Time In', width: 22 }, { header: 'Time Out', width: 22 }, { header: 'Opening Float', width: 16, format: '₱#,##0.00' },
+      { header: 'Cash Sales', width: 16, format: '₱#,##0.00' }, { header: 'Online Sales', width: 16, format: '₱#,##0.00' }, { header: 'Total Sales', width: 16, format: '₱#,##0.00' },
+      { header: 'Orders', width: 12 }, { header: 'Expected Drawer', width: 18, format: '₱#,##0.00' }, { header: 'Counted Ending', width: 18, format: '₱#,##0.00' },
+      { header: 'Variance', width: 16, format: '₱#,##0.00' }, { header: 'Notes', width: 34 }
+    ];
+    const sheet = workbook.addWorksheet('Shifts & Drawer');
+    const headerRow = styleExcelSheet(sheet, 'Hometown Brew — Staff Shifts & Drawer', `Generated ${new Date().toLocaleString('en-PH')}`, columns);
+    shifts.forEach(shift => sheet.addRow([
+      shift.cashierName || shift.user?.name || 'Staff', shift.user?.email || '', shift.role, shift.status === 'active' ? 'Active' : 'Timed Out',
+      shift.startTime ? new Date(shift.startTime).toLocaleString('en-PH') : '', shift.endTime ? new Date(shift.endTime).toLocaleString('en-PH') : 'In Progress',
+      shift.startingCash || 0, shift.cashSales || 0, shift.onlineSales || 0, shift.totalSales || 0, shift.orderCount || 0,
+      shift.expectedCash || 0, shift.endingCash ?? '', shift.cashDifference || 0, shift.notes || ''
+    ]));
+    styleExcelDataRows(sheet, headerRow + 1, sheet.rowCount, columns);
+    await sendExcelWorkbook(res, workbook, `Staff_Shifts_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Shift Excel export error:', error);
+    res.status(500).json({ success: false, message: 'Excel export failed' });
+  }
+});
+
+// GET /api/reports/export/payroll.xlsx — Formatted payroll workbook
+router.get('/export/payroll.xlsx', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const payments = await prisma.payrollPayment.findMany({
+      where: { tenantId: req.tenantId },
+      include: { staff: { select: { name: true, role: true } } },
+      orderBy: [{ periodStart: 'desc' }, { staff: { name: 'asc' } }]
+    });
+    const workbook = new ExcelJS.Workbook();
+    const columns = [
+      { header: 'Staff Name', width: 26 }, { header: 'Role', width: 16 }, { header: 'Pay Period', width: 28 },
+      { header: 'Gross Salary', width: 18, format: '₱#,##0.00' }, { header: 'Deduction', width: 16, format: '₱#,##0.00' },
+      { header: 'Net Pay', width: 18, format: '₱#,##0.00' }, { header: 'Status', width: 16 }, { header: 'Payment Date', width: 22 }
+    ];
+    const sheet = workbook.addWorksheet('Payroll');
+    const headerRow = styleExcelSheet(sheet, 'Hometown Brew — Payroll History', `Generated ${new Date().toLocaleString('en-PH')}`, columns);
+    payments.forEach(payment => sheet.addRow([
+      payment.staff?.name || 'Staff', payment.staff?.role || 'staff', `${new Date(payment.periodStart).toLocaleDateString('en-PH')} - ${new Date(payment.periodEnd).toLocaleDateString('en-PH')}`,
+      payment.grossAmount ?? payment.amount, payment.deductionAmount || 0, payment.amount || 0, payment.status === 'paid' ? 'Paid' : 'Unpaid', payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString('en-PH') : ''
+    ]));
+    styleExcelDataRows(sheet, headerRow + 1, sheet.rowCount, columns);
+    await sendExcelWorkbook(res, workbook, `Payroll_History_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Payroll Excel export error:', error);
+    res.status(500).json({ success: false, message: 'Excel export failed' });
+  }
+});
+
+// GET /api/reports/export/bookings.xlsx — Formatted accepted bookings workbook
+router.get('/export/bookings.xlsx', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const bookings = await prisma.eventBooking.findMany({
+      where: { tenantId: req.tenantId, status: { in: ['accepted', 'confirmed'] } },
+      include: { package: { select: { name: true } } },
+      orderBy: { eventDate: 'asc' }
+    });
+    const workbook = new ExcelJS.Workbook();
+    const columns = [
+      { header: 'Booking ID', width: 14 }, { header: 'Customer', width: 24 }, { header: 'Email', width: 32 }, { header: 'Phone', width: 18 },
+      { header: 'Package', width: 24 }, { header: 'Event Type', width: 20 }, { header: 'Event Date and Time', width: 24 }, { header: 'Venue', width: 30 },
+      { header: 'Location Guide', width: 32 }, { header: 'Guests', width: 12 }, { header: 'Payment Method', width: 18 }, { header: 'Payment Mode', width: 24 },
+      { header: 'Amount Paid', width: 18, format: '₱#,##0.00' }, { header: 'Booking Status', width: 18 }, { header: 'Approved At', width: 24 }
+    ];
+    const sheet = workbook.addWorksheet('Accepted Bookings');
+    const headerRow = styleExcelSheet(sheet, 'Hometown Brew — Accepted Package Bookings', `Generated ${new Date().toLocaleString('en-PH')}`, columns);
+    const paymentLabels = { cash: 'Cash', gcash: 'GCash', maya: 'Maya' };
+    bookings.forEach(booking => sheet.addRow([
+      booking.id, booking.customerName, booking.customerEmail, booking.customerPhone || '', booking.package?.name || '', booking.eventType,
+      new Date(booking.eventDate).toLocaleString('en-PH'), booking.venue, booking.locationGuide || '', booking.guestCount || '', paymentLabels[booking.paymentMethod] || 'GCash',
+      booking.paymentMode === 'downpayment' ? (booking.paymentStatus === 'paid' ? 'Downpayment + balance paid' : 'Downpayment (50%)') : 'Full payment',
+      booking.paymentAmount || 0, booking.status, booking.reviewedAt ? new Date(booking.reviewedAt).toLocaleString('en-PH') : ''
+    ]));
+    styleExcelDataRows(sheet, headerRow + 1, sheet.rowCount, columns);
+    await sendExcelWorkbook(res, workbook, `Accepted_Bookings_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Booking Excel export error:', error);
+    res.status(500).json({ success: false, message: 'Excel export failed' });
   }
 });
 

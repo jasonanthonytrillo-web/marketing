@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Archive, Check, ChevronLeft, ChevronRight, Clock3, Download, ExternalLink, Mail, MapPin, Phone, Trash2, X } from 'lucide-react';
-import { deleteAdminBooking, getAdminBookings, updateAdminBookingStatus, requestAdminBookingPayment, updateAdminBookingPaymentStatus } from '../../services/api';
+import { deleteAdminBooking, getAdminBookings, updateAdminBookingStatus, requestAdminBookingPayment, updateAdminBookingPaymentStatus, exportBookingsExcel } from '../../services/api';
 import { formatDate } from '../../utils/helpers';
 import { useSocket } from '../../context/SocketContext';
-import { downloadStyledExcel } from '../../utils/csvExport';
+import { downloadBlob } from '../../utils/csvExport';
 
 const bookingPaymentMethodLabel = (method) => ({ cash: 'Cash', gcash: 'GCash', maya: 'Maya' }[method] || 'GCash');
+
+const getPaymentBadge = (booking) => {
+  if (booking.paymentStatus === 'paid') return { label: 'Fully Paid', className: 'bg-emerald-100 text-emerald-700' };
+  if (booking.paymentMode === 'downpayment') return { label: 'Downpayment', className: 'bg-amber-100 text-amber-700' };
+  if (booking.paymentStatus === 'submitted') return { label: 'Payment Submitted', className: 'bg-blue-100 text-blue-700' };
+  if (booking.paymentStatus === 'awaiting_payment') return { label: 'Awaiting Payment', className: 'bg-amber-100 text-amber-700' };
+  if (booking.paymentStatus === 'verified' || (booking.status === 'accepted' && booking.paymentMethod === 'cash')) return { label: 'Fully Paid', className: 'bg-emerald-100 text-emerald-700' };
+  return { label: 'Payment Pending', className: 'bg-slate-100 text-slate-600' };
+};
 
 export default function PackageBookingsTab() {
   const [bookings, setBookings] = useState([]);
@@ -121,40 +130,13 @@ export default function PackageBookingsTab() {
   };
 
   const exportAcceptedBookings = async () => {
-    const response = await getAdminBookings(false, 1, 100);
-    const acceptedBookings = (response.data.data || []).filter(booking => ['accepted', 'confirmed'].includes(booking.status));
-    if (acceptedBookings.length === 0) {
-      alert('There are no accepted bookings to export.');
-      return;
+    try {
+      const response = await exportBookingsExcel();
+      downloadBlob(`Accepted_Bookings_${new Date().toISOString().slice(0, 10)}.xlsx`, response);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to export accepted bookings. Please try again.');
     }
-
-    const headers = [
-      'Booking ID', 'Customer', 'Email', 'Phone', 'Package', 'Event Type',
-      'Event Date and Time', 'Venue', 'Location Guide', 'Guests',
-      'Payment Method', 'Payment Mode', 'Amount Paid', 'Booking Status', 'Approved At'
-    ];
-    const rows = acceptedBookings.map(booking => [
-      booking.id,
-      booking.customerName,
-      booking.customerEmail,
-      booking.customerPhone,
-      booking.package?.name,
-      booking.eventType,
-      formatDate(booking.eventDate),
-      booking.venue,
-      booking.locationGuide,
-      booking.guestCount,
-      bookingPaymentMethodLabel(booking.paymentMethod),
-      booking.paymentMode === 'downpayment' ? (booking.paymentStatus === 'paid' ? 'Downpayment + balance paid' : 'Downpayment (50%)') : 'Full payment',
-      booking.paymentAmount,
-      booking.status,
-      booking.reviewedAt ? formatDate(booking.reviewedAt) : ''
-    ]);
-    downloadStyledExcel(`Accepted_Bookings_${new Date().toISOString().slice(0, 10)}.xls`, [{
-      title: 'Accepted Package Bookings',
-      headers,
-      rows
-    }]);
   };
 
   if (loading) return <div className="p-8 text-center text-surface-500">Loading booking requests...</div>;
@@ -230,9 +212,15 @@ export default function PackageBookingsTab() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-surface-400">{booking.package.name}</p>
                   <h3 className="mt-1 text-xl font-black text-surface-900">{booking.customerName}</h3>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : booking.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                  {booking.status}
-                </span>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : booking.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    {booking.status}
+                  </span>
+                  {(() => {
+                    const paymentBadge = getPaymentBadge(booking);
+                    return <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${paymentBadge.className}`}>{paymentBadge.label}</span>;
+                  })()}
+                </div>
               </div>
 
               <div className="mt-5 grid gap-3 text-sm text-surface-600 sm:grid-cols-2">

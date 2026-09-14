@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../../services/api';
+import { getSuppliers, createSupplier, updateSupplier, deleteSupplier, exportSuppliersExcel } from '../../services/api';
 import { Plus, Edit, Trash2, MoreVertical, Pencil } from 'lucide-react';
-import { downloadStyledExcel } from '../../utils/csvExport';
+import { downloadBlob } from '../../utils/csvExport';
 
 export default function SuppliersTab() {
   const [suppliers, setSuppliers] = useState([]);
@@ -88,25 +88,29 @@ export default function SuppliersTab() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
         <div>
           <h2 className="font-heading text-2xl font-bold text-surface-900">Supplier Directory</h2>
           <p className="text-surface-500 text-sm">Manage your inventory vendors and contact information.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3 w-full sm:w-auto">
           <button 
-            onClick={() => downloadStyledExcel(`Suppliers_List_${new Date().toISOString().split('T')[0]}.xls`, [{
-              title: 'Supplier Directory',
-              headers: ['Supplier Name', 'Contact Person', 'Email', 'Phone', 'Address'],
-              rows: suppliers.map(s => [s.name, s.contactPerson || '', s.email || '', s.phone || '', s.address || ''])
-            }])}
-            className="px-4 py-2 bg-white border border-surface-200 hover:border-primary-500 hover:text-primary-600 text-surface-600 font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-xs group"
+            onClick={async () => {
+              try {
+                const response = await exportSuppliersExcel();
+                downloadBlob(`Suppliers_List_${new Date().toISOString().split('T')[0]}.xlsx`, response);
+              } catch (error) {
+                console.error(error);
+                alert('Failed to export suppliers. Please try again.');
+              }
+            }}
+            className="w-full justify-center px-3 py-2.5 bg-white border border-surface-200 hover:border-primary-500 hover:text-primary-600 text-surface-600 font-bold rounded-2xl transition-all shadow-sm flex items-center gap-2 text-xs group"
           >
             Export Excel
           </button>
           <button 
             onClick={() => handleOpenModal()}
-            className="px-6 py-2.5 bg-primary-500 text-white font-bold rounded-2xl hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20 flex items-center gap-2 text-sm"
+            className="w-full justify-center px-3 py-2.5 bg-primary-500 text-white font-bold rounded-2xl hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20 flex items-center gap-2 text-xs sm:text-sm"
           >
             <Plus className="w-4 h-4" /> Add New Supplier
           </button>
@@ -114,8 +118,8 @@ export default function SuppliersTab() {
       </div>
 
       <div className="bg-white rounded-3xl shadow-sm border border-surface-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+        <div className="hidden sm:block overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left">
             <thead>
               <tr className="bg-surface-50 border-b border-surface-200">
                 <th className="px-6 py-4 text-[10px] font-black text-surface-400 uppercase tracking-widest">Supplier Name</th>
@@ -170,6 +174,40 @@ export default function SuppliersTab() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="sm:hidden divide-y divide-surface-100">
+          {loading ? (
+            <div className="px-5 py-10 text-center text-sm text-surface-400">Loading suppliers...</div>
+          ) : suppliers.length === 0 ? (
+            <div className="px-5 py-10 text-center text-sm text-surface-400">No suppliers found.</div>
+          ) : (
+            suppliers.map(s => (
+              <div key={s.id} className="p-5 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-base font-black text-surface-900 break-words">{s.name}</p>
+                    <p className="mt-1 text-xs font-bold text-surface-500">{s.contactPerson || 'No contact person'}</p>
+                  </div>
+                  <div className="relative flex-shrink-0" ref={openMenuId === s.id ? menuRef : null}>
+                    <button onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)} className="rounded-xl border border-surface-200 p-2 text-surface-400 hover:bg-surface-50 hover:text-surface-700">
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    {openMenuId === s.id && (
+                      <div className="absolute right-0 top-full z-50 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-surface-200 bg-white shadow-xl">
+                        <button onClick={() => { setOpenMenuId(null); handleOpenModal(s); }} className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-surface-700 hover:bg-surface-50"><Pencil className="w-4 h-4 text-blue-500" /> Edit</button>
+                        <button onClick={() => { setOpenMenuId(null); handleDelete(s.id); }} className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /> Delete</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-2 rounded-2xl bg-surface-50 p-3 text-sm">
+                  <div><span className="text-[10px] font-black uppercase tracking-widest text-surface-400">Phone</span><p className="break-words font-medium text-surface-700">{s.phone || '—'}</p></div>
+                  <div><span className="text-[10px] font-black uppercase tracking-widest text-surface-400">Email</span><p className="break-words font-medium text-surface-700">{s.email || '—'}</p></div>
+                  <div><span className="text-[10px] font-black uppercase tracking-widest text-surface-400">Address</span><p className="break-words font-medium text-surface-700">{s.address || '—'}</p></div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

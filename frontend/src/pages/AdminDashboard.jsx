@@ -356,15 +356,22 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-surface-200">
-                  <h3 className="font-heading font-bold text-surface-900 mb-6">Top Categories</h3>
+                  <h3 className="font-heading font-bold text-surface-900 mb-1">Top Categories</h3>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-surface-400 mb-5">Last 30 days</p>
                   <div className="space-y-4">
                     {summary.topCategories?.map((cat, i) => (
                       <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-surface-50 group hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-surface-100">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-sm font-bold shadow-sm">{i+1}</div>
-                          <span className="font-bold text-surface-700">{cat.name}</span>
+                          <div>
+                            <span className="font-bold text-surface-700">{cat.name}</span>
+                            <p className="text-[10px] font-bold text-red-400 mt-0.5">Expenses: {formatCurrency(cat.expenses || 0)}</p>
+                          </div>
                         </div>
-                        <span className="text-primary-600 font-black">{cat._count.products} <span className="text-[10px] text-surface-400">items</span></span>
+                        <div className="text-right">
+                          <p className="text-primary-600 font-black">{formatCurrency(cat.sales || 0)}</p>
+                          <p className={`text-[10px] font-black ${cat.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>Net {formatCurrency(Math.abs(cat.profit || 0))}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
