@@ -69,7 +69,7 @@ export default function Menu() {
   const [usualOrderDismissed, setUsualOrderDismissed] = useState(false);
   const [eventPackages, setEventPackages] = useState([]);
   const [bookedEventSlots, setBookedEventSlots] = useState([]);
-  const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], notes: '', comboChoices: null });
+  const [addOpts, setAddOpts] = useState({ size: '', flavor: '', addons: [], comboChoices: null });
   const [optionError, setOptionError] = useState(false);
   const [comboStep, setComboStep] = useState(1); // 1 or 2
   const { addToCart, getItemCount, items, getSubtotal, clearCart } = useCart();
@@ -155,7 +155,6 @@ export default function Menu() {
           const options = {
             size: item.size || '',
             flavor: item.flavor || '',
-            notes: item.notes || '',
             addons: item.addons ? JSON.parse(item.addons) : [],
             comboChoices: item.comboChoices ? (typeof item.comboChoices === 'string' ? JSON.parse(item.comboChoices) : item.comboChoices) : null,
             isRedemption: item.isRedemption || false
@@ -219,9 +218,9 @@ export default function Menu() {
   const handleProductClick = (product) => {
     if (product.isCombo) {
       setComboStep(1);
-      setAddOpts({ size: '', flavor: '', addons: [], notes: '', comboChoices: { group1: null, group2: null } });
+      setAddOpts({ size: '', flavor: '', addons: [], comboChoices: { group1: null, group2: null } });
     } else {
-      setAddOpts({ size: null, flavor: '', addons: [], notes: '', comboChoices: null });
+      setAddOpts({ size: null, flavor: '', addons: [], comboChoices: null });
     }
     setOptionError(false);
     setSelectedProduct(product);
@@ -343,7 +342,7 @@ export default function Menu() {
     }
     addToCart(product, { ...addOpts, sizePrice, isRedemption: product.isRedemption });
     closeProductModal();
-    setAddOpts({ size: null, flavor: '', addons: [], notes: '', comboChoices: null });
+    setAddOpts({ size: null, flavor: '', addons: [], comboChoices: null });
     setComboStep(1);
   };
 
@@ -456,7 +455,6 @@ export default function Menu() {
                 size: item.size || '',
                 flavor: item.flavor || '',
                 addons,
-                notes: item.notes || '',
                 comboChoices,
                 sizePrice
               }
@@ -861,10 +859,10 @@ export default function Menu() {
       {/* Product Detail Modal / Combo Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={closeProductModal}>
-          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-[calc(100vw-2rem)] sm:max-w-lg max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col animate-fade-in-up shadow-2xl" onClick={e => e.stopPropagation()}>
 
             {/* Modal Header Image */}
-            <div className="w-full h-64 sm:h-72 md:h-80 bg-surface-50 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
+            <div className="w-full h-48 sm:h-72 md:h-80 bg-surface-50 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
               <img
                 src={getOptimizedImageUrl((selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image)}
                 className="w-full h-full object-cover relative z-10 transition-all duration-700"
@@ -891,9 +889,9 @@ export default function Menu() {
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-1 scrollbar-hide">
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 scrollbar-hide">
               {/* Product Title */}
-              <h2 className="font-heading text-2xl md:text-3xl font-black text-surface-900 mb-2 leading-tight" style={{ color: brandingColor }}>
+              <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-black text-surface-900 mb-2 leading-tight" style={{ color: brandingColor }}>
                 {selectedProduct.name}
               </h2>
               {/* Full-Sized Badges in Details Panel */}
@@ -1027,9 +1025,9 @@ export default function Menu() {
                 </div>
               ) : (
                 <>
-                  <p className="text-surface-500 text-sm mb-6">{selectedProduct.description}</p>
-                  <div className="flex items-center gap-4 mb-8">
-                    <p className="font-heading text-3xl font-bold" style={{ color: brandingColor }}>
+                  <p className="text-surface-500 text-xs sm:text-sm mb-4 sm:mb-6">{selectedProduct.description}</p>
+                  <div className="flex items-center gap-4 mb-6 sm:mb-8">
+                    <p className="font-heading text-2xl sm:text-3xl font-bold" style={{ color: brandingColor }}>
                       ₱{(() => {
                         if (addOpts.size && selectedProduct.sizes && Array.isArray(selectedProduct.sizes)) {
                           const match = selectedProduct.sizes.find(s => s.name === addOpts.size);
@@ -1110,21 +1108,10 @@ export default function Menu() {
                     </div>
                   )}
 
-                  {/* Notes */}
-                  <div className="mb-8">
-                    <h3 className="text-xs font-black text-surface-400 uppercase tracking-widest mb-3">Special Instructions</h3>
-                    <textarea
-                      value={addOpts.notes}
-                      onChange={e => setAddOpts(p => ({ ...p, notes: e.target.value }))}
-                      className="w-full bg-surface-50 border border-surface-200 rounded-2xl p-4 text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none h-24 resize-none"
-                      placeholder="e.g. No onions, extra sauce..."
-                    />
-                  </div>
-
                   <div className="flex gap-4">
                     <button
                       onClick={() => handleAddToCart(selectedProduct)}
-                      className="flex-1 py-4 rounded-2xl font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 py-3 sm:py-4 rounded-2xl text-sm sm:text-base font-black text-white uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: brandingColor }}
                       disabled={!selectedProduct.available || branding?.storeClosed}
                     >

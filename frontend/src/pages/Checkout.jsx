@@ -251,7 +251,6 @@ export default function Checkout() {
         quantity: item.quantity, 
         size: item.size, 
         flavor: item.flavor,
-        notes: item.notes, 
         addons: item.selectedAddons?.map(a => a.id) || [],
         isRedemption: item.isRedemption || false,
         comboChoices: item.comboChoices // Add this!
