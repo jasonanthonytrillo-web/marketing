@@ -21,6 +21,7 @@ export default function PackageBookingsTab() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [paymentBooking, setPaymentBooking] = useState(null);
+  const [paymentCompletionBooking, setPaymentCompletionBooking] = useState(null);
   const [rejectionBooking, setRejectionBooking] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [paymentForm, setPaymentForm] = useState({ paymentMode: 'downpayment', paymentAmount: '' });
@@ -198,6 +199,25 @@ export default function PackageBookingsTab() {
         </div>
       )}
 
+      {paymentCompletionBooking && (() => {
+        const packageAmount = Number(String(paymentCompletionBooking.package?.priceText || '').replace(/[^0-9.]/g, ''));
+        const remainingAmount = Number.isFinite(packageAmount) ? packageAmount - Number(paymentCompletionBooking.paymentAmount || 0) : 0;
+        return (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl border border-surface-200 bg-white p-6 shadow-2xl animate-scale-in">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700"><Check className="h-6 w-6" /></div>
+                <div><p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Complete payment</p><h3 className="mt-1 text-xl font-black text-surface-900">Mark booking as fully paid?</h3><p className="mt-2 text-sm leading-relaxed text-surface-500">Confirm that <span className="font-bold text-surface-800">{paymentCompletionBooking.customerName}</span> paid the remaining <span className="font-black text-emerald-700">₱{remainingAmount.toFixed(2)}</span>.</p></div>
+              </div>
+              <div className="mt-6 flex gap-3">
+                <button type="button" onClick={() => setPaymentCompletionBooking(null)} className="flex-1 rounded-xl border border-surface-200 py-3 text-sm font-black text-surface-600 hover:bg-surface-50">Cancel</button>
+                <button type="button" onClick={async () => { await updatePaymentStatus(paymentCompletionBooking, 'paid'); setPaymentCompletionBooking(null); }} disabled={processingId === paymentCompletionBooking.id} className="flex-1 rounded-xl bg-emerald-600 py-3 text-sm font-black text-white hover:bg-emerald-700 disabled:opacity-50">{processingId === paymentCompletionBooking.id ? 'Saving...' : 'Confirm Paid'}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {bookings.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-surface-200 bg-white px-6 py-16 text-center">
           <Clock3 className="mx-auto mb-3 h-10 w-10 text-surface-300" />
@@ -255,7 +275,7 @@ export default function PackageBookingsTab() {
                 </div>
               ) : booking.status === 'accepted' && booking.paymentMode === 'downpayment' && booking.paymentStatus === 'verified' ? (
                 <div className="mt-5 flex gap-3 border-t border-surface-100 pt-4">
-                  <button disabled={processingId === booking.id} onClick={() => completeDownpayment(booking)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"><Check className="h-4 w-4" /> Payment Completed</button>
+                  <button disabled={processingId === booking.id} onClick={() => setPaymentCompletionBooking(booking)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"><Check className="h-4 w-4" /> Payment Completed</button>
                 </div>
               ) : booking.status === 'pending' && (
                 <div className="mt-5 flex gap-3 border-t border-surface-100 pt-4">
