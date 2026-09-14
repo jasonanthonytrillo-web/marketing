@@ -197,13 +197,11 @@ export default function ReportsTab() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] text-left border-collapse">
+          <table className="w-full min-w-[420px] text-left border-collapse">
             <thead>
               <tr className="text-[10px] font-black text-surface-400 uppercase tracking-widest border-b border-surface-100">
                 <th className="pb-3">Category</th>
-                <th className="pb-3 text-right">Sales</th>
-                <th className="pb-3 text-right">Expenses</th>
-                <th className="pb-3 w-1/4">Sales / Expense</th>
+                <th className="pb-3">Sales / Expenses</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-50">
@@ -212,8 +210,6 @@ export default function ReportsTab() {
                 return (
                   <tr key={category.categoryId} className="hover:bg-surface-50/60 transition-colors">
                     <td className="py-4 font-bold text-surface-900">{category.name}</td>
-                    <td className="py-4 text-right font-bold text-blue-600">{formatCurrency(category.sales)}</td>
-                    <td className="py-4 text-right font-bold text-red-500">-{formatCurrency(category.expenses)}</td>
                     <td className="py-4 pl-4">
                       <div className="space-y-2 min-w-[180px]">
                         <div className="h-2.5 rounded-full border border-blue-200 bg-surface-100 overflow-hidden" title={`Sales: ${formatCurrency(category.sales)}`}>
