@@ -212,11 +212,17 @@ export default function ReportsTab() {
                     <td className="py-4 font-bold text-surface-900">{category.name}</td>
                     <td className="py-4 pl-4">
                       <div className="space-y-2 min-w-[180px]">
-                        <div className="h-2.5 rounded-full border border-blue-200 bg-surface-100 overflow-hidden" title={`Sales: ${formatCurrency(category.sales)}`}>
-                          <div className="h-full rounded-full bg-blue-500" style={{ width: `${(category.sales / maxValue) * 100}%` }} />
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 flex-1 rounded-full border border-blue-200 bg-surface-100 overflow-hidden" title={`Sales: ${formatCurrency(category.sales)}`}>
+                            <div className="h-full rounded-full bg-blue-500" style={{ width: `${(category.sales / maxValue) * 100}%` }} />
+                          </div>
+                          <span className="w-20 shrink-0 text-right text-[10px] font-black text-blue-600">{formatCurrency(category.sales)}</span>
                         </div>
-                        <div className="h-2.5 rounded-full border border-red-200 bg-surface-100 overflow-hidden" title={`Expenses: ${formatCurrency(category.expenses)}`}>
-                          <div className="h-full rounded-full bg-red-400" style={{ width: `${(category.expenses / maxValue) * 100}%` }} />
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 flex-1 rounded-full border border-red-200 bg-surface-100 overflow-hidden" title={`Expenses: ${formatCurrency(category.expenses)}`}>
+                            <div className="h-full rounded-full bg-red-400" style={{ width: `${(category.expenses / maxValue) * 100}%` }} />
+                          </div>
+                          <span className="w-20 shrink-0 text-right text-[10px] font-black text-red-500">{formatCurrency(category.expenses)}</span>
                         </div>
                       </div>
                     </td>
@@ -227,10 +233,6 @@ export default function ReportsTab() {
           </table>
         </div>
         {(!categoryReport || categoryReport.categories.length === 0) && <p className="py-8 text-center text-sm font-bold text-surface-400">No category data available yet.</p>}
-        <div className="flex items-center justify-end gap-4 mt-4 text-[10px] font-black uppercase tracking-widest text-surface-400">
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Sales</span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-400" /> Expenses</span>
-        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
