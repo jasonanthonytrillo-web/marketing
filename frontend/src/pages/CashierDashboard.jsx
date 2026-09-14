@@ -13,6 +13,7 @@ import { getOfflineOrderRecords, isOfflineOrder, updateOfflineOrder } from '../s
 export default function CashierDashboard() {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [expandedOrderNote, setExpandedOrderNote] = useState(false);
   const [activeTab, setActiveTab] = useState('pending'); // pending, confirmed, preparing, ready
   const [viewMode, setViewMode] = useState('orders'); // 'orders' | 'menu'
   const [paymentData, setPaymentData] = useState({ received: '', method: 'cash', discountType: '', discountPercent: '', referenceNumber: '' });
@@ -130,6 +131,10 @@ export default function CashierDashboard() {
       calculateTotals();
     }
   }, [paymentData.received, paymentData.method, paymentData.discountType, paymentData.discountPercent, selectedOrder]);
+
+  useEffect(() => {
+    setExpandedOrderNote(false);
+  }, [selectedOrder?.id]);
 
   const loadOrders = async () => {
     try {
@@ -1281,9 +1286,18 @@ export default function CashierDashboard() {
                       {!promoOnly && selectedOrder.notes && (
                         <div className="mx-3 mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 sm:mx-6 animate-fade-in shadow-sm">
                           <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0"><AlertTriangle className="w-5 h-5 text-amber-600" /></div>
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 leading-none mb-1">Global Order Note</p>
-                            <p className="text-sm font-medium text-amber-900">{selectedOrder.notes}</p>
+                            <p className={`text-sm font-medium text-amber-900 break-words ${expandedOrderNote ? '' : 'line-clamp-3'}`}>{selectedOrder.notes}</p>
+                            {selectedOrder.notes.length > 180 && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedOrderNote(value => !value)}
+                                className="mt-2 text-xs font-black text-amber-700 underline underline-offset-2 hover:text-amber-900"
+                              >
+                                {expandedOrderNote ? 'Show less' : 'Read full note'}
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}
