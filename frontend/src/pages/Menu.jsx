@@ -14,6 +14,16 @@ import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flam
 
 const DEFAULT_MENU_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
 const COMMON_EVENT_TYPES = ['Birthday', 'Wedding', 'Corporate event', 'School event', 'Festival or market', 'Private gathering', 'Other'];
+const COFFEE_DRINKS = ['Americano', 'Cafe Latte', 'Spanish Latte', 'Cafe Mocha', 'Caramel Macchiato'];
+const NON_COFFEE_DRINKS = ['Strawberry Latte', 'Choco Latte (hot/iced)', 'Blueberry Latte', 'Matcha Latte'];
+const PACKAGE_DRINK_LIMITS = {
+  'The Curated': { coffee: 2, nonCoffee: 1 },
+  'The Signature Pour': { coffee: 3, nonCoffee: 1 },
+  'The Elevated Pour': { coffee: 4, nonCoffee: 1 },
+  'The Grand Pour': { coffee: 4, nonCoffee: 2 }
+};
+
+const getPackageDrinkLimits = (eventPackage) => PACKAGE_DRINK_LIMITS[eventPackage?.name] || { coffee: 0, nonCoffee: 0 };
 
 const getOptimizedImageUrl = (imageUrl) => {
   if (!imageUrl) return DEFAULT_MENU_IMAGE;
@@ -51,8 +61,9 @@ export default function Menu() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showRewards, setShowRewards] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
+  const [showPackageTerms, setShowPackageTerms] = useState(false);
   const [bookingPackage, setBookingPackage] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', paymentMethod: 'cash', paymentMode: 'full_payment' });
+  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', coffeeSelections: [], nonCoffeeSelections: [], paymentMethod: 'cash', paymentMode: 'full_payment' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
   const [bookingErrors, setBookingErrors] = useState({});
@@ -91,6 +102,17 @@ export default function Menu() {
   };
 
   const clearBookingError = (field) => setBookingErrors(current => ({ ...current, [field]: false }));
+
+  const toggleBookingDrink = (field, drink, limit) => {
+    setBookingForm(current => {
+      const selected = current[field] || [];
+      const next = selected.includes(drink)
+        ? selected.filter(item => item !== drink)
+        : selected.length < limit ? [...selected, drink] : selected;
+      return { ...current, [field]: next };
+    });
+    clearBookingError(field);
+  };
 
   useEffect(() => {
     setShowPackages(searchParams.get('packages') === '1');
@@ -232,7 +254,7 @@ export default function Menu() {
     setBookingMessage('');
     setBookingErrors({});
     setBookingEventOpen(false);
-    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', paymentMethod: 'cash', paymentMode: 'full_payment' });
+    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', coffeeSelections: [], nonCoffeeSelections: [], paymentMethod: 'cash', paymentMode: 'full_payment' });
     setShowBookingMap(false);
     closePackages();
   };
@@ -240,26 +262,31 @@ export default function Menu() {
   const handleBookingSubmit = async (event) => {
     event.preventDefault();
     const errors = {};
+    const drinkLimits = getPackageDrinkLimits(bookingPackage);
     if (!bookingForm.eventType) errors.eventType = true;
     if (bookingForm.eventType === 'Other' && !bookingForm.otherEventType.trim()) errors.otherEventType = true;
     if (!bookingForm.venue.trim()) errors.venue = true;
     if (!bookingForm.eventDate || !/T\d{2}:\d{2}$/.test(bookingForm.eventDate)) errors.eventDate = true;
     if (!bookingForm.paymentMethod) errors.paymentMethod = true;
     if (!bookingForm.paymentMode) errors.paymentMode = true;
+    if (bookingForm.coffeeSelections.length !== drinkLimits.coffee) errors.coffeeSelections = true;
+    if (bookingForm.nonCoffeeSelections.length !== drinkLimits.nonCoffee) errors.nonCoffeeSelections = true;
     if (Object.keys(errors).length > 0) {
       setBookingErrors(errors);
-      setBookingMessage('Please complete the highlighted fields before submitting.');
+      setBookingMessage('Please complete the highlighted fields before submitting, including your drink selections.');
       setTimeout(() => document.querySelector('[data-booking-error="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
       return;
     }
     setBookingSubmitting(true);
     setBookingMessage('');
     try {
+      const drinkNotes = `Drink selections:\nCoffee: ${bookingForm.coffeeSelections.join(', ')}\nNon-coffee: ${bookingForm.nonCoffeeSelections.join(', ')}`;
       await createPackageBooking({
         packageId: bookingPackage.id,
         customerName: user.name,
         customerEmail: user.email,
         ...bookingForm,
+        notes: [bookingForm.notes.trim(), drinkNotes].filter(Boolean).join('\n\n'),
         eventType: bookingForm.eventType === 'Other' ? bookingForm.otherEventType : bookingForm.eventType,
         paymentMethod: bookingForm.paymentMethod
       });
@@ -293,6 +320,7 @@ export default function Menu() {
 
   const brandingColor = branding?.primaryColor || '#0a3d01';
   const itemCount = getItemCount();
+  const bookingDrinkLimits = getPackageDrinkLimits(bookingPackage);
 
   const { joinRoom, leaveRoom, connected, emit } = useSocket();
 
@@ -1402,10 +1430,39 @@ export default function Menu() {
                 <a href="https://www.facebook.com/hometownbrew24" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-[#1877F2] px-4 py-2.5 text-sm font-black text-white shadow-sm transition-all hover:bg-[#166fe5] hover:scale-105">
                   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 21v-8h2.75l.4-3h-3.15V8.08c0-.87.24-1.46 1.5-1.46h1.75V3.94c-.3-.04-1.34-.13-2.55-.13-2.52 0-4.25 1.54-4.25 4.37V10H7v3h2.95v8h3.55Z" /></svg> Inquire on Facebook
                 </a>
+                <button type="button" onClick={() => setShowPackageTerms(true)} className="mt-3 inline-flex items-center gap-2 rounded-xl border border-surface-300 bg-white px-4 py-2.5 text-sm font-black text-surface-700 shadow-sm transition-all hover:border-surface-400 hover:bg-surface-50 hover:scale-105">
+                  <FileText className="w-4 h-4" /> Terms &amp; Conditions
+                </button>
               </div>
 
             </div>
           </div>
+
+          {showPackageTerms && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-surface-900/70 backdrop-blur-sm" onClick={() => setShowPackageTerms(false)}></div>
+              <div role="dialog" aria-modal="true" aria-labelledby="package-terms-title" className="relative z-10 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white p-6 shadow-2xl md:p-8">
+                <div className="mb-6 flex items-start justify-between gap-4 border-b border-surface-100 pb-5">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: brandingColor }}>Event Packages</p>
+                    <h3 id="package-terms-title" className="mt-1 text-2xl font-heading font-black text-surface-900">Terms &amp; Conditions</h3>
+                  </div>
+                  <button type="button" onClick={() => setShowPackageTerms(false)} aria-label="Close terms and conditions" className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-100 text-surface-600 transition-colors hover:bg-surface-200">
+                    <span className="text-xl leading-none">&times;</span>
+                  </button>
+                </div>
+                <div className="space-y-5 text-sm leading-relaxed text-surface-600">
+                  <section><h4 className="font-black text-surface-900">Booking &amp; Payment</h4><p>A non-refundable deposit P1,000 is required to secure your event date. Full payment must be completed before the event date.</p></section>
+                  <section><h4 className="font-black text-surface-900">Guest Count</h4><p>Packages are based on the confirmed number of guests. Any additional guests will be charged accordingly.</p></section>
+                  <section><h4 className="font-black text-surface-900">Menu Customization</h4><p>Menu selections must be finalized at least 5 days before the event. Changes after confirmation are subject to availability.</p></section>
+                  <section><h4 className="font-black text-surface-900">Event Duration</h4><p>Service time is based on the agreed package. Additional service hours may incur extra charges.</p></section>
+                  <section><h4 className="font-black text-surface-900">Setup Requirements</h4><p>Client must provide access to the venue, power supply, and setup space. Setup time will be coordinated in advance.</p></section>
+                  <section><h4 className="font-black text-surface-900">Cancellations &amp; Rescheduling</h4><p>Deposits are non-refundable. Rescheduling is subject to availability and must be requested in advance.</p></section>
+                </div>
+                <button type="button" onClick={() => setShowPackageTerms(false)} className="mt-7 w-full rounded-xl px-4 py-3 text-sm font-black text-white transition-opacity hover:opacity-90" style={{ backgroundColor: brandingColor }}>Close</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1457,6 +1514,32 @@ export default function Menu() {
               <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-primary-600" />Contact number</span>
                 <input type="tel" value={bookingForm.customerPhone} onChange={e => setBookingForm({ ...bookingForm, customerPhone: e.target.value })} placeholder="09XX XXX XXXX" className="input-field mt-1 w-full" />
               </label>
+              <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50/50 p-4" data-booking-error={bookingErrors.coffeeSelections || bookingErrors.nonCoffeeSelections ? 'true' : undefined}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="flex items-center gap-2 text-sm font-black text-surface-900"><Coffee className="h-4 w-4" style={{ color: brandingColor }} />Menu selection</p>
+                    <p className="mt-1 text-xs font-medium text-surface-500">Choose exactly the number of drink types included in your package.</p>
+                  </div>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-surface-500 shadow-sm">{bookingDrinkLimits.coffee} coffee · {bookingDrinkLimits.nonCoffee} non-coffee</span>
+                </div>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {[
+                    { key: 'coffeeSelections', title: 'Hot / Iced Coffee', drinks: COFFEE_DRINKS, limit: bookingDrinkLimits.coffee },
+                    { key: 'nonCoffeeSelections', title: 'Non-Coffee', drinks: NON_COFFEE_DRINKS, limit: bookingDrinkLimits.nonCoffee }
+                  ].map(group => (
+                    <div key={group.key}>
+                      <p className="mb-2 text-xs font-black uppercase tracking-wider text-surface-600">{group.title} <span className="font-bold text-surface-400">({group.limit} choice{group.limit === 1 ? '' : 's'})</span></p>
+                      <div className="space-y-2">
+                        {group.drinks.map(drink => {
+                          const selected = bookingForm[group.key].includes(drink);
+                          return <button key={drink} type="button" aria-pressed={selected} onClick={() => toggleBookingDrink(group.key, drink, group.limit)} className={`flex w-full items-center justify-between rounded-xl border-2 px-3 py-2.5 text-left text-sm font-bold transition ${selected ? 'border-amber-500 bg-amber-100 text-amber-900' : 'border-white bg-white text-surface-700 hover:border-amber-200'} ${!selected && bookingForm[group.key].length >= group.limit ? 'opacity-50' : ''}`}><span>{drink}</span>{selected && <CheckCircle className="h-4 w-4 text-amber-600" />}</button>;
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {(bookingErrors.coffeeSelections || bookingErrors.nonCoffeeSelections) && <p className="mt-3 text-xs font-bold text-red-600">Please select the required number of coffee and non-coffee drinks for this package.</p>}
+              </div>
               <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 p-4 md:col-span-2">
                 <p className="flex items-center gap-2 text-sm font-black text-emerald-900">Payment choice <span className="text-red-500">*</span><span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">Required</span></p>
                 <p className="mt-1 text-xs font-medium text-emerald-700">Choose how much you want to pay for this package.</p>
