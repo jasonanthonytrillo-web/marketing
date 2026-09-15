@@ -50,7 +50,7 @@ router.post('/', authenticate, authorize('customer'), async (req, res) => {
 
     const packageAmount = Number(String(eventPackage.priceText || '').replace(/[^0-9.]/g, ''));
     const paymentAmount = Number.isFinite(packageAmount) && packageAmount > 0
-      ? paymentMode === 'downpayment' ? packageAmount / 2 : packageAmount
+      ? paymentMode === 'downpayment' ? 1000 : packageAmount
       : null;
 
     const booking = await prisma.eventBooking.create({

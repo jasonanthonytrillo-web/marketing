@@ -7,6 +7,8 @@ export default function PackagesTab() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -51,13 +53,21 @@ export default function PackagesTab() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this event package?')) return;
+  const handleDelete = (pkg) => {
+    setDeleteTarget(pkg);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
-      await deleteAdminPackage(id);
-      setPackages(packages.filter(p => p.id !== id));
+      await deleteAdminPackage(deleteTarget.id);
+      setPackages(current => current.filter(p => p.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (err) {
-      alert('Failed to delete package');
+      setError('Failed to delete package');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -175,7 +185,7 @@ export default function PackagesTab() {
                       <button onClick={() => handleEdit(pkg)} className="flex-1 py-3 bg-surface-50 text-surface-700 rounded-2xl font-bold hover:bg-surface-100 hover:text-surface-900 transition-colors flex items-center justify-center gap-2 border border-surface-200 shadow-sm">
                         <Edit2 className="w-4 h-4" /> Edit
                       </button>
-                      <button onClick={() => handleDelete(pkg.id)} className="w-[52px] flex items-center justify-center bg-red-50 text-red-500 rounded-2xl font-bold border border-red-100 hover:bg-red-500 hover:text-white transition-all shadow-sm">
+                      <button onClick={() => handleDelete(pkg)} className="w-[52px] flex items-center justify-center bg-red-50 text-red-500 rounded-2xl font-bold border border-red-100 hover:bg-red-500 hover:text-white transition-all shadow-sm" aria-label={`Delete ${pkg.name}`}>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -279,6 +289,29 @@ export default function PackagesTab() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:pl-[calc(16rem+1.5rem)]" role="dialog" aria-modal="true" aria-labelledby="delete-package-title">
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => !isDeleting && setDeleteTarget(null)}></div>
+          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
+            <div className="p-6 md:p-7">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+                  <Trash2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 id="delete-package-title" className="text-xl font-black text-slate-900">Delete event package?</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-500">Are you sure you want to delete <span className="font-black text-slate-700">{deleteTarget.name}</span>?</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 md:px-7">
+              <button type="button" disabled={isDeleting} onClick={() => setDeleteTarget(null)} className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-black text-slate-600 transition hover:bg-slate-100 disabled:opacity-50">Cancel</button>
+              <button type="button" disabled={isDeleting} onClick={confirmDelete} className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50">{isDeleting ? 'Deleting...' : 'Delete package'}</button>
+            </div>
           </div>
         </div>
       )}

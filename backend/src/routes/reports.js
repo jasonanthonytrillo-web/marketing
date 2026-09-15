@@ -759,7 +759,7 @@ router.get('/export/bookings.xlsx', authenticate, authorize('admin'), async (req
     bookings.forEach(booking => sheet.addRow([
       booking.id, booking.customerName, booking.customerEmail, booking.customerPhone || '', booking.package?.name || '', booking.eventType,
       new Date(booking.eventDate).toLocaleString('en-PH'), booking.venue, booking.locationGuide || '', booking.guestCount || '', paymentLabels[booking.paymentMethod] || 'GCash',
-      booking.paymentMode === 'downpayment' ? (booking.paymentStatus === 'paid' ? 'Downpayment + balance paid' : 'Downpayment (50%)') : 'Full payment',
+      booking.paymentMode === 'downpayment' ? (booking.paymentStatus === 'paid' ? 'Downpayment + balance paid' : 'Downpayment (₱1,000)') : 'Full payment',
       booking.paymentAmount || 0, booking.status, booking.reviewedAt ? new Date(booking.reviewedAt).toLocaleString('en-PH') : ''
     ]));
     styleExcelDataRows(sheet, headerRow + 1, sheet.rowCount, columns);

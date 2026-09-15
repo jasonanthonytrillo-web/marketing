@@ -934,13 +934,26 @@ router.put('/packages/:id', authenticate, authorize('admin', 'manager'), async (
 router.delete('/packages/:id', authenticate, authorize('admin', 'manager'), async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.eventPackage.delete({
-      where: { id: parseInt(id), tenantId: req.tenantId }
+    const packageId = parseInt(id, 10);
+    const eventPackage = await prisma.eventPackage.findFirst({
+      where: { id: packageId, tenantId: req.tenantId },
+      select: { id: true, name: true }
     });
+    if (!eventPackage) return res.status(404).json({ success: false, message: 'Package not found.' });
+
+    const bookingCount = await prisma.eventBooking.count({ where: { packageId, tenantId: req.tenantId } });
+    if (bookingCount > 0) {
+      await prisma.eventPackage.update({
+        where: { id: packageId },
+        data: { isActive: false, isPopular: false }
+      });
+    } else {
+      await prisma.eventPackage.delete({ where: { id: packageId } });
+    }
     await prisma.auditLog.create({
-      data: { tenantId: req.tenantId, userId: req.user.id, action: 'delete_package', entityType: 'package', entityId: id, details: `Deleted package ID: ${id}` }
+      data: { tenantId: req.tenantId, userId: req.user.id, action: bookingCount > 0 ? 'archive_package' : 'delete_package', entityType: 'package', entityId: id, details: `${bookingCount > 0 ? 'Archived' : 'Deleted'} package: ${eventPackage.name}` }
     });
-    res.json({ success: true, message: 'Package deleted successfully.' });
+    res.json({ success: true, message: bookingCount > 0 ? 'Package archived because it has booking history.' : 'Package deleted successfully.' });
   } catch (error) {
     console.error('Delete Package Error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete package.' });
@@ -1024,9 +1037,9 @@ router.post('/bookings/:id/payment-request', authenticate, authorize('admin'), a
     const packageAmount = Number(String(booking.package.priceText || '').replace(/[^0-9.]/g, ''));
     const paymentMode = booking.paymentMode || requestedPaymentMode;
     const calculatedAmount = Number.isFinite(packageAmount) && packageAmount > 0
-      ? paymentMode === 'downpayment' ? packageAmount / 2 : packageAmount
+      ? paymentMode === 'downpayment' ? 1000 : packageAmount
       : null;
-    const amount = Number(booking.paymentAmount || calculatedAmount || requestedPaymentAmount);
+    const amount = Number(calculatedAmount || requestedPaymentAmount);
     if (!['downpayment', 'full_payment'].includes(paymentMode) || !Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ success: false, message: 'Enter a valid payment amount.' });
     }

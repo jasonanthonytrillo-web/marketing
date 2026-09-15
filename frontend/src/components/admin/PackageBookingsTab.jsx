@@ -94,7 +94,8 @@ export default function PackageBookingsTab() {
   const openPaymentRequest = (booking) => {
     setPaymentBooking(booking);
     const packageAmount = Number(String(booking.package?.priceText || '').replace(/[^0-9.]/g, ''));
-    setPaymentForm({ paymentMode: booking.paymentMode || 'full_payment', paymentAmount: booking.paymentAmount || (Number.isFinite(packageAmount) ? packageAmount : '') });
+    const paymentMode = booking.paymentMode || 'full_payment';
+    setPaymentForm({ paymentMode, paymentAmount: paymentMode === 'downpayment' ? 1000 : (Number.isFinite(packageAmount) ? packageAmount : '') });
   };
 
   const sendPaymentRequest = async (event) => {
@@ -167,7 +168,7 @@ export default function PackageBookingsTab() {
               <div><p className="text-[10px] font-black uppercase tracking-widest text-surface-400">Payment request</p><h3 className="mt-1 text-xl font-black text-surface-900">{paymentBooking.customerName}</h3></div>
               <button type="button" onClick={() => setPaymentBooking(null)} className="text-2xl text-surface-400">×</button>
             </div>
-            <div className="mt-5 rounded-2xl border border-surface-200 bg-surface-50 p-4 text-sm"><p className="font-bold text-surface-700">Customer payment choice</p><p className="mt-1 font-black text-primary-600">{paymentForm.paymentMode === 'downpayment' ? 'Downpayment (50%)' : 'Full payment'}</p></div>
+            <div className="mt-5 rounded-2xl border border-surface-200 bg-surface-50 p-4 text-sm"><p className="font-bold text-surface-700">Customer payment choice</p><p className="mt-1 font-black text-primary-600">{paymentForm.paymentMode === 'downpayment' ? 'Downpayment (₱1,000)' : 'Full payment'}</p></div>
             <label className="mt-4 block text-sm font-bold text-surface-700">Amount to pay
               <input required readOnly type="number" min="0.01" step="0.01" value={paymentForm.paymentAmount} onChange={e => setPaymentForm({ ...paymentForm, paymentAmount: e.target.value })} className="input-field mt-1 w-full bg-surface-50 font-black" />
             </label>
