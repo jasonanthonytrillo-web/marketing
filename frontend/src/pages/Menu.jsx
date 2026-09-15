@@ -274,6 +274,7 @@ export default function Menu() {
     if (bookingForm.eventType === 'Other' && !bookingForm.otherEventType.trim()) errors.otherEventType = true;
     if (!bookingForm.venue.trim()) errors.venue = true;
     if (!bookingForm.eventDate || !/T\d{2}:\d{2}$/.test(bookingForm.eventDate)) errors.eventDate = true;
+    if (!/^\d{11}$/.test(bookingForm.customerPhone)) errors.customerPhone = true;
     if (!bookingForm.paymentMethod) errors.paymentMethod = true;
     if (!bookingForm.paymentMode) errors.paymentMode = true;
     if (bookingForm.coffeeSelections.length !== drinkLimits.coffee) errors.coffeeSelections = true;
@@ -1362,7 +1363,7 @@ export default function Menu() {
       {showPackages && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
           <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={closePackages}></div>
-          <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[28px] bg-cover bg-center shadow-2xl animate-fade-in-up scrollbar-hide" style={{ backgroundImage: "url('/package-pic.jpg')" }}>
+          <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-x-hidden overflow-y-auto rounded-[28px] bg-center bg-no-repeat shadow-2xl animate-fade-in-up scrollbar-hide" style={{ backgroundImage: "url('/package-pic.jpg')", backgroundSize: '100% 100%' }}>
             <div className="pointer-events-none absolute inset-0 bg-white/95"></div>
 
             <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/90 backdrop-blur-md border-b border-surface-100">
@@ -1401,14 +1402,6 @@ export default function Menu() {
                       {getPackagePax(pkg) && <div className="mx-auto mb-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700">{getPackagePax(pkg)} PAX</div>}
                       <p className="text-surface-500 text-xs mb-3 min-h-[36px] flex items-center justify-center">{pkg.description}</p>
                       <div className="text-2xl md:text-3xl font-black mb-4" style={{ color: pkg.isPopular ? brandingColor : '#334155' }}>{pkg.priceText}</div>
-
-                      {(() => {
-                        const drinkLimits = getPackageDrinkLimits(pkg);
-                        return <div className="mb-5 rounded-xl border-2 border-amber-200 bg-amber-50 px-3 py-3 text-left shadow-sm">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Drinks included</p>
-                          <p className="mt-1 text-sm font-black leading-snug text-surface-900">{drinkLimits.coffee} coffee drink{drinkLimits.coffee === 1 ? '' : 's'} <span className="text-amber-600">+</span> {drinkLimits.nonCoffee} non-coffee option{drinkLimits.nonCoffee === 1 ? '' : 's'}</p>
-                        </div>;
-                      })()}
 
                       {pkg.features && (
                         <ul className="text-xs text-surface-600 space-y-2 mb-6 text-left max-w-[200px] mx-auto min-h-[100px]">
@@ -1519,8 +1512,9 @@ export default function Menu() {
                   <div><span className="mb-1 block text-[11px] font-semibold text-surface-400">Time</span><input required type="time" value={bookingForm.eventDate.split('T')[1] || ''} onChange={e => updateBookingDateTime('time', e.target.value)} className={`input-field w-full ${bookingErrors.eventDate ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100 shadow-[0_0_14px_rgba(239,68,68,0.22)]' : ''}`} /></div>
                 </div>
               </label>
-              <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-primary-600" />Contact number</span>
-                <input type="tel" value={bookingForm.customerPhone} onChange={e => setBookingForm({ ...bookingForm, customerPhone: e.target.value })} placeholder="09XX XXX XXXX" className="input-field mt-1 w-full" />
+              <label className="text-sm font-bold text-surface-700" data-booking-error={bookingErrors.customerPhone ? 'true' : undefined}><span className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-primary-600" />Contact number <span className="text-red-500">*</span></span>
+                <input required type="tel" inputMode="numeric" pattern="[0-9]{11}" maxLength="11" value={bookingForm.customerPhone} onChange={e => { setBookingForm({ ...bookingForm, customerPhone: e.target.value.replace(/\D/g, '').slice(0, 11) }); clearBookingError('customerPhone'); }} placeholder="09XXXXXXXXX" className={`input-field mt-1 w-full ${bookingErrors.customerPhone ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100' : ''}`} />
+                {bookingErrors.customerPhone && <span className="mt-1 block text-xs font-bold text-red-600">Enter exactly 11 digits.</span>}
               </label>
               <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50/50 p-4" data-booking-error={bookingErrors.coffeeSelections || bookingErrors.nonCoffeeSelections ? 'true' : undefined}>
                 <div className="flex flex-wrap items-start justify-between gap-2">

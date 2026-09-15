@@ -14,6 +14,9 @@ router.post('/', authenticate, authorize('customer'), async (req, res) => {
     if (!Number.isInteger(parsedPackageId) || !customerName?.trim() || !customerEmail?.trim() || !eventType?.trim() || !venue?.trim() || !/T\d{2}:\d{2}/.test(eventDate || '') || Number.isNaN(parsedDate.getTime())) {
       return res.status(400).json({ success: false, message: 'Package, customer details, event type, venue, and both event date and time are required.' });
     }
+    if (!/^\d{11}$/.test(String(customerPhone || ''))) {
+      return res.status(400).json({ success: false, message: 'Contact number must contain exactly 11 digits.' });
+    }
     if (parsedDate < new Date()) {
       return res.status(400).json({ success: false, message: 'The event date must be in the future.' });
     }
