@@ -16,6 +16,12 @@ const getPaymentBadge = (booking) => {
   return { label: 'Payment Pending', className: 'bg-slate-100 text-slate-600' };
 };
 
+const getPackagePax = (eventPackage) => eventPackage?.features?.split(',').map(item => item.trim()).find(item => /pax/i.test(item));
+const getDrinkSelections = (notes = '') => {
+  const match = notes.match(/Drink selections:\s*Coffee:\s*(.*?)\s*Non-coffee:\s*(.*)$/is);
+  return match ? { coffee: match[1].trim(), nonCoffee: match[2].trim() } : null;
+};
+
 export default function PackageBookingsTab() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -232,6 +238,7 @@ export default function PackageBookingsTab() {
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-surface-400">{booking.package.name}</p>
                   <h3 className="mt-1 text-xl font-black text-surface-900">{booking.customerName}</h3>
+                  {getPackagePax(booking.package) && <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700">{getPackagePax(booking.package)}</span>}
                 </div>
                 <div className="flex flex-wrap justify-end gap-2">
                   <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : booking.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
@@ -267,7 +274,20 @@ export default function PackageBookingsTab() {
                   <ExternalLink className="h-4 w-4" /> Navigate in Google Maps
                 </a>
               )}
-              {booking.notes && <p className="mt-4 rounded-xl bg-surface-50 p-3 text-sm text-surface-600"><strong className="text-surface-900">Notes:</strong> {booking.notes}</p>}
+              {booking.notes && (() => {
+                const drinkSelections = getDrinkSelections(booking.notes);
+                const generalNotes = booking.notes.replace(/\n?\n?Drink selections:\s*Coffee:\s*.*?\s*Non-coffee:\s*.*$/is, '').trim();
+                return <>
+                  {drinkSelections && <div className="mt-4 rounded-2xl border-2 border-amber-200 bg-amber-50 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Drink selections</p>
+                    <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                      <p><strong className="text-surface-900">Coffee:</strong> {drinkSelections.coffee}</p>
+                      <p><strong className="text-surface-900">Non-coffee:</strong> {drinkSelections.nonCoffee}</p>
+                    </div>
+                  </div>}
+                  {generalNotes && <p className="mt-3 rounded-xl bg-surface-50 p-3 text-sm text-surface-600"><strong className="text-surface-900">Notes:</strong> {generalNotes}</p>}
+                </>;
+              })()}
 
               {view === 'archives' ? (
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-surface-100 pt-4">

@@ -975,7 +975,7 @@ router.get('/bookings', authenticate, authorize('admin'), async (req, res) => {
       where: {
         ...where
       },
-      include: { package: { select: { name: true, priceText: true } } },
+      include: { package: { select: { name: true, priceText: true, features: true } } },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }]

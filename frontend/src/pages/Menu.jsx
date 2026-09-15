@@ -10,7 +10,7 @@ import useStoreOperationRealtime from '../hooks/useStoreOperationRealtime';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
 import LocationPicker from '../components/LocationPicker';
-import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles, ChevronDown, CalendarDays, MapPin, Users, Phone, FileText } from 'lucide-react';
+import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles, ChevronDown, CalendarDays, MapPin, Phone, FileText } from 'lucide-react';
 
 const DEFAULT_MENU_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
 const COMMON_EVENT_TYPES = ['Birthday', 'Wedding', 'Corporate event', 'School event', 'Festival or market', 'Private gathering', 'Other'];
@@ -22,8 +22,15 @@ const PACKAGE_DRINK_LIMITS = {
   'The Elevated Pour': { coffee: 4, nonCoffee: 1 },
   'The Grand Pour': { coffee: 4, nonCoffee: 2 }
 };
+const PACKAGE_PAX = {
+  'The Curated': 30,
+  'The Signature Pour': 60,
+  'The Elevated Pour': 90,
+  'The Grand Pour': 120
+};
 
 const getPackageDrinkLimits = (eventPackage) => PACKAGE_DRINK_LIMITS[eventPackage?.name] || { coffee: 0, nonCoffee: 0 };
+const getPackagePax = (eventPackage) => PACKAGE_PAX[eventPackage?.name];
 
 const getOptimizedImageUrl = (imageUrl) => {
   if (!imageUrl) return DEFAULT_MENU_IMAGE;
@@ -63,7 +70,7 @@ export default function Menu() {
   const [showPackages, setShowPackages] = useState(false);
   const [showPackageTerms, setShowPackageTerms] = useState(false);
   const [bookingPackage, setBookingPackage] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', coffeeSelections: [], nonCoffeeSelections: [], paymentMethod: 'cash', paymentMode: 'full_payment' });
+  const [bookingForm, setBookingForm] = useState({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', locationGuide: '', notes: '', coffeeSelections: [], nonCoffeeSelections: [], paymentMethod: 'cash', paymentMode: 'full_payment' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
   const [bookingErrors, setBookingErrors] = useState({});
@@ -254,7 +261,7 @@ export default function Menu() {
     setBookingMessage('');
     setBookingErrors({});
     setBookingEventOpen(false);
-    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', guestCount: '', locationGuide: '', notes: '', coffeeSelections: [], nonCoffeeSelections: [], paymentMethod: 'cash', paymentMode: 'full_payment' });
+    setBookingForm({ eventType: '', otherEventType: '', venue: '', venueLat: null, venueLng: null, eventDate: '', customerPhone: '', locationGuide: '', notes: '', coffeeSelections: [], nonCoffeeSelections: [], paymentMethod: 'cash', paymentMode: 'full_payment' });
     setShowBookingMap(false);
     closePackages();
   };
@@ -1356,7 +1363,7 @@ export default function Menu() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
           <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={closePackages}></div>
           <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[28px] bg-cover bg-center shadow-2xl animate-fade-in-up scrollbar-hide" style={{ backgroundImage: "url('/package-pic.jpg')" }}>
-            <div className="pointer-events-none absolute inset-0 bg-white/80"></div>
+            <div className="pointer-events-none absolute inset-0 bg-white/95"></div>
 
             <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/90 backdrop-blur-md border-b border-surface-100">
               <div>
@@ -1381,7 +1388,7 @@ export default function Menu() {
                   </div>
                 ) : (
                   eventPackages.map(pkg => (
-                    <div key={pkg.id} className={`rounded-[20px] p-5 text-center shadow-sm relative overflow-hidden group hover:border-primary-300 transition-all ${pkg.isPopular ? 'border-2 bg-white transform md:-translate-y-2 shadow-lg' : 'border border-surface-200 bg-surface-50/50'}`} style={pkg.isPopular ? { borderColor: brandingColor } : {}}>
+                    <div key={pkg.id} className={`rounded-[20px] p-5 text-center shadow-sm relative overflow-hidden group hover:border-primary-300 transition-all ${pkg.isPopular ? 'border-2 bg-white transform md:-translate-y-2 shadow-lg' : 'border border-surface-200 bg-white'}`} style={pkg.isPopular ? { borderColor: brandingColor } : {}}>
                       {pkg.isPopular && (
                         <div className="absolute top-0 inset-x-0 py-1 text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest" style={{ backgroundColor: brandingColor }}>Most Popular</div>
                       )}
@@ -1391,8 +1398,17 @@ export default function Menu() {
                       </div>
 
                       <h4 className="text-lg md:text-xl font-black text-surface-900 mb-1">{pkg.name}</h4>
+                      {getPackagePax(pkg) && <div className="mx-auto mb-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700">{getPackagePax(pkg)} PAX</div>}
                       <p className="text-surface-500 text-xs mb-3 min-h-[36px] flex items-center justify-center">{pkg.description}</p>
                       <div className="text-2xl md:text-3xl font-black mb-4" style={{ color: pkg.isPopular ? brandingColor : '#334155' }}>{pkg.priceText}</div>
+
+                      {(() => {
+                        const drinkLimits = getPackageDrinkLimits(pkg);
+                        return <div className="mb-5 rounded-xl border-2 border-amber-200 bg-amber-50 px-3 py-3 text-left shadow-sm">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Drinks included</p>
+                          <p className="mt-1 text-sm font-black leading-snug text-surface-900">{drinkLimits.coffee} coffee drink{drinkLimits.coffee === 1 ? '' : 's'} <span className="text-amber-600">+</span> {drinkLimits.nonCoffee} non-coffee option{drinkLimits.nonCoffee === 1 ? '' : 's'}</p>
+                        </div>;
+                      })()}
 
                       {pkg.features && (
                         <ul className="text-xs text-surface-600 space-y-2 mb-6 text-left max-w-[200px] mx-auto min-h-[100px]">
@@ -1418,7 +1434,7 @@ export default function Menu() {
               </div>
 
               {/* Footer Note */}
-              <div className="bg-surface-100 rounded-2xl p-6 text-center border border-surface-200">
+              <div className="bg-white rounded-2xl p-6 text-center border border-surface-200 shadow-sm">
                 <Info className="w-6 h-6 text-surface-400 mx-auto mb-2" />
                 <h5 className="font-bold text-surface-800 mb-1">Need a custom quotation?</h5>
                 <p className="text-surface-500 text-sm mb-4">If you want a custom package, please inquire through our Facebook page and our team will help create one for your event.</p>
@@ -1502,9 +1518,6 @@ export default function Menu() {
                   <div><span className="mb-1 block text-[11px] font-semibold text-surface-400">Date</span><input required type="date" min={new Date().toISOString().slice(0, 10)} value={bookingForm.eventDate.split('T')[0] || ''} onChange={e => updateBookingDateTime('date', e.target.value)} className={`input-field w-full ${bookingErrors.eventDate ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100 shadow-[0_0_14px_rgba(239,68,68,0.22)]' : ''}`} /></div>
                   <div><span className="mb-1 block text-[11px] font-semibold text-surface-400">Time</span><input required type="time" value={bookingForm.eventDate.split('T')[1] || ''} onChange={e => updateBookingDateTime('time', e.target.value)} className={`input-field w-full ${bookingErrors.eventDate ? 'border-red-500 bg-red-50/40 ring-2 ring-red-100 shadow-[0_0_14px_rgba(239,68,68,0.22)]' : ''}`} /></div>
                 </div>
-              </label>
-              <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-primary-600" />Number of guests</span>
-                <input type="number" min="1" value={bookingForm.guestCount} onChange={e => setBookingForm({ ...bookingForm, guestCount: e.target.value })} placeholder="Optional" className="input-field mt-1 w-full" />
               </label>
               <label className="text-sm font-bold text-surface-700"><span className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-primary-600" />Contact number</span>
                 <input type="tel" value={bookingForm.customerPhone} onChange={e => setBookingForm({ ...bookingForm, customerPhone: e.target.value })} placeholder="09XX XXX XXXX" className="input-field mt-1 w-full" />
