@@ -1,0 +1,105 @@
+%PDF-1.4
+%ÿÿÿÿ
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Length 4214 >>
+stream
+BT
+/F1 10 Tf
+48 784 Td
+0 0 Td 0.04 0.24 0.08 rg /F2 22 Tf (Database Storage Overview) Tj
+0 -34 Td 0.35 0.42 0.50 rg /F1 10 Tf (Hometown Brew POS System | Prepared September 2026) Tj
+0 -15 Td 0.04 0.24 0.08 rg /F2 14 Tf (Executive Summary) Tj
+0 -24 Td 0.12 0.18 0.25 rg /F1 10 Tf (The live application database is currently using approximately 13 MB of storage. This is a) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (small amount for a production POS database and there is no immediate storage concern.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (At an estimated 40 customer orders per day, the system would process approximately 14,600) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (orders per year. Based on the current data sample, expected database growth is) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (approximately 30–100 MB per year, depending on order details, payments, notifications, and) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (inventory records.) Tj
+0 -15 Td 0.04 0.24 0.08 rg /F2 14 Tf (Current Usage) Tj
+0 -24 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Total database size: approximately 13.3 MiB \(13,929,619 bytes\)) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Current Order rows: 8) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Current OrderItem rows: 8) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Current AuditLog rows: 0; audit logging is disabled) Tj
+0 -15 Td 0.04 0.24 0.08 rg /F2 14 Tf (Largest Tables) Tj
+0 -24 Td 0.12 0.18 0.25 rg /F1 10 Tf (• AuditLog: 360 KB allocated table space; no active records are being stored) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• objects: 304 KB; Supabase Storage file metadata and indexes) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Order: 264 KB; main customer order records) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• users: 128 KB; customer, staff, and account records, including loyalty points) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• OrderItem: 128 KB; products and quantities belonging to each order) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• EventBooking: 80 KB; event package booking records) Tj
+0 -15 Td 0.04 0.24 0.08 rg /F2 14 Tf (What Grows Over Time) Tj
+0 -24 Td 0.12 0.18 0.25 rg /F1 10 Tf (Regular sales primarily add records to Order, OrderItem, Payment, InventoryLog, and) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (Notification. Event package reservations add records to EventBooking. Customer loyalty) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (points are stored on the customer account in users and are not recalculated from old) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (orders.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (The objects table stores metadata for uploaded files such as logos, product images,) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (package images, and QR codes. The actual file contents are stored separately in Supabase) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (Storage.) Tj
+0 -15 Td 0.04 0.24 0.08 rg /F2 14 Tf (Forecast at 40 Orders Per Day) Tj
+0 -24 Td 0.12 0.18 0.25 rg /F1 10 Tf (• 40 orders per day = approximately 1,200 orders per month) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• 40 orders per day = approximately 14,600 orders per year) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Current order data averages about 1.9 KB per order in the present sample) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Raw Order and OrderItem data would add approximately 28 MB per year) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Allow approximately 30–100 MB per year after related records and indexes) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (The exact date when storage becomes full depends on the database quota and future usage) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (patterns. Storage is not expected to fill quickly at the current projected volume.) Tj
+0 -15 Td 0.04 0.24 0.08 rg /F2 14 Tf (Recommended Monthly Backup Plan) Tj
+0 -24 Td 0.12 0.18 0.25 rg /F1 10 Tf (1. Export orders, order items, payments, inventory logs, event bookings, and) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (customer accounts.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (2. Store exports by month on the client hard drive.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (3. Keep at least one additional backup copy in a separate location.) Tj
+ET
+endstream
+endobj
+4 0 obj
+<< /Length 1065 >>
+stream
+BT
+/F1 10 Tf
+48 784 Td
+0 0 Td 0.12 0.18 0.25 rg /F1 10 Tf (4. Open and verify each export before deleting any database records.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (5. Delete old records only after confirming the backup is complete and usable.) Tj
+0 -15 Td 0.04 0.24 0.08 rg /F2 14 Tf (Important Data-Safety Notes) Tj
+0 -24 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Deleting orders can affect order history, reporting, refunds, and related records.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Deleting Order rows may also remove related OrderItem and Payment records.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• Deleting old orders does not remove customer loyalty points stored in users.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• PostgreSQL may need maintenance after deletion before disk space is reclaimed.) Tj
+0 -15 Td 0.12 0.18 0.25 rg /F1 10 Tf (• A backup should always be completed before bulk deletion.) Tj
+0 -15 Td 0.45 0.50 0.56 rg /F1 8 Tf (Prepared for Hometown Brew | Storage information is based on the current live database snapshot.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Pages /Kids [6 0 R 7 0 R] /Count 2 >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 5 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 3 0 R >>
+endobj
+7 0 obj
+<< /Type /Page /Parent 5 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 4 0 R >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 5 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000019 00000 n 
+0000000089 00000 n 
+0000000164 00000 n 
+0000004430 00000 n 
+0000005547 00000 n 
+0000005610 00000 n 
+0000005746 00000 n 
+0000005882 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+5931
+%%EOF

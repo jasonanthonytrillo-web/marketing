@@ -17,6 +17,7 @@ const getPaymentBadge = (booking) => {
 };
 
 const getPackagePax = (eventPackage) => eventPackage?.features?.split(',').map(item => item.trim()).find(item => /pax/i.test(item));
+const getPackageDuration = (eventPackage) => eventPackage?.features?.split(',').map(item => item.trim()).find(item => /hours?/i.test(item));
 const getDrinkSelections = (notes = '') => {
   const match = notes.match(/Drink selections:\s*Coffee:\s*(.*?)\s*Non-coffee:\s*(.*)$/is);
   return match ? { coffee: match[1].trim(), nonCoffee: match[2].trim() } : null;
@@ -259,6 +260,7 @@ export default function PackageBookingsTab() {
                 <p><strong className="text-surface-900">What:</strong> {booking.eventType}</p>
                 <p><strong className="text-surface-900">Payment:</strong> {bookingPaymentMethodLabel(booking.paymentMethod)}</p>
                 {getPackagePax(booking.package) && <p><strong className="text-surface-900">Package pax:</strong> {getPackagePax(booking.package)}</p>}
+                {getPackageDuration(booking.package) && <p><strong className="text-surface-900">Service duration:</strong> {getPackageDuration(booking.package)}</p>}
                 {booking.locationGuide && <p className="sm:col-span-2"><strong className="text-surface-900">Location guide:</strong> {booking.locationGuide}</p>}
                 {booking.guestCount && <p><strong className="text-surface-900">Guests:</strong> {booking.guestCount}</p>}
                 <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary-500" />{booking.customerEmail}</p>
