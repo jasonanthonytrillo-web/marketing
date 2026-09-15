@@ -966,9 +966,20 @@ router.get('/bookings', authenticate, authorize('admin'), async (req, res) => {
     const archived = req.query.archived === 'true';
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const completedPastBooking = {
+      eventDate: { lt: new Date() },
+      status: 'accepted',
+      OR: [
+        { paymentStatus: 'paid' },
+        { paymentMode: 'full_payment', paymentStatus: 'verified' },
+        { paymentMethod: 'cash', paymentStatus: 'verified' }
+      ]
+    };
     const where = {
       tenantId: req.tenantId,
-      status: archived ? { in: ['rejected', 'cancelled'] } : { notIn: ['rejected', 'cancelled'] }
+      ...(archived
+        ? { OR: [{ status: { in: ['rejected', 'cancelled'] } }, completedPastBooking] }
+        : { status: { notIn: ['rejected', 'cancelled'] }, NOT: completedPastBooking })
     };
     const [bookings, total] = await Promise.all([
       prisma.eventBooking.findMany({
@@ -997,7 +1008,12 @@ router.delete('/bookings/:id', authenticate, authorize('admin'), async (req, res
       include: { package: { select: { name: true, priceText: true } } }
     });
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found.' });
-    if (!['rejected', 'cancelled'].includes(booking.status)) {
+    const completedPastBooking = booking.eventDate < new Date() && booking.status === 'accepted' && (
+      booking.paymentStatus === 'paid'
+      || (booking.paymentMode === 'full_payment' && booking.paymentStatus === 'verified')
+      || (booking.paymentMethod === 'cash' && booking.paymentStatus === 'verified')
+    );
+    if (!['rejected', 'cancelled'].includes(booking.status) && !completedPastBooking) {
       return res.status(400).json({ success: false, message: 'Only archived bookings can be permanently deleted.' });
     }
 
