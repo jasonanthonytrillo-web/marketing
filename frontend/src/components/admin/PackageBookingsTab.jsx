@@ -238,7 +238,6 @@ export default function PackageBookingsTab() {
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-surface-400">{booking.package.name}</p>
                   <h3 className="mt-1 text-xl font-black text-surface-900">{booking.customerName}</h3>
-                  {getPackagePax(booking.package) && <span className="mt-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-700">{getPackagePax(booking.package)}</span>}
                 </div>
                 <div className="flex flex-wrap justify-end gap-2">
                   <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' : booking.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
@@ -259,6 +258,7 @@ export default function PackageBookingsTab() {
                 </div>
                 <p><strong className="text-surface-900">What:</strong> {booking.eventType}</p>
                 <p><strong className="text-surface-900">Payment:</strong> {bookingPaymentMethodLabel(booking.paymentMethod)}</p>
+                {getPackagePax(booking.package) && <p><strong className="text-surface-900">Package pax:</strong> {getPackagePax(booking.package)}</p>}
                 {booking.locationGuide && <p className="sm:col-span-2"><strong className="text-surface-900">Location guide:</strong> {booking.locationGuide}</p>}
                 {booking.guestCount && <p><strong className="text-surface-900">Guests:</strong> {booking.guestCount}</p>}
                 <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary-500" />{booking.customerEmail}</p>
@@ -295,11 +295,11 @@ export default function PackageBookingsTab() {
                   <button disabled={processingId === booking.id} onClick={() => permanentlyDeleteBooking(booking)} className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-black text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"><Trash2 className="h-4 w-4" /> Delete permanently</button>
                 </div>
               ) : booking.status === 'accepted' && booking.paymentMode === 'downpayment' && booking.paymentStatus === 'verified' ? (
-                <div className="mt-5 flex gap-3 border-t border-surface-100 pt-4">
-                  <button disabled={processingId === booking.id} onClick={() => setPaymentCompletionBooking(booking)} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"><Check className="h-4 w-4" /> Payment Completed</button>
+                <div className="mt-5 grid grid-cols-1 gap-2 border-t border-surface-100 pt-4 sm:flex sm:gap-3">
+                  <button disabled={processingId === booking.id} onClick={() => setPaymentCompletionBooking(booking)} className="flex w-full flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-3 text-xs font-black leading-tight text-white transition-colors hover:bg-emerald-700 disabled:opacity-50 sm:px-4 sm:text-sm"><Check className="h-4 w-4 flex-shrink-0" /> Payment Completed</button>
                 </div>
               ) : booking.status === 'pending' && (
-                <div className="mt-5 flex gap-3 border-t border-surface-100 pt-4">
+                <div className="mt-5 grid grid-cols-2 items-stretch gap-2 border-t border-surface-100 pt-4 [&>button]:min-w-0 [&>button]:w-full [&>button]:px-2 [&>button]:text-[11px] [&>button]:leading-tight sm:flex sm:gap-3 sm:[&>button]:w-auto sm:[&>button]:px-4 sm:[&>button]:text-sm">
                   {booking.paymentStatus === 'submitted' ? (
                     <>
                       <button disabled={processingId === booking.id} onClick={() => updatePaymentStatus(booking, 'verified')} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-blue-700 disabled:opacity-50"><Check className="h-4 w-4" /> Verify ₱{Number(booking.paymentAmount).toFixed(2)} / Ref {booking.paymentReference}</button>

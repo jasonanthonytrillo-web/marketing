@@ -22,15 +22,9 @@ const PACKAGE_DRINK_LIMITS = {
   'The Elevated Pour': { coffee: 4, nonCoffee: 1 },
   'The Grand Pour': { coffee: 4, nonCoffee: 2 }
 };
-const PACKAGE_PAX = {
-  'The Curated': 30,
-  'The Signature Pour': 60,
-  'The Elevated Pour': 90,
-  'The Grand Pour': 120
-};
-
 const getPackageDrinkLimits = (eventPackage) => PACKAGE_DRINK_LIMITS[eventPackage?.name] || { coffee: 0, nonCoffee: 0 };
-const getPackagePax = (eventPackage) => PACKAGE_PAX[eventPackage?.name];
+const getPackagePax = (eventPackage) => eventPackage?.features?.split(',').map(item => item.trim()).find(item => /pax/i.test(item));
+const isBookingFullyPaid = (booking) => booking?.paymentStatus === 'paid' || (booking?.paymentStatus === 'verified' && (booking?.paymentMode === 'full_payment' || booking?.paymentMethod === 'cash'));
 
 const getOptimizedImageUrl = (imageUrl) => {
   if (!imageUrl) return DEFAULT_MENU_IMAGE;
@@ -1364,7 +1358,7 @@ export default function Menu() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
           <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={closePackages}></div>
           <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-x-hidden overflow-y-auto rounded-[28px] bg-center bg-no-repeat shadow-2xl animate-fade-in-up scrollbar-hide" style={{ backgroundImage: "url('/package-pic.jpg')", backgroundSize: '100% 100%' }}>
-            <div className="pointer-events-none absolute inset-0 bg-white/95"></div>
+            <div className="pointer-events-none absolute inset-0 bg-white"></div>
 
             <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/90 backdrop-blur-md border-b border-surface-100">
               <div>
@@ -1399,7 +1393,6 @@ export default function Menu() {
                       </div>
 
                       <h4 className="text-lg md:text-xl font-black text-surface-900 mb-1">{pkg.name}</h4>
-                      {getPackagePax(pkg) && <div className="mx-auto mb-2 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700">{getPackagePax(pkg)} PAX</div>}
                       <p className="text-surface-500 text-xs mb-3 min-h-[36px] flex items-center justify-center">{pkg.description}</p>
                       <div className="text-2xl md:text-3xl font-black mb-4" style={{ color: pkg.isPopular ? brandingColor : '#334155' }}>{pkg.priceText}</div>
 
@@ -1541,6 +1534,13 @@ export default function Menu() {
                   ))}
                 </div>
                 {(bookingErrors.coffeeSelections || bookingErrors.nonCoffeeSelections) && <p className="mt-3 text-xs font-bold text-red-600">Please select the required number of coffee and non-coffee drinks for this package.</p>}
+                <div className="mt-4 flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs font-medium text-blue-900">Want a custom drink or special menu? Please inquire with us on Facebook.</p>
+                  <a href="https://www.facebook.com/hometownbrew24" target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#1877F2] px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-[#166fe5]">
+                    <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 21v-8h2.75l.4-3h-3.15V8.08c0-.87.24-1.46 1.5-1.46h1.75V3.94c-.3-.04-1.34-.13-2.55-.13-2.52 0-4.25 1.54-4.25 4.37V10H7v3h2.95v8h3.55Z" /></svg>
+                    Inquire on Facebook
+                  </a>
+                </div>
               </div>
               <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 p-4 md:col-span-2">
                 <p className="flex items-center gap-2 text-sm font-black text-emerald-900">Payment choice <span className="text-red-500">*</span><span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-700">Required</span></p>
@@ -1616,9 +1616,9 @@ export default function Menu() {
                         <>
                           <div className="flex items-start justify-between gap-3">
                             <div><p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Confirmed booking</p><p className="font-black text-surface-900">{order.package?.name || 'Event package'}</p><p className="text-xs text-surface-500 mt-1">Requested {formatDate(order.createdAt)}</p></div>
-                            <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">Accepted</span>
+                            <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${isBookingFullyPaid(order) ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>{isBookingFullyPaid(order) ? 'Fully Paid' : order.status === 'accepted' ? 'Accepted' : order.status}</span>
                           </div>
-                          <div className="mt-4 grid gap-2 border-t border-emerald-100 pt-4 text-sm text-surface-600 sm:grid-cols-2"><p><strong className="text-surface-900">Event:</strong> {order.eventType}</p><p><strong className="text-surface-900">Date:</strong> {formatDate(order.eventDate)}</p><p className="sm:col-span-2"><strong className="text-surface-900">Venue:</strong> {order.venue}</p>{order.locationGuide && <p className="sm:col-span-2"><strong className="text-surface-900">Location guide:</strong> {order.locationGuide}</p>}<p><strong className="text-surface-900">Payment:</strong> {order.paymentMethod === 'gcash' ? 'GCash' : order.paymentMethod === 'maya' ? 'Maya' : 'Cash'}</p>{order.guestCount && <p><strong className="text-surface-900">Guests:</strong> {order.guestCount}</p>}</div>
+                          <div className="mt-4 grid gap-2 border-t border-emerald-100 pt-4 text-sm text-surface-600 sm:grid-cols-2"><p><strong className="text-surface-900">Event:</strong> {order.eventType}</p><p><strong className="text-surface-900">Date:</strong> {formatDate(order.eventDate)}</p><p className="sm:col-span-2"><strong className="text-surface-900">Venue:</strong> {order.venue}</p>{order.locationGuide && <p className="sm:col-span-2"><strong className="text-surface-900">Location guide:</strong> {order.locationGuide}</p>}<p><strong className="text-surface-900">Payment:</strong> {order.paymentMethod === 'gcash' ? 'GCash' : order.paymentMethod === 'maya' ? 'Maya' : 'Cash'}</p>{getPackagePax(order.package) && <p><strong className="text-surface-900">Package pax:</strong> {getPackagePax(order.package)}</p>}</div>
                         </>
                       ) : (
                         <>

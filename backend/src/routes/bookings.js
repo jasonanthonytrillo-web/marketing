@@ -120,7 +120,7 @@ router.get('/mine', authenticate, authorize('customer'), async (req, res) => {
   try {
     const bookings = await prisma.eventBooking.findMany({
       where: { tenantId: req.tenantId, customerId: req.user.id },
-      include: { package: { select: { name: true, priceText: true } } },
+      include: { package: { select: { name: true, priceText: true, features: true } } },
       orderBy: { createdAt: 'desc' }
     });
     res.json({ success: true, data: bookings });
