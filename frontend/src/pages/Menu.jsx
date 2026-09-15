@@ -1357,8 +1357,7 @@ export default function Menu() {
       {showPackages && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
           <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={closePackages}></div>
-          <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-x-hidden overflow-y-auto rounded-[28px] bg-center bg-no-repeat shadow-2xl animate-fade-in-up scrollbar-hide" style={{ backgroundImage: "url('/package-pic.jpg')", backgroundSize: '100% 100%' }}>
-            <div className="pointer-events-none absolute inset-0 bg-white"></div>
+          <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-x-hidden overflow-y-auto rounded-[28px] bg-white shadow-2xl animate-fade-in-up scrollbar-hide">
 
             <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/90 backdrop-blur-md border-b border-surface-100">
               <div>
