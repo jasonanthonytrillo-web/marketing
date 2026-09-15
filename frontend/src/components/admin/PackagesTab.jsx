@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { getAdminPackages, createAdminPackage, updateAdminPackage, deleteAdminPackage, uploadImage } from '../../services/api';
 import { Plus, Edit2, Trash2, Loader2, Store, Star, Coffee, AlertCircle, Upload } from 'lucide-react';
 
@@ -199,7 +200,7 @@ export default function PackagesTab() {
 
       {/* Editor Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto p-3 sm:p-6">
+        createPortal((<div className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto p-3 sm:p-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setShowModal(false)}></div>
           <div className="relative z-10 my-auto flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-fade-in-up sm:max-h-[calc(100dvh-3rem)] sm:rounded-3xl">
             <div className="px-6 py-5 md:px-8 md:py-6 border-b border-surface-100 shrink-0">
@@ -290,11 +291,11 @@ export default function PackagesTab() {
 
             </form>
           </div>
-        </div>
+        </div>), document.body)
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="delete-package-title">
+        createPortal((<div className="fixed inset-0 z-[1100] flex items-center justify-center overflow-y-auto p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="delete-package-title">
           <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => !isDeleting && setDeleteTarget(null)}></div>
           <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl">
             <div className="p-6 md:p-7">
@@ -313,7 +314,7 @@ export default function PackagesTab() {
               <button type="button" disabled={isDeleting} onClick={confirmDelete} className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50">{isDeleting ? 'Deleting...' : 'Delete package'}</button>
             </div>
           </div>
-        </div>
+        </div>), document.body)
       )}
     </div>
   );

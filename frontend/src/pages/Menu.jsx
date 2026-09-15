@@ -1355,9 +1355,10 @@ export default function Menu() {
       {showPackages && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pb-24 md:p-6">
           <div className="absolute inset-0 bg-surface-900/60 backdrop-blur-sm" onClick={closePackages}></div>
-          <div className="bg-white rounded-[28px] w-full max-w-4xl max-h-[90vh] overflow-y-auto relative z-10 shadow-2xl animate-fade-in-up scrollbar-hide">
+          <div className="relative z-10 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-[28px] bg-cover bg-center shadow-2xl animate-fade-in-up scrollbar-hide" style={{ backgroundImage: "url('/package-pic.jpg')" }}>
+            <div className="pointer-events-none absolute inset-0 bg-white/80"></div>
 
-            <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/95 backdrop-blur-md border-b border-surface-100">
+            <div className="sticky top-0 z-20 flex justify-between items-center p-5 md:p-6 bg-white/90 backdrop-blur-md border-b border-surface-100">
               <div>
                 <h2 className="text-xl md:text-2xl font-heading font-black text-surface-900 leading-tight">Pop-Up Cafe <span style={{ color: brandingColor }}>Packages</span></h2>
                 <p className="text-surface-500 font-medium mt-0.5 text-xs md:text-sm">Bring the premium coffee experience to your next event!</p>
@@ -1370,7 +1371,7 @@ export default function Menu() {
               </button>
             </div>
 
-            <div className="p-4 md:p-6 space-y-6">
+            <div className="relative z-10 p-4 md:p-6 space-y-6">
               {/* Package Tiers */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
 
@@ -1385,15 +1386,9 @@ export default function Menu() {
                         <div className="absolute top-0 inset-x-0 py-1 text-[9px] md:text-[10px] font-black text-white uppercase tracking-widest" style={{ backgroundColor: brandingColor }}>Most Popular</div>
                       )}
 
-                      {pkg.image ? (
-                        <div className={`w-full h-32 md:h-40 rounded-xl overflow-hidden mb-4 shadow-sm ${pkg.isPopular ? 'mt-4' : 'mt-2'}`}>
-                          <img src={pkg.image.startsWith('http') ? pkg.image : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${pkg.image}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={pkg.name} />
-                        </div>
-                      ) : (
-                        <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-sm mx-auto mb-3 mt-4 group-hover:scale-110 transition-transform ${pkg.isPopular ? 'bg-white' : 'bg-white border border-surface-100'}`} style={pkg.isPopular ? { backgroundColor: `${brandingColor}10` } : {}}>
-                          {pkg.icon === 'Star' ? <Star className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { fill: brandingColor, color: brandingColor } : { color: '#94a3b8' }} /> : pkg.icon === 'Store' ? <Store className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} /> : <Coffee className={`w-7 h-7 md:w-8 md:h-8`} style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} />}
-                        </div>
-                      )}
+                      <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-sm mx-auto mb-3 mt-4 group-hover:scale-110 transition-transform ${pkg.isPopular ? 'bg-white' : 'bg-white border border-surface-100'}`} style={pkg.isPopular ? { backgroundColor: `${brandingColor}10` } : {}}>
+                        {pkg.icon === 'Star' ? <Star className="w-7 h-7 md:w-8 md:h-8" style={pkg.isPopular ? { fill: brandingColor, color: brandingColor } : { color: '#94a3b8' }} /> : pkg.icon === 'Store' ? <Store className="w-7 h-7 md:w-8 md:h-8" style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} /> : <Coffee className="w-7 h-7 md:w-8 md:h-8" style={pkg.isPopular ? { color: brandingColor } : { color: '#94a3b8' }} />}
+                      </div>
 
                       <h4 className="text-lg md:text-xl font-black text-surface-900 mb-1">{pkg.name}</h4>
                       <p className="text-surface-500 text-xs mb-3 min-h-[36px] flex items-center justify-center">{pkg.description}</p>
