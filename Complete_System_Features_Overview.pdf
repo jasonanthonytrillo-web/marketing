@@ -1,0 +1,227 @@
+%PDF-1.4
+%ÿÿÿÿ
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R] /Count 4 >>
+endobj
+4 0 obj
+<< /Length 4302 >>
+stream
+BT
+48 784 Td
+0 0 Td 0.04 0.24 0.08 rg /F2 22 Tf (Hometown Brew POS System) Tj
+0 -32 Td 0.35 0.42 0.50 rg /F1 10 Tf (Complete Features and Operations Overview | September 2026) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (1. System Overview) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (A custom, multi-tenant point-of-sale and business operations platform designed for cafes,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (kiosks, pop-up coffee services, and event bookings. The system combines customer ordering,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (staff operations, inventory, payments, loyalty, reporting, and real-time notifications in) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (one application.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Responsive customer-facing menu and account experience) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Admin, cashier, kitchen, rider, and staff workflows) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Real-time order and notification synchronization) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Tenant-specific data isolation, branding, settings, and operations) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (2. Customer Experience) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Browse products by category with descriptions, prices, availability, options,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (add-ons, combos, and dietary or allergen badges.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Add products to a cart, select customizations, review totals, and submit orders.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Support for pickup, dine-in, take-out, and delivery workflows where enabled.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Delivery location selection with map support, address guidance, and distance-based) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (delivery fees.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Customer accounts with secure login, profile information, order history, booking) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (history, and password management.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Google and Facebook login integrations where configured.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Real-time order status and order-ready notifications with optional sound and voice) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (announcements.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Dynamic store branding, colors, logos, banners, seasonal effects, and store) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (operating notices.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (3. Shopping, Payments, and Orders) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Product catalog with categories, images, pricing, stock availability, tags, sizes,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (flavors, add-ons, and combo choices.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Cash, GCash, Maya, card, and loyalty-points payment workflows where configured.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Payment tracking, payment references, discounts, taxes, delivery fees, and order) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (totals.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Order lifecycle management: pending, confirmed, preparing, ready, completed, and) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (cancelled.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Customer and staff order history with order numbers, dates, totals, statuses, and) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (item details.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Receipt and confirmation workflows for completed purchases.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (4. Loyalty and Customer Rewards) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Registered customers earn loyalty points from eligible purchases.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Points can be redeemed for eligible products using configured points costs.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Point balances are stored on customer accounts and are independent of) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (order-history cleanup.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Point adjustments and reversals are handled when orders are cancelled or) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (redemption transactions change.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (5. Cashier and Store Operations) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 4379 >>
+stream
+BT
+48 784 Td
+0 0 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Cashier workspace for processing orders, confirming payments, completing sales,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (and managing point redemptions.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Cash drawer and shift workflows for opening, closing, cash counts, and shift) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (records.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Payment tracking for cash and configured digital payment methods.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Operational controls for store closure, delivery availability, and customer-facing) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (notices.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (6. Kitchen and Fulfillment) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Kitchen display workflow for incoming orders, preparation progress, and) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (completion.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Real-time order updates across customer, cashier, kitchen, and management screens.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Order-ready notifications and optional custom chimes or voice announcements.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Preparation timing and estimated completion support.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (7. Inventory and Supply Management) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Track finished products, raw ingredients, stock quantities, availability, and) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (low-stock conditions.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Raw-ingredient tracking can connect product and add-on consumption to ingredient) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (stock.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Automatic stock depletion for eligible sales and inventory adjustments.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Inventory logs record restocks, sales deductions, adjustments, waste, and related) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (references.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Supplier records for supplier names, contacts, addresses, and supply costs.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Product availability can be controlled so unavailable products or add-ons cannot) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (be selected.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (8. Event and Pop-Up Cafe Packages) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Admin-created packages with package name, description, price, features, icon,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (active status, and optional image.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Current package tiers include The Curated, The Signature Pour, The Elevated Pour,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (and The Grand Pour.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Each package defines its pax capacity, service duration, coffee selections, and) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (non-coffee selections.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Customers select the allowed drink types directly in the booking form.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Custom drink requests link customers to the business Facebook page for inquiry.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Booking form captures event type, venue, date, time, contact number, location) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (guide, notes, and payment choice.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Contact numbers are required and validated as exactly 11 digits.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Downpayment is a fixed P1,000 deposit; full payment uses the package amount.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Terms and Conditions are available from the package modal.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Bookings move to Archives after the event date when fully paid; rejected and) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (cancelled bookings are also archived.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (9. Admin Dashboard) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Overview dashboard with revenue, expenses, profit, order counts, visitors, sales) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (charts, and top categories.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Order management for reviewing, filtering, updating, and monitoring customer) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (orders.) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 4367 >>
+stream
+BT
+48 784 Td
+0 0 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Reports for sales, accepted bookings, payments, inventory activity, and) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (operational performance.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Products and Categories management with product details, pricing, images,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (availability, tags, and options.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Packages management with create, edit, activate, archive, and delete behavior that) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (protects booking history.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Inventory, inventory history, suppliers, expenses, staff, shifts, feedback,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (promotions, bookings, and devices modules.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Booking review actions include payment requests, payment verification, acceptance,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (rejection, completion, and archive management.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (10. Event Booking Administration) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Admin sees package name, customer, event date, venue, event type, payment method,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (package pax, and service duration.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Selected coffee and non-coffee drinks are highlighted for staff in the booking) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (details.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Payment actions support fixed P1,000 downpayments and full-payment completion.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Booking cards use responsive layouts for desktop, tablet, and mobile screens.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (11. Notifications and Real-Time Updates) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- WebSocket-based synchronization keeps relevant screens updated without manual) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (refresh.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Customers receive order-ready and booking payment notifications where configured.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Admins receive notifications for new orders, booking requests, payment references,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (and operational events.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Private tenant and user rooms help keep notifications isolated to the correct) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (store and user.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (12. Security and Data Isolation) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- JWT authentication with protected cookies and role-based access control.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Password hashing using bcrypt.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Admin, manager, cashier, kitchen, rider, staff, and customer permissions are) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (separated by workflow.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Multi-tenant database filtering keeps stores and their data isolated.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Private real-time channels prevent cross-store notification leakage.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Rate limiting, security headers, CORS controls, and protected API routes.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (13. Database, Files, and Storage) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- PostgreSQL database accessed through Prisma ORM for structured, type-safe data) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (operations.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Uploaded files use Supabase Storage; the database stores file metadata and) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (references.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Customer points are stored on customer accounts, not derived from order rows.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Audit logging has been disabled and existing AuditLog records have been cleared.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (14. Backup and Data Retention) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Recommended monthly export includes orders, order items, payments, inventory logs,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (event bookings, and customer accounts.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Exports should be stored by month with an additional backup copy in a separate) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 1563 >>
+stream
+BT
+48 784 Td
+0 0 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (location.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Exports should be opened and verified before old rows are deleted.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Deleting orders may affect sales history, reports, refunds, and related records.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Database maintenance may be required before PostgreSQL reclaims space after large) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (deletions.) Tj
+0 -14 Td 0.04 0.24 0.08 rg /F2 13 Tf (15. Current Storage Snapshot) Tj
+0 -22 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Current live database usage: approximately 13.3 MiB.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Current regular orders: 8 rows.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- At 40 orders per day: approximately 14,600 orders per year.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (- Estimated growth: approximately 30–100 MB per year, depending on related records) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (and order complexity.) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (The system is currently using a small amount of storage. The exact time until a storage) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (limit is reached depends on the hosting plan quota, uploaded file storage, order volume,) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (and retention policy.) Tj
+0 -14 Td 0.45 0.50 0.56 rg /F1 8 Tf (Prepared for Hometown Brew | This overview describes the implemented system features) Tj
+0 -14 Td 0.12 0.18 0.25 rg /F1 9.5 Tf (and current operating configuration.) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000019 00000 n 
+0000000089 00000 n 
+0000000164 00000 n 
+0000000240 00000 n 
+0000004594 00000 n 
+0000004730 00000 n 
+0000009161 00000 n 
+0000009297 00000 n 
+0000013716 00000 n 
+0000013852 00000 n 
+0000015468 00000 n 
+0000015606 00000 n 
+trailer
+<< /Size 13 /Root 12 0 R >>
+startxref
+15656
+%%EOF

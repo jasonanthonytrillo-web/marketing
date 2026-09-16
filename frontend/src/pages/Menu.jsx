@@ -12,7 +12,6 @@ import SeasonalEffects from '../components/SeasonalEffects';
 import LocationPicker from '../components/LocationPicker';
 import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles, ChevronDown, CalendarDays, MapPin, Phone, FileText } from 'lucide-react';
 
-const DEFAULT_MENU_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
 const COMMON_EVENT_TYPES = ['Birthday', 'Wedding', 'Corporate event', 'School event', 'Festival or market', 'Private gathering', 'Other'];
 const COFFEE_DRINKS = ['Americano', 'Cafe Latte', 'Spanish Latte', 'Cafe Mocha', 'Caramel Macchiato'];
 const NON_COFFEE_DRINKS = ['Strawberry Latte', 'Choco Latte (hot/iced)', 'Blueberry Latte', 'Matcha Latte'];
@@ -27,7 +26,7 @@ const getPackagePax = (eventPackage) => eventPackage?.features?.split(',').map(i
 const isBookingFullyPaid = (booking) => booking?.paymentStatus === 'paid' || (booking?.paymentStatus === 'verified' && (booking?.paymentMode === 'full_payment' || booking?.paymentMethod === 'cash'));
 
 const getOptimizedImageUrl = (imageUrl) => {
-  if (!imageUrl) return DEFAULT_MENU_IMAGE;
+  if (!imageUrl) return null;
 
   const url = String(imageUrl);
 
@@ -790,11 +789,14 @@ export default function Menu() {
                     disabled={!product.available || product.stock <= 0}
                   >
                     <div className="w-[130px] md:w-full md:h-48 flex-shrink-0 relative overflow-hidden bg-surface-100">
-                      <img
-                        src={product.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1000&auto=format&fit=crop'}
-                        className="w-full h-full object-cover absolute inset-0 md:static"
-                        loading="lazy"
-                      />
+                      {product.image && (
+                        <img
+                          src={product.image}
+                          className="w-full h-full object-cover absolute inset-0 md:static"
+                          loading="lazy"
+                          alt={product.name}
+                        />
+                      )}
                       {product.tags && (() => {
                         const allTags = product.tags.split(',');
                         // Prioritize 'recommended' (Best Seller) badge
@@ -893,14 +895,16 @@ export default function Menu() {
 
             {/* Modal Header Image */}
             <div className="w-full h-64 sm:h-72 md:h-80 bg-surface-50 flex items-center justify-center text-7xl relative overflow-hidden flex-shrink-0">
-              <img
-                src={getOptimizedImageUrl((selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image)}
-                className="w-full h-full object-cover relative z-10 transition-all duration-700"
-                alt={selectedProduct.name}
-                loading="lazy"
-                decoding="async"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
+              {getOptimizedImageUrl((selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image) && (
+                <img
+                  src={getOptimizedImageUrl((selectedProduct.isCombo && addOpts.comboChoices?.[`group${comboStep}`]?.image) || selectedProduct.image)}
+                  className="w-full h-full object-cover relative z-10 transition-all duration-700"
+                  alt={selectedProduct.name}
+                  loading="lazy"
+                  decoding="async"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              )}
               {/* Back Button for Combo Step 2 */}
               {selectedProduct.isCombo && comboStep > 1 && (
                 <button
@@ -993,14 +997,16 @@ export default function Menu() {
                               )}
 
                               <div className="aspect-[4/3] overflow-hidden bg-surface-50">
-                                <img
-                                  src={getOptimizedImageUrl(opt.product.image)}
-                                  className={`w-full h-full object-cover transition-transform duration-500 ${isSelected ? 'scale-110' : 'group-hover:scale-105'}`}
-                                  alt={opt.product.name}
-                                  loading="lazy"
-                                  decoding="async"
-                                  sizes="(max-width: 768px) 100vw, 25vw"
-                                />
+                                {getOptimizedImageUrl(opt.product.image) && (
+                                  <img
+                                    src={getOptimizedImageUrl(opt.product.image)}
+                                    className={`w-full h-full object-cover transition-transform duration-500 ${isSelected ? 'scale-110' : 'group-hover:scale-105'}`}
+                                    alt={opt.product.name}
+                                    loading="lazy"
+                                    decoding="async"
+                                    sizes="(max-width: 768px) 100vw, 25vw"
+                                  />
+                                )}
                               </div>
 
                               <div className="p-3 text-center">
@@ -1213,13 +1219,15 @@ export default function Menu() {
 
                       <div className="relative z-10 flex gap-5 items-center mb-6">
                         <div className="relative shrink-0">
-                          <img
-                            src={getOptimizedImageUrl(product.image)}
-                            alt={product.name}
-                            loading="lazy"
-                            decoding="async"
-                            className={`w-20 h-20 rounded-2xl object-cover shadow-md transition-transform group-hover:scale-105 ${!canAfford ? 'grayscale opacity-80' : ''}`}
-                          />
+                          {getOptimizedImageUrl(product.image) && (
+                            <img
+                              src={getOptimizedImageUrl(product.image)}
+                              alt={product.name}
+                              loading="lazy"
+                              decoding="async"
+                              className={`w-20 h-20 rounded-2xl object-cover shadow-md transition-transform group-hover:scale-105 ${!canAfford ? 'grayscale opacity-80' : ''}`}
+                            />
+                          )}
                           {canAfford && (
                             <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 text-white text-xs flex items-center justify-center rounded-full shadow-md border-2 border-white">✓</div>
                           )}

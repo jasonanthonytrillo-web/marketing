@@ -989,11 +989,11 @@ export default function ProductsTab() {
               {filteredProducts.length > 0 ? filteredProducts.map(product => (
                 <tr key={product.id} className="hover:bg-surface-50 transition-colors">
                   <td className="p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-surface-100 flex-shrink-0 overflow-hidden border border-surface-200">
+                    <div className="w-10 h-10 rounded-lg bg-white flex-shrink-0 overflow-hidden border border-surface-200">
                       {product.image ? (
                         <img src={product.image.startsWith('http') ? product.image : `${API_BASE}${product.image}`} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-surface-200"></div>
+                        <div className="w-full h-full bg-white"></div>
                       )}
                     </div>
                     <span className="font-semibold text-surface-900">{product.name}</span>

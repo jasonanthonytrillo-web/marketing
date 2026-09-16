@@ -15,8 +15,6 @@ import {
   Sparkles, Tag, Coffee, Layers, User, Hash, AlertCircle, RefreshCw, Flame, ChefHat
 } from 'lucide-react';
 
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600&auto=format&fit=crop';
-
 export default function CashierMenuPOS({ 
   onBackToOrders, 
   activeOrdersCount = 0, 
@@ -564,13 +562,14 @@ export default function CashierMenuPOS({
                     }`}
                   >
                     <div>
-                      <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-100 mb-2 relative">
-                        <img 
-                          src={product.image || DEFAULT_IMAGE} 
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => { e.currentTarget.src = DEFAULT_IMAGE; }}
-                        />
+                      <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-white mb-2 relative">
+                        {product.image && (
+                          <img 
+                            src={product.image} 
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        )}
                         {isOutOfStock && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center">
                             <span className="px-2 py-1 bg-red-600 text-white font-black text-[10px] rounded-lg uppercase tracking-wider">Sold Out</span>
@@ -858,12 +857,14 @@ export default function CashierMenuPOS({
             {/* Modal Header */}
             <div className="p-5 bg-gradient-to-r from-primary-600 to-primary-700 text-white flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/20 flex-shrink-0">
-                  <img 
-                    src={customizingProduct.image || DEFAULT_IMAGE} 
-                    alt={customizingProduct.name}
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-white flex-shrink-0">
+                  {customizingProduct.image && (
+                    <img 
+                      src={customizingProduct.image} 
+                      alt={customizingProduct.name}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <div>
                   <h3 className="font-heading font-black text-base leading-tight">{customizingProduct.name}</h3>

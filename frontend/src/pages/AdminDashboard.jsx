@@ -203,7 +203,7 @@ export default function AdminDashboard() {
       {/* Mobile Drawer Overlay */}
       {showDrawer && (
         <div 
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-[45] bg-black/50 lg:hidden"
           onClick={() => setShowDrawer(false)}
         />
       )}
