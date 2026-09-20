@@ -788,11 +788,11 @@ export default function Menu() {
                     className={`bg-white border border-surface-200/50 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 text-left overflow-hidden group flex flex-row md:flex-col h-[130px] md:h-auto ${(!product.available || product.stock <= 0) ? 'opacity-75 grayscale-[0.5] cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
                     disabled={!product.available || product.stock <= 0}
                   >
-                    <div className="w-[130px] md:w-full md:h-48 flex-shrink-0 relative overflow-hidden bg-surface-100">
+                    <div className="w-[130px] h-full md:w-full md:h-48 flex-shrink-0 relative overflow-hidden bg-surface-100">
                       {product.image && (
                         <img
                           src={getOptimizedImageUrl(product.image)}
-                          className="w-full h-full object-cover absolute inset-0 md:static"
+                          className="block w-full h-full object-cover"
                           loading="eager"
                           decoding="async"
                           alt={product.name}
