@@ -791,10 +791,15 @@ export default function Menu() {
                     <div className="w-[130px] md:w-full md:h-48 flex-shrink-0 relative overflow-hidden bg-surface-100">
                       {product.image && (
                         <img
-                          src={product.image}
+                          src={getOptimizedImageUrl(product.image)}
                           className="w-full h-full object-cover absolute inset-0 md:static"
-                          loading="lazy"
+                          loading="eager"
+                          decoding="async"
                           alt={product.name}
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = '/favicon.png';
+                          }}
                         />
                       )}
                       {product.tags && (() => {
