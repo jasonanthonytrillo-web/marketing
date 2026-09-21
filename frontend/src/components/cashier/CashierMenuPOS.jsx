@@ -9,6 +9,7 @@ import {
   syncOfflineOrders
 } from '../../services/offlineQueue';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import LocationPicker from '../LocationPicker';
 import { 
   Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, Truck, MapPin,
   Smartphone, CreditCard, CheckCircle, X, ArrowLeft, Printer, 
@@ -34,6 +35,8 @@ export default function CashierMenuPOS({
   const [customerName, setCustomerName] = useState('Walk-in Customer');
   const [orderType, setOrderType] = useState('dine_in'); // 'dine_in' | 'take_out' | 'delivery'
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryLat, setDeliveryLat] = useState(null);
+  const [deliveryLng, setDeliveryLng] = useState(null);
   const [deliveryFee, setDeliveryFee] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'gcash' | 'maya' | 'pay_later'
@@ -245,6 +248,8 @@ export default function CashierMenuPOS({
     setCashReceived('');
     setReferenceNumber('');
     setDeliveryAddress('');
+    setDeliveryLat(null);
+    setDeliveryLng(null);
     setDeliveryFee('');
     setPaymentMethod('cash');
   };
@@ -329,6 +334,8 @@ export default function CashierMenuPOS({
         status: 'confirmed', // Directly sends ticket to kitchen display
         paymentReference: !deferPayment && paymentMethod !== 'cash' ? referenceNumber : undefined,
         deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
+        deliveryLat: orderType === 'delivery' ? deliveryLat : undefined,
+        deliveryLng: orderType === 'delivery' ? deliveryLng : undefined,
         deliveryFee: orderType === 'delivery' ? (parseFloat(deliveryFee) || 0) : 0,
         source: 'counter',
         clientOrderId
@@ -344,6 +351,10 @@ export default function CashierMenuPOS({
         status: 'confirmed',
         subtotal: total,
         total,
+        deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : null,
+        deliveryLat: orderType === 'delivery' ? deliveryLat : null,
+        deliveryLng: orderType === 'delivery' ? deliveryLng : null,
+        deliveryFee: orderType === 'delivery' ? (parseFloat(deliveryFee) || 0) : 0,
         notes: orderNotes,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -470,6 +481,8 @@ export default function CashierMenuPOS({
           items: orderItems, notes: orderNotes, status: 'confirmed', clientOrderId,
           paymentReference: !deferPayment && paymentMethod !== 'cash' ? referenceNumber : undefined,
           deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
+          deliveryLat: orderType === 'delivery' ? deliveryLat : undefined,
+          deliveryLng: orderType === 'delivery' ? deliveryLng : undefined,
           deliveryFee: orderType === 'delivery' ? (parseFloat(deliveryFee) || 0) : 0,
           source: 'counter',
           deferPayment,
@@ -703,26 +716,41 @@ export default function CashierMenuPOS({
             </div>
           </div>
           {orderType === 'delivery' && (
-            <div className="grid grid-cols-[1fr_90px] gap-1.5 animate-fade-in">
-              <div className="relative">
-                <MapPin className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <div className="space-y-1.5 animate-fade-in">
+              <div className="grid grid-cols-[1fr_90px] gap-1.5">
+                <div className="relative">
+                  <MapPin className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={deliveryAddress}
+                    onChange={e => setDeliveryAddress(e.target.value)}
+                    placeholder="Delivery address..."
+                    className="w-full pl-7 pr-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
+                  />
+                </div>
                 <input
-                  type="text"
-                  value={deliveryAddress}
-                  onChange={e => setDeliveryAddress(e.target.value)}
-                  placeholder="Delivery address..."
-                  className="w-full pl-7 pr-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={deliveryFee}
+                  onChange={e => setDeliveryFee(e.target.value)}
+                  placeholder="Fee"
+                  className="w-full px-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
                 />
               </div>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={deliveryFee}
-                onChange={e => setDeliveryFee(e.target.value)}
-                placeholder="Fee"
-                className="w-full px-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
+              <LocationPicker
+                initialAddress={deliveryAddress}
+                onLocationSelect={({ address, lat, lng }) => {
+                  if (address) setDeliveryAddress(address);
+                  setDeliveryLat(lat);
+                  setDeliveryLng(lng);
+                }}
               />
+              {deliveryLat && deliveryLng && (
+                <p className="text-[10px] font-bold text-emerald-600">
+                  Location pinned: {Number(deliveryLat).toFixed(6)}, {Number(deliveryLng).toFixed(6)}
+                </p>
+              )}
             </div>
           )}
         </div>

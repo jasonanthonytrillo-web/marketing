@@ -112,6 +112,9 @@ router.post('/orders/:id/served', authenticate, authorize('kitchen', 'admin', 'c
     const orderId = parseInt(req.params.id);
     const order = await prisma.order.findUnique({ where: { id: orderId, tenantId: req.tenantId } });
     if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+    if (order.orderType === 'delivery' && order.status !== 'on_the_way') {
+      return res.status(400).json({ success: false, message: 'Delivery orders must be dispatched before marking them delivered.' });
+    }
     const nextStatus = order.paymentStatus === 'paid' ? 'completed' : 'served';
     const updated = await prisma.order.update({
       where: { id: orderId, tenantId: req.tenantId },

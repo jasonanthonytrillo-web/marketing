@@ -521,6 +521,15 @@ router.post('/orders/:id/request-payment', authenticate, authorize('cashier', 'a
 router.post('/orders/:id/dispatch', authenticate, authorize('cashier', 'admin'), async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
+    const order = await prisma.order.findUnique({
+      where: { id: orderId, tenantId: req.tenantId }
+    });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found.' });
+    }
+    if (order.orderType !== 'delivery') {
+      return res.status(400).json({ success: false, message: 'Only delivery orders can be dispatched.' });
+    }
     const updated = await prisma.order.update({
       where: { id: orderId, tenantId: req.tenantId },
       data: { status: 'on_the_way' },
@@ -559,6 +568,12 @@ router.post('/orders/:id/status', authenticate, authorize('cashier', 'admin'), a
       if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
       if (order.paymentStatus !== 'paid') {
         return res.status(400).json({ success: false, message: 'Unpaid orders cannot be completed. Collect payment first.' });
+      }
+    }
+    if (status === 'served') {
+      const order = await prisma.order.findUnique({ where: { id: orderId, tenantId: req.tenantId } });
+      if (order?.orderType === 'delivery') {
+        return res.status(400).json({ success: false, message: 'Delivery orders must be dispatched as delivering, not served.' });
       }
     }
     const updated = await prisma.order.update({

@@ -435,6 +435,15 @@ export default function CashierDashboard() {
     if (!selectedOrder) return;
     setProcessing(true);
     try {
+      // Delivery orders leave the counter as "on_the_way". They are never
+      // sent through the normal dine-in/take-out served action.
+      if (selectedOrder.orderType === 'delivery' && selectedOrder.status === 'ready') {
+        await updateOrderStatus(selectedOrder.id, 'on_the_way');
+        setShowServeModal(false);
+        setSelectedOrder(null);
+        loadOrders();
+        return;
+      }
       if (isOfflineOrder(selectedOrder)) {
         updateOfflineOrder(selectedOrder.id, {
           status: selectedOrder.paymentStatus === 'paid' ? 'completed' : 'served',
