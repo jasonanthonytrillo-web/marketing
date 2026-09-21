@@ -590,7 +590,9 @@ export default function CashierDashboard() {
     if (calcResult) setPaymentData(p => ({ ...p, received: calcResult.total.toString() }));
   };
 
-  const filteredOrders = orders.filter(o => o.status === activeTab);
+  const filteredOrders = activeTab === 'unpaid'
+    ? orders.filter(o => o.paymentStatus === 'unpaid')
+    : orders.filter(o => o.status === activeTab);
 
   if (loading) return null;
 
@@ -1159,12 +1161,12 @@ export default function CashierDashboard() {
           {/* Left Panel: Order List */}
         <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none min-w-0 no-print`}>
           <div className="p-2 sm:p-4 border-b border-surface-200 flex gap-1.5 sm:gap-2 overflow-x-auto bg-white flex-shrink-0 scrollbar-hide">
-            {['pending', 'confirmed', 'preparing', 'ready', 'served', 'on_the_way', 'completed'].map(tab => (
+            {['pending', 'confirmed', 'preparing', 'ready', 'unpaid', 'on_the_way', 'completed'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold capitalize whitespace-nowrap transition-all ${activeTab === tab ? 'bg-primary-500 text-white shadow-md' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}`}>
-                {tab === 'on_the_way' ? 'Out for Delivery' : tab}
+                {tab === 'on_the_way' ? 'Out for Delivery' : tab === 'unpaid' ? 'Unpaid' : tab}
                 <span className={`ml-1.5 sm:ml-2 inline-flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full text-[10px] sm:text-xs ${activeTab === tab ? 'bg-white/20 text-white' : 'bg-surface-200 text-surface-500'}`}>
-                  {orders.filter(o => o.status === tab).length}
+                  {tab === 'unpaid' ? orders.filter(o => o.paymentStatus === 'unpaid').length : orders.filter(o => o.status === tab).length}
                 </span>
               </button>
             ))}
