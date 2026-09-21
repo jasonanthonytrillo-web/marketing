@@ -11,7 +11,7 @@ import {
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import LocationPicker from '../LocationPicker';
 import { 
-  Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, Truck, MapPin,
+  Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, Truck,
   Smartphone, CreditCard, CheckCircle, X, ArrowLeft, Printer, 
   Sparkles, Tag, Coffee, Layers, User, Hash, AlertCircle, RefreshCw, Flame, ChefHat, Clock
 } from 'lucide-react';
@@ -717,25 +717,16 @@ export default function CashierMenuPOS({
           </div>
           {orderType === 'delivery' && (
             <div className="space-y-1.5 animate-fade-in">
-              <div className="grid grid-cols-[1fr_90px] gap-1.5">
-                <div className="relative">
-                  <MapPin className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={deliveryAddress}
-                    onChange={e => setDeliveryAddress(e.target.value)}
-                    placeholder="Delivery address..."
-                    className="w-full pl-7 pr-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
-                  />
-                </div>
+              <div className="flex justify-end">
                 <input
                   type="number"
                   min="0"
                   step="0.01"
                   value={deliveryFee}
                   onChange={e => setDeliveryFee(e.target.value)}
-                  placeholder="Fee"
-                  className="w-full px-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
+                  placeholder="Delivery fee"
+                  aria-label="Delivery fee"
+                  className="w-24 px-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
                 />
               </div>
               <LocationPicker
