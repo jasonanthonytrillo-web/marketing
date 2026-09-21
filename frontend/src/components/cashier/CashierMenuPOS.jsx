@@ -10,9 +10,9 @@ import {
 } from '../../services/offlineQueue';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { 
-  Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, 
+  Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, Truck, MapPin,
   Smartphone, CreditCard, CheckCircle, X, ArrowLeft, Printer, 
-  Sparkles, Tag, Coffee, Layers, User, Hash, AlertCircle, RefreshCw, Flame, ChefHat
+  Sparkles, Tag, Coffee, Layers, User, Hash, AlertCircle, RefreshCw, Flame, ChefHat, Clock
 } from 'lucide-react';
 
 export default function CashierMenuPOS({ 
@@ -32,9 +32,11 @@ export default function CashierMenuPOS({
   // Cart & Order Form State
   const [cartItems, setCartItems] = useState([]);
   const [customerName, setCustomerName] = useState('Walk-in Customer');
-  const [orderType, setOrderType] = useState('dine_in'); // 'dine_in' | 'take_out'
+  const [orderType, setOrderType] = useState('dine_in'); // 'dine_in' | 'take_out' | 'delivery'
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'gcash' | 'maya' | 'card'
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'gcash' | 'maya' | 'pay_later'
   const [cashReceived, setCashReceived] = useState('');
   const [showCashKeypad, setShowCashKeypad] = useState(false);
   const [referenceNumber, setReferenceNumber] = useState('');
@@ -242,6 +244,9 @@ export default function CashierMenuPOS({
     setOrderNotes('');
     setCashReceived('');
     setReferenceNumber('');
+    setDeliveryAddress('');
+    setDeliveryFee('');
+    setPaymentMethod('cash');
   };
 
   // Calculations
@@ -255,7 +260,7 @@ export default function CashierMenuPOS({
     }, 0);
   }, [cartItems]);
 
-  const total = subtotal;
+  const total = subtotal + (orderType === 'delivery' ? (parseFloat(deliveryFee) || 0) : 0);
 
   const calculatedChange = useMemo(() => {
     if (paymentMethod !== 'cash') return 0;
@@ -264,7 +269,7 @@ export default function CashierMenuPOS({
   }, [cashReceived, total, paymentMethod]);
 
   const isCashInsufficient = useMemo(() => {
-    if (paymentMethod !== 'cash') return false;
+    if (paymentMethod !== 'cash' || paymentMethod === 'pay_later') return false;
     const received = parseFloat(cashReceived) || 0;
     return total > 0 && received < total;
   }, [cashReceived, total, paymentMethod]);
@@ -281,12 +286,20 @@ export default function CashierMenuPOS({
       return;
     }
 
-    if (!navigator.onLine && paymentMethod !== 'cash') {
+    const deferPayment = paymentMethod === 'pay_later';
+    const effectivePaymentMethod = deferPayment ? 'cash' : paymentMethod;
+
+    if (orderType === 'delivery' && !deliveryAddress.trim()) {
+      alert('Please enter the delivery address.');
+      return;
+    }
+
+    if (!navigator.onLine && paymentMethod !== 'cash' && !deferPayment) {
       alert('Online payment methods are unavailable offline. Please use cash or reconnect to the internet.');
       return;
     }
 
-    if (autoConfirmPaid && paymentMethod === 'cash') {
+    if (autoConfirmPaid && !deferPayment && paymentMethod === 'cash') {
       const received = parseFloat(cashReceived) || total;
       if (received < total) {
         alert(`Insufficient cash amount. Total is ${formatCurrency(total)}, received is ${formatCurrency(received)}`);
@@ -310,11 +323,14 @@ export default function CashierMenuPOS({
       const salePayload = {
         customerName: customerName.trim() || 'Walk-in Customer',
         orderType,
-        paymentMethod,
+        paymentMethod: effectivePaymentMethod,
         items: orderItems,
         notes: orderNotes,
         status: 'confirmed', // Directly sends ticket to kitchen display
-        paymentReference: paymentMethod !== 'cash' ? referenceNumber : undefined,
+        paymentReference: !deferPayment && paymentMethod !== 'cash' ? referenceNumber : undefined,
+        deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
+        deliveryFee: orderType === 'delivery' ? (parseFloat(deliveryFee) || 0) : 0,
+        source: 'counter',
         clientOrderId
       };
       const localOrder = {
@@ -323,8 +339,8 @@ export default function CashierMenuPOS({
         orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}`,
         customerName: customerName.trim() || 'Walk-in Customer',
         orderType,
-        paymentMethod,
-        paymentStatus: 'paid',
+        paymentMethod: effectivePaymentMethod,
+        paymentStatus: deferPayment ? 'unpaid' : 'paid',
         status: 'confirmed',
         subtotal: total,
         total,
@@ -348,8 +364,9 @@ export default function CashierMenuPOS({
         enqueueOfflineOrder({
           ...salePayload,
           payment: {
-            amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total,
-            paymentMethod,
+            amountReceived: deferPayment ? 0 : (paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total),
+            paymentMethod: effectivePaymentMethod,
+            deferPayment,
             referenceNumber: referenceNumber || undefined
           }
         }, localOrder);
@@ -359,12 +376,12 @@ export default function CashierMenuPOS({
           order: { orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}` },
           items: cartItems,
           total,
-          amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total,
+          amountReceived: deferPayment ? 0 : (paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total),
           change: calculatedChange,
-          paymentMethod,
+          paymentMethod: effectivePaymentMethod,
           orderType,
           customerName: customerName.trim() || 'Walk-in Customer',
-          isPaid: true,
+          isPaid: !deferPayment,
           isOffline: true
         });
         clearCurrentCart();
@@ -372,8 +389,8 @@ export default function CashierMenuPOS({
       }
 
       const payment = {
-        amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total,
-        paymentMethod,
+        amountReceived: deferPayment ? 0 : (paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total),
+        paymentMethod: effectivePaymentMethod,
         referenceNumber: referenceNumber || undefined
       };
       const resOrder = await createOrder(salePayload);
@@ -388,7 +405,7 @@ export default function CashierMenuPOS({
         finalChange = paymentMethod === 'cash' ? (finalPaidAmount - total) : 0;
 
         // Auto-confirm payment so it goes directly to shift sales & kitchen
-        await confirmOrder(newOrder.id, payment);
+        await confirmOrder(newOrder.id, { ...payment, deferPayment });
       }
 
       // Notify parent to refresh cashier orders
@@ -401,10 +418,10 @@ export default function CashierMenuPOS({
         total,
         amountReceived: finalPaidAmount,
         change: finalChange,
-        paymentMethod,
+        paymentMethod: effectivePaymentMethod,
         orderType,
         customerName: customerName.trim() || 'Walk-in Customer',
-        isPaid: autoConfirmPaid
+        isPaid: autoConfirmPaid && !deferPayment
       });
 
       // Clear the cart
@@ -428,8 +445,8 @@ export default function CashierMenuPOS({
           orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}`,
           customerName: customerName.trim() || 'Walk-in Customer',
           orderType,
-          paymentMethod,
-          paymentStatus: 'paid',
+          paymentMethod: effectivePaymentMethod,
+          paymentStatus: deferPayment ? 'unpaid' : 'paid',
           status: 'confirmed',
           subtotal: total,
           total,
@@ -449,14 +466,18 @@ export default function CashierMenuPOS({
           }))
         };
         enqueueOfflineOrder({
-          customerName: customerName.trim() || 'Walk-in Customer', orderType, paymentMethod,
+          customerName: customerName.trim() || 'Walk-in Customer', orderType, paymentMethod: effectivePaymentMethod,
           items: orderItems, notes: orderNotes, status: 'confirmed', clientOrderId,
-          paymentReference: paymentMethod !== 'cash' ? referenceNumber : undefined,
-          payment: { amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total, paymentMethod, referenceNumber: referenceNumber || undefined }
+          paymentReference: !deferPayment && paymentMethod !== 'cash' ? referenceNumber : undefined,
+          deliveryAddress: orderType === 'delivery' ? deliveryAddress.trim() : undefined,
+          deliveryFee: orderType === 'delivery' ? (parseFloat(deliveryFee) || 0) : 0,
+          source: 'counter',
+          deferPayment,
+          payment: { amountReceived: deferPayment ? 0 : (paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total), paymentMethod: effectivePaymentMethod, referenceNumber: referenceNumber || undefined }
         }, localOrder);
         setPendingSyncCount(getOfflineOrderCount());
         onOrderCreated();
-        setOrderSuccess({ order: { orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}` }, items: cartItems, total, amountReceived: paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total, change: calculatedChange, paymentMethod, orderType, customerName: customerName.trim() || 'Walk-in Customer', isPaid: true, isOffline: true });
+        setOrderSuccess({ order: { orderNumber: `OFFLINE-${clientOrderId.slice(-6).toUpperCase()}` }, items: cartItems, total, amountReceived: deferPayment ? 0 : (paymentMethod === 'cash' ? (parseFloat(cashReceived) || total) : total), change: calculatedChange, paymentMethod: effectivePaymentMethod, orderType, customerName: customerName.trim() || 'Walk-in Customer', isPaid: !deferPayment, isOffline: true });
         clearCurrentCart();
         return;
       }
@@ -632,7 +653,7 @@ export default function CashierMenuPOS({
         {/* Compact Customer & Order Type Bar */}
         <div className="p-2.5 bg-surface-50 border-b border-surface-200 flex flex-col gap-1.5 flex-shrink-0">
           <div className="flex items-center gap-1.5">
-            {/* Dine in / Take out */}
+            {/* Dine in / Take out / Delivery */}
             <div className="flex items-center p-0.5 bg-surface-200 rounded-lg flex-shrink-0 text-xs">
               <button
                 type="button"
@@ -656,6 +677,17 @@ export default function CashierMenuPOS({
               >
                 <ShoppingBag className="w-3 h-3 text-amber-600" /> Take Out
               </button>
+              <button
+                type="button"
+                onClick={() => setOrderType('delivery')}
+                className={`px-2 py-1 rounded-md font-black text-[11px] uppercase tracking-wider flex items-center gap-1 transition-all ${
+                  orderType === 'delivery'
+                    ? 'bg-white text-surface-900 shadow-xs'
+                    : 'text-surface-600 hover:text-surface-900'
+                }`}
+              >
+                <Truck className="w-3 h-3 text-blue-600" /> Delivery
+              </button>
             </div>
 
             {/* Customer Name */}
@@ -670,6 +702,29 @@ export default function CashierMenuPOS({
               />
             </div>
           </div>
+          {orderType === 'delivery' && (
+            <div className="grid grid-cols-[1fr_90px] gap-1.5 animate-fade-in">
+              <div className="relative">
+                <MapPin className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={deliveryAddress}
+                  onChange={e => setDeliveryAddress(e.target.value)}
+                  placeholder="Delivery address..."
+                  className="w-full pl-7 pr-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
+                />
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={deliveryFee}
+                onChange={e => setDeliveryFee(e.target.value)}
+                placeholder="Fee"
+                className="w-full px-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
+              />
+            </div>
+          )}
         </div>
 
         {/* Scrollable Cart Items List (Maximized Vertical Space) */}
@@ -757,19 +812,22 @@ export default function CashierMenuPOS({
             </div>
 
             {/* Payment Method Selector (Compact Segmented Tabs) */}
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-4 gap-1.5">
               {[
                 { id: 'cash', label: 'Cash', icon: <Banknote className="w-3.5 h-3.5" /> },
                 { id: 'gcash', label: 'GCash', icon: <Smartphone className="w-3.5 h-3.5" /> },
-                { id: 'maya', label: 'Maya', icon: <CreditCard className="w-3.5 h-3.5" /> }
+                { id: 'maya', label: 'Maya', icon: <CreditCard className="w-3.5 h-3.5" /> },
+                { id: 'pay_later', label: orderType === 'delivery' ? 'COD' : 'Pay Later', icon: <Clock className="w-3.5 h-3.5" /> }
               ].map(method => (
                 <button
                   key={method.id}
                   type="button"
                   onClick={() => {
                     setPaymentMethod(method.id);
-                    if (method.id !== 'cash') {
+                    if (method.id !== 'cash' && method.id !== 'pay_later') {
                       setCashReceived(total.toString());
+                    } else if (method.id === 'pay_later') {
+                      setCashReceived('');
                     }
                   }}
                   className={`py-1 px-1 rounded-lg text-[11px] font-black flex items-center justify-center gap-1 border transition-all ${
@@ -822,6 +880,11 @@ export default function CashierMenuPOS({
                   </span>
                 </div>
               </div>
+            ) : paymentMethod === 'pay_later' ? (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-xl text-[11px] font-bold flex items-center gap-2">
+                <Clock className="w-4 h-4 flex-shrink-0" />
+                {orderType === 'delivery' ? 'Cash will be collected on delivery.' : 'Payment will be collected before completing the order.'}
+              </div>
             ) : (
               <div className="relative">
                 <Hash className="w-3.5 h-3.5 text-surface-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -838,11 +901,11 @@ export default function CashierMenuPOS({
               <button
                 type="button"
                 onClick={() => handlePlaceOrder()}
-                disabled={submitting || isCashInsufficient}
+                disabled={submitting || isCashInsufficient || (orderType === 'delivery' && !deliveryAddress.trim())}
                 className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
                 <CheckCircle className="w-3.5 h-3.5" />
-                <span>{submitting ? 'Placing...' : `Confirm Order (${formatCurrency(total)})`}</span>
+                <span>{submitting ? 'Placing...' : paymentMethod === 'pay_later' ? `Place Unpaid Order (${formatCurrency(total)})` : `Confirm Order (${formatCurrency(total)})`}</span>
               </button>
             </div>
           </div>

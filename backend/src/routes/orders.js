@@ -46,8 +46,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Order notes must be 150 characters or fewer.' });
     }
 
-    // RESTRICTION: Delivery orders must be paid first (no cash)
-    if (orderType === 'delivery' && paymentMethod === 'cash') {
+    // Customer-created delivery orders must be prepaid. Counter POS orders may use COD.
+    if (orderType === 'delivery' && paymentMethod === 'cash' && req.body.source !== 'counter') {
       return res.status(400).json({ success: false, message: 'Cash on Delivery is not allowed. Please choose an online payment method.' });
     }
 

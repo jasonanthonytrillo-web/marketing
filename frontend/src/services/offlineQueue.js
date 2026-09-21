@@ -75,16 +75,16 @@ export const syncOfflineOrders = async (createOrder, confirmOrder, statusHandler
       const created = await createOrder(entry.payload);
       const order = created.data.data;
       if (order.paymentStatus !== 'paid') {
-        await confirmOrder(order.id, entry.payload.payment);
+        await confirmOrder(order.id, { ...entry.payload.payment, deferPayment: Boolean(entry.payload.deferPayment) });
       }
       const offlineStatus = entry.payload.offlineStatus;
-      if (['preparing', 'ready', 'completed'].includes(offlineStatus) && statusHandlers.startPreparing) {
+      if (['preparing', 'ready', 'served', 'completed'].includes(offlineStatus) && statusHandlers.startPreparing) {
         await statusHandlers.startPreparing(order.id, entry.payload.prepTime || 15);
       }
-      if (['ready', 'completed'].includes(offlineStatus) && statusHandlers.completeOrder) {
+      if (['ready', 'served', 'completed'].includes(offlineStatus) && statusHandlers.completeOrder) {
         await statusHandlers.completeOrder(order.id);
       }
-      if (offlineStatus === 'completed' && statusHandlers.markServed) {
+      if (['served', 'completed'].includes(offlineStatus) && statusHandlers.markServed) {
         await statusHandlers.markServed(order.id);
       }
 

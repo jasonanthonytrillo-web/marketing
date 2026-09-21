@@ -12,7 +12,7 @@ router.get('/orders', authenticate, authorize('cashier', 'admin'), async (req, r
     if (status && status !== 'all') {
       where.status = status;
     } else {
-      where.status = { in: ['pending', 'confirmed', 'preparing', 'ready', 'on_the_way', 'completed'] };
+      where.status = { in: ['pending', 'confirmed', 'preparing', 'ready', 'served', 'on_the_way', 'completed'] };
     }
 
     const orders = await prisma.order.findMany({
@@ -32,7 +32,7 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
   let currentStep = 'initializing';
   try {
     const orderId = parseInt(req.params.id);
-    const { amountReceived, paymentMethod, discountType, discountPercent, referenceNumber } = req.body;
+    const { amountReceived, paymentMethod, discountType, discountPercent, referenceNumber, deferPayment } = req.body;
     
     currentStep = 'fetching order';
     const order = await prisma.order.findUnique({
@@ -76,6 +76,55 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
     const roundedTax = round2(taxAmount || 0);
     total = round2(total || 0);
     const method = paymentMethod || order.paymentMethod;
+
+    // Counter Pay Later / Cash on Delivery: confirm the order and send it to
+    // the kitchen without creating a payment record yet.
+    if (deferPayment === true) {
+      const nextStatus = order.status === 'pending' ? 'confirmed' : order.status;
+      const deferred = await prisma.order.update({
+        where: { id: orderId, tenantId: req.tenantId },
+        data: {
+          status: nextStatus,
+          paymentStatus: 'unpaid',
+          paymentMethod: method || 'cash',
+          discountType: effectiveDiscountType || null,
+          discountAmount,
+          taxAmount: roundedTax,
+          total,
+          cashierId: req.user.id,
+          confirmedAt: order.confirmedAt || new Date()
+        },
+        include: { items: true }
+      });
+
+      await prisma.notification.create({
+        data: {
+          orderId,
+          type: 'order_confirmed',
+          message: `Order #${order.orderNumber} confirmed with payment due later.`,
+          module: 'kitchen'
+        }
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          tenantId: req.tenantId,
+          userId: req.user.id,
+          action: 'confirm_order_unpaid',
+          entityType: 'order',
+          entityId: orderId.toString(),
+          details: `Confirmed unpaid Order #${order.orderNumber}`
+        }
+      });
+
+      if (req.io) {
+        req.io.emitKitchenOrder && req.io.emitKitchenOrder(deferred);
+        req.io.emitOrderUpdate && req.io.emitOrderUpdate(deferred, 'confirmed');
+      }
+
+      return res.json({ success: true, data: { order: deferred } });
+    }
+
     const isPointsRedemption = method === 'points';
     const received = isPointsRedemption ? 0 : (parseFloat(amountReceived) || total);
     const change = isPointsRedemption ? 0 : (received - total);
@@ -120,7 +169,7 @@ router.post('/orders/:id/confirm', authenticate, authorize('cashier', 'admin'), 
       }
     }
 
-    const nextStatus = order.status === 'pending' ? 'confirmed' : order.status;
+    const nextStatus = order.status === 'pending' ? 'confirmed' : (order.status === 'served' ? 'completed' : order.status);
 
     const updated = await prisma.order.update({
       where: { id: orderId, tenantId: req.tenantId },
@@ -502,6 +551,16 @@ router.post('/orders/:id/status', authenticate, authorize('cashier', 'admin'), a
   try {
     const orderId = parseInt(req.params.id);
     const { status } = req.body;
+    if (!['pending', 'confirmed', 'preparing', 'ready', 'served', 'on_the_way', 'completed', 'cancelled'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid order status.' });
+    }
+    if (status === 'completed') {
+      const order = await prisma.order.findUnique({ where: { id: orderId, tenantId: req.tenantId } });
+      if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+      if (order.paymentStatus !== 'paid') {
+        return res.status(400).json({ success: false, message: 'Unpaid orders cannot be completed. Collect payment first.' });
+      }
+    }
     const updated = await prisma.order.update({
       where: { id: orderId, tenantId: req.tenantId },
       data: { status },
@@ -780,4 +839,3 @@ router.get('/shift/history', authenticate, authorize('cashier', 'kitchen', 'ride
 });
 
 module.exports = router;
-

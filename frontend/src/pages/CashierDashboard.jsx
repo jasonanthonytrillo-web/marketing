@@ -437,7 +437,7 @@ export default function CashierDashboard() {
     try {
       if (isOfflineOrder(selectedOrder)) {
         updateOfflineOrder(selectedOrder.id, {
-          status: 'completed',
+          status: selectedOrder.paymentStatus === 'paid' ? 'completed' : 'served',
           servedAt: new Date().toISOString()
         });
         setShowServeModal(false);
@@ -1150,7 +1150,7 @@ export default function CashierDashboard() {
           {/* Left Panel: Order List */}
         <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none min-w-0 no-print`}>
           <div className="p-2 sm:p-4 border-b border-surface-200 flex gap-1.5 sm:gap-2 overflow-x-auto bg-white flex-shrink-0 scrollbar-hide">
-            {['pending', 'confirmed', 'preparing', 'ready', 'on_the_way', 'completed'].map(tab => (
+            {['pending', 'confirmed', 'preparing', 'ready', 'served', 'on_the_way', 'completed'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold capitalize whitespace-nowrap transition-all ${activeTab === tab ? 'bg-primary-500 text-white shadow-md' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}`}>
                 {tab === 'on_the_way' ? 'Delivering' : tab}
