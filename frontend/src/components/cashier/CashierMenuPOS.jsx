@@ -747,11 +747,6 @@ export default function CashierMenuPOS({
                   setDeliveryLng(lng);
                 }}
               />
-              {deliveryLat && deliveryLng && (
-                <p className="text-[10px] font-bold text-emerald-600">
-                  Location pinned: {Number(deliveryLat).toFixed(6)}, {Number(deliveryLng).toFixed(6)}
-                </p>
-              )}
             </div>
           )}
         </div>

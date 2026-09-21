@@ -439,7 +439,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '', 
         document.body
       )}
 
-      {address && (
+      {address && !compact && (
         <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-100 rounded-2xl p-4 animate-fade-in shadow-sm">
           <div className="mt-0.5 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white flex-shrink-0">
             <CheckCircle className="w-4 h-4" />
