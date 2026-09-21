@@ -127,10 +127,10 @@ export default function CashierDashboard() {
   }, [onEvent]);
 
   useEffect(() => {
-    if (selectedOrder && selectedOrder.status === 'pending') {
+    if (selectedOrder && (selectedOrder.status === 'pending' || selectedOrder.paymentStatus === 'unpaid')) {
       calculateTotals();
     }
-  }, [paymentData.received, paymentData.method, paymentData.discountType, paymentData.discountPercent, selectedOrder]);
+  }, [paymentData.received, paymentData.method, paymentData.discountType, paymentData.discountPercent, selectedOrder?.id, selectedOrder?.status, selectedOrder?.paymentStatus]);
 
   useEffect(() => {
     setExpandedOrderNote(false);
@@ -1162,7 +1162,7 @@ export default function CashierDashboard() {
             {['pending', 'confirmed', 'preparing', 'ready', 'served', 'on_the_way', 'completed'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold capitalize whitespace-nowrap transition-all ${activeTab === tab ? 'bg-primary-500 text-white shadow-md' : 'bg-surface-100 text-surface-600 hover:bg-surface-200'}`}>
-                {tab === 'on_the_way' ? 'Delivering' : tab}
+                {tab === 'on_the_way' ? 'Out for Delivery' : tab}
                 <span className={`ml-1.5 sm:ml-2 inline-flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full text-[10px] sm:text-xs ${activeTab === tab ? 'bg-white/20 text-white' : 'bg-surface-200 text-surface-500'}`}>
                   {orders.filter(o => o.status === tab).length}
                 </span>
@@ -1172,7 +1172,7 @@ export default function CashierDashboard() {
 
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
             {filteredOrders.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-surface-400 font-medium text-sm">No {activeTab === 'on_the_way' ? 'delivering' : activeTab} orders</div>
+              <div className="h-full flex items-center justify-center text-surface-400 font-medium text-sm">No {activeTab === 'on_the_way' ? 'out for delivery' : activeTab} orders</div>
             ) : (
               filteredOrders.map((order, idx) => (
                 <button key={order.id} onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
@@ -1234,7 +1234,7 @@ export default function CashierDashboard() {
                   <p className="text-surface-500">{selectedOrder.customerName} • {formatDate(selectedOrder.createdAt)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`badge text-sm px-3 py-1 badge-${selectedOrder.status}`}>{selectedOrder.status.toUpperCase()}</span>
+                  <span className={`badge text-sm px-3 py-1 badge-${selectedOrder.status}`}>{selectedOrder.status === 'on_the_way' ? 'Out for Delivery' : selectedOrder.status.replace(/_/g, ' ').toUpperCase()}</span>
                 </div>
               </div>
 
