@@ -77,7 +77,7 @@ async function reverseGeocode(lat, lng, setAddress) {
   }
 }
 
-export default function LocationPicker({ onLocationSelect, initialAddress = '', compact = false }) {
+export default function LocationPicker({ onLocationSelect, initialAddress = '', compact = false, pinBelow = false }) {
   const [position, setPosition] = useState(null);
   const [address, setAddress] = useState(initialAddress);
   const [searchQuery, setSearchQuery] = useState('');
@@ -242,8 +242,8 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '', 
       </div>}
 
       {compact && !isFullscreen && (
-        <div className="flex gap-1.5">
-          <div className="relative min-w-0 flex-1">
+        <div className={pinBelow ? 'space-y-1.5' : 'flex gap-1.5'}>
+          <div className={`relative min-w-0 ${pinBelow ? 'w-full' : 'flex-1'}`}>
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-surface-400" />
             <input
               type="text"
@@ -281,7 +281,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '', 
           <button
             type="button"
             onClick={expandMap}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-black transition-all active:scale-95 ${position
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-black transition-all active:scale-95 ${pinBelow ? 'w-full justify-center' : ''} ${position
               ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
               : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
             }`}
