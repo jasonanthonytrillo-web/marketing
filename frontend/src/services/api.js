@@ -27,6 +27,14 @@ api.interceptors.request.use(config => {
 
   config.headers['x-tenant-slug'] = tenantSlug;
 
+  // Safari on iPad can omit the cross-origin auth cookie even when login
+  // succeeded. The JWT is also stored locally by AuthContext, so send it as
+  // a header fallback for API requests that need authentication.
+  const token = localStorage.getItem('pos_token');
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   // If we have a slug, we should let the backend resolve the ID by slug 
   // or use the saved ID only if it matches the current session logic
   const savedTenantId = localStorage.getItem('tenant_id');
