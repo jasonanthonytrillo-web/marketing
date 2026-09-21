@@ -717,6 +717,15 @@ export default function CashierMenuPOS({
           </div>
           {orderType === 'delivery' && (
             <div className="space-y-1.5 animate-fade-in">
+              <LocationPicker
+                compact
+                initialAddress={deliveryAddress}
+                onLocationSelect={({ address, lat, lng }) => {
+                  if (address) setDeliveryAddress(address);
+                  setDeliveryLat(lat);
+                  setDeliveryLng(lng);
+                }}
+              />
               <div className="flex justify-end">
                 <input
                   type="number"
@@ -729,15 +738,6 @@ export default function CashierMenuPOS({
                   className="w-24 px-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
                 />
               </div>
-              <LocationPicker
-                compact
-                initialAddress={deliveryAddress}
-                onLocationSelect={({ address, lat, lng }) => {
-                  if (address) setDeliveryAddress(address);
-                  setDeliveryLat(lat);
-                  setDeliveryLng(lng);
-                }}
-              />
             </div>
           )}
         </div>
