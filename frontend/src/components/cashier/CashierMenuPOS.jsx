@@ -739,6 +739,7 @@ export default function CashierMenuPOS({
                 />
               </div>
               <LocationPicker
+                compact
                 initialAddress={deliveryAddress}
                 onLocationSelect={({ address, lat, lng }) => {
                   if (address) setDeliveryAddress(address);

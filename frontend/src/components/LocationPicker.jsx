@@ -77,7 +77,7 @@ async function reverseGeocode(lat, lng, setAddress) {
   }
 }
 
-export default function LocationPicker({ onLocationSelect, initialAddress = '' }) {
+export default function LocationPicker({ onLocationSelect, initialAddress = '', compact = false }) {
   const [position, setPosition] = useState(null);
   const [address, setAddress] = useState(initialAddress);
   const [searchQuery, setSearchQuery] = useState('');
@@ -189,7 +189,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      {!compact && <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
           <div onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(); } }}>
@@ -237,10 +237,25 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '' }
             <Navigation className="w-6 h-6 group-hover:animate-pulse" />
           )}
         </button>
-      </div>
+      </div>}
+
+      {compact && !isFullscreen && (
+        <button
+          type="button"
+          onClick={expandMap}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-black transition-all active:scale-95 ${position
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+          }`}
+          title="Pin delivery location"
+        >
+          <MapPin className="h-3.5 w-3.5" />
+          {position ? 'Update Pin Location' : 'Pin Location'}
+        </button>
+      )}
 
       {/* Non-fullscreen inline map */}
-      {!isFullscreen && (
+      {!compact && !isFullscreen && (
         <div className="h-64 rounded-3xl overflow-hidden border-2 border-surface-100 shadow-inner relative z-10">
           <div
             className="relative h-full w-full cursor-pointer"
