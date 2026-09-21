@@ -310,6 +310,64 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '', 
               <Minimize2 className="h-5 w-5" />
             </button>
 
+            {compact && (
+              <div className="absolute left-4 right-20 top-4 z-[10000] flex gap-2 sm:left-6 sm:right-24">
+                <div className="relative min-w-0 flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-surface-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onFocus={() => setShowSuggestions(true)}
+                    onChange={e => {
+                      setSearchQuery(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearch();
+                      }
+                    }}
+                    placeholder="Search a place..."
+                    className="w-full rounded-xl border border-surface-200 bg-white/95 py-3 pl-9 pr-3 text-sm font-semibold text-surface-800 shadow-lg outline-none backdrop-blur focus:border-primary-500"
+                  />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-[10001] mt-1 overflow-hidden rounded-xl border border-surface-200 bg-white shadow-xl">
+                      {suggestions.map((s, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(s)}
+                          className="flex w-full items-start gap-2 border-b border-surface-100 px-3 py-2 text-left text-xs text-surface-700 last:border-0 hover:bg-surface-50"
+                        >
+                          <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-surface-400" />
+                          <span className="line-clamp-2">{s.display_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="rounded-xl bg-primary-600 px-4 text-white shadow-lg hover:bg-primary-700 disabled:opacity-60"
+                  title="Search location"
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={useMyLocation}
+                  disabled={loading}
+                  className="rounded-xl bg-white/95 px-3 text-primary-600 shadow-lg backdrop-blur hover:bg-primary-50 disabled:opacity-60"
+                  title="Use my current location"
+                >
+                  <Navigation className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+
             <MapContainer
               center={position ? [position.lat, position.lng] : [14.5995, 120.9842]}
               zoom={position ? 16 : 13}
