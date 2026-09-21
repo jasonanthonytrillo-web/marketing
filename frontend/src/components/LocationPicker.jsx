@@ -133,6 +133,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '', 
     setSearchQuery(s.display_name);
     setSuggestions([]);
     setShowSuggestions(false);
+    if (compact) setIsFullscreen(true);
   };
 
   const handleSearch = async (e) => {
@@ -147,6 +148,7 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '', 
         const newPos = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
         setPosition(newPos);
         reverseGeocode(newPos.lat, newPos.lng, setAddress);
+        if (compact) setIsFullscreen(true);
       } else {
         alert('Location not found');
       }
@@ -240,18 +242,55 @@ export default function LocationPicker({ onLocationSelect, initialAddress = '', 
       </div>}
 
       {compact && !isFullscreen && (
-        <button
-          type="button"
-          onClick={expandMap}
-          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-black transition-all active:scale-95 ${position
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
-          }`}
-          title="Pin delivery location"
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          {position ? 'Update Pin Location' : 'Pin Location'}
-        </button>
+        <div className="flex gap-1.5">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-surface-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onFocus={() => setShowSuggestions(true)}
+              onChange={e => {
+                setSearchQuery(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSearch();
+                }
+              }}
+              placeholder="Search a place..."
+              className="w-full rounded-lg border border-surface-200 bg-white py-1.5 pl-8 pr-2 text-[11px] font-semibold text-surface-800 outline-none focus:border-primary-500"
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full z-[200] mt-1 overflow-hidden rounded-lg border border-surface-200 bg-white shadow-xl">
+                {suggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSelectSuggestion(s)}
+                    className="flex w-full items-start gap-2 border-b border-surface-100 px-2.5 py-2 text-left text-[11px] text-surface-700 last:border-0 hover:bg-surface-50"
+                  >
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-surface-400" />
+                    <span className="line-clamp-2">{s.display_name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={expandMap}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-black transition-all active:scale-95 ${position
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+              : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+            }`}
+            title="Pin delivery location"
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            {position ? 'Update Pin' : 'Pin Location'}
+          </button>
+        </div>
       )}
 
       {/* Non-fullscreen inline map */}
