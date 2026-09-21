@@ -5,10 +5,13 @@ const authenticate = async (req, res, next) => {
   try {
     let token = null;
     
-    if (req.cookies && req.cookies.pos_token) {
-      token = req.cookies.pos_token;
-    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    // Prefer the bearer token sent by the client. Safari on iPad may omit or
+    // retain a stale cross-site cookie, while the frontend keeps the current
+    // JWT in localStorage and sends it in the Authorization header.
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && req.cookies.pos_token) {
+      token = req.cookies.pos_token;
     } else if (req.query.token) {
       token = req.query.token;
     }
