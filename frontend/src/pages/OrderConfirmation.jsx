@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate, unlockAudio, formatMinutes } from '../utils/helpers';
 
 import { applyTheme, clearTheme } from '../utils/theme';
-import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Gem, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon, Truck, MapPin, Navigation, BellRing, Smartphone } from 'lucide-react';
+import { ClipboardList, CheckCircle, ChefHat, Bell, XCircle, AlertTriangle, Clock, Home, ShoppingBag, Gift, Utensils, Star, Sparkles, Bean, ListOrdered, UtensilsCrossed, Download, ArrowLeft, AlertOctagon, Truck, MapPin, Navigation, BellRing, Smartphone } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -571,7 +571,7 @@ export default function OrderConfirmation() {
           <div className="bg-slate-900 rounded-[2rem] p-6 mb-6 text-white shadow-2xl relative overflow-hidden group border border-white/5 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary-500/30 transition-all duration-500"></div>
             <div className="relative z-10 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center shadow-xl backdrop-blur-md border border-white/20"><Gem className="w-6 h-6 text-primary-200" /></div>
+              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center shadow-xl backdrop-blur-md border border-white/20"><Bean className="w-6 h-6 text-primary-200" /></div>
               <div className="flex-1">
                 <h4 className="text-lg font-black text-white mb-1 tracking-tight">Save this meal to your story!</h4>
                 <p className="text-slate-300 text-[11px] leading-relaxed mb-4">Sign up now to start your Personal Timeline and earn <span className="text-amber-400 font-black">{Math.floor(order.total / (branding?.points_rate || 100))} points</span> on this order.</p>
