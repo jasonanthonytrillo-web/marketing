@@ -200,13 +200,16 @@ export default function ProductsTab() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
+      // Add-ons are managed centrally from the Add-ons tab and inherited by
+      // category; never overwrite them from the product form.
+      const { addons: _productAddons, ...productData } = currentProduct;
       const isUpdating = !!currentProduct.id;
       let savedProduct;
       if (currentProduct.id) {
-        const res = await updateProduct(currentProduct.id, currentProduct);
+        const res = await updateProduct(currentProduct.id, productData);
         savedProduct = res.data.data;
       } else {
-        const res = await createProduct(currentProduct);
+        const res = await createProduct(productData);
         savedProduct = res.data.data;
       }
 
@@ -370,7 +373,7 @@ export default function ProductsTab() {
               <button onClick={() => setIsEditing(false)} className="text-surface-400 hover:text-surface-600 transition-colors">✕</button>
             </div>
 
-            <div className="p-6">
+            <div className="min-h-0 overflow-y-auto p-6">
               <form id="productForm" onSubmit={handleSave} className="space-y-6">
                 {/* Group 1: Basic Information */}
                 <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
@@ -400,7 +403,7 @@ export default function ProductsTab() {
                 </div>
 
                 {/* Group 2: Pricing */}
-                <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
+                <div className="hidden bg-surface-50 p-5 rounded-2xl border border-surface-200">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 mb-4 ml-1">Pricing & Loyalty</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -745,8 +748,8 @@ export default function ProductsTab() {
                   </div>
                 )}
 
-                {/* Group 5: Add-ons Section */}
-                <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
+                {/* Group 5: Add-ons are managed centrally in Add-onsTab. */}
+                <div className="hidden bg-surface-50 p-5 rounded-2xl border border-surface-200">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 ml-1">Customization Add-ons</h4>
                     <button

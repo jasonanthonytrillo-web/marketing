@@ -10,7 +10,7 @@ import useStoreOperationRealtime from '../hooks/useStoreOperationRealtime';
 import { applyTheme, clearTheme } from '../utils/theme';
 import SeasonalEffects from '../components/SeasonalEffects';
 import LocationPicker from '../components/LocationPicker';
-import { ArrowLeft, Gem, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles, ChevronDown, CalendarDays, MapPin, Phone, FileText } from 'lucide-react';
+import { ArrowLeft, Bean, Lock, ScrollText, LogOut, Utensils, Package, Star, Flame, CheckCircle, Ban, Wheat, AlertCircle, Leaf, Info, Gift, Tag, Coffee, Store, Sparkles, ChevronDown, CalendarDays, MapPin, Phone, FileText } from 'lucide-react';
 
 const COMMON_EVENT_TYPES = ['Birthday', 'Wedding', 'Corporate event', 'School event', 'Festival or market', 'Private gathering', 'Other'];
 const COFFEE_DRINKS = ['Americano', 'Cafe Latte', 'Spanish Latte', 'Cafe Mocha', 'Caramel Macchiato'];
@@ -637,7 +637,7 @@ export default function Menu() {
                   onClick={() => setShowRewards(true)}
                   className="animate-fade-in flex items-center gap-3 bg-emerald-50 border border-emerald-100 px-2 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl shadow-sm hover:bg-emerald-100 transition-all active:scale-95 group shrink-0"
                 >
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-500 rounded-lg sm:rounded-xl flex items-center justify-center text-white text-base sm:text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform"><Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-100" /></div>
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-500 rounded-lg sm:rounded-xl flex items-center justify-center text-white text-base sm:text-lg shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform"><Bean className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-100" /></div>
                   <div className="text-left hidden sm:block">
                     <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-0.5">Points</p>
                     <p className="text-sm font-black text-emerald-900 leading-none">{Math.floor(user.points || 0)}</p>
@@ -1079,7 +1079,7 @@ export default function Menu() {
                     </p>
                     {selectedProduct.pointsCost && isCustomer && !branding?.saRewardsDisabled && (
                       <div className="bg-amber-50 text-amber-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-amber-100 flex items-center gap-1.5">
-                        <Gem className="w-3.5 h-3.5" /> Redeem for {selectedProduct.pointsCost} Points
+                        <Bean className="w-3.5 h-3.5" /> Redeem for {selectedProduct.pointsCost} Points
                       </div>
                     )}
                   </div>
@@ -1181,7 +1181,7 @@ export default function Menu() {
               <div className="relative z-10 flex justify-between items-start">
                 <div>
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-white/20 shadow-sm backdrop-blur-md">
-                    <Gem className="w-3 h-3" /> VIP Member
+                    <Bean className="w-3 h-3" /> VIP Member
                   </div>
                   <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase mb-2 drop-shadow-sm">Rewards Gallery</h2>
                   <p className="text-white/90 font-bold text-lg flex items-center gap-2">
@@ -1240,7 +1240,7 @@ export default function Menu() {
                         <div className="flex-1">
                           <h4 className={`font-black text-lg leading-tight mb-1 ${canAfford ? 'text-slate-900' : 'text-slate-500'}`}>{product.name}</h4>
                           <p className="font-black text-sm flex items-center gap-1" style={{ color: brandingColor }}>
-                            <Gem className="w-3 h-3" /> {product.pointsCost} <span className="text-[10px] text-slate-400 uppercase tracking-widest ml-1">Pts</span>
+                            <Bean className="w-3 h-3" /> {product.pointsCost} <span className="text-[10px] text-slate-400 uppercase tracking-widest ml-1">Pts</span>
                           </p>
                         </div>
                       </div>

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { getAdminSummary } from '../services/api';
 import ProductsTab from '../components/admin/ProductsTab';
 import CategoriesTab from '../components/admin/CategoriesTab';
+import AddonsTab from '../components/admin/AddonsTab';
 import OrdersTab from '../components/admin/OrdersTab';
 import InventoryTab from '../components/admin/InventoryTab';
 import InventoryLogsTab from '../components/admin/InventoryLogsTab';
@@ -23,7 +24,7 @@ import AdminNotifications from '../components/admin/AdminNotifications';
 import { formatCurrency } from '../utils/helpers';
 import { applyTheme, clearTheme } from '../utils/theme';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
-import { BarChart2, ShoppingBag, FolderTree, PackageSearch, Users, Truck, Package, RotateCcw, Wallet, LineChart, MessageSquare, Settings, LogOut, Store, CircleDollarSign, Coins, ShoppingCart, Eye, Globe, Tag, Menu, X, Monitor, Timer, CalendarDays } from 'lucide-react';
+import { BarChart2, ShoppingBag, FolderTree, PackageSearch, Users, Truck, Package, RotateCcw, Wallet, LineChart, MessageSquare, Settings, LogOut, Store, CircleDollarSign, Coins, ShoppingCart, Eye, Globe, Tag, Menu, X, Monitor, Timer, CalendarDays, Puzzle } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 
 export default function AdminDashboard() {
@@ -121,6 +122,7 @@ export default function AdminDashboard() {
       items: [
         { id: 'products', label: 'Products', icon: <PackageSearch className="w-5 h-5" /> },
         { id: 'categories', label: 'Categories', icon: <FolderTree className="w-5 h-5" /> },
+        { id: 'addons', label: 'Add-ons', icon: <Puzzle className="w-5 h-5" /> },
         { id: 'packages', label: 'Packages', icon: <Store className="w-5 h-5" /> },
       ]
     },
@@ -249,7 +251,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <main className="relative z-40 flex min-w-0 flex-1 flex-col min-h-0 overflow-hidden lg:h-screen">
+      <main className="relative flex min-w-0 flex-1 flex-col min-h-0 overflow-hidden lg:h-screen">
         <header className="relative z-50 flex min-w-0 items-center justify-between gap-2 px-3 py-3 md:px-6 md:py-4 border-b border-surface-200 bg-white/80 backdrop-blur-xl flex-shrink-0">
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
             <button
@@ -282,7 +284,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <div className="relative z-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
+        <div className="relative min-w-0 flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
           {activeTab === 'overview' && summary && (
             <div className="animate-fade-in w-full max-w-[1400px] mx-auto space-y-6 sm:space-y-8">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -380,6 +382,7 @@ export default function AdminDashboard() {
 
           {activeTab === 'orders' && <OrdersTab />}
           {activeTab === 'categories' && <CategoriesTab />}
+          {activeTab === 'addons' && <AddonsTab />}
           {activeTab === 'packages' && <PackagesTab />}
           {activeTab === 'bookings' && <PackageBookingsTab />}
           {activeTab === 'products' && <ProductsTab />}

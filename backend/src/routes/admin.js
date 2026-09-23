@@ -9,6 +9,131 @@ const sharp = require('sharp');
 
 const supabase = require('../lib/supabase');
 
+// Keep the existing ProductAddon relation in sync so cashier, ordering and
+// inventory code can continue consuming add-ons without product-level setup.
+const syncAddonProducts = async (addonId, tenantId) => {
+  const addon = await prisma.addon.findFirst({ where: { id: addonId, tenantId } });
+  if (!addon) return;
+
+  const categoryIds = Array.isArray(addon.categoryIds) ? addon.categoryIds.map(Number) : [];
+  const products = await prisma.product.findMany({
+    where: { tenantId, categoryId: { in: categoryIds } },
+    select: { id: true }
+  });
+
+  await prisma.productAddon.deleteMany({ where: { masterId: addonId, tenantId } });
+  if (addon.available && products.length) {
+    await prisma.productAddon.createMany({
+      data: products.map(product => ({
+        tenantId,
+        productId: product.id,
+        masterId: addon.id,
+        name: addon.name,
+        price: addon.price,
+        available: true,
+        rawIngredientId: addon.rawIngredientId,
+        quantityUsed: addon.quantityUsed
+      }))
+    });
+  }
+};
+
+const syncProductAddons = async (productId, tenantId, categoryId) => {
+  const masters = await prisma.addon.findMany({ where: { tenantId } });
+  const applicable = masters.filter(addon =>
+    addon.available && Array.isArray(addon.categoryIds) && addon.categoryIds.map(Number).includes(Number(categoryId))
+  );
+  await prisma.productAddon.deleteMany({ where: { productId, tenantId, masterId: { not: null } } });
+  if (applicable.length) {
+    await prisma.productAddon.createMany({
+      data: applicable.map(addon => ({
+        tenantId, productId, masterId: addon.id, name: addon.name,
+        price: addon.price, available: true,
+        rawIngredientId: addon.rawIngredientId, quantityUsed: addon.quantityUsed
+      }))
+    });
+  }
+};
+
+// Centralized add-ons
+router.get('/addons', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const addons = await prisma.addon.findMany({
+      where: { tenantId: req.tenantId },
+      include: { rawIngredient: true },
+      orderBy: { name: 'asc' }
+    });
+    res.json({ success: true, data: addons });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to load add-ons.' });
+  }
+});
+
+router.post('/addons', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, price, available, categoryIds, rawIngredientId, quantityUsed } = req.body;
+    if (!name || !Array.isArray(categoryIds) || categoryIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Name and at least one category are required.' });
+    }
+    const addon = await prisma.addon.create({
+      data: {
+        tenantId: req.tenantId,
+        name: name.trim(),
+        price: parseFloat(price) || 0,
+        available: available !== false,
+        categoryIds: categoryIds.map(Number),
+        rawIngredientId: rawIngredientId ? parseInt(rawIngredientId) : null,
+        quantityUsed: quantityUsed ? parseFloat(quantityUsed) : null
+      },
+      include: { rawIngredient: true }
+    });
+    await syncAddonProducts(addon.id, req.tenantId);
+    res.status(201).json({ success: true, data: addon });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to create add-on.' });
+  }
+});
+
+router.put('/addons/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { name, price, available, categoryIds, rawIngredientId, quantityUsed } = req.body;
+    const existing = await prisma.addon.findFirst({ where: { id: parseInt(req.params.id), tenantId: req.tenantId } });
+    if (!existing) return res.status(404).json({ success: false, message: 'Add-on not found.' });
+    const addon = await prisma.addon.update({
+      where: { id: existing.id },
+      data: {
+        name: name?.trim(),
+        price: price !== undefined ? parseFloat(price) || 0 : undefined,
+        available: available !== undefined ? available : undefined,
+        categoryIds: Array.isArray(categoryIds) ? categoryIds.map(Number) : undefined,
+        rawIngredientId: rawIngredientId ? parseInt(rawIngredientId) : null,
+        quantityUsed: quantityUsed ? parseFloat(quantityUsed) : null
+      },
+      include: { rawIngredient: true }
+    });
+    await syncAddonProducts(addon.id, req.tenantId);
+    res.json({ success: true, data: addon });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to update add-on.' });
+  }
+});
+
+router.delete('/addons/:id', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const existing = await prisma.addon.findFirst({ where: { id: parseInt(req.params.id), tenantId: req.tenantId } });
+    if (!existing) return res.status(404).json({ success: false, message: 'Add-on not found.' });
+    await prisma.productAddon.deleteMany({ where: { masterId: existing.id, tenantId: req.tenantId } });
+    await prisma.addon.delete({ where: { id: existing.id } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to delete add-on.' });
+  }
+});
+
 // Media Upload (Base64) - Supports Images and Videos - Now Using Supabase Storage!
 router.post('/upload-image', authenticate, authorize('admin'), async (req, res) => {
   try {
@@ -169,6 +294,7 @@ router.post('/products', authenticate, authorize('admin'), async (req, res) => {
       },
       include: { category: true, addons: true }
     });
+    await syncProductAddons(product.id, req.tenantId, product.categoryId);
     await prisma.auditLog.create({
       data: { tenantId: req.tenantId, userId: req.user.id, action: 'create_product', entityType: 'product', entityId: product.name, details: `Created new product "${product.name}" in category "${product.category?.name || 'N/A'}" at ₱${product.price}` }
     });
@@ -219,6 +345,7 @@ router.put('/products/:id', authenticate, authorize('admin'), async (req, res) =
       },
       include: { category: true, addons: true }
     });
+    await syncProductAddons(product.id, req.tenantId, product.categoryId);
     await prisma.auditLog.create({
       data: { tenantId: req.tenantId, userId: req.user.id, action: 'update_product', entityType: 'product', entityId: product.name, details: `Updated product "${product.name}": Price=₱${product.price}, Stock=${product.stock}, Active=${product.available}` }
     });

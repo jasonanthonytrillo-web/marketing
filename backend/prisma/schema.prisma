@@ -47,6 +47,7 @@ model Tenant {
   authorizedDevices AuthorizedDevice[]
   cashierShifts CashierShift[]
   payrollPayments PayrollPayment[]
+  addons        Addon[]
 }
 
 model User {
@@ -136,6 +137,7 @@ model ProductAddon {
   id        Int      @id @default(autoincrement())
   tenantId  Int      @default(1)
   productId Int
+  masterId  Int?
   name      String
   price     Float
   available Boolean  @default(true)
@@ -146,6 +148,26 @@ model ProductAddon {
 
   product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   rawIngredient RawIngredient? @relation(fields: [rawIngredientId], references: [id])
+  master        Addon?         @relation(fields: [masterId], references: [id], onDelete: SetNull)
+}
+
+// Central add-on definitions. ProductAddon rows are synchronized copies used
+// by the existing ordering and inventory flows.
+model Addon {
+  id              Int      @id @default(autoincrement())
+  tenantId        Int
+  name            String
+  price           Float    @default(0)
+  available       Boolean  @default(true)
+  categoryIds     Json
+  rawIngredientId Int?
+  quantityUsed    Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rawIngredient   RawIngredient?  @relation(fields: [rawIngredientId], references: [id], onDelete: SetNull)
+  productAddons   ProductAddon[]
 }
 
 model ComboOption {
@@ -359,6 +381,7 @@ model RawIngredient {
   tenant      Tenant       @relation(fields: [tenantId], references: [id])
   recipeItems RecipeItem[]
   addons      ProductAddon[]
+  masterAddons Addon[]
   logs        RawIngredientLog[]
 }
 

@@ -126,6 +126,10 @@ export const createStaff = (data) => api.post('/admin/staff', data);
 export const updateStaff = (id, data) => api.put(`/admin/staff/${id}`, data);
 export const deleteStaff = (id) => api.delete(`/admin/staff/${id}`);
 export const getInventory = () => api.get('/admin/inventory');
+export const getAddons = () => api.get('/admin/addons');
+export const createAddon = (data) => api.post('/admin/addons', data);
+export const updateAddon = (id, data) => api.put(`/admin/addons/${id}`, data);
+export const deleteAddon = (id) => api.delete(`/admin/addons/${id}`);
 
 // Raw Ingredients & Recipes
 export const getRawIngredients = () => api.get('/inventory/ingredients');
