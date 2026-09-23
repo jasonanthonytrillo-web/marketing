@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAddons, createAddon, updateAddon, deleteAddon, getCategories, getRawIngredients } from '../../services/api';
-import { Pencil, Trash2, X } from 'lucide-react';
+import { Pencil, Trash2, X, Download, Search, MoreVertical } from 'lucide-react';
 
 const emptyAddon = { name: '', price: '', categoryIds: [], rawIngredientId: '', quantityUsed: '', available: true };
 
@@ -10,6 +10,10 @@ export default function AddonsTab() {
   const [ingredients, setIngredients] = useState([]);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -45,6 +49,31 @@ export default function AddonsTab() {
       : [...current.categoryIds, id]
   }));
 
+  const filteredAddons = addons.filter(addon => {
+    const matchesSearch = addon.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || (addon.categoryIds || []).map(Number).includes(Number(categoryFilter));
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? addon.available : !addon.available);
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  const exportExcel = () => {
+    const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const rows = [
+      ['Add-on Name', 'Selling Price', 'Categories', 'COGS Ingredient', 'Quantity Used', 'Status'],
+      ...filteredAddons.map(addon => {
+        const assigned = categories.filter(category => (addon.categoryIds || []).map(Number).includes(category.id));
+        return [addon.name, Number(addon.price || 0).toFixed(2), assigned.map(category => category.name).join(', '), addon.rawIngredient?.name || '', addon.quantityUsed || '', addon.available ? 'Active' : 'Inactive'];
+      })
+    ];
+    const csv = '\ufeff' + rows.map(row => row.map(escape).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Add-ons_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <div className="p-8 text-center text-surface-500">Loading add-ons...</div>;
 
   return (
@@ -54,7 +83,19 @@ export default function AddonsTab() {
           <h2 className="font-heading text-2xl font-bold text-surface-900">Add-ons</h2>
           <p className="text-sm text-surface-500 mt-1">Create add-ons once and assign them to one or more product categories.</p>
         </div>
-        <button onClick={() => setEditing({ ...emptyAddon })} className="btn-primary py-2 px-4">+ Add Add-on</button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={exportExcel} className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-surface-200 bg-white text-surface-600 font-bold hover:border-primary-300 hover:text-primary-600"><Download className="w-4 h-4" /> Export Excel</button>
+          <button onClick={() => setEditing({ ...emptyAddon })} className="btn-primary py-2 px-4">+ Add Add-on</button>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-3 mb-6 bg-surface-50/60 p-4 rounded-2xl border border-surface-100">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+          <input className="input-field w-full pl-9 bg-white" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search add-ons..." />
+        </div>
+        <select className="input-field lg:w-56 bg-white" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}><option value="all">All Categories</option>{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select>
+        <select className="input-field lg:w-40 bg-white" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}><option value="all">All Status</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-surface-200 overflow-x-auto">
@@ -63,7 +104,7 @@ export default function AddonsTab() {
             <tr><th className="p-4">Add-on</th><th className="p-4">Price</th><th className="p-4">Categories</th><th className="p-4">COGS ingredient</th><th className="p-4">Status</th><th className="p-4 text-right">Actions</th></tr>
           </thead>
           <tbody className="divide-y divide-surface-100 text-sm">
-            {addons.map(addon => {
+            {filteredAddons.map(addon => {
               const assigned = categories.filter(category => (addon.categoryIds || []).map(Number).includes(category.id));
               return <tr key={addon.id}>
                 <td className="p-4 font-bold text-surface-900">{addon.name}</td>
@@ -71,10 +112,20 @@ export default function AddonsTab() {
                 <td className="p-4 text-surface-600">{assigned.map(category => category.name).join(', ') || 'None'}</td>
                 <td className="p-4 text-surface-600">{addon.rawIngredient?.name || 'Not linked'}</td>
                 <td className="p-4"><span className={`px-2 py-1 rounded text-xs font-bold ${addon.available ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{addon.available ? 'Active' : 'Inactive'}</span></td>
-                <td className="p-4 text-right"><div className="flex justify-end gap-2"><button onClick={() => setEditing({ ...addon, categoryIds: (addon.categoryIds || []).map(Number) })} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Pencil className="w-4 h-4" /></button><button onClick={async () => { if (confirm(`Delete ${addon.name}?`)) { await deleteAddon(addon.id); load(); } }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></div></td>
+                <td className="p-4 text-right">
+                  <div className="relative inline-block">
+                    <button onClick={() => setOpenMenuId(openMenuId === addon.id ? null : addon.id)} className="p-2 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors" aria-label={`Actions for ${addon.name}`}>
+                      <MoreVertical className="w-5 h-5" />
+                    </button>
+                    {openMenuId === addon.id && <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-surface-200 overflow-hidden z-50 min-w-[140px] text-left">
+                      <button onClick={() => { setOpenMenuId(null); setEditing({ ...addon, categoryIds: (addon.categoryIds || []).map(Number) }); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-surface-700 hover:bg-surface-50"><Pencil className="w-4 h-4 text-blue-500" /> Edit</button>
+                      <button onClick={async () => { setOpenMenuId(null); if (confirm(`Delete ${addon.name}?`)) { await deleteAddon(addon.id); load(); } }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /> Delete</button>
+                    </div>}
+                  </div>
+                </td>
               </tr>;
             })}
-            {addons.length === 0 && <tr><td colSpan="6" className="p-8 text-center text-surface-400">No add-ons configured yet.</td></tr>}
+            {filteredAddons.length === 0 && <tr><td colSpan="6" className="p-8 text-center text-surface-400">No matching add-ons found.</td></tr>}
           </tbody>
         </table>
       </div>
