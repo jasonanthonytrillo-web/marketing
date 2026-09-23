@@ -637,6 +637,43 @@ router.get('/export/inventory.xlsx', authenticate, authorize('admin'), async (re
   }
 });
 
+// GET /api/reports/export/addons.xlsx — Formatted add-on workbook
+router.get('/export/addons.xlsx', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const [addons, categories] = await Promise.all([
+      prisma.addon.findMany({ where: { tenantId: req.tenantId }, include: { rawIngredient: true }, orderBy: { name: 'asc' } }),
+      prisma.category.findMany({ where: { tenantId: req.tenantId }, orderBy: { name: 'asc' } })
+    ]);
+    const search = String(req.query.search || '').toLowerCase();
+    const categoryId = req.query.category && req.query.category !== 'all' ? Number(req.query.category) : null;
+    const status = req.query.status || 'all';
+    const filtered = addons.filter(addon => {
+      const ids = Array.isArray(addon.categoryIds) ? addon.categoryIds.map(Number) : [];
+      return addon.name.toLowerCase().includes(search) && (!categoryId || ids.includes(categoryId))
+        && (status === 'all' || (status === 'active' ? addon.available : !addon.available));
+    });
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Hometown Brew POS';
+    workbook.created = new Date();
+    const sheet = workbook.addWorksheet('Add-ons');
+    const columns = [
+      { header: 'Add-on Name', width: 28 }, { header: 'Selling Price', width: 18, format: '₱#,##0.00' },
+      { header: 'Categories', width: 34 }, { header: 'COGS Ingredient', width: 24 },
+      { header: 'Quantity Used', width: 18, format: '#,##0.####' }, { header: 'Status', width: 16 }
+    ];
+    const headerRow = styleExcelSheet(sheet, 'Hometown Brew — Add-ons', `Generated ${new Date().toLocaleString('en-PH')}`, columns);
+    filtered.forEach(addon => {
+      const ids = Array.isArray(addon.categoryIds) ? addon.categoryIds.map(Number) : [];
+      sheet.addRow([addon.name, addon.price || 0, categories.filter(category => ids.includes(category.id)).map(category => category.name).join(', '), addon.rawIngredient?.name || 'Not linked', addon.quantityUsed || '', addon.available ? 'Active' : 'Inactive']);
+    });
+    styleExcelDataRows(sheet, headerRow + 1, sheet.rowCount, columns);
+    await sendExcelWorkbook(res, workbook, `Add-ons_${new Date().toISOString().split('T')[0]}.xlsx`);
+  } catch (error) {
+    console.error('Add-ons Excel export error:', error);
+    res.status(500).json({ success: false, message: 'Excel export failed' });
+  }
+});
+
 // GET /api/reports/export/suppliers — Export suppliers to CSV
 router.get('/export/suppliers', authenticate, authorize('admin'), async (req, res) => {
   try {

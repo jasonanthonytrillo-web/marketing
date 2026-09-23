@@ -1086,13 +1086,13 @@ export default function CashierMenuPOS({
                 <button
                   type="button"
                   onClick={() => setCustomizingProduct(null)}
-                  className="flex-1 py-3 bg-surface-100 hover:bg-surface-200 text-surface-700 font-bold rounded-2xl text-xs uppercase tracking-wider transition-colors"
+                  className="flex-1 min-w-0 py-3 bg-surface-100 hover:bg-surface-200 text-surface-700 font-bold rounded-2xl text-xs uppercase tracking-wider transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-2 py-3 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-primary-600/20 transition-all"
+                  className="flex-[2] min-w-0 whitespace-nowrap py-3 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-2xl text-xs uppercase tracking-wider shadow-lg shadow-primary-600/20 transition-all"
                 >
                   Add to Order
                 </button>

@@ -230,6 +230,7 @@ export const exportSalesCSV = () => api.get('/reports/export/sales', { responseT
 export const exportInventoryCSV = () => api.get('/reports/export/inventory', { responseType: 'blob' });
 export const exportSalesExcel = (date) => api.get('/reports/export/sales.xlsx', { params: { date }, responseType: 'blob' });
 export const exportInventoryExcel = (type = 'products') => api.get('/reports/export/inventory.xlsx', { params: { type }, responseType: 'blob' });
+export const exportAddonsExcel = (params = {}) => api.get('/reports/export/addons.xlsx', { params, responseType: 'blob' });
 export const exportSuppliersExcel = () => api.get('/reports/export/suppliers.xlsx', { responseType: 'blob' });
 export const exportShiftsExcel = () => api.get('/reports/export/shifts.xlsx', { responseType: 'blob' });
 export const exportPayrollExcel = () => api.get('/reports/export/payroll.xlsx', { responseType: 'blob' });

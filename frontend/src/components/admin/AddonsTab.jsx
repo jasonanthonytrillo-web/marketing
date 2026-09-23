@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getAddons, createAddon, updateAddon, deleteAddon, getCategories, getRawIngredients } from '../../services/api';
+import { getAddons, createAddon, updateAddon, deleteAddon, getCategories, getRawIngredients, exportAddonsExcel } from '../../services/api';
+import { downloadBlob } from '../../utils/csvExport';
 import { Pencil, Trash2, X, Download, Search, MoreVertical } from 'lucide-react';
 
 const emptyAddon = { name: '', price: '', categoryIds: [], rawIngredientId: '', quantityUsed: '', available: true };
@@ -56,22 +57,14 @@ export default function AddonsTab() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const exportExcel = () => {
-    const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const rows = [
-      ['Add-on Name', 'Selling Price', 'Categories', 'COGS Ingredient', 'Quantity Used', 'Status'],
-      ...filteredAddons.map(addon => {
-        const assigned = categories.filter(category => (addon.categoryIds || []).map(Number).includes(category.id));
-        return [addon.name, Number(addon.price || 0).toFixed(2), assigned.map(category => category.name).join(', '), addon.rawIngredient?.name || '', addon.quantityUsed || '', addon.available ? 'Active' : 'Inactive'];
-      })
-    ];
-    const csv = '\ufeff' + rows.map(row => row.map(escape).join(',')).join('\r\n');
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Add-ons_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const exportExcel = async () => {
+    try {
+      const response = await exportAddonsExcel({ search, category: categoryFilter, status: statusFilter });
+      downloadBlob(`Add-ons_${new Date().toISOString().split('T')[0]}.xlsx`, response);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to export add-ons. Please try again.');
+    }
   };
 
   if (loading) return <div className="p-8 text-center text-surface-500">Loading add-ons...</div>;
