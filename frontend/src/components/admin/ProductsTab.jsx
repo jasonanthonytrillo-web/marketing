@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAdminProducts, createProduct, updateProduct, deleteProduct, hardDeleteProduct, getCategories, uploadImage, getSettings, getRawIngredients, getRecipes, addRecipeItem, removeRecipeItem } from '../../services/api';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency, getProductBasePrice } from '../../utils/helpers';
 import { ClipboardList, FolderArchive, ImageIcon, Upload, FolderUp, Lightbulb, ArchiveX, AlertTriangle, CheckCircle, Gem, MoreVertical, Pencil, Trash2, ArchiveRestore, Download } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -191,7 +191,7 @@ export default function ProductsTab() {
   };
 
   const handleAdd = () => {
-    setCurrentProduct({ name: '', description: '', price: '', costPrice: '', image: '', categoryId: '', stock: 0, available: true, isCombo: false, tags: '', sizes: [] });
+    setCurrentProduct({ name: '', description: '', price: '', costPrice: '', pointsCost: '', image: '', categoryId: '', stock: 0, available: true, isCombo: false, tags: '', sizes: [] });
     setComboOptions([]);
     setProductRecipes([]);
     setIsEditing(true);
@@ -203,6 +203,11 @@ export default function ProductsTab() {
       // Add-ons are managed centrally from the Add-ons tab and inherited by
       // category; never overwrite them from the product form.
       const { addons: _productAddons, ...productData } = currentProduct;
+      const variantPrices = (productData.sizes || [])
+        .filter(size => size?.available !== false)
+        .map(size => Number(size.price))
+        .filter(price => Number.isFinite(price));
+      if (variantPrices.length > 0) productData.price = Math.min(...variantPrices);
       const isUpdating = !!currentProduct.id;
       let savedProduct;
       if (currentProduct.id) {
@@ -403,12 +408,12 @@ export default function ProductsTab() {
                 </div>
 
                 {/* Group 2: Pricing */}
-                <div className="hidden bg-surface-50 p-5 rounded-2xl border border-surface-200">
+                <div className="bg-surface-50 p-5 rounded-2xl border border-surface-200">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-surface-500 mb-4 ml-1">Pricing & Loyalty</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-surface-700 mb-1">Selling Price (₱)</label>
-                      <input required type="number" step="0.01" value={currentProduct.price} onChange={e => setCurrentProduct({ ...currentProduct, price: e.target.value })} className="input-field w-full font-bold text-primary-600 bg-white" />
+                      <label className="block text-sm font-medium text-surface-700 mb-1">Base Price (₱)</label>
+                      <input required type="number" step="0.01" value={(currentProduct.sizes || []).length > 0 ? getProductBasePrice(currentProduct) : currentProduct.price} onChange={e => setCurrentProduct({ ...currentProduct, price: e.target.value })} disabled={(currentProduct.sizes || []).length > 0} className="input-field w-full font-bold text-primary-600 bg-white disabled:bg-surface-100 disabled:text-surface-500 disabled:cursor-not-allowed" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-surface-700 mb-1">Cost Price (₱)</label>

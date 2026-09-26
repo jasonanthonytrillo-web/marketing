@@ -122,6 +122,17 @@ export function formatCurrency(amount) {
   return `₱${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+export function getProductBasePrice(product) {
+  const variantPrices = Array.isArray(product?.sizes)
+    ? product.sizes
+      .filter(size => size?.available !== false)
+      .map(size => Number(size.price))
+      .filter(price => Number.isFinite(price))
+    : [];
+
+  return variantPrices.length > 0 ? Math.min(...variantPrices) : Number(product?.price) || 0;
+}
+
 export function formatDate(date) {
   return new Date(date).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }

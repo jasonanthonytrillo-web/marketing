@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getProducts, changePassword, getOrder, trackVisit, getPublicPackages, getOrderHistory, getMyPackageBookings, getBookingAvailability, createPackageBooking } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useSocket } from '../context/SocketContext';
-import { formatCurrency, formatDate, unlockAudio } from '../utils/helpers';
+import { formatCurrency, formatDate, unlockAudio, getProductBasePrice } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import { useDynamicBranding } from '../hooks/useDynamicBranding';
 import useStoreOperationRealtime from '../hooks/useStoreOperationRealtime';
@@ -847,10 +847,7 @@ export default function Menu() {
                       <p className="text-[11px] md:text-sm text-surface-500 line-clamp-2 md:line-clamp-2 mb-2 md:mb-4 flex-1 leading-snug">{product.description}</p>
                       <div className="flex items-center justify-between mt-auto">
                         <span className="font-heading font-black text-base md:text-2xl" style={{ color: brandingColor }}>
-                          {product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0
-                            ? `From ₱${Math.min(...product.sizes.filter(s => s.available !== false).map(s => parseFloat(s.price))).toFixed(2)}`
-                            : `₱${product.price.toFixed(2)}`
-                          }
+                          {formatCurrency(getProductBasePrice(product))}
                         </span>
                         {!branding?.storeClosed ? (
                           <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-lg md:text-xl font-black transition-all group-hover:scale-110 text-white" style={{ backgroundColor: brandingColor }}>

@@ -8,7 +8,7 @@ import {
   getOfflineOrderCount,
   syncOfflineOrders
 } from '../../services/offlineQueue';
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { formatCurrency, formatDate, getProductBasePrice } from '../../utils/helpers';
 import LocationPicker from '../LocationPicker';
 import { 
   Search, Plus, Minus, Trash2, ShoppingBag, Utensils, Banknote, Truck,
@@ -627,7 +627,7 @@ export default function CashierMenuPOS({
 
                     <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-surface-100">
                       <span className="font-heading font-black text-primary-600 text-xs sm:text-sm">
-                        {formatCurrency(product.price)}
+                        {formatCurrency(getProductBasePrice(product))}
                       </span>
                       <span className="w-7 h-7 rounded-lg bg-primary-600 text-white flex items-center justify-center shadow-sm active:scale-95 transition-transform flex-shrink-0">
                         <Plus className="w-4 h-4" strokeWidth={3} />
