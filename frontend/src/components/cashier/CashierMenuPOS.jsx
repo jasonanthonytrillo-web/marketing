@@ -948,7 +948,9 @@ export default function CashierMenuPOS({
                 <div>
                   <h3 className="font-heading font-black text-base leading-tight">{customizingProduct.name}</h3>
                   <p className="text-xs text-white/90 font-bold mt-0.5">
-                    Base Price: {formatCurrency(customizingProduct.price)}
+                    {customizingProduct.sizes && Array.isArray(customizingProduct.sizes) && customizingProduct.sizes.length > 0
+                      ? formatCurrency(getProductBasePrice(customizingProduct))
+                      : `Price: ${formatCurrency(customizingProduct.price)}`}
                   </p>
                 </div>
               </div>
