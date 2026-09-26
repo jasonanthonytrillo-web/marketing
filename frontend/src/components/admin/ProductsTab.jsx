@@ -203,7 +203,16 @@ export default function ProductsTab() {
       // Add-ons are managed centrally from the Add-ons tab and inherited by
       // category; never overwrite them from the product form.
       const { addons: _productAddons, ...productData } = currentProduct;
-      const variantPrices = (productData.sizes || [])
+      const sizes = productData.sizes || [];
+      const invalidVariant = sizes.find(size =>
+        size?.available !== false &&
+        (!String(size.name || '').trim() || size.price === '' || size.price == null || !Number.isFinite(Number(size.price)) || Number(size.price) <= 0)
+      );
+      if (invalidVariant) {
+        alert('Please enter a valid price greater than 0 for every available variant before saving.');
+        return;
+      }
+      const variantPrices = sizes
         .filter(size => size?.available !== false)
         .map(size => Number(size.price))
         .filter(price => Number.isFinite(price));
@@ -414,6 +423,9 @@ export default function ProductsTab() {
                     <div>
                       <label className="block text-sm font-medium text-surface-700 mb-1">Base Price (₱)</label>
                       <input required type="number" step="0.01" value={(currentProduct.sizes || []).length > 0 ? getProductBasePrice(currentProduct) : currentProduct.price} onChange={e => setCurrentProduct({ ...currentProduct, price: e.target.value })} disabled={(currentProduct.sizes || []).length > 0} className="input-field w-full font-bold text-primary-600 bg-white disabled:bg-surface-100 disabled:text-surface-500 disabled:cursor-not-allowed" />
+                      {(currentProduct.sizes || []).length > 0 && (
+                        <p className="text-[11px] text-amber-700 mt-1.5 font-medium">Price is calculated from the lowest variant. Update the variant prices below.</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-surface-700 mb-1">Cost Price (₱)</label>
