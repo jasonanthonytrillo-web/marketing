@@ -427,9 +427,6 @@ export default function ProductsTab() {
                     <div>
                       <label className="block text-sm font-medium text-surface-700 mb-1">Base Price (₱)</label>
                       <input required type="number" step="0.01" value={(currentProduct.sizes || []).length > 0 ? getProductBasePrice(currentProduct) : currentProduct.price} onChange={e => setCurrentProduct({ ...currentProduct, price: e.target.value })} disabled={(currentProduct.sizes || []).length > 0} className="input-field w-full font-bold text-primary-600 bg-white disabled:bg-surface-100 disabled:text-surface-500 disabled:cursor-not-allowed" />
-                      {(currentProduct.sizes || []).length > 0 && (
-                        <p className="text-[11px] text-amber-700 mt-1.5 font-medium">Price is calculated from the lowest variant. Update the variant prices below.</p>
-                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-surface-700 mb-1">Cost Price (₱)</label>
@@ -440,6 +437,12 @@ export default function ProductsTab() {
                       <input type="number" value={currentProduct.pointsCost || ''} onChange={e => setCurrentProduct({ ...currentProduct, pointsCost: e.target.value })} className="input-field w-full bg-white border-emerald-50 focus:border-emerald-500" placeholder="e.g. 50" />
                     </div>
                   </div>
+                  {(currentProduct.sizes || []).length > 0 && (
+                    <div className="mt-4 flex w-full items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-amber-800">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                      <p className="text-xs font-medium leading-relaxed">Price is calculated from the lowest variant. Update the variant prices below.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Group 3: Media */}
