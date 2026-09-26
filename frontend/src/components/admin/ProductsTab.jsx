@@ -729,10 +729,9 @@ export default function ProductsTab() {
                         </div>
                         <div className="bg-surface-50/50 rounded-2xl border border-surface-100 p-2 max-h-[350px] overflow-y-auto space-y-1">
                           {products.filter(p => {
-                            if (p.isCombo || !p.available) return false;
-                            const cat = p.category?.name?.toLowerCase() || '';
-                            const isSideOrDrink = cat.includes('drink') || cat.includes('beverage') || cat.includes('side') || cat.includes('snack') || cat.includes('dessert');
-                            return isSideOrDrink; // Only Sides & Drinks
+                            // Step 2 can use any available product, but never the
+                            // combo being edited or another combo product.
+                            return p.id !== currentProduct.id && !p.isCombo && p.available;
                           }).map(p => {
                             const isSelected = comboOptions.some(o => o.productId === p.id && o.groupNumber === 2);
                             return (
