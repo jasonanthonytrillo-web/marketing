@@ -1073,7 +1073,7 @@ export default function Menu() {
                           const match = selectedProduct.sizes.find(s => s.name === addOpts.size);
                           if (match) return parseFloat(match.price).toFixed(2);
                         }
-                        return selectedProduct.price.toFixed(2);
+                        return getProductBasePrice(selectedProduct).toFixed(2);
                       })()}
                     </p>
                     {selectedProduct.pointsCost && isCustomer && !branding?.saRewardsDisabled && (
