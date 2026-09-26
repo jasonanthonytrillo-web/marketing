@@ -216,6 +216,10 @@ export default function ProductsTab() {
         .filter(size => size?.available !== false)
         .map(size => Number(size.price))
         .filter(price => Number.isFinite(price));
+      const lowestVariantPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : null;
+      if (lowestVariantPrice != null && Number(currentProduct.price) !== lowestVariantPrice) {
+        alert(`The base price cannot be changed while variants exist. The lowest variant price (₱${lowestVariantPrice.toFixed(2)}) will be used instead.`);
+      }
       if (variantPrices.length > 0) productData.price = Math.min(...variantPrices);
       const isUpdating = !!currentProduct.id;
       let savedProduct;
