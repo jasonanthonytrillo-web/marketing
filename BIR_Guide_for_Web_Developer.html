@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>BIR Guide for Web Developer - Elevate POS</title>
+<style>
+@page{size:A4;margin:18mm 19mm}body{font-family:Arial,sans-serif;color:#202124;font-size:10.8pt;line-height:1.42}h1{color:#17365d;text-align:center;font-size:20pt;margin:0 0 5px}h2{color:#17365d;font-size:14pt;border-bottom:1px solid #b7c9df;padding-bottom:4px;margin-top:20px}h3{color:#17365d;font-size:11.5pt;margin-bottom:3px}.center{text-align:center}.muted{color:#5f6368}.box{border:1px solid #9aa9b8;padding:10px 12px;margin:10px 0;background:#f7f9fb}.warn{border-left:4px solid #c47f00;background:#fff8e6;padding:9px 11px;margin:10px 0}table{width:100%;border-collapse:collapse;margin:8px 0 12px}td,th{border:1px solid #b8c2cc;padding:6px;vertical-align:top}th{background:#eaf0f6;text-align:left;width:30%}li{margin:3px 0}.step{border-left:4px solid #2f6690;padding:7px 11px;margin:8px 0;background:#f5f9fc}.page{page-break-before:always}.small{font-size:9pt}</style></head>
+<body>
+<h1>BIR Guide for a Web Developer</h1>
+<div class="center"><strong>Elevate POS</strong><br><span class="muted">How to request classification and registration guidance</span></div>
+<div class="box"><strong>Purpose:</strong> Use this guide to ask the BIR how the café’s configured system should be treated. This is not a legal opinion and does not replace a written BIR determination.</div>
+
+<h2>1. Which BIR office should you visit?</h2>
+<table><tr><th>If you are asking about…</th><th>Go first to…</th></tr>
+<tr><td>The café’s use of Elevate POS</td><td>The café’s assigned <strong>Revenue District Office (RDO)</strong>, based on the café’s registered business address. Bring the café owner or an authorized representative.</td></tr>
+<tr><td>Your own developer/supplier accreditation</td><td>Your own business’s assigned RDO, based on your registered head-office address. Ask for the Registration Section / eAccReg guidance for a supplier, developer, or provider.</td></tr>
+<tr><td>Where to start inside the RDO</td><td>Go to the <strong>Registration Section</strong> or Taxpayer Assistance / Officer of the Day counter. Say that you need guidance on POS/sales-machine classification and possible CAS/CBA registration.</td></tr></table>
+<div class="warn"><strong>Best approach:</strong> Have the café taxpayer-user make the first inquiry about its actual system use. You may attend as the developer and explain the technical configuration.</div>
+
+<h2>2. What to say at the RDO</h2>
+<p>Use this explanation:</p>
+<div class="box">“We are presenting Elevate POS, a web-based internal sales and inventory system used by a café. In the deployed version, the receipt-printing feature has been removed/disabled. The system does not issue customer-facing BIR invoices or receipts. The café issues its BIR-compliant invoice separately. We request confirmation whether the system requires a Permit to Use as a POS/sales machine, or registration as a computerized accounting system/component.”</div>
+<p>Ask the officer to identify the applicable registration category and documentary requirements in writing or on the relevant BIR checklist.</p>
+
+<h2>3. What to bring</h2>
+<h3>Bring the café’s documents</h3><ul><li>BIR Certificate of Registration (COR)</li><li>TIN and branch code</li><li>Business permit, if requested</li><li>Sample BIR-compliant invoice issued separately by the café</li><li>Authorization letter or board/owner authorization naming the person attending</li></ul>
+<h3>Bring your system documents</h3><ul><li>Printed copy of the <strong>BIR_POS_System_Presentation.pdf</strong></li><li>System name, version, release date, and developer details</li><li>Screenshots showing that receipt printing is removed/disabled</li><li>Live demonstration or test account</li><li>Sample internal sales, inventory, and management reports</li><li>Simple system flow diagram: order entry → internal report → separate BIR invoice</li><li>Written statement that no POS-generated slip is given to customers</li></ul>
+
+<div class="page"></div><h2>4. Questions to ask the BIR officer</h2>
+<ol><li>Does this configured system require a Permit to Use as a CRM/POS or other sales machine?</li><li>Because receipt printing is disabled, is the system treated only as an internal sales/inventory tool?</li><li>Does the system qualify as a computerized accounting system, computerized books of accounts, or a component that must be registered?</li><li>Does storing sales data or generating sales reports trigger a separate registration requirement?</li><li>What exact BIR form, checklist, office, and online system should be used?</li><li>Does the café need to submit eSales reports or any other reports for this system?</li><li>What controls must be maintained for audit purposes, such as audit logs, user access, backups, and data retention?</li><li>Can the RDO provide written confirmation or annotate the inquiry/receive a formal letter?</li></ol>
+
+<h2>5. What not to do</h2><ul><li>Do not give the POS printout to customers as an invoice or receipt.</li><li>Do not label an internal report “Official Receipt,” “Sales Invoice,” or “BIR Receipt.”</li><li>Do not tell the BIR that the system is exempt; ask the BIR to classify it.</li><li>Do not disable printing only temporarily for inspection if the café will later use it for customer documents.</li><li>Do not claim that the system is “BIR-accredited” unless BIR has issued the applicable accreditation or permit.</li></ul>
+
+<h2>6. After the visit</h2><div class="step"><strong>Step 1:</strong> Record the RDO, date, officer/section, requirements given, and any reference number.</div><div class="step"><strong>Step 2:</strong> If registration is required, follow the official checklist and keep the filed application and acknowledgment.</div><div class="step"><strong>Step 3:</strong> If the officer says no POS Permit is required, request that conclusion in writing or submit a signed letter and retain the received copy.</div><div class="step"><strong>Step 4:</strong> Keep the deployed software version, configuration screenshots, reports, invoices, and change history together in one compliance folder.</div>
+
+<h2>7. Important distinction</h2><table><tr><th>Party</th><th>Possible BIR concern</th></tr><tr><td>Café / taxpayer-user</td><td>Whether its actual system use requires PTU, CAS/CBA/component registration, and whether invoices are properly issued.</td></tr><tr><td>Web developer / supplier</td><td>Whether you are supplying a sales machine/software subject to supplier/developer accreditation, especially if selling or deploying it for multiple taxpayers.</td></tr></table>
+<div class="box"><strong>Bring this sentence with you:</strong> “Please classify the system based on its actual deployed functions and advise us of the exact registration, accreditation, or reporting requirements.”</div>
+<p class="small muted">Prepared for discussion with the concerned BIR Revenue District Office. Confirm current requirements directly with BIR because procedures and forms may change.</p>
+</body></html>

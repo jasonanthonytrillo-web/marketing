@@ -597,7 +597,7 @@ export default function CashierDashboard() {
   if (loading) return null;
 
   return (
-    <div className="relative flex h-screen min-w-0 flex-col overflow-hidden bg-surface-100">
+    <div className="relative flex h-screen min-h-0 min-w-0 flex-col overflow-hidden bg-surface-100">
 
       {/* Prep Time Modal */}
       {showPrepModal && (
@@ -1157,9 +1157,9 @@ export default function CashierDashboard() {
           onOrderCreated={loadOrders}
         />
       ) : (
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden md:flex-row">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex-row">
           {/* Left Panel: Order List */}
-        <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none min-w-0 no-print`}>
+        <div className={`${selectedOrder ? 'hidden md:flex' : 'flex'} md:w-1/2 min-h-0 flex-col border-r border-surface-200 bg-surface-50 flex-1 md:flex-none min-w-0 no-print`}>
           <div className="p-2 sm:p-4 border-b border-surface-200 flex gap-1.5 sm:gap-2 overflow-x-auto bg-white flex-shrink-0 scrollbar-hide">
             {['pending', 'confirmed', 'preparing', 'ready', 'unpaid', 'on_the_way', 'completed'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
@@ -1172,7 +1172,7 @@ export default function CashierDashboard() {
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-2 sm:space-y-3">
             {filteredOrders.length === 0 ? (
               <div className="h-full flex items-center justify-center text-surface-400 font-medium text-sm">No {activeTab === 'on_the_way' ? 'out for delivery' : activeTab} orders</div>
             ) : (
@@ -1215,7 +1215,7 @@ export default function CashierDashboard() {
         </div>
 
         {/* Right Panel: Order Details & Cash Register */}
-        <div className={`${selectedOrder ? 'flex' : 'hidden md:flex'} md:w-1/2 flex-col bg-white overflow-hidden relative flex-1 md:flex-none`}>
+        <div className={`${selectedOrder ? 'flex' : 'hidden md:flex'} md:w-1/2 min-h-0 flex-col bg-white overflow-hidden relative flex-1 md:flex-none`}>
           {/* Mobile back button */}
           {selectedOrder && (
             <button onClick={() => setSelectedOrder(null)} className="no-print md:hidden flex items-center gap-2 px-4 py-3 text-sm font-bold text-surface-600 border-b border-surface-200 bg-surface-50">
@@ -1228,7 +1228,7 @@ export default function CashierDashboard() {
               <p className="font-medium">Select an order to view details</p>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col overflow-hidden animate-slide-in">
+            <div className="min-h-0 flex-1 flex flex-col overflow-hidden animate-slide-in">
               {/* Order Header */}
               <div className="flex flex-shrink-0 items-start justify-between gap-3 border-b border-surface-200 bg-surface-50 p-4 sm:p-6 no-print">
                 <div className="min-w-0">
@@ -1241,7 +1241,7 @@ export default function CashierDashboard() {
               </div>
 
               {/* Scrollable Body */}
-              <div className="flex-1 overflow-y-auto flex flex-col no-print">
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain flex flex-col no-print">
                 {/* Delivery Info Banner */}
                 {selectedOrder.orderType === 'delivery' && (
                   <div className="mx-3 mt-4 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 sm:mx-6 animate-fade-in shadow-sm">
