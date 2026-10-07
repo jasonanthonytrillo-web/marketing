@@ -567,7 +567,7 @@ export default function CashierMenuPOS({
         </div>
 
         {/* Product Grid */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-[62vh] sm:p-4 sm:pb-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-[42vh] sm:p-4 sm:pb-4">
           {loading ? (
             <div className="h-64 flex flex-col items-center justify-center text-surface-400 gap-3">
               <RefreshCw className="w-8 h-8 animate-spin text-primary-600" />
@@ -642,7 +642,7 @@ export default function CashierMenuPOS({
       </div>
 
       {/* RIGHT PANEL: Live Order & Fast Cashier Checkout */}
-      <div className="fixed inset-x-0 bottom-0 z-40 flex h-[60vh] max-h-[560px] w-full flex-col overflow-hidden rounded-t-2xl border border-surface-200 bg-white shadow-[0_-10px_30px_rgba(15,23,42,0.18)] no-print md:static md:z-10 md:h-full md:min-h-0 md:max-h-full md:w-[330px] md:shrink-0 md:overflow-x-hidden md:overflow-y-scroll md:overscroll-contain md:touch-pan-y md:rounded-none md:border-l md:border-t-0 md:shadow-lg lg:w-[370px] xl:w-[410px]">
+      <div className="fixed inset-x-0 bottom-0 z-40 flex h-[40vh] max-h-[400px] w-full flex-col overflow-hidden rounded-t-2xl border border-surface-200 bg-white shadow-[0_-10px_30px_rgba(15,23,42,0.18)] no-print md:static md:z-10 md:h-full md:min-h-0 md:max-h-full md:w-[330px] md:shrink-0 md:overflow-x-hidden md:overflow-y-scroll md:overscroll-contain md:touch-pan-y md:rounded-none md:border-l md:border-t-0 md:shadow-lg lg:w-[370px] xl:w-[410px]">
         
         {/* Cart Header */}
         <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-r from-primary-600 to-primary-700 px-3.5 py-2.5 text-white">
