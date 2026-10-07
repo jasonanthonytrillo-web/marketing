@@ -55,6 +55,7 @@ export default function CashierMenuPOS({
   // Submission & Success Modal
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null); // { order, change, amountReceived }
+  const [showCustomerNameModal, setShowCustomerNameModal] = useState(false);
   const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
   const [pendingSyncCount, setPendingSyncCount] = useState(() => getOfflineOrderCount());
   const [syncing, setSyncing] = useState(false);
@@ -278,6 +279,34 @@ export default function CashierMenuPOS({
     const received = parseFloat(cashReceived) || 0;
     return total > 0 && received < total;
   }, [cashReceived, total, paymentMethod]);
+
+  const handlePrePlaceOrder = () => {
+    if (isRestricted) {
+      onRestrictedAction('placing orders');
+      return;
+    }
+    if (cartItems.length === 0) {
+      alert('Cart is empty. Please add items to place an order.');
+      return;
+    }
+    const deferPayment = paymentMethod === 'pay_later';
+    if (orderType === 'delivery' && !deliveryAddress.trim()) {
+      alert('Please enter the delivery address.');
+      return;
+    }
+    if (!navigator.onLine && paymentMethod !== 'cash' && !deferPayment) {
+      alert('Online payment methods are unavailable offline. Please use cash or reconnect to the internet.');
+      return;
+    }
+    if (!deferPayment && paymentMethod === 'cash') {
+      const received = parseFloat(cashReceived) || total;
+      if (received < total) {
+        alert(`Insufficient cash amount. Total is ${formatCurrency(total)}, received is ${formatCurrency(received)}`);
+        return;
+      }
+    }
+    setShowCustomerNameModal(true);
+  };
 
   // Order Submission
   const handlePlaceOrder = async (autoConfirmPaid = true) => {
@@ -703,16 +732,6 @@ export default function CashierMenuPOS({
               </button>
             </div>
 
-            {/* Customer Name */}
-            <div className="relative flex-1 min-w-0">
-              <User className="w-3.5 h-3.5 text-surface-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              <input 
-                type="text"
-                value={customerName}
-                onChange={e => setCustomerName(e.target.value)}
-                placeholder="Customer name..."
-                className="w-full pl-7 pr-2 py-1 bg-white border border-surface-200 rounded-lg text-xs font-semibold text-surface-800 placeholder-surface-400 focus:border-primary-500 outline-none"
-              />
             </div>
           </div>
           {orderType === 'delivery' && (
@@ -916,7 +935,7 @@ export default function CashierMenuPOS({
             <div className="flex pt-0.5">
               <button
                 type="button"
-                onClick={() => handlePlaceOrder()}
+                onClick={() => handlePrePlaceOrder()}
                 disabled={submitting || isCashInsufficient || (orderType === 'delivery' && !deliveryAddress.trim())}
                 className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-1.5"
               >
@@ -1100,6 +1119,46 @@ export default function CashierMenuPOS({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOMER NAME MODAL */}
+      {showCustomerNameModal && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-surface-900/60 backdrop-blur-sm animate-fade-in no-print">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-scale-in border border-surface-100 p-5">
+            <h3 className="font-heading font-black text-lg mb-2">Customer Name</h3>
+            <p className="text-xs text-surface-500 mb-4">Please enter the customer's name for this order.</p>
+            <div className="relative mb-5">
+              <User className="w-4 h-4 text-surface-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text"
+                value={customerName}
+                onChange={e => setCustomerName(e.target.value)}
+                autoFocus
+                onFocus={(e) => e.target.select()}
+                className="w-full pl-9 pr-3 py-2.5 bg-surface-50 border border-surface-200 rounded-xl text-sm font-semibold text-surface-800 placeholder-surface-400 focus:bg-white focus:border-primary-500 outline-none transition-all"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCustomerNameModal(false)}
+                className="flex-1 py-2.5 bg-surface-100 hover:bg-surface-200 text-surface-700 font-bold rounded-xl text-xs uppercase tracking-wider transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCustomerNameModal(false);
+                  handlePlaceOrder();
+                }}
+                className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-primary-600/20 transition-all"
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}
