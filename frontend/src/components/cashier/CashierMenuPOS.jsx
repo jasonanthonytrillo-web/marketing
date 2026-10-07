@@ -731,8 +731,6 @@ export default function CashierMenuPOS({
                 <Truck className="w-3 h-3 text-blue-600" /> Delivery
               </button>
             </div>
-
-            </div>
           </div>
           {orderType === 'delivery' && (
             <div className="grid grid-cols-[1fr_90px] items-start gap-1.5 animate-fade-in">
