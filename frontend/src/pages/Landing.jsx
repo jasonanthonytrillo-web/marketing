@@ -193,6 +193,34 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden" style={{ '--primary-custom': primaryColor }}>
 
+      {/* Public storefront header */}
+      <header
+        className="relative z-30 w-full flex-shrink-0 border-b border-white/15 shadow-lg"
+        style={{ backgroundColor: primaryColor }}
+      >
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 sm:py-4 md:flex-row md:items-center md:justify-between md:px-8">
+          <div className="min-w-0">
+            <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 shadow-sm transition-transform hover:scale-[1.02]">
+              <img
+                src={tenant?.logo ? getAbsoluteUrl(tenant.logo) : '/hb_logo.jpg'}
+                className="h-7 w-7 rounded-lg object-cover"
+                alt={tenant?.name || 'Store logo'}
+                onError={(e) => { e.currentTarget.src = '/favicon.png'; }}
+              />
+              <span className="truncate text-sm font-black tracking-tight" style={{ color: primaryColor }}>
+                {tenant?.name || 'Hometown Brew'}
+              </span>
+            </Link>
+            <p className="mt-2 truncate text-xs font-medium text-white/85 sm:text-sm">
+              Open daily 5:00 PM – 11:00 PM
+            </p>
+          </div>
+          <p className="text-xs font-medium text-white/80 md:whitespace-nowrap">
+            © {new Date().getFullYear()} {tenant?.name || 'Hometown Brew'}
+          </p>
+        </div>
+      </header>
+
       {/* Splash Screen Intro */}
       {showSplash && (
         <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black transition-opacity duration-700 ${splashFading ? 'opacity-0' : 'opacity-100'}`}>

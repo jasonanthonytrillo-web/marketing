@@ -154,7 +154,7 @@ export const deleteCategory = (id) => api.delete(`/categories/${id}`);
 
 // Reports
 export const getDailyReport = (days) => api.get(`/reports/daily?days=${days || 7}`);
-export const getBestsellers = () => api.get('/reports/bestsellers');
+export const getBestsellers = (days = 30) => api.get(`/reports/bestsellers?days=${days}`);
 export const getCategoryProfitability = (days = 30) => api.get(`/reports/category-profitability?days=${days}`);
 export const getAdminSummary = () => api.get('/reports/summary');
 export const getAdminNotifications = () => api.get('/admin/notifications');

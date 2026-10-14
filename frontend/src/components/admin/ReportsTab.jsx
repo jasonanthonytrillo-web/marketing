@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getDailyReport, getBestsellers, getKitchenTimes, getForecasting, getSalesByDate, getCategoryProfitability } from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
-import { Sparkles, AlertTriangle, LineChart, CalendarDays, Trophy, ChefHat, Search, ShoppingBag, Package, BarChart3 } from 'lucide-react';
+import { Sparkles, AlertTriangle, LineChart, CalendarDays, Trophy, ChefHat, ShoppingBag, BarChart3 } from 'lucide-react';
 
 export default function ReportsTab() {
   const [dailyData, setDailyData] = useState([]);
@@ -30,7 +30,7 @@ export default function ReportsTab() {
     try {
       const [dailyRes, bestRes, kitchenRes, forecastRes, categoryRes] = await Promise.all([
         getDailyReport(7),
-        getBestsellers(),
+        getBestsellers(30),
         getKitchenTimes(),
         getForecasting(),
         getCategoryProfitability(30)
@@ -73,7 +73,7 @@ export default function ReportsTab() {
             <h2 className="font-heading text-xl font-bold text-surface-900 flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-primary-500" /> Sales by Date
             </h2>
-            <p className="text-surface-400 text-sm mt-0.5">Select any date to see what was sold and how much was earned.</p>
+            <p className="text-surface-400 text-sm mt-0.5">Select any date to see sales, costs, and net profit.</p>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -91,18 +91,26 @@ export default function ReportsTab() {
         ) : dateReport && dateReport.products.length > 0 ? (
           <>
             {/* Summary tiles */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
               <div className="bg-blue-50 rounded-2xl p-4 text-center">
                 <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Gross Revenue</p>
                 <p className="text-2xl font-black text-blue-700">{formatCurrency(dateReport.totalRevenue)}</p>
               </div>
               <div className="bg-red-50 rounded-2xl p-4 text-center">
-                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">Cost of Goods</p>
-                <p className="text-2xl font-black text-red-600">{formatCurrency(dateReport.totalRevenue - dateReport.totalProfit)}</p>
+                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">COGS</p>
+                <p className="text-2xl font-black text-red-600">{formatCurrency(dateReport.totalCOGS)}</p>
               </div>
               <div className="bg-emerald-50 rounded-2xl p-4 text-center">
-                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Net Profit</p>
-                <p className="text-2xl font-black text-emerald-700">{formatCurrency(dateReport.totalProfit)}</p>
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Gross Profit</p>
+                <p className="text-2xl font-black text-emerald-700">{formatCurrency(dateReport.totalGrossProfit)}</p>
+              </div>
+              <div className="bg-amber-50 rounded-2xl p-4 text-center">
+                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Expenses</p>
+                <p className="text-2xl font-black text-amber-700">{formatCurrency((dateReport.totalExpenses || 0) + (dateReport.totalWaste || 0))}</p>
+              </div>
+              <div className="bg-emerald-100 rounded-2xl p-4 text-center">
+                <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1">Net Profit</p>
+                <p className="text-2xl font-black text-emerald-800">{formatCurrency(dateReport.totalProfit)}</p>
               </div>
               <div className="bg-purple-50 rounded-2xl p-4 text-center">
                 <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Items Sold</p>
@@ -120,7 +128,7 @@ export default function ReportsTab() {
                     <th className="pb-3 text-center">Qty</th>
                     <th className="pb-3 text-right">Revenue</th>
                     <th className="pb-3 text-right">Cost</th>
-                    <th className="pb-3 text-right">Net Profit</th>
+                    <th className="pb-3 text-right">Gross Profit</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-50">
@@ -167,7 +175,7 @@ export default function ReportsTab() {
                       <p className="text-xs font-bold text-red-400">{formatCurrency(p.cost)}</p>
                     </div>
                     <div>
-                      <p className="text-[9px] font-black uppercase tracking-wide text-surface-400">Net profit</p>
+                      <p className="text-[9px] font-black uppercase tracking-wide text-surface-400">Gross profit</p>
                       <p className="text-xs font-black text-emerald-600">{formatCurrency(p.profit)}</p>
                     </div>
                   </div>
@@ -191,9 +199,9 @@ export default function ReportsTab() {
             <h2 className="font-heading text-xl font-bold text-surface-900 flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-primary-500" /> Category Sales vs Expenses
             </h2>
-            <p className="text-surface-400 text-sm mt-0.5">Compare revenue and assigned expenses for the last {categoryReport?.days || 30} days.</p>
+            <p className="text-surface-400 text-sm mt-0.5">Revenue, product costs, and assigned operating expenses for the last {categoryReport?.days || 30} days.</p>
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-surface-400">Profit = Sales − Expenses</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-surface-400">Net profit = Sales − COGS − Expenses</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -201,7 +209,7 @@ export default function ReportsTab() {
             <thead>
               <tr className="text-[10px] font-black text-surface-400 uppercase tracking-widest border-b border-surface-100">
                 <th className="pb-3">Category</th>
-                <th className="pb-3">Sales / Expenses</th>
+                <th className="pb-3">Sales / Costs</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-50">
@@ -211,7 +219,7 @@ export default function ReportsTab() {
                   <tr key={category.categoryId} className="hover:bg-surface-50/60 transition-colors">
                     <td className="py-4 font-bold text-surface-900">{category.name}</td>
                     <td className="py-4 pl-4">
-                      <div className="space-y-2 min-w-[180px]">
+                      <div className="space-y-2 min-w-[260px]">
                         <div className="flex items-center gap-2">
                           <div className="h-2.5 flex-1 rounded-full border border-blue-200 bg-surface-100 overflow-hidden" title={`Sales: ${formatCurrency(category.sales)}`}>
                             <div className="h-full rounded-full bg-blue-500" style={{ width: `${(category.sales / maxValue) * 100}%` }} />
@@ -223,6 +231,10 @@ export default function ReportsTab() {
                             <div className="h-full rounded-full bg-red-400" style={{ width: `${(category.expenses / maxValue) * 100}%` }} />
                           </div>
                           <span className="w-20 shrink-0 text-right text-[10px] font-black text-red-500">{formatCurrency(category.expenses)}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-surface-400 pt-1">
+                          <span>COGS {formatCurrency(category.cogs)}</span>
+                          <span className={category.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}>Net {formatCurrency(category.netProfit)}</span>
                         </div>
                       </div>
                     </td>
@@ -276,9 +288,9 @@ export default function ReportsTab() {
 
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="space-y-4">
-                <span className="px-4 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-white/10">AI Insights</span>
-                <h3 className="font-heading text-3xl font-black leading-tight">Tomorrow's Prediction</h3>
-                <p className="text-surface-300 text-sm leading-relaxed max-w-xs">Our AI analyzed your last 30 days of performance to project tomorrow's results.</p>
+                <span className="px-4 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-white/10">Sales Forecast</span>
+                <h3 className="font-heading text-3xl font-black leading-tight">Tomorrow's Forecast</h3>
+                <p className="text-surface-300 text-sm leading-relaxed max-w-xs">A weekday-average forecast based on your last 30 days of completed sales.</p>
               </div>
 
               <div className="flex flex-col justify-center items-center lg:items-start space-y-2 p-6 bg-white/5 rounded-3xl border border-white/5 backdrop-blur-sm">
@@ -293,7 +305,7 @@ export default function ReportsTab() {
               <div className="flex flex-col justify-center space-y-6">
                 <div className="flex items-end gap-3">
                   <div className="flex-1">
-                    <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">Growth Trend</p>
+                    <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">30-Day Trend</p>
                     <p className={`text-3xl font-black ${parseFloat(forecast.growthTrend) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {parseFloat(forecast.growthTrend) >= 0 ? '↑' : '↓'} {Math.abs(forecast.growthTrend)}%
                     </p>
@@ -314,7 +326,7 @@ export default function ReportsTab() {
                           <div className="relative w-full flex flex-col justify-end h-full">
                             <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[8px] font-black opacity-0 group-hover/bar:opacity-100 transition-opacity bg-indigo-500 px-1 rounded">{formatCurrency(day.average)}</div>
                             <div
-                              className={`w-full rounded-t-sm transition-all duration-700 ${new Date().getDay() + 1 === i ? 'bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'bg-indigo-500/40 group-hover/bar:bg-indigo-400'}`}
+                              className={`w-full rounded-t-sm transition-all duration-700 ${new Date().getDay() === i ? 'bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'bg-indigo-500/40 group-hover/bar:bg-indigo-400'}`}
                               style={{ height: `${(day.average / (maxAvg || 1)) * 100}%`, minHeight: '2px' }}
                             ></div>
                           </div>
@@ -374,6 +386,7 @@ export default function ReportsTab() {
                 <tr className="text-[10px] font-black text-surface-400 uppercase tracking-widest border-b border-surface-100">
                   <th className="pb-4">Date</th>
                   <th className="pb-4 text-right">Revenue</th>
+                  <th className="pb-4 text-right">COGS</th>
                   <th className="pb-4 text-right">Expenses</th>
                   <th className="pb-4 text-right">Net Profit</th>
                   <th className="pb-4 text-right">Margin</th>
@@ -386,7 +399,8 @@ export default function ReportsTab() {
                     <tr key={i} className="hover:bg-surface-50/50 transition-colors group">
                       <td className="py-4 font-bold text-surface-600 text-sm">{day.date}</td>
                       <td className="py-4 text-right font-bold text-surface-900">{formatCurrency(day.sales)}</td>
-                      <td className="py-4 text-right font-bold text-red-500">-{formatCurrency(day.expenses)}</td>
+                      <td className="py-4 text-right font-bold text-red-500">-{formatCurrency(day.cogs)}</td>
+                      <td className="py-4 text-right font-bold text-amber-600">-{formatCurrency(day.expenses)}</td>
                       <td className={`py-4 text-right font-black ${day.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                         {day.profit < 0 ? '-' : ''}{formatCurrency(Math.abs(day.profit))}
                       </td>
@@ -436,7 +450,7 @@ export default function ReportsTab() {
                   <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center font-bold text-primary-600 shadow-sm">{i + 1}</div>
                   <div>
                     <p className="font-bold text-surface-900">{item.name}</p>
-                    <p className="text-[10px] font-bold text-surface-400 uppercase tracking-widest">{item.quantity} units sold</p>
+                    <p className="text-[10px] font-bold text-surface-400 uppercase tracking-widest">{item.quantity} units sold · last 30 days</p>
                   </div>
                 </div>
                 <div className="text-right">

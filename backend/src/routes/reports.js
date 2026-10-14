@@ -70,7 +70,7 @@ router.get('/daily', authenticate, authorize('admin'), async (req, res) => {
     startDate.setDate(startDate.getDate() - parseInt(days));
     startDate.setHours(0, 0, 0, 0);
 
-    const [orders, expenses, wasteLogs] = await Promise.all([
+    const [orders, orderItems, expenses, wasteLogs] = await Promise.all([
       prisma.order.findMany({
         where: { 
           createdAt: { gte: startDate }, 
@@ -78,6 +78,20 @@ router.get('/daily', authenticate, authorize('admin'), async (req, res) => {
           tenantId: req.tenantId
         },
         select: { total: true, createdAt: true }
+      }),
+      prisma.orderItem.findMany({
+        where: {
+          order: {
+            createdAt: { gte: startDate },
+            status: 'completed',
+            tenantId: req.tenantId
+          }
+        },
+        select: {
+          quantity: true,
+          order: { select: { createdAt: true } },
+          product: { select: { costPrice: true } }
+        }
       }),
       prisma.expense.findMany({
         where: {
@@ -102,7 +116,7 @@ router.get('/daily', authenticate, authorize('admin'), async (req, res) => {
     // Process Orders
     orders.forEach(o => {
       const day = getDateKey(o.createdAt);
-      if (!dailyMap[day]) dailyMap[day] = { date: day, sales: 0, expenses: 0, profit: 0, orders: 0, waste: 0 };
+       if (!dailyMap[day]) dailyMap[day] = { date: day, sales: 0, cogs: 0, expenses: 0, profit: 0, grossProfit: 0, orders: 0, waste: 0 };
       dailyMap[day].sales += o.total;
       dailyMap[day].orders += 1;
     });
@@ -110,14 +124,22 @@ router.get('/daily', authenticate, authorize('admin'), async (req, res) => {
     // Process Expenses
     expenses.forEach(e => {
       const day = getDateKey(e.date);
-      if (!dailyMap[day]) dailyMap[day] = { date: day, sales: 0, expenses: 0, profit: 0, orders: 0, waste: 0 };
-      dailyMap[day].expenses += e.amount;
+       if (!dailyMap[day]) dailyMap[day] = { date: day, sales: 0, cogs: 0, expenses: 0, profit: 0, grossProfit: 0, orders: 0, waste: 0 };
+       dailyMap[day].expenses += e.amount;
+     });
+
+    // COGS comes from the product cost at the time of reporting. Keep it
+    // separate from operating expenses so every report can use the same P&L.
+    orderItems.forEach(item => {
+      const day = getDateKey(item.order.createdAt);
+      if (!dailyMap[day]) dailyMap[day] = { date: day, sales: 0, cogs: 0, expenses: 0, profit: 0, grossProfit: 0, orders: 0, waste: 0 };
+      dailyMap[day].cogs += Math.abs(item.quantity) * (item.product?.costPrice || 0);
     });
 
     // Process Waste (as additional expense)
     wasteLogs.forEach(w => {
       const day = getDateKey(w.createdAt);
-      if (!dailyMap[day]) dailyMap[day] = { date: day, sales: 0, expenses: 0, profit: 0, orders: 0, waste: 0 };
+       if (!dailyMap[day]) dailyMap[day] = { date: day, sales: 0, cogs: 0, expenses: 0, profit: 0, grossProfit: 0, orders: 0, waste: 0 };
       const wasteCost = Math.abs(w.quantityChange) * (w.product.costPrice || 0);
       dailyMap[day].expenses += wasteCost;
       dailyMap[day].waste = (dailyMap[day].waste || 0) + wasteCost;
@@ -125,7 +147,8 @@ router.get('/daily', authenticate, authorize('admin'), async (req, res) => {
 
     // Calculate Profit
     Object.keys(dailyMap).forEach(day => {
-      dailyMap[day].profit = dailyMap[day].sales - dailyMap[day].expenses;
+       dailyMap[day].grossProfit = dailyMap[day].sales - dailyMap[day].cogs;
+       dailyMap[day].profit = dailyMap[day].grossProfit - dailyMap[day].expenses;
     });
 
     res.json({ success: true, data: Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date)) });
@@ -138,11 +161,15 @@ router.get('/daily', authenticate, authorize('admin'), async (req, res) => {
 // GET /api/reports/bestsellers
 router.get('/bestsellers', authenticate, authorize('admin'), async (req, res) => {
   try {
+    const days = Math.max(1, parseInt(req.query.days, 10) || 30);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
     const items = await prisma.orderItem.findMany({
       where: { 
         order: { 
           status: 'completed',
-          tenantId: req.tenantId
+          tenantId: req.tenantId,
+          createdAt: { gte: startDate }
         } 
       },
       select: { productName: true, quantity: true, subtotal: true }
@@ -162,13 +189,13 @@ router.get('/bestsellers', authenticate, authorize('admin'), async (req, res) =>
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 10);
 
-    res.json({ success: true, data: sorted });
+    res.json({ success: true, data: sorted, days });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to load bestsellers.' });
   }
 });
 
-// GET /api/reports/category-profitability — Sales and expenses grouped by product category
+// GET /api/reports/category-profitability — Sales, COGS, and expenses grouped by product category
 router.get('/category-profitability', authenticate, authorize('admin'), async (req, res) => {
   try {
     const days = Math.max(1, parseInt(req.query.days, 10) || 30);
@@ -187,9 +214,9 @@ router.get('/category-profitability', authenticate, authorize('admin'), async (r
           order: { tenantId: req.tenantId, status: 'completed', createdAt: { gte: startDate } }
         },
         select: {
-          subtotal: true,
-          quantity: true,
-          product: { select: { categoryId: true } }
+           subtotal: true,
+           quantity: true,
+           product: { select: { categoryId: true, costPrice: true } }
         }
       }),
       prisma.expense.findMany({
@@ -204,10 +231,12 @@ router.get('/category-profitability', authenticate, authorize('admin'), async (r
         categoryId: category.id,
         name: category.name,
         icon: category.icon,
-        unitsSold: 0,
-        sales: 0,
-        expenses: 0,
-        profit: 0
+         unitsSold: 0,
+         sales: 0,
+         cogs: 0,
+         expenses: 0,
+         grossProfit: 0,
+         netProfit: 0
       };
     });
 
@@ -216,6 +245,7 @@ router.get('/category-profitability', authenticate, authorize('admin'), async (r
       if (!grouped[categoryId]) return;
       grouped[categoryId].unitsSold += item.quantity;
       grouped[categoryId].sales += item.subtotal;
+      grouped[categoryId].cogs += Math.abs(item.quantity) * (item.product?.costPrice || 0);
     });
 
     expenses.forEach(expense => {
@@ -224,7 +254,8 @@ router.get('/category-profitability', authenticate, authorize('admin'), async (r
 
     const data = Object.values(grouped).map(row => ({
       ...row,
-      profit: row.sales - row.expenses
+       grossProfit: row.sales - row.cogs,
+       netProfit: row.sales - row.cogs - row.expenses
     }));
 
     res.json({ success: true, data: { days, categories: data } });
@@ -940,7 +971,8 @@ router.get('/sales-by-date', authenticate, authorize('admin'), async (req, res) 
     const start = new Date(`${date}T00:00:00.000Z`);
     const end   = new Date(`${date}T23:59:59.999Z`);
 
-    const items = await prisma.orderItem.findMany({
+    const [items, expenses, wasteLogs] = await Promise.all([
+      prisma.orderItem.findMany({
       where: {
         order: {
           tenantId: req.tenantId,
@@ -955,7 +987,20 @@ router.get('/sales-by-date', authenticate, authorize('admin'), async (req, res) 
         productPrice: true,
         product: { select: { costPrice: true } }
       }
-    });
+      }),
+      prisma.expense.findMany({
+        where: { tenantId: req.tenantId, date: { gte: start, lte: end } },
+        select: { amount: true }
+      }),
+      prisma.inventoryLog.findMany({
+        where: {
+          createdAt: { gte: start, lte: end },
+          reason: 'waste',
+          product: { tenantId: req.tenantId }
+        },
+        include: { product: { select: { costPrice: true } } }
+      })
+    ]);
 
     console.log(`[sales-by-date] date=${date} start=${start.toISOString()} end=${end.toISOString()} items=${items.length} tenantId=${req.tenantId}`);
 
@@ -974,10 +1019,24 @@ router.get('/sales-by-date', authenticate, authorize('admin'), async (req, res) 
 
     const products = Object.values(aggregated).sort((a, b) => b.profit - a.profit);
     const totalRevenue = products.reduce((s, p) => s + p.revenue, 0);
-    const totalProfit  = products.reduce((s, p) => s + p.profit, 0);
+    const totalCOGS = products.reduce((s, p) => s + p.cost, 0);
+    const totalGrossProfit = products.reduce((s, p) => s + p.profit, 0);
+    const totalExpenses = expenses.reduce((s, expense) => s + (expense.amount || 0), 0);
+    const totalWaste = wasteLogs.reduce((s, log) => s + Math.abs(log.quantityChange) * (log.product?.costPrice || 0), 0);
+    const totalProfit = totalGrossProfit - totalExpenses - totalWaste;
     const totalItems   = products.reduce((s, p) => s + p.quantity, 0);
 
-    res.json({ success: true, data: { date, products, totalRevenue, totalProfit, totalItems } });
+    res.json({ success: true, data: {
+      date,
+      products,
+      totalRevenue,
+      totalCOGS,
+      totalGrossProfit,
+      totalExpenses,
+      totalWaste,
+      totalProfit,
+      totalItems
+    } });
   } catch (error) {
     console.error('Sales-by-date error:', error);
     res.status(500).json({ success: false, message: 'Failed to load sales by date.' });
