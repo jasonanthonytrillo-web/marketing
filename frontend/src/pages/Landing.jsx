@@ -446,7 +446,7 @@ export default function Landing() {
 
       {/* Legal Footer */}
       <div className="relative z-10 mt-auto py-8 text-center border-t border-white/5 w-full max-w-sm mx-auto">
-        <p className="mb-4 text-xs font-medium text-surface-400">Open daily 5:00 PM – 11:00 PM</p>
+        <p className="mb-4 text-xs font-medium text-surface-400">Buenavista, Agusan del Norte · Open daily 5:00 PM – 11:00 PM</p>
         <div className="flex justify-center gap-6 text-[10px] font-bold text-surface-500 uppercase tracking-widest">
           <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
           <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
