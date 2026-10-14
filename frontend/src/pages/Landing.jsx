@@ -191,7 +191,7 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden" style={{ '--primary-custom': primaryColor }}>
+    <div className="min-h-screen bg-black flex flex-col items-center justify-start relative overflow-hidden" style={{ '--primary-custom': primaryColor }}>
 
       {/* Public storefront header */}
       <header
@@ -445,14 +445,14 @@ export default function Landing() {
       </div>
 
       {/* Legal Footer */}
-      <div className="relative z-10 mt-auto py-8 text-center border-t border-white/5 w-full max-w-sm mx-auto">
+      <footer className="relative z-10 mt-auto w-full border-t border-white/5 px-6 py-8 text-center">
         <p className="mb-4 text-xs font-medium text-surface-400">Buenavista, Agusan del Norte · Open daily 5:00 PM – 11:00 PM</p>
         <div className="flex justify-center gap-6 text-[10px] font-bold text-surface-500 uppercase tracking-widest">
           <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
           <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
           <Link to="/data-deletion" className="hover:text-white transition-colors">Conditions</Link>
         </div>
-      </div>
+      </footer>
     </div>
   );
 }
