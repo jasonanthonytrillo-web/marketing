@@ -421,7 +421,7 @@ export default function Landing() {
 
       {/* Store footer */}
       <footer className="relative z-10 mt-auto w-full border-t border-white/15 px-4 py-5 shadow-lg" style={{ backgroundColor: primaryColor }}>
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:px-6 md:flex-row md:items-start md:justify-between md:px-8">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-6 sm:px-6 md:grid-cols-2 md:px-8">
           <div className="min-w-0">
             <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 shadow-sm transition-transform hover:scale-[1.02]">
               <img
@@ -436,12 +436,14 @@ export default function Landing() {
             </Link>
             <p className="mt-2 text-xs font-medium text-white/90 sm:text-sm">Buenavista, Agusan del Norte · Open daily 5:00 PM – 11:00 PM</p>
           </div>
-          <p className="text-xs font-medium text-white/80 md:whitespace-nowrap">© {new Date().getFullYear()} {tenant?.name || 'Hometown Brew'}</p>
-        </div>
-        <div className="mt-4 flex justify-center gap-6 text-[10px] font-bold uppercase tracking-widest text-white/60">
-          <Link to="/privacy" className="transition-colors hover:text-white">Privacy</Link>
-          <Link to="/terms" className="transition-colors hover:text-white">Terms</Link>
-          <Link to="/data-deletion" className="transition-colors hover:text-white">Conditions</Link>
+          <div className="flex flex-col items-center gap-3 md:items-end">
+            <p className="text-xs font-medium text-white/80 md:whitespace-nowrap">© {new Date().getFullYear()} {tenant?.name || 'Hometown Brew'}</p>
+            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] font-bold uppercase tracking-widest text-white/70 md:justify-end" aria-label="Legal links">
+              <Link to="/privacy" className="transition-colors hover:text-white">Privacy</Link>
+              <Link to="/terms" className="transition-colors hover:text-white">Terms</Link>
+              <Link to="/data-deletion" className="transition-colors hover:text-white">Conditions</Link>
+            </nav>
+          </div>
         </div>
       </footer>
     </div>
