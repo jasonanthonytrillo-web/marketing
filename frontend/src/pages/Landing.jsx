@@ -297,7 +297,7 @@ export default function Landing() {
       </div>
 
       {/* Main Content Wrapper - Centered */}
-      <div className="relative z-20 w-full max-w-5xl mx-auto px-6 py-20 flex flex-col items-center justify-center text-center animate-fade-in-up">
+      <div className="relative z-20 flex min-h-screen w-full max-w-5xl mx-auto flex-col items-center justify-center px-6 py-20 text-center animate-fade-in-up">
         {isCustomer && (
           <div className="inline-flex flex-col items-center gap-2 mb-8 animate-fade-in">
             <div className="bg-emerald-500/10 border border-emerald-500/20 px-8 py-3 rounded-[2rem] text-emerald-400 font-bold text-lg backdrop-blur-md shadow-xl shadow-emerald-500/10 flex flex-col items-center">
