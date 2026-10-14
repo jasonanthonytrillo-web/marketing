@@ -421,19 +421,21 @@ export default function Landing() {
 
       {/* Store footer */}
       <footer className="relative z-10 mt-auto w-full border-t border-white/15 px-4 py-5 shadow-lg" style={{ backgroundColor: primaryColor }}>
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-4 sm:px-6 md:flex-row md:justify-between md:px-8">
-          <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 shadow-sm transition-transform hover:scale-[1.02]">
-            <img
-              src={tenant?.logo ? getAbsoluteUrl(tenant.logo) : '/hb_logo.jpg'}
-              className="h-7 w-7 rounded-lg object-cover"
-              alt={tenant?.name || 'Store logo'}
-              onError={(e) => { e.currentTarget.src = '/favicon.png'; }}
-            />
-            <span className="truncate text-sm font-black tracking-tight" style={{ color: primaryColor }}>
-              {tenant?.name || 'Hometown Brew'}
-            </span>
-          </Link>
-          <p className="text-center text-xs font-medium text-white/90">Buenavista, Agusan del Norte · Open daily 5:00 PM – 11:00 PM</p>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:px-6 md:flex-row md:items-start md:justify-between md:px-8">
+          <div className="min-w-0">
+            <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 shadow-sm transition-transform hover:scale-[1.02]">
+              <img
+                src={tenant?.logo ? getAbsoluteUrl(tenant.logo) : '/hb_logo.jpg'}
+                className="h-7 w-7 rounded-lg object-cover"
+                alt={tenant?.name || 'Store logo'}
+                onError={(e) => { e.currentTarget.src = '/favicon.png'; }}
+              />
+              <span className="truncate text-sm font-black tracking-tight" style={{ color: primaryColor }}>
+                {tenant?.name || 'Hometown Brew'}
+              </span>
+            </Link>
+            <p className="mt-2 text-xs font-medium text-white/90 sm:text-sm">Buenavista, Agusan del Norte · Open daily 5:00 PM – 11:00 PM</p>
+          </div>
           <p className="text-xs font-medium text-white/80 md:whitespace-nowrap">© {new Date().getFullYear()} {tenant?.name || 'Hometown Brew'}</p>
         </div>
         <div className="mt-4 flex justify-center gap-6 text-[10px] font-bold uppercase tracking-widest text-white/60">
