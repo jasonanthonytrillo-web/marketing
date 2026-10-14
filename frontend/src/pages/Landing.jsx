@@ -193,31 +193,6 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-start relative overflow-hidden" style={{ '--primary-custom': primaryColor }}>
 
-      {/* Public storefront header */}
-      <header
-        className="relative z-30 w-full flex-shrink-0 border-b border-white/15 shadow-lg"
-        style={{ backgroundColor: primaryColor }}
-      >
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 sm:py-4 md:flex-row md:items-center md:justify-between md:px-8">
-          <div className="min-w-0">
-            <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 shadow-sm transition-transform hover:scale-[1.02]">
-              <img
-                src={tenant?.logo ? getAbsoluteUrl(tenant.logo) : '/hb_logo.jpg'}
-                className="h-7 w-7 rounded-lg object-cover"
-                alt={tenant?.name || 'Store logo'}
-                onError={(e) => { e.currentTarget.src = '/favicon.png'; }}
-              />
-              <span className="truncate text-sm font-black tracking-tight" style={{ color: primaryColor }}>
-                {tenant?.name || 'Hometown Brew'}
-              </span>
-            </Link>
-          </div>
-          <p className="text-xs font-medium text-white/80 md:whitespace-nowrap">
-            © {new Date().getFullYear()} {tenant?.name || 'Hometown Brew'}
-          </p>
-        </div>
-      </header>
-
       {/* Splash Screen Intro */}
       {showSplash && (
         <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black transition-opacity duration-700 ${splashFading ? 'opacity-0' : 'opacity-100'}`}>
@@ -444,13 +419,27 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* Legal Footer */}
-      <footer className="relative z-10 mt-auto w-full border-t border-white/5 px-6 py-8 text-center">
-        <p className="mb-4 text-xs font-medium text-surface-400">Buenavista, Agusan del Norte · Open daily 5:00 PM – 11:00 PM</p>
-        <div className="flex justify-center gap-6 text-[10px] font-bold text-surface-500 uppercase tracking-widest">
-          <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-          <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
-          <Link to="/data-deletion" className="hover:text-white transition-colors">Conditions</Link>
+      {/* Store footer */}
+      <footer className="relative z-10 mt-auto w-full border-t border-white/15 px-4 py-5 shadow-lg" style={{ backgroundColor: primaryColor }}>
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-4 sm:px-6 md:flex-row md:justify-between md:px-8">
+          <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-1.5 shadow-sm transition-transform hover:scale-[1.02]">
+            <img
+              src={tenant?.logo ? getAbsoluteUrl(tenant.logo) : '/hb_logo.jpg'}
+              className="h-7 w-7 rounded-lg object-cover"
+              alt={tenant?.name || 'Store logo'}
+              onError={(e) => { e.currentTarget.src = '/favicon.png'; }}
+            />
+            <span className="truncate text-sm font-black tracking-tight" style={{ color: primaryColor }}>
+              {tenant?.name || 'Hometown Brew'}
+            </span>
+          </Link>
+          <p className="text-center text-xs font-medium text-white/90">Buenavista, Agusan del Norte · Open daily 5:00 PM – 11:00 PM</p>
+          <p className="text-xs font-medium text-white/80 md:whitespace-nowrap">© {new Date().getFullYear()} {tenant?.name || 'Hometown Brew'}</p>
+        </div>
+        <div className="mt-4 flex justify-center gap-6 text-[10px] font-bold uppercase tracking-widest text-white/60">
+          <Link to="/privacy" className="transition-colors hover:text-white">Privacy</Link>
+          <Link to="/terms" className="transition-colors hover:text-white">Terms</Link>
+          <Link to="/data-deletion" className="transition-colors hover:text-white">Conditions</Link>
         </div>
       </footer>
     </div>
